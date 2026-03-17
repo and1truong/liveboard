@@ -25,7 +25,7 @@ name: CLI Test Board
 ## Done
 `
 
-// setupCLI initialises the global CLI state used by all commands and returns
+// setupCLI initializes the global CLI state used by all commands and returns
 // the temp workspace directory.
 func setupCLI(t *testing.T) string {
 	t.Helper()
@@ -57,7 +57,7 @@ func suppressStdout(t *testing.T) {
 	}
 	os.Stdout = devNull
 	t.Cleanup(func() {
-		devNull.Close()
+		_ = devNull.Close()
 		os.Stdout = old
 	})
 }

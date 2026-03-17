@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(go build:*)",
+      "Bash(golangci-lint version:*)",
+      "Bash(GOFLAGS=\"\" golangci-lint run --go=1.24)",
+      "Bash(brew info:*)",
+      "Bash(/opt/homebrew/bin/golangci-lint version:*)",
+      "Bash(/opt/homebrew/bin/golangci-lint run:*)",
+      "Bash(goimports -l -local github.com/and1truong/liveboard /Users/htruong/code/htruong/liveboard/cmd/liveboard/main.go /Users/htruong/code/htruong/liveboard/cmd/liveboard/serve.go /Users/htruong/code/htruong/liveboard/internal/api/server.go /Users/htruong/code/htruong/liveboard/internal/board/board.go /Users/htruong/code/htruong/liveboard/internal/parser/parser.go /Users/htruong/code/htruong/liveboard/internal/workspace/workspace.go /Users/htruong/code/htruong/liveboard/internal/writer/writer.go)",
+      "Bash(golangci-lint run:*)",
+      "Bash(sed -i '' 's/RunE: func\\(cmd \\\\*cobra\\\\.Command, args \\\\[\\\\]string\\) error {/RunE: func\\(_ *cobra.Command, args []string\\) error {/g' /Users/htruong/code/htruong/liveboard/cmd/liveboard/main.go)",
+      "Bash(sed -i '' 's/PersistentPreRunE: func\\(cmd \\\\*cobra\\\\.Command, args \\\\[\\\\]string\\) error {/PersistentPreRunE: func\\(_ *cobra.Command, args []string\\) error {/g' /Users/htruong/code/htruong/liveboard/cmd/liveboard/main.go)",
+      "Bash(go test:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
+    ]
+  }
+}
