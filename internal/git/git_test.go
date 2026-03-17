@@ -15,7 +15,7 @@ func TestOpen_InitializesNewRepo(t *testing.T) {
 	if repo == nil {
 		t.Fatal("expected non-nil repository")
 	}
-	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
+	if _, err = os.Stat(filepath.Join(dir, ".git")); err != nil {
 		if os.IsNotExist(err) {
 			t.Error(".git directory not created")
 		} else {
@@ -70,11 +70,11 @@ func TestCommit_CreatesCommit(t *testing.T) {
 	}
 
 	filePath := "board.md"
-	if err := os.WriteFile(filepath.Join(dir, filePath), []byte("# Board\n"), 0644); err != nil {
+	if err = os.WriteFile(filepath.Join(dir, filePath), []byte("# Board\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
 
-	if err := repo.Commit(filePath, "add board"); err != nil {
+	if err = repo.Commit(filePath, "add board"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -105,11 +105,11 @@ func TestCommit_MultipleCommits(t *testing.T) {
 	}
 
 	for i, name := range []string{"a.md", "b.md"} {
-		if err := os.WriteFile(filepath.Join(dir, name), []byte("content"), 0644); err != nil {
+		if err = os.WriteFile(filepath.Join(dir, name), []byte("content"), 0644); err != nil {
 			t.Fatal(err)
 		}
 		msg := filepath.Base(name)
-		if err := repo.Commit(name, msg); err != nil {
+		if err = repo.Commit(name, msg); err != nil {
 			t.Fatalf("commit %d: %v", i, err)
 		}
 	}
@@ -178,20 +178,20 @@ func TestCommitRemove_RemovesAndCommits(t *testing.T) {
 	fullPath := filepath.Join(dir, filePath)
 
 	// Create and commit the file.
-	if err := os.WriteFile(fullPath, []byte("# Board\n"), 0644); err != nil {
+	if err = os.WriteFile(fullPath, []byte("# Board\n"), 0644); err != nil {
 		t.Fatal(err)
 	}
-	if err := repo.Commit(filePath, "add board"); err != nil {
+	if err = repo.Commit(filePath, "add board"); err != nil {
 		t.Fatal(err)
 	}
 
 	// Remove and commit.
-	if err := repo.CommitRemove(filePath, "remove board"); err != nil {
+	if err = repo.CommitRemove(filePath, "remove board"); err != nil {
 		t.Fatal(err)
 	}
 
 	// File should be gone from disk.
-	if _, err := os.Stat(fullPath); !os.IsNotExist(err) {
+	if _, err = os.Stat(fullPath); !os.IsNotExist(err) {
 		t.Error("expected file to be removed from disk")
 	}
 

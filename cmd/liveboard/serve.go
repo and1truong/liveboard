@@ -5,8 +5,9 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/and1truong/liveboard/internal/api"
 	"github.com/spf13/cobra"
+
+	"github.com/and1truong/liveboard/internal/api"
 )
 
 func serveCmd() *cobra.Command {
@@ -15,7 +16,7 @@ func serveCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the REST API server",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			srv := api.NewServer(ws, ws.Engine, gitRepo)
 			addr := fmt.Sprintf(":%d", port)
 			fmt.Printf("LiveBoard API listening on http://localhost:%d\n", port)

@@ -1,3 +1,4 @@
+// Package models defines the core data types for liveboard.
 package models
 
 import "time"
@@ -38,20 +39,24 @@ type Config struct {
 	Board     BoardConfig     `yaml:"board,omitempty"`
 }
 
+// LLMConfig holds configuration for the LLM integration.
 type LLMConfig struct {
 	Provider string `yaml:"provider,omitempty"`
 	Model    string `yaml:"model,omitempty"`
 }
 
+// WorkspaceConfig holds workspace-level settings.
 type WorkspaceConfig struct {
 	Default string `yaml:"default,omitempty"`
 }
 
+// GitConfig holds git auto-commit settings.
 type GitConfig struct {
-	AutoCommit    bool   `yaml:"auto_commit"`
-	CommitFormat  string `yaml:"commit_format,omitempty"`
+	AutoCommit   bool   `yaml:"auto_commit"`
+	CommitFormat string `yaml:"commit_format,omitempty"`
 }
 
+// BoardConfig holds board-level defaults.
 type BoardConfig struct {
 	DefaultColumns []string `yaml:"default_columns,omitempty"`
 }

@@ -1,3 +1,4 @@
+// Package parser parses Markdown files into Board models.
 package parser
 
 import (
@@ -5,8 +6,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/and1truong/liveboard/pkg/models"
 	"gopkg.in/yaml.v3"
+
+	"github.com/and1truong/liveboard/pkg/models"
 )
 
 var (

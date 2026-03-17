@@ -1,3 +1,4 @@
+// Package git provides Git repository operations for auto-committing board changes.
 package git
 
 import (
@@ -39,7 +40,7 @@ func (r *Repository) Commit(filePath string, message string) error {
 		return fmt.Errorf("get worktree: %w", err)
 	}
 
-	if _, err := wt.Add(filePath); err != nil {
+	if _, err = wt.Add(filePath); err != nil {
 		return fmt.Errorf("git add %s: %w", filePath, err)
 	}
 
@@ -68,7 +69,7 @@ func (r *Repository) CommitRemove(filePath string, message string) error {
 		return fmt.Errorf("get worktree: %w", err)
 	}
 
-	if _, err := wt.Remove(filePath); err != nil {
+	if _, err = wt.Remove(filePath); err != nil {
 		return fmt.Errorf("git rm %s: %w", filePath, err)
 	}
 

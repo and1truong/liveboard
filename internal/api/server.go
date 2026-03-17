@@ -3,11 +3,12 @@ package api
 import (
 	"net/http"
 
+	"github.com/go-chi/chi/v5"
+	"github.com/go-chi/chi/v5/middleware"
+
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
 	"github.com/and1truong/liveboard/internal/workspace"
-	"github.com/go-chi/chi/v5"
-	"github.com/go-chi/chi/v5/middleware"
 )
 
 // Server is the REST API server for LiveBoard.
@@ -81,7 +82,7 @@ func jsonContentType(next http.Handler) http.Handler {
 	})
 }
 
-func (s *Server) stubHandler(w http.ResponseWriter, r *http.Request) {
+func (s *Server) stubHandler(w http.ResponseWriter, _ *http.Request) {
 	respondError(w, http.StatusNotImplemented, "not yet implemented")
 }
 
