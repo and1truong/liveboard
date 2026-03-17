@@ -16,7 +16,6 @@ linters:
     # Safety
     - bodyclose
     - noctx
-    - copylock
     # Complexity
     - cyclop
     - funlen
