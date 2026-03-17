@@ -1,0 +1,43 @@
+{{define "content"}}
+<div class="board-list">
+    <div class="container">
+        <div class="header-row">
+            <h2>My Boards</h2>
+            <button live-click="show-create-form" class="btn-primary">+ New Board</button>
+        </div>
+
+        {{if .Error}}
+        <div class="error">{{.Error}}</div>
+        {{end}}
+
+        {{if .Creating}}
+        <form live-submit="create-board" class="create-board-form">
+            <input type="text" name="name" placeholder="Board name" required autofocus>
+            <button type="submit" class="btn-primary">Create</button>
+            <button type="button" live-click="cancel-create" class="btn-secondary">Cancel</button>
+        </form>
+        {{end}}
+
+        {{if .Boards}}
+        <div class="boards-grid">
+            {{range .Boards}}
+            <div class="board-card">
+                <a live-patch="/board/{{.Name}}" class="board-link">
+                    <h3>{{.Name}}</h3>
+                    {{if .Description}}
+                    <p class="description">{{.Description}}</p>
+                    {{end}}
+                    <p class="card-count">{{.CardCount}} cards</p>
+                </a>
+                <button live-click="delete-board" live-value-name="{{.Name}}" class="btn-delete">Delete</button>
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="empty-state">
+            <p>No boards yet. Create your first board to get started!</p>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{end}}

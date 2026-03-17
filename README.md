@@ -560,30 +560,34 @@ File writes use file-level locking to prevent simultaneous edits corrupting boar
 liveboard/
     cmd/
         liveboard/
-            main.go
+            main.go         CLI entrypoint
+            serve.go        server command
 
     internal/
-        workspace/      folder scanning, board resolution
-        board/          board engine, operations
-        parser/         markdown → model
-        writer/         model → markdown (AST transform)
-        git/            go-git integration
-        api/            REST handlers
-        event/          internal event bus + SSE
-        search/         bleve index
-        ai/             LLM client, tool dispatcher
+        workspace/          folder scanning, board resolution
+        board/              board engine, operations
+        parser/             markdown → model
+        writer/             model → markdown (AST transform)
+        git/                go-git integration
+        api/                REST handlers
+        templates/          HTML templates
+        web/                web UI handlers and views
 
     pkg/
-        models/         shared Board, Column, Card types
+        models/             shared Board, Column, Card types
 
     web/
-        liveview/       go-live-view templates and handlers
-
-    tui/                bubbletea models and views
+        css/                stylesheets
 
     README.md
     LICENSE
 ```
+
+**Planned modules** (not yet implemented):
+- `internal/event/` — internal event bus + SSE
+- `internal/search/` — bleve index
+- `internal/ai/` — LLM client, tool dispatcher
+- `tui/` — bubbletea models and views
 
 -----
 
