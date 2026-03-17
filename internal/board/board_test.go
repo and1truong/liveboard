@@ -69,7 +69,13 @@ func TestMoveCard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	board, _ := eng.LoadBoard(path)
+	board, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board == nil {
+		t.Fatal("nil board")
+	}
 	// Should not be in Backlog.
 	for _, card := range board.Columns[0].Cards {
 		if card.ID == "id-001" {
@@ -106,7 +112,13 @@ func TestTagCard(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	board, _ := eng.LoadBoard(path)
+	board, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board == nil {
+		t.Fatal("nil board")
+	}
 	card := findCard(board, "id-001")
 	if card == nil {
 		t.Fatal("card not found")
@@ -141,7 +153,13 @@ func TestAddColumn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	board, _ := eng.LoadBoard(path)
+	board, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board == nil {
+		t.Fatal("nil board")
+	}
 	if len(board.Columns) != 4 {
 		t.Fatalf("columns = %d, want 4", len(board.Columns))
 	}
@@ -156,7 +174,13 @@ func TestDeleteColumn(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	board, _ := eng.LoadBoard(path)
+	board, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board == nil {
+		t.Fatal("nil board")
+	}
 	if len(board.Columns) != 2 {
 		t.Fatalf("columns = %d, want 2", len(board.Columns))
 	}

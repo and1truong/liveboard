@@ -34,6 +34,9 @@ func doJSON(t *testing.T, ts *httptest.Server, method, path string, body any) *h
 	if err != nil {
 		t.Fatal(err)
 	}
+	if resp == nil {
+		t.Fatal("unexpected nil response")
+	}
 	return resp
 }
 
