@@ -5,23 +5,31 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/jfyne/live"
 
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
 	"github.com/and1truong/liveboard/internal/workspace"
+	"github.com/and1truong/liveboard/internal/web"
 )
 
 // Server is the REST API server for LiveBoard.
 type Server struct {
-	ws     *workspace.Workspace
-	eng    *board.Engine
-	git    *gitpkg.Repository
-	router chi.Router
+	ws          *workspace.Workspace
+	eng         *board.Engine
+	git         *gitpkg.Repository
+	liveHandler *web.Handler
+	router      chi.Router
 }
 
 // NewServer creates a Server with all routes registered.
 func NewServer(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repository) *Server {
-	s := &Server{ws: ws, eng: eng, git: git}
+	s := &Server{
+		ws:          ws,
+		eng:         eng,
+		git:         git,
+		liveHandler: web.NewHandler(ws, eng, git),
+	}
 	s.router = s.buildRouter()
 	return s
 }
@@ -41,9 +49,22 @@ func (s *Server) buildRouter() chi.Router {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(jsonContentType)
 
+	// Serve static assets
+	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {
+		http.StripPrefix("/static/", http.FileServer(http.Dir("web"))).ServeHTTP(w, req)
+	})
+
+	// LiveView JavaScript (required)
+	r.Handle("/live.js", live.Javascript{})
+
+	// Web UI routes
+	r.Handle("/", s.liveHandler.BoardListHandler())
+	r.Handle("/board/{name}", s.liveHandler.BoardViewHandler())
+
+	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {
+		r.Use(jsonContentType)
 		r.Get("/", s.listBoards)
 		r.Post("/", s.createBoard)
 		r.Route("/{board}", func(r chi.Router) {
@@ -60,6 +81,7 @@ func (s *Server) buildRouter() chi.Router {
 	})
 
 	r.Route("/cards/{id}", func(r chi.Router) {
+		r.Use(jsonContentType)
 		r.Get("/", s.getCard)
 		r.Delete("/", s.deleteCard)
 		r.Post("/move", s.moveCard)
