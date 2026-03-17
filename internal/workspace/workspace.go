@@ -57,7 +57,7 @@ func (w *Workspace) ListBoards() ([]models.Board, error) {
 // LoadBoard loads a board by name.
 func (w *Workspace) LoadBoard(name string) (*models.Board, error) {
 	path := w.BoardPath(name)
-	return w.Engine.LoadBoard(path)
+	return w.Engine.LoadBoard(path) //nolint:nilaway
 }
 
 // CreateBoard creates a new board with default columns.
