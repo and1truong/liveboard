@@ -20,7 +20,7 @@ type BoardViewModel struct {
 }
 
 // mountBoardView initializes the board view model.
-func (h *Handler) mountBoardView(ctx context.Context, s *live.Socket) (interface{}, error) {
+func (h *Handler) mountBoardView(ctx context.Context, _ *live.Socket) (interface{}, error) {
 	// Get board name from URL
 	boardName := live.Request(ctx).URL.Query().Get("name")
 	if boardName == "" {
@@ -39,7 +39,7 @@ func (h *Handler) mountBoardView(ctx context.Context, s *live.Socket) (interface
 }
 
 // handleCreateCard creates a new card in a column.
-func (h *Handler) handleCreateCard(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	column, ok := p["column"].(string)
 	if !ok || column == "" {
 		return BoardViewModel{Error: "Column name is required"}, nil
@@ -82,7 +82,7 @@ func (h *Handler) handleCreateCard(ctx context.Context, s *live.Socket, p live.P
 }
 
 // handleMoveCard moves a card to a different column.
-func (h *Handler) handleMoveCard(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	cardID, ok := p["card_id"].(string)
 	if !ok || cardID == "" {
 		return BoardViewModel{Error: "Card ID is required"}, nil
@@ -125,7 +125,7 @@ func (h *Handler) handleMoveCard(ctx context.Context, s *live.Socket, p live.Par
 }
 
 // handleDeleteCard deletes a card.
-func (h *Handler) handleDeleteCard(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	cardID, ok := p["card_id"].(string)
 	if !ok || cardID == "" {
 		return BoardViewModel{Error: "Card ID is required"}, nil
@@ -163,7 +163,7 @@ func (h *Handler) handleDeleteCard(ctx context.Context, s *live.Socket, p live.P
 }
 
 // handleToggleComplete marks a card as completed.
-func (h *Handler) handleToggleComplete(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	cardID, ok := p["card_id"].(string)
 	if !ok || cardID == "" {
 		return BoardViewModel{Error: "Card ID is required"}, nil
@@ -201,7 +201,7 @@ func (h *Handler) handleToggleComplete(ctx context.Context, s *live.Socket, p li
 }
 
 // handleCreateColumn creates a new column.
-func (h *Handler) handleCreateColumn(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleCreateColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	colName, ok := p["column_name"].(string)
 	if !ok || colName == "" {
 		return BoardViewModel{Error: "Column name is required"}, nil
@@ -239,7 +239,7 @@ func (h *Handler) handleCreateColumn(ctx context.Context, s *live.Socket, p live
 }
 
 // handleShowAddCard shows the add card form for a column.
-func (h *Handler) handleShowAddCard(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleShowAddCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	boardName, ok := p["name"].(string)
 	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
@@ -262,7 +262,7 @@ func (h *Handler) handleShowAddCard(ctx context.Context, s *live.Socket, p live.
 }
 
 // handleCancelAddCard cancels the add card form.
-func (h *Handler) handleCancelAddCard(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleCancelAddCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	boardName, ok := p["name"].(string)
 	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
@@ -281,7 +281,7 @@ func (h *Handler) handleCancelAddCard(ctx context.Context, s *live.Socket, p liv
 }
 
 // handleBoardUpdate handles PubSub messages for real-time updates.
-func (h *Handler) handleBoardUpdate(ctx context.Context, s *live.Socket, msg any) (interface{}, error) {
+func (h *Handler) handleBoardUpdate(_ context.Context, _ *live.Socket, msg any) (interface{}, error) {
 	// Reload board on any PubSub message
 	boardName, ok := msg.(string)
 	if !ok {

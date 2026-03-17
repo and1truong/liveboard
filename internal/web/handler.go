@@ -6,7 +6,6 @@ import (
 	"html/template"
 	"net/http"
 	"path/filepath"
-	"sync"
 
 	"github.com/jfyne/live"
 
@@ -22,7 +21,6 @@ type Handler struct {
 	git    *gitpkg.Repository
 	pubsub *live.PubSub
 	tmpl   *template.Template
-	mu     sync.RWMutex
 }
 
 // NewHandler creates a new web Handler.
@@ -101,7 +99,7 @@ func (h *Handler) BoardViewHandler() http.Handler {
 func (h *Handler) publishBoardEvent(boardName string, eventType string) {
 	ctx := context.Background()
 	topic := "board:" + boardName
-	h.pubsub.Publish(ctx, topic, live.Event{
+	_ = h.pubsub.Publish(ctx, topic, live.Event{
 		T: eventType,
 	})
 }

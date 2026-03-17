@@ -23,7 +23,7 @@ type BoardSummary struct {
 }
 
 // mountBoardList initializes the board list model.
-func (h *Handler) mountBoardList(ctx context.Context, s *live.Socket) (interface{}, error) {
+func (h *Handler) mountBoardList(_ context.Context, _ *live.Socket) (interface{}, error) {
 	boards, err := h.ws.ListBoards()
 	if err != nil {
 		return BoardListModel{Error: err.Error()}, nil
@@ -46,7 +46,7 @@ func (h *Handler) mountBoardList(ctx context.Context, s *live.Socket) (interface
 }
 
 // handleParams handles parameter changes (e.g., URL params).
-func (h *Handler) handleParams(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleParams(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
 	// Reload boards when params change
 	boards, err := h.ws.ListBoards()
 	if err != nil {
@@ -70,7 +70,7 @@ func (h *Handler) handleParams(ctx context.Context, s *live.Socket, p live.Param
 }
 
 // handleCreateBoard creates a new board.
-func (h *Handler) handleCreateBoard(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleCreateBoard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	name, ok := p["name"].(string)
 	if !ok || name == "" {
 		return BoardListModel{Error: "Board name is required"}, nil
@@ -110,7 +110,7 @@ func (h *Handler) handleCreateBoard(ctx context.Context, s *live.Socket, p live.
 }
 
 // handleDeleteBoard deletes a board.
-func (h *Handler) handleDeleteBoard(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleDeleteBoard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	name, ok := p["name"].(string)
 	if !ok || name == "" {
 		return BoardListModel{Error: "Board name is required"}, nil
@@ -150,11 +150,11 @@ func (h *Handler) handleDeleteBoard(ctx context.Context, s *live.Socket, p live.
 }
 
 // handleShowCreateForm shows the create board form.
-func (h *Handler) handleShowCreateForm(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleShowCreateForm(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
 	return BoardListModel{Creating: true}, nil
 }
 
 // handleCancelCreate cancels the create board form.
-func (h *Handler) handleCancelCreate(ctx context.Context, s *live.Socket, p live.Params) (interface{}, error) {
+func (h *Handler) handleCancelCreate(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
 	return BoardListModel{Creating: false}, nil
 }
