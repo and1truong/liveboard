@@ -96,7 +96,7 @@ func (h *Handler) BoardViewHandler() http.Handler {
 }
 
 // publishBoardEvent broadcasts a board update to all subscribers.
-func (h *Handler) publishBoardEvent(boardName string, eventType string) {
+func (h *Handler) publishBoardEvent(boardName string, _ string) {
 	ctx := context.Background()
 	_ = h.pubsub.Publish(ctx, "board_update", live.Event{
 		T:        "board_update",
