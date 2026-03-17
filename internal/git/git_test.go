@@ -135,6 +135,30 @@ func TestCommitRemove_NoOpWhenAutoCommitDisabled(t *testing.T) {
 	}
 }
 
+func TestCommitRemove_FileRemainsWhenAutoCommitDisabled(t *testing.T) {
+	dir := t.TempDir()
+	repo, err := Open(dir, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	filePath := "board.md"
+	fullPath := filepath.Join(dir, filePath)
+	if err := os.WriteFile(fullPath, []byte("# Board\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	// CommitRemove should be a no-op when autoCommit is disabled.
+	if err := repo.CommitRemove(filePath, "remove"); err != nil {
+		t.Fatal(err)
+	}
+
+	// File must still exist on disk.
+	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+		t.Error("file was removed despite autoCommit being disabled")
+	}
+}
+
 func TestCommitRemove_RemovesAndCommits(t *testing.T) {
 	dir := t.TempDir()
 	repo, err := Open(dir, true)
