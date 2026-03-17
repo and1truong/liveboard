@@ -114,6 +114,36 @@ func TestParseCards(t *testing.T) {
 	}
 }
 
+func TestParseCardBody(t *testing.T) {
+	md := `## Backlog
+
+- [ ] Task with body
+<!-- liveboard:id=id-body -->
+  tags: important
+
+  First line of body.
+  Second line of body.
+
+- [ ] Task without body
+<!-- liveboard:id=id-nobody -->
+`
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns[0].Cards) != 2 {
+		t.Fatalf("cards = %d, want 2", len(board.Columns[0].Cards))
+	}
+	withBody := board.Columns[0].Cards[0]
+	if withBody.Body != "First line of body.\nSecond line of body." {
+		t.Errorf("body = %q", withBody.Body)
+	}
+	withoutBody := board.Columns[0].Cards[1]
+	if withoutBody.Body != "" {
+		t.Errorf("expected empty body, got %q", withoutBody.Body)
+	}
+}
+
 func TestParseMinimalBoard(t *testing.T) {
 	md := "## Todo\n\n- [ ] First task\n<!-- liveboard:id=abc -->\n"
 	board, err := Parse(md)

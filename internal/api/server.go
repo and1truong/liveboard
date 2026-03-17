@@ -64,7 +64,7 @@ func (s *Server) buildRouter() chi.Router {
 		r.Post("/move", s.moveCard)
 		r.Post("/complete", s.completeCard)
 		r.Post("/tag", s.tagCard)
-		r.Patch("/", s.stubHandler)
+		r.Patch("/", s.patchCard)
 	})
 
 	r.Get("/search", s.stubHandler)

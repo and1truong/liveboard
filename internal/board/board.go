@@ -126,6 +126,28 @@ func (e *Engine) TagCard(boardPath, cardID string, tags []string) error {
 	return os.WriteFile(boardPath, []byte(newContent), 0644)
 }
 
+// UpdateCardBody sets the body/notes text for a card.
+func (e *Engine) UpdateCardBody(boardPath, cardID, body string) error {
+	content, err := os.ReadFile(boardPath)
+	if err != nil {
+		return err
+	}
+
+	board, err := parser.Parse(string(content))
+	if err != nil {
+		return err
+	}
+
+	card := findCard(board, cardID)
+	if card == nil {
+		return fmt.Errorf("card %s not found", cardID)
+	}
+
+	card.Body = body
+	newContent := writer.UpdateCard(string(content), cardID, card)
+	return os.WriteFile(boardPath, []byte(newContent), 0644)
+}
+
 // DeleteCard removes a card by ID.
 func (e *Engine) DeleteCard(boardPath, cardID string) error {
 	content, err := os.ReadFile(boardPath)

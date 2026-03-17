@@ -70,6 +70,13 @@ func writeCard(b *strings.Builder, card *models.Card) {
 	for k, v := range card.Metadata {
 		b.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
 	}
+
+	if card.Body != "" {
+		b.WriteString("\n")
+		for _, line := range strings.Split(card.Body, "\n") {
+			b.WriteString("  " + line + "\n")
+		}
+	}
 }
 
 // AddCard inserts a card into the raw Markdown content under the specified column.
@@ -125,11 +132,11 @@ func RemoveCard(content string, cardID string) string {
 
 		if skip {
 			trimmed := strings.TrimSpace(line)
-			// End of card: next card, next column, or empty line followed by non-metadata.
+			// End of card: next card or next column heading.
 			if strings.HasPrefix(line, "- [") || strings.HasPrefix(line, "## ") {
 				skip = false
 				result = append(result, line)
-			} else if trimmed == "" || isCardMeta(line) || isIDComment(line) {
+			} else if trimmed == "" || isCardMeta(line) || isIDComment(line) || isBodyLine(line) {
 				continue
 			} else {
 				skip = false
@@ -164,18 +171,14 @@ func UpdateCard(content string, cardID string, card *models.Card) string {
 				// Replace this card's lines.
 				result = append(result, renderCardLines(card)...)
 				replaced = true
-				// Skip old card lines.
+				// Skip old card lines (ID, metadata, blank lines, body) until next card or heading.
 				i++ // skip ID line
 				for i+1 < len(lines) {
 					next := lines[i+1]
-					if isCardMeta(next) || strings.TrimSpace(next) == "" {
-						i++
-						if strings.TrimSpace(next) == "" {
-							break
-						}
-					} else {
+					if strings.HasPrefix(next, "- [") || strings.HasPrefix(next, "## ") {
 						break
 					}
+					i++
 				}
 				continue
 			}
@@ -212,6 +215,12 @@ func renderCardLines(card *models.Card) []string {
 	for k, v := range card.Metadata {
 		lines = append(lines, fmt.Sprintf("  %s: %s", k, v))
 	}
+	if card.Body != "" {
+		lines = append(lines, "") // blank separator
+		for _, line := range strings.Split(card.Body, "\n") {
+			lines = append(lines, "  "+line)
+		}
+	}
 	return lines
 }
 
@@ -231,6 +240,10 @@ func isIDComment(line string) bool {
 
 func isCardMeta(line string) bool {
 	return metaRe.MatchString(line)
+}
+
+func isBodyLine(line string) bool {
+	return strings.HasPrefix(line, "  ") && !isCardMeta(line)
 }
 
 var (

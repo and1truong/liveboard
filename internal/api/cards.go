@@ -165,6 +165,33 @@ func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
 	respondNoContent(w)
 }
 
+func (s *Server) patchCard(w http.ResponseWriter, r *http.Request) {
+	cardID := pathParam(r, "id")
+	var req struct {
+		Body *string `json:"body"`
+	}
+	if err := decodeJSON(r, &req); err != nil {
+		respondError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+		return
+	}
+
+	board, err := s.ws.FindBoardByCardID(cardID)
+	if err != nil {
+		handleError(w, err)
+		return
+	}
+
+	if req.Body != nil {
+		if err := s.ws.Engine.UpdateCardBody(board.FilePath, cardID, *req.Body); err != nil {
+			handleError(w, err)
+			return
+		}
+		s.gitCommit(filepath.Base(board.FilePath), fmt.Sprintf("card: update body %s", shortID(cardID)))
+	}
+
+	respondNoContent(w)
+}
+
 func shortID(id string) string {
 	if len(id) > 8 {
 		return id[:8]

@@ -292,6 +292,32 @@ func TestNotFoundErrors(t *testing.T) {
 	}
 }
 
+func TestPatchCardBody(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "notes"})
+
+	resp := doJSON(t, ts, "POST", "/boards/notes/columns/Backlog/cards", map[string]string{"title": "Annotated"})
+	var card models.Card
+	decodeResp(t, resp, &card)
+
+	// Patch body.
+	resp = doJSON(t, ts, "PATCH", "/cards/"+card.ID, map[string]string{"body": "Details here."})
+	if resp.StatusCode != 204 {
+		t.Fatalf("expected 204, got %d", resp.StatusCode)
+	}
+	resp.Body.Close()
+
+	// Verify body is returned on GET.
+	resp = doJSON(t, ts, "GET", "/cards/"+card.ID, nil)
+	var cr cardResponse
+	decodeResp(t, resp, &cr)
+	if cr.Body != "Details here." {
+		t.Errorf("body = %q, want %q", cr.Body, "Details here.")
+	}
+}
+
 func TestStubEndpoints(t *testing.T) {
 	ts := setupTest(t)
 	defer ts.Close()

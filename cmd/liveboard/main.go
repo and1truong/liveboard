@@ -144,11 +144,13 @@ func cardCmd() *cobra.Command {
 	cmd.AddCommand(cardTagCmd())
 	cmd.AddCommand(cardShowCmd())
 	cmd.AddCommand(cardDeleteCmd())
+	cmd.AddCommand(cardNoteCmd())
 	return cmd
 }
 
 func cardAddCmd() *cobra.Command {
 	var column string
+	var body string
 	cmd := &cobra.Command{
 		Use:   "add <board> <title>",
 		Short: "Add a card to a board",
@@ -165,12 +167,18 @@ func cardAddCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
+			if body != "" {
+				if err := eng.UpdateCardBody(path, card.ID, body); err != nil {
+					return err
+				}
+			}
 			fmt.Printf("Added card %q → %s [%s]\n", title, column, card.ID)
 			gitCommit(boardName+".md", fmt.Sprintf("card: add %q → %s", title, column))
 			return nil
 		},
 	}
 	cmd.Flags().StringVarP(&column, "column", "c", "", "target column (default: Backlog)")
+	cmd.Flags().StringVarP(&body, "body", "b", "", "card body/notes")
 	return cmd
 }
 
@@ -276,6 +284,9 @@ func cardShowCmd() *cobra.Command {
 			if card.Due != "" {
 				fmt.Printf("  Due:    %s\n", card.Due)
 			}
+			if card.Body != "" {
+				fmt.Printf("\n%s\n", card.Body)
+			}
 			return nil
 		},
 	}
@@ -298,6 +309,28 @@ func cardDeleteCmd() *cobra.Command {
 			fmt.Printf("Deleted card %s\n", shortID(cardID))
 			relPath := filepath.Base(b.FilePath)
 			gitCommit(relPath, fmt.Sprintf("card: delete %s", shortID(cardID)))
+			return nil
+		},
+	}
+}
+
+func cardNoteCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "note <id> <text>",
+		Short: "Set the body/notes for a card",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cardID, body := args[0], args[1]
+			b, err := ws.FindBoardByCardID(cardID)
+			if err != nil {
+				return err
+			}
+			if err := eng.UpdateCardBody(b.FilePath, cardID, body); err != nil {
+				return err
+			}
+			fmt.Printf("Updated notes for card %s\n", shortID(cardID))
+			relPath := filepath.Base(b.FilePath)
+			gitCommit(relPath, fmt.Sprintf("card: update body %s", shortID(cardID)))
 			return nil
 		},
 	}
