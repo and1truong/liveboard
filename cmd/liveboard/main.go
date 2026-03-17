@@ -46,6 +46,7 @@ func main() {
 	rootCmd.AddCommand(boardCmd())
 	rootCmd.AddCommand(cardCmd())
 	rootCmd.AddCommand(columnCmd())
+	rootCmd.AddCommand(serveCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
