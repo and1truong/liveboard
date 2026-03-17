@@ -66,9 +66,7 @@ func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Par
 	}
 
 	// Git commit for card creation
-	if h.git != nil {
-		_ = h.git.Commit(boardPath, fmt.Sprintf("Add card \"%s\" to %s", title, column))
-	}
+	h.commitWithHandling(boardPath, fmt.Sprintf("Add card \"%s\" to %s", title, column))
 
 	// Publish update to all subscribers
 	h.publishBoardEvent(boardName, "card_created")
@@ -109,9 +107,7 @@ func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Param
 	}
 
 	// Git commit for card move
-	if h.git != nil {
-		_ = h.git.Commit(boardPath, fmt.Sprintf("Move card %s to %s", cardID, targetColumn))
-	}
+	h.commitWithHandling(boardPath, fmt.Sprintf("Move card %s to %s", cardID, targetColumn))
 
 	// Publish update to all subscribers
 	h.publishBoardEvent(boardName, "card_moved")
@@ -147,9 +143,7 @@ func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Par
 	}
 
 	// Git commit for card deletion
-	if h.git != nil {
-		_ = h.git.CommitRemove(boardPath, fmt.Sprintf("Delete card %s", cardID))
-	}
+	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete card %s", cardID))
 
 	// Publish update to all subscribers
 	h.publishBoardEvent(boardName, "card_deleted")
@@ -185,9 +179,7 @@ func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live
 	}
 
 	// Git commit for card completion
-	if h.git != nil {
-		_ = h.git.Commit(boardPath, fmt.Sprintf("Complete card %s", cardID))
-	}
+	h.commitWithHandling(boardPath, fmt.Sprintf("Complete card %s", cardID))
 
 	// Publish update to all subscribers
 	h.publishBoardEvent(boardName, "card_completed")
@@ -223,9 +215,7 @@ func (h *Handler) handleCreateColumn(_ context.Context, _ *live.Socket, p live.P
 	}
 
 	// Git commit for column creation
-	if h.git != nil {
-		_ = h.git.Commit(boardPath, fmt.Sprintf("Add column: %s", colName))
-	}
+	h.commitWithHandling(boardPath, fmt.Sprintf("Add column: %s", colName))
 
 	// Publish update to all subscribers
 	h.publishBoardEvent(boardName, "column_created")
@@ -245,30 +235,38 @@ func (h *Handler) handleCreateColumn(_ context.Context, _ *live.Socket, p live.P
 // handleShowAddCard shows the add card form for a column.
 func (h *Handler) handleShowAddCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	boardName, ok := p["name"].(string)
-	if !ok {
+	if !ok || boardName == "" {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
 	column, ok := p["column"].(string)
-	if ok {
+	if !ok || column == "" {
 		board, err := h.ws.LoadBoard(boardName)
 		if err != nil {
 			return BoardViewModel{Error: err.Error()}, nil
 		}
 		return BoardViewModel{
-			Board:       board,
-			BoardName:   boardName,
-			ShowAddCard: column,
+			Board:     board,
+			BoardName: boardName,
+			Error:     "Column is required",
 		}, nil
 	}
 
-	return BoardViewModel{}, nil
+	board, err := h.ws.LoadBoard(boardName)
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+	return BoardViewModel{
+		Board:       board,
+		BoardName:   boardName,
+		ShowAddCard: column,
+	}, nil
 }
 
 // handleCancelAddCard cancels the add card form.
 func (h *Handler) handleCancelAddCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	boardName, ok := p["name"].(string)
-	if !ok {
+	if !ok || boardName == "" {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 

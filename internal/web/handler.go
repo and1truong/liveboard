@@ -4,6 +4,7 @@ package web
 import (
 	"context"
 	"html/template"
+	"log"
 	"net/http"
 	"path/filepath"
 
@@ -102,4 +103,24 @@ func (h *Handler) publishBoardEvent(boardName string, _ string) {
 		T:        "board_update",
 		SelfData: boardName,
 	})
+}
+
+// commitWithHandling performs a git commit and logs any errors.
+func (h *Handler) commitWithHandling(boardPath, msg string) {
+	if h.git == nil {
+		return
+	}
+	if err := h.git.Commit(boardPath, msg); err != nil {
+		log.Printf("git commit failed for %s: %v", boardPath, err)
+	}
+}
+
+// commitRemoveWithHandling performs a git commit for removal and logs any errors.
+func (h *Handler) commitRemoveWithHandling(boardPath, msg string) {
+	if h.git == nil {
+		return
+	}
+	if err := h.git.CommitRemove(boardPath, msg); err != nil {
+		log.Printf("git commit remove failed for %s: %v", boardPath, err)
+	}
 }
