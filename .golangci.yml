@@ -9,6 +9,7 @@ linters:
     - unused
     # Code quality
     - gofmt
+    - goimports
     - revive
     - misspell
     - whitespace
@@ -38,14 +39,8 @@ linters-settings:
     min-complexity: 20
   misspell:
     locale: US
-
-formatters:
-  enable:
-    - goimports
-  settings:
-    goimports:
-      local-prefixes:
-        - github.com/and1truong/liveboard
+  goimports:
+    local-prefixes: github.com/and1truong/liveboard
 
 issues:
   exclude-rules:
