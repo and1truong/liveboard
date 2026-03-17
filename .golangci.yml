@@ -1,0 +1,60 @@
+version: "2"
+
+linters:
+  default: none
+  enable:
+    # Correctness
+    - errcheck
+    - govet
+    - staticcheck
+    - ineffassign
+    - unused
+    # Code quality
+    - gofmt
+    - goimports
+    - revive
+    - misspell
+    - whitespace
+    # Safety
+    - bodyclose
+    - noctx
+    - copylock
+    # Complexity
+    - cyclop
+    - funlen
+    - gocognit
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+  govet:
+    enable:
+      - shadow
+      - printf
+      - unreachable
+  cyclop:
+    max-complexity: 15
+  funlen:
+    lines: 80
+    statements: 50
+  gocognit:
+    min-complexity: 20
+  misspell:
+    locale: US
+  goimports:
+    local-prefixes: github.com/and1truong/liveboard
+
+issues:
+  exclude-rules:
+    - path: "_test\\.go$"
+      linters:
+        - funlen
+        - gocognit
+        - cyclop
+        - bodyclose
+    - path: "internal/parser/"
+      linters:
+        - cyclop
+        - gocognit
+  max-issues-per-linter: 0
+  max-same-issues: 0
