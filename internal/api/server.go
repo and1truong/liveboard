@@ -9,8 +9,8 @@ import (
 
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
-	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/internal/web"
+	"github.com/and1truong/liveboard/internal/workspace"
 )
 
 // Server is the REST API server for LiveBoard.

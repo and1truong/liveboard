@@ -252,8 +252,8 @@ func (h *Handler) handleShowAddCard(ctx context.Context, s *live.Socket, p live.
 			return BoardViewModel{Error: err.Error()}, nil
 		}
 		return BoardViewModel{
-			Board:     board,
-			BoardName: boardName,
+			Board:       board,
+			BoardName:   boardName,
 			ShowAddCard: column,
 		}, nil
 	}
@@ -274,8 +274,8 @@ func (h *Handler) handleCancelAddCard(ctx context.Context, s *live.Socket, p liv
 	}
 
 	return BoardViewModel{
-		Board:     board,
-		BoardName: boardName,
+		Board:       board,
+		BoardName:   boardName,
 		ShowAddCard: "",
 	}, nil
 }
