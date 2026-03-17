@@ -22,7 +22,11 @@ type BoardViewModel struct {
 // mountBoardView initializes the board view model.
 func (h *Handler) mountBoardView(ctx context.Context, _ *live.Socket) (interface{}, error) {
 	// Get board name from URL
-	boardName := live.Request(ctx).URL.Query().Get("name")
+	req := live.Request(ctx)
+	if req == nil || req.URL == nil {
+		return BoardViewModel{Error: "Invalid request"}, nil
+	}
+	boardName := req.URL.Query().Get("name")
 	if boardName == "" {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
