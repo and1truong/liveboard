@@ -1,3 +1,4 @@
+// Package writer renders Board models to Markdown and performs in-place edits.
 package writer
 
 import (
@@ -5,8 +6,9 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/and1truong/liveboard/pkg/models"
 	"gopkg.in/yaml.v3"
+
+	"github.com/and1truong/liveboard/pkg/models"
 )
 
 // Render converts a Board model into a Markdown string.
@@ -49,10 +51,10 @@ func writeCard(b *strings.Builder, card *models.Card) {
 	if card.Completed {
 		checkbox = "x"
 	}
-	b.WriteString(fmt.Sprintf("- [%s] %s\n", checkbox, card.Title))
+	fmt.Fprintf(b, "- [%s] %s\n", checkbox, card.Title)
 
 	if card.ID != "" {
-		b.WriteString(fmt.Sprintf("<!-- liveboard:id=%s -->\n", card.ID))
+		fmt.Fprintf(b, "<!-- liveboard:id=%s -->\n", card.ID)
 	}
 
 	if len(card.Tags) > 0 {
@@ -68,7 +70,7 @@ func writeCard(b *strings.Builder, card *models.Card) {
 		b.WriteString("  due: " + card.Due + "\n")
 	}
 	for k, v := range card.Metadata {
-		b.WriteString(fmt.Sprintf("  %s: %s\n", k, v))
+		fmt.Fprintf(b, "  %s: %s\n", k, v)
 	}
 }
 

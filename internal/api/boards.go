@@ -1,3 +1,4 @@
+// Package api implements the LiveBoard REST API server and handlers.
 package api
 
 import (
@@ -6,7 +7,7 @@ import (
 	"path/filepath"
 )
 
-func (s *Server) listBoards(w http.ResponseWriter, r *http.Request) {
+func (s *Server) listBoards(w http.ResponseWriter, _ *http.Request) {
 	boards, err := s.ws.ListBoards()
 	if err != nil {
 		handleError(w, err)

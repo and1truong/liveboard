@@ -1,3 +1,4 @@
+// Package board implements CRUD operations on Markdown-based kanban boards.
 package board
 
 import (
@@ -5,15 +6,17 @@ import (
 	"os"
 	"strings"
 
+	"github.com/google/uuid"
+
 	"github.com/and1truong/liveboard/internal/parser"
 	"github.com/and1truong/liveboard/internal/writer"
 	"github.com/and1truong/liveboard/pkg/models"
-	"github.com/google/uuid"
 )
 
 // Engine provides CRUD operations on boards backed by Markdown files.
 type Engine struct{}
 
+// New creates a new Engine instance.
 func New() *Engine {
 	return &Engine{}
 }

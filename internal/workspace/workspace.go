@@ -1,3 +1,4 @@
+// Package workspace manages the liveboard workspace directory and board files.
 package workspace
 
 import (
@@ -6,10 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"gopkg.in/yaml.v3"
+
 	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/internal/writer"
 	"github.com/and1truong/liveboard/pkg/models"
-	"gopkg.in/yaml.v3"
 )
 
 var defaultColumns = []string{"Backlog", "In Progress", "Review", "Done"}

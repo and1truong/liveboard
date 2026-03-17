@@ -19,7 +19,7 @@ type ErrorResponse struct {
 func respond(w http.ResponseWriter, status int, v any) {
 	w.WriteHeader(status)
 	if v != nil {
-		json.NewEncoder(w).Encode(v)
+		_ = json.NewEncoder(w).Encode(v)
 	}
 }
 

@@ -23,7 +23,9 @@ func doJSON(t *testing.T, ts *httptest.Server, method, path string, body any) *h
 	t.Helper()
 	var buf bytes.Buffer
 	if body != nil {
-		json.NewEncoder(&buf).Encode(body)
+		if err := json.NewEncoder(&buf).Encode(body); err != nil {
+			t.Fatal(err)
+		}
 	}
 	req, err := http.NewRequest(method, ts.URL+path, &buf)
 	if err != nil {
@@ -42,7 +44,7 @@ func doJSON(t *testing.T, ts *httptest.Server, method, path string, body any) *h
 
 func decodeResp(t *testing.T, resp *http.Response, v any) {
 	t.Helper()
-	defer resp.Body.Close()
+	defer func() { _ = resp.Body.Close() }()
 	if err := json.NewDecoder(resp.Body).Decode(v); err != nil {
 		t.Fatal(err)
 	}
@@ -304,6 +306,6 @@ func TestStubEndpoints(t *testing.T) {
 		if resp.StatusCode != 501 {
 			t.Fatalf("expected 501 for %s, got %d", path, resp.StatusCode)
 		}
-		resp.Body.Close()
+		_ = resp.Body.Close()
 	}
 }

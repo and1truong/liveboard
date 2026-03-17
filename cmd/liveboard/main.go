@@ -1,3 +1,4 @@
+// Package main is the entry point for the liveboard CLI.
 package main
 
 import (
@@ -6,11 +7,12 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/spf13/cobra"
+
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
-	"github.com/spf13/cobra"
 )
 
 var (
@@ -24,7 +26,7 @@ func main() {
 	rootCmd := &cobra.Command{
 		Use:   "liveboard",
 		Short: "Markdown-native, local-first Kanban system",
-		PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if workDir == "" {
 				workDir, _ = os.Getwd()
 			}
@@ -70,7 +72,7 @@ func boardListCmd() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List all boards",
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, _ []string) error {
 			boards, err := ws.ListBoards()
 			if err != nil {
 				return err
@@ -100,7 +102,7 @@ func boardCreateCmd() *cobra.Command {
 		Use:   "create <name>",
 		Short: "Create a new board",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			name := args[0]
 			b, err := ws.CreateBoard(name)
 			if err != nil {
@@ -118,7 +120,7 @@ func boardDeleteCmd() *cobra.Command {
 		Use:   "delete <name>",
 		Short: "Delete a board",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			name := args[0]
 			relPath := name + ".md"
 			if err := ws.DeleteBoard(name); err != nil {
@@ -153,7 +155,7 @@ func cardAddCmd() *cobra.Command {
 		Use:   "add <board> <title>",
 		Short: "Add a card to a board",
 		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, title := args[0], args[1]
 			path := ws.BoardPath(boardName)
 
@@ -179,7 +181,7 @@ func cardMoveCmd() *cobra.Command {
 		Use:   "move <id> <column>",
 		Short: "Move a card to another column",
 		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			cardID, targetCol := args[0], args[1]
 			b, err := ws.FindBoardByCardID(cardID)
 			if err != nil {
@@ -201,7 +203,7 @@ func cardCompleteCmd() *cobra.Command {
 		Use:   "complete <id>",
 		Short: "Mark a card as completed",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			cardID := args[0]
 			b, err := ws.FindBoardByCardID(cardID)
 			if err != nil {
@@ -223,7 +225,7 @@ func cardTagCmd() *cobra.Command {
 		Use:   "tag <id> <tag> [tag...]",
 		Short: "Add tags to a card",
 		Args:  cobra.MinimumNArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			cardID := args[0]
 			tags := args[1:]
 			b, err := ws.FindBoardByCardID(cardID)
@@ -246,7 +248,7 @@ func cardShowCmd() *cobra.Command {
 		Use:   "show <id>",
 		Short: "Show card details",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			cardID := args[0]
 			b, err := ws.FindBoardByCardID(cardID)
 			if err != nil {
@@ -286,7 +288,7 @@ func cardDeleteCmd() *cobra.Command {
 		Use:   "delete <id>",
 		Short: "Delete a card",
 		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			cardID := args[0]
 			b, err := ws.FindBoardByCardID(cardID)
 			if err != nil {
@@ -321,7 +323,7 @@ func columnAddCmd() *cobra.Command {
 		Use:   "add <board> <name>",
 		Short: "Add a column to a board",
 		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, colName := args[0], args[1]
 			path := ws.BoardPath(boardName)
 			if err := eng.AddColumn(path, colName); err != nil {
@@ -340,7 +342,7 @@ func columnMoveCmd() *cobra.Command {
 		Use:   "move <board> <name>",
 		Short: "Move a column",
 		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, colName := args[0], args[1]
 			path := ws.BoardPath(boardName)
 			if err := eng.MoveColumn(path, colName, after); err != nil {
@@ -361,7 +363,7 @@ func columnDeleteCmd() *cobra.Command {
 		Use:   "delete <board> <name>",
 		Short: "Delete a column from a board",
 		Args:  cobra.ExactArgs(2),
-		RunE: func(cmd *cobra.Command, args []string) error {
+		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, colName := args[0], args[1]
 			path := ws.BoardPath(boardName)
 			if err := eng.DeleteColumn(path, colName); err != nil {
