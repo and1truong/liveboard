@@ -15,8 +15,12 @@ func TestOpen_InitializesNewRepo(t *testing.T) {
 	if repo == nil {
 		t.Fatal("expected non-nil repository")
 	}
-	if _, err := os.Stat(filepath.Join(dir, ".git")); os.IsNotExist(err) {
-		t.Error(".git directory not created")
+	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
+		if os.IsNotExist(err) {
+			t.Error(".git directory not created")
+		} else {
+			t.Fatalf("stat .git failed: %v", err)
+		}
 	}
 }
 
@@ -154,8 +158,12 @@ func TestCommitRemove_FileRemainsWhenAutoCommitDisabled(t *testing.T) {
 	}
 
 	// File must still exist on disk.
-	if _, err := os.Stat(fullPath); os.IsNotExist(err) {
-		t.Error("file was removed despite autoCommit being disabled")
+	if _, err := os.Stat(fullPath); err != nil {
+		if os.IsNotExist(err) {
+			t.Error("file was removed despite autoCommit being disabled")
+		} else {
+			t.Fatalf("stat file failed: %v", err)
+		}
 	}
 }
 
