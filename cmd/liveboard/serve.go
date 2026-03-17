@@ -15,11 +15,12 @@ func serveCmd() *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "serve",
-		Short: "Start the REST API server",
+		Short: "Start the REST API and Web UI server",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			srv := api.NewServer(ws, ws.Engine, gitRepo)
 			addr := fmt.Sprintf(":%d", port)
-			fmt.Printf("LiveBoard API listening on http://localhost:%d\n", port)
+			fmt.Printf("LiveBoard Web UI: http://localhost:%d\n", port)
+			fmt.Printf("REST API: http://localhost:%d/boards\n", port)
 			return srv.Start(addr)
 		},
 	}
