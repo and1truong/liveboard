@@ -729,15 +729,52 @@ body {
     flex-shrink: 0;
 }
 
+.column-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    padding: 0 2px;
+    flex-shrink: 0;
+    gap: 4px;
+}
+
 .column h3 {
     font-size: var(--font-size-xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.06em;
     color: var(--color-text-secondary);
-    margin-bottom: 8px;
-    padding: 0 2px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.column-menu-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-muted);
+    padding: 2px 5px;
+    border-radius: var(--radius-sm);
+    font-size: 1rem;
+    line-height: 1;
     flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.12s, color 0.12s;
+    letter-spacing: 0.05em;
+}
+
+.column:hover .column-menu-btn {
+    opacity: 1;
+}
+
+.column-menu-btn:hover {
+    background: var(--color-border);
+    color: var(--color-text-primary);
+    opacity: 1;
 }
 
 .column.add-column {

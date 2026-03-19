@@ -301,6 +301,57 @@ func (h *Handler) handleCancelAddCard(_ context.Context, _ *live.Socket, p live.
 	return h.boardViewModel(slug)
 }
 
+// handleRenameColumn renames a column.
+func (h *Handler) handleRenameColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	oldName, ok := p["old_name"].(string)
+	if !ok || oldName == "" {
+		return BoardViewModel{Error: "Old column name is required"}, nil
+	}
+
+	newName, ok := p["new_name"].(string)
+	if !ok || newName == "" {
+		return BoardViewModel{Error: "New column name is required"}, nil
+	}
+
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	boardPath := h.ws.BoardPath(slug)
+	if err := h.eng.RenameColumn(boardPath, oldName, newName); err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	h.commitWithHandling(boardPath, fmt.Sprintf("Rename column %q to %q", oldName, newName))
+	h.publishBoardEvent(slug, "column_renamed")
+
+	return h.boardViewModel(slug)
+}
+
+// handleDeleteColumn deletes a column and all its cards.
+func (h *Handler) handleDeleteColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	colName, ok := p["column_name"].(string)
+	if !ok || colName == "" {
+		return BoardViewModel{Error: "Column name is required"}, nil
+	}
+
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	boardPath := h.ws.BoardPath(slug)
+	if err := h.eng.DeleteColumn(boardPath, colName); err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete column: %s", colName))
+	h.publishBoardEvent(slug, "column_deleted")
+
+	return h.boardViewModel(slug)
+}
+
 // handleBoardUpdate handles PubSub messages for real-time updates.
 func (h *Handler) handleBoardUpdate(_ context.Context, _ *live.Socket, msg any) (interface{}, error) {
 	slug, ok := msg.(string)

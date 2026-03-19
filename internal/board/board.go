@@ -251,6 +251,24 @@ func (e *Engine) DeleteColumn(boardPath, colName string) error {
 	return os.WriteFile(boardPath, []byte(strings.Join(result, "\n")), 0644)
 }
 
+// RenameColumn renames a column in-place.
+func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
+	content, err := os.ReadFile(boardPath)
+	if err != nil {
+		return err
+	}
+
+	lines := strings.Split(string(content), "\n")
+	target := "## " + oldName
+	for i, line := range lines {
+		if strings.TrimSpace(line) == target {
+			lines[i] = "## " + newName
+		}
+	}
+
+	return os.WriteFile(boardPath, []byte(strings.Join(lines, "\n")), 0644)
+}
+
 // MoveColumn reorders a column to be after another column.
 func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 	content, err := os.ReadFile(boardPath)

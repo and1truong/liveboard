@@ -116,6 +116,8 @@ func (h *Handler) BoardViewHandler() http.Handler {
 	boardViewHandler.HandleEvent("edit-card", h.handleEditCard)
 	boardViewHandler.HandleEvent("show-add-card", h.handleShowAddCard)
 	boardViewHandler.HandleEvent("cancel-add-card", h.handleCancelAddCard)
+	boardViewHandler.HandleEvent("rename-column", h.handleRenameColumn)
+	boardViewHandler.HandleEvent("delete-column", h.handleDeleteColumn)
 	boardViewHandler.HandleSelf("board_update", h.handleBoardUpdate)
 
 	return live.NewHttpHandler(context.Background(), boardViewHandler,
