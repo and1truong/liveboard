@@ -1,11 +1,11 @@
 {{define "content"}}
 <div class="board-list">
-    <div class="container">
-        <div class="header-row">
-            <h2>My Boards</h2>
-            <button live-click="show-create-form" class="btn-primary">+ New Board</button>
-        </div>
+    <div class="workspace-header">
+        <h2 class="workspace-title">My Boards</h2>
+        <button live-click="show-create-form" class="btn-primary">+ New Board</button>
+    </div>
 
+    <div class="workspace-body">
         {{if .Error}}
         <div class="error">{{.Error}}</div>
         {{end}}

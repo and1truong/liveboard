@@ -1,106 +1,103 @@
 {{define "content"}}
 <div class="board-view">
-    <div class="container">
-        {{if .Error}}
-        <div class="error">{{.Error}}</div>
-        {{end}}
+    {{if .Error}}
+    <div class="board-error-banner">{{.Error}}</div>
+    {{end}}
 
-        {{if .Board}}
-        <div class="board-header">
-            <div>
-                <h2>{{.Board.Name}}</h2>
-                {{if .Board.Description}}
-                <p class="description">{{.Board.Description}}</p>
-                {{end}}
-                {{if .Board.Tags}}
-                <div class="tags">
-                    {{range .Board.Tags}}
-                    <span class="tag">{{.}}</span>
-                    {{end}}
-                </div>
-                {{end}}
-            </div>
-            <a href="/" class="btn-secondary">← Back to Boards</a>
-        </div>
-
-        <div class="columns-container">
-            {{range $column := .Board.Columns}}
-            <div class="column">
-                <h3>{{$column.Name}}</h3>
-                <div class="cards" data-column="{{$column.Name}}">
-                    {{range $card := .Cards}}
-                    <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-card-id="{{.ID}}">
-                        {{range $.Board.Columns}}
-                        {{if ne .Name $column.Name}}
-                        <button class="move-trigger"
-                            data-target="{{.Name}}"
-                            live-click="move-card"
-                            live-value-card_id="{{$card.ID}}"
-                            live-value-target_column="{{.Name}}"
-                            live-value-name="{{$.BoardSlug}}"></button>
-                        {{end}}
-                        {{end}}
-                        <div class="card-header">
-                            <h4>{{.Title}}</h4>
-                            {{if .Completed}}
-                            <span class="status-badge completed">✓ Done</span>
-                            {{end}}
-                        </div>
-
-                        {{if .Body}}
-                        <p class="card-body">{{.Body}}</p>
-                        {{end}}
-
-                        {{if .Tags}}
-                        <div class="card-tags">
-                            {{range .Tags}}
-                            <span class="tag">{{.}}</span>
-                            {{end}}
-                        </div>
-                        {{end}}
-
-                        {{if .Assignee}}
-                        <p class="card-meta">👤 {{.Assignee}}</p>
-                        {{end}}
-
-                        {{if .Priority}}
-                        <p class="card-meta">⚡ {{.Priority}}</p>
-                        {{end}}
-
-                        {{if .Due}}
-                        <p class="card-meta">📅 {{.Due}}</p>
-                        {{end}}
-
-                        <div class="card-actions">
-                            {{if not .Completed}}
-                            <button live-click="toggle-complete" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small">Complete</button>
-                            {{end}}
-                            <button live-click="delete-card" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small btn-danger">Delete</button>
-                        </div>
-                    </div>
-                    {{end}}
-                </div>
-
-                {{if eq $.ShowAddCard .Name}}
-                <form live-submit="create-card" live-value-column="{{.Name}}" class="add-card-form">
-                    <input type="text" name="title" placeholder="Card title" required autofocus>
-                    <button type="submit" class="btn-small btn-primary">Add</button>
-                    <button type="button" live-click="cancel-add-card" class="btn-small">Cancel</button>
-                </form>
-                {{else}}
-                <button live-click="show-add-card" live-value-column="{{.Name}}" class="btn-add-card">+ Add Card</button>
+    {{if .Board}}
+    <div class="board-topbar">
+        <div class="board-topbar-left">
+            <h2 class="board-title">{{.Board.Name}}</h2>
+            {{if .Board.Tags}}
+            <div class="tags">
+                {{range .Board.Tags}}
+                <span class="tag">{{.}}</span>
                 {{end}}
             </div>
             {{end}}
-
-            <div class="column add-column">
-                <form live-submit="create-column" class="add-column-form">
-                    <input type="text" name="column_name" placeholder="New column name" required>
-                    <button type="submit" class="btn-small">+ Add Column</button>
-                </form>
-            </div>
         </div>
+        {{if .Board.Description}}
+        <span class="board-description">{{.Board.Description}}</span>
         {{end}}
     </div>
+
+    <div class="columns-container">
+        {{range $column := .Board.Columns}}
+        <div class="column">
+            <h3>{{$column.Name}}</h3>
+            <div class="cards" data-column="{{$column.Name}}">
+                {{range $card := .Cards}}
+                <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-card-id="{{.ID}}">
+                    {{range $.Board.Columns}}
+                    {{if ne .Name $column.Name}}
+                    <button class="move-trigger"
+                        data-target="{{.Name}}"
+                        live-click="move-card"
+                        live-value-card_id="{{$card.ID}}"
+                        live-value-target_column="{{.Name}}"
+                        live-value-name="{{$.BoardSlug}}"></button>
+                    {{end}}
+                    {{end}}
+                    <div class="card-header">
+                        <h4>{{.Title}}</h4>
+                        {{if .Completed}}
+                        <span class="status-badge completed">&#10003; Done</span>
+                        {{end}}
+                    </div>
+
+                    {{if .Body}}
+                    <p class="card-body">{{.Body}}</p>
+                    {{end}}
+
+                    {{if .Tags}}
+                    <div class="card-tags">
+                        {{range .Tags}}
+                        <span class="tag">{{.}}</span>
+                        {{end}}
+                    </div>
+                    {{end}}
+
+                    {{if .Assignee}}
+                    <p class="card-meta">&#128100; {{.Assignee}}</p>
+                    {{end}}
+
+                    {{if .Priority}}
+                    <p class="card-meta">&#9889; {{.Priority}}</p>
+                    {{end}}
+
+                    {{if .Due}}
+                    <p class="card-meta">&#128197; {{.Due}}</p>
+                    {{end}}
+
+                    <div class="card-actions">
+                        {{if not .Completed}}
+                        <button live-click="toggle-complete" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small">Complete</button>
+                        {{end}}
+                        <button live-click="delete-card" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small btn-danger">Delete</button>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+
+            {{if eq $.ShowAddCard .Name}}
+            <form live-submit="create-card" live-value-column="{{.Name}}" class="add-card-form">
+                <input type="text" name="title" placeholder="Card title" required autofocus>
+                <button type="submit" class="btn-small btn-primary">Add</button>
+                <button type="button" live-click="cancel-add-card" class="btn-small">Cancel</button>
+            </form>
+            {{else}}
+            <button live-click="show-add-card" live-value-column="{{.Name}}" class="btn-add-card">+ Add Card</button>
+            {{end}}
+        </div>
+        {{end}}
+
+        <div class="column add-column">
+            <form live-submit="create-column" class="add-column-form">
+                <input type="text" name="column_name" placeholder="New column name" required>
+                <button type="submit" class="btn-small">+ Add Column</button>
+            </form>
+        </div>
+    </div>
+    {{end}}
 </div>
 {{end}}

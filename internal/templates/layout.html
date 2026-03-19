@@ -9,17 +9,51 @@
     <script src="/static/js/drag.js" defer></script>
 </head>
 <body>
-    <header>
-        <div class="container">
-            <h1><a href="/">LiveBoard</a></h1>
-            <div class="connection-status">
-                <span class="live-connected">Connected</span>
-                <span class="live-disconnected">Disconnected</span>
+    <div class="app-shell">
+        <aside class="app-sidebar" id="appSidebar">
+            <div class="app-brand">
+                <a href="/" class="brand-link">
+                    <span class="brand-icon">&#9644;</span>
+                    <span class="brand-name">LiveBoard</span>
+                </a>
+                <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <rect x="1" y="1" width="5" height="14" rx="1.5" fill="currentColor" opacity="0.9"/>
+                        <rect x="8" y="1" width="7" height="14" rx="1.5" fill="currentColor" opacity="0.35"/>
+                    </svg>
+                </button>
             </div>
+            <nav class="sidebar-nav">
+                <a href="/" class="sidebar-nav-item">
+                    <span class="nav-icon">&#9783;</span>
+                    <span class="nav-label">Boards</span>
+                </a>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="connection-status">
+                    <span class="live-connected">&#9679; Live</span>
+                    <span class="live-disconnected">&#9679; Offline</span>
+                </div>
+            </div>
+        </aside>
+        <div class="app-workspace">
+            <main class="workspace-content">
+                {{template "content" .}}
+            </main>
         </div>
-    </header>
-    <main>
-        {{template "content" .}}
-    </main>
+    </div>
+    <script>
+        (function() {
+            var sidebar = document.getElementById('appSidebar');
+            var toggle = document.getElementById('sidebarToggle');
+            if (localStorage.getItem('sidebarCollapsed') === 'true') {
+                sidebar.classList.add('collapsed');
+            }
+            toggle.addEventListener('click', function() {
+                sidebar.classList.toggle('collapsed');
+                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+            });
+        })();
+    </script>
 </body>
 </html>
