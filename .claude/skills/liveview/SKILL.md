@@ -186,11 +186,35 @@ Templates use Go `html/template` with LiveView data attributes. Create `internal
 
 Form inputs with `name="xyz"` attributes are automatically included in `live-submit` params as `p["xyz"]`.
 
-### 6. Client-Side JavaScript
+### 6. Client-Side Interactivity
 
-For interactions beyond what LiveView attributes provide (drag-and-drop, modals, context menus), use JS in `web/js/drag.js`.
+**Prefer Alpine.js** for all client-side interactivity (dropdowns, filtering, toggles, modals, inline editing). Use the **alpinejs skill** for Alpine.js syntax and patterns — it covers directives, magics, plugins, and idiomatic examples.
 
-**Sending events from JS:**
+**How Alpine.js integrates with LiveView:**
+
+Alpine manages local UI state (visibility, filtering, form input) while LiveView manages server state. They communicate through `window.Live.send()` from Alpine event handlers:
+
+```html
+{{define "content"}}
+<div x-data="{ search: '' }">
+    <!-- Alpine handles local filtering UI -->
+    <input x-model="search" @keyup.debounce="window.Live.send('suggest', { query: search })" />
+
+    <!-- Server-rendered results from LiveView -->
+    {{range .Suggestions}}
+    <div @click="window.Live.send('selected', { id: '{{.ID}}' })">
+        {{.Name}}
+    </div>
+    {{end}}
+</div>
+{{end}}
+```
+
+The server handles `"suggest"` and `"selected"` events via `handler.HandleEvent()` as normal — Alpine just provides the reactive UI layer on top.
+
+**When to use vanilla JS instead:** Only for low-level DOM manipulation that Alpine doesn't cover well, like drag-and-drop with complex pointer tracking. Legacy vanilla JS lives in `web/js/drag.js`.
+
+**Sending events from vanilla JS:**
 
 ```javascript
 window.Live.send("event-name", {
@@ -199,72 +223,20 @@ window.Live.send("event-name", {
 });
 ```
 
-**Re-attaching after LiveView re-renders:**
-
-LiveView replaces DOM on every server render. Re-wire event listeners:
-
-```javascript
-function attach() {
-    // Query elements and attach listeners
-    document.querySelectorAll('.your-element').forEach(function(el) {
-        el.addEventListener('click', function() {
-            // handle interaction
-        });
-    });
-}
-
-// Re-attach after LiveView updates
-document.addEventListener("live:updated", attach);
-
-// Also watch for DOM mutations as fallback
-new MutationObserver(function() {
-    requestAnimationFrame(attach);
-}).observe(document.body, { childList: true, subtree: true });
-
-// Initial attach
-attach();
-```
-
-**Data attributes for JS-driven interactions:**
-
-Put data on DOM elements in templates, read them in JS:
-
-```html
-<div class="card" data-card-id="{{.ID}}" data-card-title="{{.Title}}">
-```
-
-```javascript
-var id = el.getAttribute('data-card-id');
-var title = el.getAttribute('data-card-title');
-```
-
 ## PubSub for Real-Time Updates
 
-When multiple browser tabs or users view the same board, PubSub keeps them in sync.
-
-**Publishing** (in any event handler after a mutation):
-
-```go
-h.publishBoardEvent(slug, "descriptive_action")
-```
-
-This calls `h.pubsub.Publish()` which broadcasts to all connected sockets.
-
-**Subscribing** (in the handler factory):
-
-```go
-handler.HandleSelf("board_update", h.handleBoardUpdate)
-```
-
-The `HandleSelf` handler receives the broadcast and returns a fresh model, causing a re-render for all connected clients.
+Publish/subscribe pattern for syncing state across multiple browser tabs and users. Read `references/pubsub.md` for the publishing and subscribing patterns.
 
 ## Components (page.Component)
 
 For reusable, self-contained UI pieces with their own state and events, use `github.com/jfyne/live/page`. Read `references/components.md` for the full pattern — it covers creating components, composing parent-child relationships, and scoped events.
 
+## Error Handling
+
+Three levels: model-based inline errors, handler-level `ErrorHandler`, and client-side JS hooks. Read `references/error-handling.md` for the full pattern with code examples and selection guidance.
+
 ## Common Patterns in This Project
 
-- **Error handling**: Return the model with `.Error` set; template shows it conditionally
 - **UI state toggles**: Use model fields like `ShowAddCard string` to control conditional rendering
 - **Slug passing**: Every event includes `live-value-name="{{.BoardSlug}}"` so handlers know which board to operate on
 - **Git integration**: Call `h.commitWithHandling()` or `h.commitRemoveWithHandling()` after mutations
