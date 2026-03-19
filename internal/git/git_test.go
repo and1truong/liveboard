@@ -167,6 +167,47 @@ func TestCommitRemove_FileRemainsWhenAutoCommitDisabled(t *testing.T) {
 	}
 }
 
+func TestCommit_ErrorOnNonexistentFile(t *testing.T) {
+	dir := t.TempDir()
+	repo, err := Open(dir, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Committing a file that doesn't exist should trigger a git add error.
+	err = repo.Commit("does-not-exist.md", "should fail")
+	if err == nil {
+		t.Fatal("expected error when committing nonexistent file")
+	}
+}
+
+func TestCommitRemove_ErrorOnUntrackedFile(t *testing.T) {
+	dir := t.TempDir()
+	repo, err := Open(dir, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Removing a file that was never tracked should trigger a git rm error.
+	err = repo.CommitRemove("never-tracked.md", "should fail")
+	if err == nil {
+		t.Fatal("expected error when removing untracked file")
+	}
+}
+
+func TestOpen_ErrorOnInvalidPath(t *testing.T) {
+	// Use a path that can't be initialized as a git repo (file, not dir).
+	tmpFile := filepath.Join(t.TempDir(), "not-a-dir")
+	if err := os.WriteFile(tmpFile, []byte("x"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	_, err := Open(tmpFile, false)
+	if err == nil {
+		t.Fatal("expected error when opening a file as a git repo")
+	}
+}
+
 func TestCommitRemove_RemovesAndCommits(t *testing.T) {
 	dir := t.TempDir()
 	repo, err := Open(dir, true)

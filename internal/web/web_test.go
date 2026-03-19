@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"net/http/httptest"
 	"os"
@@ -8,9 +9,36 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/jfyne/live"
+
+	"github.com/and1truong/liveboard/internal/board"
+	gitpkg "github.com/and1truong/liveboard/internal/git"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 )
+
+// setupHandlerWithBoard creates a Handler with a real workspace containing one board.
+// Returns the handler and the board slug.
+func setupHandlerWithBoard(t *testing.T) (*Handler, string) {
+	t.Helper()
+	dir := t.TempDir()
+	ws := workspace.Open(dir)
+	eng := board.New()
+	ctx := context.Background()
+
+	h := &Handler{
+		ws:     ws,
+		eng:    eng,
+		pubsub: live.NewPubSub(ctx, live.NewLocalTransport()),
+	}
+
+	// Create a board via workspace so it has default columns.
+	if _, err := ws.CreateBoard("test-board"); err != nil {
+		t.Fatal(err)
+	}
+
+	return h, "test-board"
+}
 
 func TestBoardSlug(t *testing.T) {
 	cases := []struct {
@@ -443,4 +471,877 @@ func TestSettingsAPIHighColumnWidth(t *testing.T) {
 	if s.ColumnWidth != 280 {
 		t.Errorf("expected column_width=280 for out-of-range value, got %d", s.ColumnWidth)
 	}
+}
+
+// --- Handler / event handler tests ---
+
+func TestBoardListModel(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	model, err := h.boardListModel()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.Title != "LiveBoard" {
+		t.Errorf("title = %q", model.Title)
+	}
+	if len(model.Boards) != 1 {
+		t.Fatalf("boards = %d, want 1", len(model.Boards))
+	}
+	if model.Boards[0].Name != "test-board" {
+		t.Errorf("board name = %q", model.Boards[0].Name)
+	}
+}
+
+func TestMountBoardList(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	result, err := h.mountBoardList(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	model, ok := result.(BoardListModel)
+	if !ok {
+		t.Fatalf("unexpected type %T", result)
+	}
+	if len(model.Boards) != 1 {
+		t.Errorf("boards = %d", len(model.Boards))
+	}
+}
+
+func TestHandleParams(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	result, err := h.handleParams(context.Background(), nil, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := result.(BoardListModel)
+	if len(model.Boards) != 1 {
+		t.Errorf("boards = %d", len(model.Boards))
+	}
+}
+
+func TestHandleCreateBoard(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	// Missing name
+	result, err := h.handleCreateBoard(context.Background(), nil, map[string]interface{}{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := result.(BoardListModel)
+	if model.Error == "" {
+		t.Error("expected error for missing name")
+	}
+
+	// Valid creation
+	result, err = h.handleCreateBoard(context.Background(), nil, map[string]interface{}{"name": "new-board"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	model = result.(BoardListModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+	if len(model.Boards) != 2 {
+		t.Errorf("boards = %d, want 2", len(model.Boards))
+	}
+}
+
+func TestHandleDeleteBoard(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	// Missing name
+	result, err := h.handleDeleteBoard(context.Background(), nil, map[string]interface{}{})
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := result.(BoardListModel)
+	if model.Error == "" {
+		t.Error("expected error for missing name")
+	}
+
+	// Valid deletion
+	result, err = h.handleDeleteBoard(context.Background(), nil, map[string]interface{}{"name": "test-board"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	model = result.(BoardListModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+	if len(model.Boards) != 0 {
+		t.Errorf("boards = %d, want 0", len(model.Boards))
+	}
+}
+
+func TestHandleSetBoardIconList(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing slug
+	result, _ := h.handleSetBoardIconList(context.Background(), nil, map[string]interface{}{})
+	model := result.(BoardListModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid
+	result, _ = h.handleSetBoardIconList(context.Background(), nil, map[string]interface{}{
+		"name": slug, "icon": "🚀",
+	})
+	model = result.(BoardListModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestBoardViewModel(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	model, err := h.boardViewModel(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.Board == nil {
+		t.Fatal("board is nil")
+	}
+	if model.BoardSlug != slug {
+		t.Errorf("slug = %q", model.BoardSlug)
+	}
+	if model.Title == "" {
+		t.Error("title is empty")
+	}
+
+	// Nonexistent board
+	model, err = h.boardViewModel("nonexistent")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.Error == "" {
+		t.Error("expected error for nonexistent board")
+	}
+}
+
+func TestHandleCreateCard(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing column
+	result, _ := h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "title": "Card",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing column")
+	}
+
+	// Missing title
+	result, _ = h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing title")
+	}
+
+	// Missing slug
+	result, _ = h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"column": "not now", "title": "Card",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid
+	result, _ = h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "New Card",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+	if len(model.Board.Columns[0].Cards) != 1 {
+		t.Errorf("cards = %d, want 1", len(model.Board.Columns[0].Cards))
+	}
+}
+
+func TestHandleMoveCard(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Add a card first
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "Move me",
+	})
+
+	// Missing col_idx
+	result, _ := h.handleMoveCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "card_idx": "0", "target_column": "done",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing col_idx")
+	}
+
+	// Missing target_column
+	result, _ = h.handleMoveCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "card_idx": "0",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing target_column")
+	}
+
+	// Missing slug
+	result, _ = h.handleMoveCard(context.Background(), nil, map[string]interface{}{
+		"col_idx": "0", "card_idx": "0", "target_column": "done",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid move
+	result, _ = h.handleMoveCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "card_idx": "0", "target_column": "done",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleReorderCard(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Add two cards
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "A",
+	})
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "B",
+	})
+
+	// Missing column
+	result, _ := h.handleReorderCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "card_idx": "1",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing column")
+	}
+
+	// Missing slug
+	result, _ = h.handleReorderCard(context.Background(), nil, map[string]interface{}{
+		"col_idx": "0", "card_idx": "0", "column": "not now",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid reorder with before_idx
+	result, _ = h.handleReorderCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "card_idx": "1", "column": "not now", "before_idx": "0",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleDeleteCard(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "Delete me",
+	})
+
+	// Missing slug
+	result, _ := h.handleDeleteCard(context.Background(), nil, map[string]interface{}{
+		"col_idx": "0", "card_idx": "0",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid delete
+	result, _ = h.handleDeleteCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "card_idx": "0",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleToggleComplete(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "Complete me",
+	})
+
+	// Missing slug
+	result, _ := h.handleToggleComplete(context.Background(), nil, map[string]interface{}{
+		"col_idx": "0", "card_idx": "0",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid toggle
+	result, _ = h.handleToggleComplete(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "card_idx": "0",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+	if !model.Board.Columns[0].Cards[0].Completed {
+		t.Error("card should be completed")
+	}
+}
+
+func TestHandleEditCard(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "Edit me",
+	})
+
+	// Missing slug
+	result, _ := h.handleEditCard(context.Background(), nil, map[string]interface{}{
+		"col_idx": "0", "card_idx": "0", "title": "Edited",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid edit with tags
+	result, _ = h.handleEditCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "card_idx": "0",
+		"title": "Edited", "body": "body text", "tags": "a, b, ,c",
+		"priority": "high", "due": "2025-12-01",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+	card := model.Board.Columns[0].Cards[0]
+	if card.Title != "Edited" {
+		t.Errorf("title = %q", card.Title)
+	}
+	if len(card.Tags) != 3 {
+		t.Errorf("tags = %v, want [a b c]", card.Tags)
+	}
+}
+
+func TestHandleCreateColumn(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing column name
+	result, _ := h.handleCreateColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug,
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing column name")
+	}
+
+	// Missing slug
+	result, _ = h.handleCreateColumn(context.Background(), nil, map[string]interface{}{
+		"column_name": "QA",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid
+	result, _ = h.handleCreateColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column_name": "QA",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleRenameColumn(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing old_name
+	result, _ := h.handleRenameColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "new_name": "Todo",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing old_name")
+	}
+
+	// Missing new_name
+	result, _ = h.handleRenameColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "old_name": "not now",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing new_name")
+	}
+
+	// Missing slug
+	result, _ = h.handleRenameColumn(context.Background(), nil, map[string]interface{}{
+		"old_name": "not now", "new_name": "Todo",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid
+	result, _ = h.handleRenameColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "old_name": "not now", "new_name": "Todo",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleDeleteColumn(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing column name
+	result, _ := h.handleDeleteColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug,
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing column name")
+	}
+
+	// Missing slug
+	result, _ = h.handleDeleteColumn(context.Background(), nil, map[string]interface{}{
+		"column_name": "done",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid
+	result, _ = h.handleDeleteColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column_name": "done",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleUpdateBoardMeta(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing slug
+	result, _ := h.handleUpdateBoardMeta(context.Background(), nil, map[string]interface{}{
+		"board_name": "New Name",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid with tags
+	result, _ = h.handleUpdateBoardMeta(context.Background(), nil, map[string]interface{}{
+		"name": slug, "board_name": "Renamed", "description": "desc", "tags": "x, y",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+	if model.Board.Name != "Renamed" {
+		t.Errorf("name = %q", model.Board.Name)
+	}
+}
+
+func TestHandleToggleColumnCollapse(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing slug
+	result, _ := h.handleToggleColumnCollapse(context.Background(), nil, map[string]interface{}{
+		"col_index": "0",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Missing col_index
+	result, _ = h.handleToggleColumnCollapse(context.Background(), nil, map[string]interface{}{
+		"name": slug,
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing col_index")
+	}
+
+	// Valid
+	result, _ = h.handleToggleColumnCollapse(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_index": "0",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleSortColumn(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Add cards to sort
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "B",
+	})
+	h.handleCreateCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "column": "not now", "title": "A",
+	})
+
+	// Missing sort_by
+	result, _ := h.handleSortColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing sort_by")
+	}
+
+	// Missing slug
+	result, _ = h.handleSortColumn(context.Background(), nil, map[string]interface{}{
+		"col_idx": "0", "sort_by": "name",
+	})
+	model = result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid
+	result, _ = h.handleSortColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "sort_by": "name",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleUpdateBoardSettings(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing slug
+	result, _ := h.handleUpdateBoardSettings(context.Background(), nil, map[string]interface{}{
+		"show_checkbox": "true",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid with all settings
+	result, _ = h.handleUpdateBoardSettings(context.Background(), nil, map[string]interface{}{
+		"name": slug, "show_checkbox": "true", "card_position": "prepend", "expand_columns": "true",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleSetBoardIcon(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Missing slug
+	result, _ := h.handleSetBoardIcon(context.Background(), nil, map[string]interface{}{
+		"icon": "🎯",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing slug")
+	}
+
+	// Valid
+	result, _ = h.handleSetBoardIcon(context.Background(), nil, map[string]interface{}{
+		"name": slug, "icon": "🎯",
+	})
+	model = result.(BoardViewModel)
+	if model.Error != "" {
+		t.Errorf("unexpected error: %s", model.Error)
+	}
+}
+
+func TestHandleBoardUpdate(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Valid message
+	result, err := h.handleBoardUpdate(context.Background(), nil, slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := result.(BoardViewModel)
+	if model.Board == nil {
+		t.Error("board is nil")
+	}
+
+	// Invalid message type
+	_, err = h.handleBoardUpdate(context.Background(), nil, 123)
+	if err == nil {
+		t.Error("expected error for invalid message type")
+	}
+}
+
+func TestCommitWithHandlingNilGit(t *testing.T) {
+	h := &Handler{git: nil}
+	// Should be a no-op, no panic.
+	h.commitWithHandling("/path", "msg")
+}
+
+func TestCommitRemoveWithHandlingNilGit(t *testing.T) {
+	h := &Handler{git: nil}
+	// Should be a no-op, no panic.
+	h.commitRemoveWithHandling("/path", "msg")
+}
+
+func TestMountBoardViewNilSocket(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	// nil socket + nil request context → should return error model
+	result, err := h.mountBoardView(context.Background(), nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := result.(BoardViewModel)
+	// live.Request(ctx) returns nil when no request in context, so error expected
+	if model.Error == "" {
+		t.Error("expected error for nil request context")
+	}
+}
+
+func TestToBoardSettingsViewExpandColumnsTrue(t *testing.T) {
+	expandTrue := true
+	v := toBoardSettingsView(models.BoardSettings{
+		ExpandColumns: &expandTrue,
+	})
+	if v.ExpandColumns != "true" {
+		t.Errorf("ExpandColumns = %q, want 'true'", v.ExpandColumns)
+	}
+}
+
+func TestMutateBoardError(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// op that returns an error
+	result, err := h.mutateBoard(slug, "test", func(_ string) error {
+		return os.ErrNotExist
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error from failed op")
+	}
+}
+
+func TestMutateBoardRemoveError(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	result, err := h.mutateBoardRemove(slug, "test", func(_ string) error {
+		return os.ErrNotExist
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error from failed op")
+	}
+}
+
+func TestNewHandler(t *testing.T) {
+	dir := t.TempDir()
+	ws := workspace.Open(dir)
+	eng := board.New()
+
+	h := NewHandler(ws, eng, nil)
+	if h == nil {
+		t.Fatal("handler is nil")
+	}
+	if h.ws != ws {
+		t.Error("ws not set")
+	}
+	if h.eng != eng {
+		t.Error("eng not set")
+	}
+	if h.pubsub == nil {
+		t.Error("pubsub is nil")
+	}
+}
+
+func TestPublishBoardEvent(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+	// Should not panic.
+	h.publishBoardEvent(slug)
+}
+
+func TestBoardListHandler(t *testing.T) {
+	h := NewHandler(workspace.Open(t.TempDir()), board.New(), nil)
+	handler := h.BoardListHandler()
+	if handler == nil {
+		t.Fatal("BoardListHandler returned nil")
+	}
+}
+
+func TestBoardViewHandler(t *testing.T) {
+	h := NewHandler(workspace.Open(t.TempDir()), board.New(), nil)
+	handler := h.BoardViewHandler()
+	if handler == nil {
+		t.Fatal("BoardViewHandler returned nil")
+	}
+}
+
+func TestHandleCreateBoardDuplicate(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	// Creating a duplicate board should return an error model (not panic).
+	result, _ := h.handleCreateBoard(context.Background(), nil, map[string]interface{}{"name": "test-board"})
+	model := result.(BoardListModel)
+	if model.Error == "" {
+		t.Error("expected error for duplicate board")
+	}
+}
+
+func TestHandleDeleteBoardNotFound(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	result, _ := h.handleDeleteBoard(context.Background(), nil, map[string]interface{}{"name": "nonexistent"})
+	model := result.(BoardListModel)
+	if model.Error == "" {
+		t.Error("expected error for nonexistent board")
+	}
+}
+
+func TestHandleSetBoardIconListError(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	// Board slug that doesn't exist
+	result, _ := h.handleSetBoardIconList(context.Background(), nil, map[string]interface{}{
+		"name": "nonexistent", "icon": "🎯",
+	})
+	model := result.(BoardListModel)
+	if model.Error == "" {
+		t.Error("expected error for nonexistent board")
+	}
+}
+
+func TestHandleMoveCardMissingCardIdx(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	result, _ := h.handleMoveCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "target_column": "done",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing card_idx")
+	}
+}
+
+func TestHandleReorderCardMissingCardIdx(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	result, _ := h.handleReorderCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0", "column": "not now",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing card_idx")
+	}
+}
+
+func TestHandleDeleteCardMissingCardIdx(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	result, _ := h.handleDeleteCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing card_idx")
+	}
+}
+
+func TestHandleToggleCompleteMissingCardIdx(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	result, _ := h.handleToggleComplete(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing card_idx")
+	}
+}
+
+func TestHandleEditCardMissingCardIdx(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	result, _ := h.handleEditCard(context.Background(), nil, map[string]interface{}{
+		"name": slug, "col_idx": "0",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing card_idx")
+	}
+}
+
+func TestHandleSortColumnMissingColIdx(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	result, _ := h.handleSortColumn(context.Background(), nil, map[string]interface{}{
+		"name": slug, "sort_by": "name",
+	})
+	model := result.(BoardViewModel)
+	if model.Error == "" {
+		t.Error("expected error for missing col_idx")
+	}
+}
+
+func TestCommitWithHandlingGitError(t *testing.T) {
+	// Use a git repo but commit a nonexistent file to trigger the error log path.
+	dir := t.TempDir()
+	ws := workspace.Open(dir)
+
+	gitRepo, err := gitpkg.Open(dir, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h := &Handler{ws: ws, git: gitRepo}
+	// Should not panic; logs the error internally.
+	h.commitWithHandling("nonexistent-file.md", "test")
+}
+
+func TestCommitRemoveWithHandlingGitError(t *testing.T) {
+	dir := t.TempDir()
+	ws := workspace.Open(dir)
+
+	gitRepo, err := gitpkg.Open(dir, true)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	h := &Handler{ws: ws, git: gitRepo}
+	// Should not panic; logs the error internally.
+	h.commitRemoveWithHandling("nonexistent-file.md", "test")
 }

@@ -142,3 +142,119 @@ func TestParseLegacyIDComments(t *testing.T) {
 		t.Errorf("tags = %v", card.Tags)
 	}
 }
+
+func TestParseInvalidYAML(t *testing.T) {
+	md := "---\nname: [invalid yaml\n---\n\n## Col\n"
+	_, err := Parse(md)
+	if err == nil {
+		t.Fatal("expected error for invalid YAML frontmatter")
+	}
+}
+
+func TestParseInlineHashTags(t *testing.T) {
+	md := "## Todo\n\n- [ ] Fix login bug #urgent #backend\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Title != "Fix login bug" {
+		t.Errorf("title = %q, want 'Fix login bug'", card.Title)
+	}
+	if len(card.Tags) != 2 {
+		t.Fatalf("tags = %v, want [urgent backend]", card.Tags)
+	}
+	if card.Tags[0] != "urgent" || card.Tags[1] != "backend" {
+		t.Errorf("tags = %v", card.Tags)
+	}
+}
+
+func TestParseDueDate(t *testing.T) {
+	md := "## Todo\n\n- [ ] Ship v2\n  due: 2025-06-01\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Due != "2025-06-01" {
+		t.Errorf("due = %q, want '2025-06-01'", card.Due)
+	}
+}
+
+func TestParseCustomMetadata(t *testing.T) {
+	md := "## Todo\n\n- [ ] Task\n  estimate: 3h\n  sprint: 42\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Metadata == nil {
+		t.Fatal("expected metadata map to be initialized")
+	}
+	if card.Metadata["estimate"] != "3h" {
+		t.Errorf("estimate = %q", card.Metadata["estimate"])
+	}
+	if card.Metadata["sprint"] != "42" {
+		t.Errorf("sprint = %q", card.Metadata["sprint"])
+	}
+}
+
+func TestParseCardBody(t *testing.T) {
+	md := "## Todo\n\n- [ ] Task with body\n  This is the first line.\n  This is the second line.\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Body != "This is the first line.\nThis is the second line." {
+		t.Errorf("body = %q", card.Body)
+	}
+}
+
+func TestParseCardBodySingleLine(t *testing.T) {
+	md := "## Todo\n\n- [ ] Task\n  Just one body line.\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Body != "Just one body line." {
+		t.Errorf("body = %q", card.Body)
+	}
+}
+
+func TestParseListCollapse(t *testing.T) {
+	md := "---\nname: Board\nlist-collapse: [true, false, true]\n---\n\n## Col A\n\n## Col B\n\n## Col C\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns) != 3 {
+		t.Fatalf("columns = %d", len(board.Columns))
+	}
+	if !board.Columns[0].Collapsed {
+		t.Error("Col A should be collapsed")
+	}
+	if board.Columns[1].Collapsed {
+		t.Error("Col B should not be collapsed")
+	}
+	if !board.Columns[2].Collapsed {
+		t.Error("Col C should be collapsed")
+	}
+}
+
+func TestParseCardBodyWithMetadata(t *testing.T) {
+	// Body lines should be distinguished from metadata lines
+	md := "## Todo\n\n- [ ] Task\n  priority: high\n  Some body text here.\n  More body text.\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Priority != "high" {
+		t.Errorf("priority = %q", card.Priority)
+	}
+	if card.Body != "Some body text here.\nMore body text." {
+		t.Errorf("body = %q", card.Body)
+	}
+}
