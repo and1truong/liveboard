@@ -10,12 +10,17 @@ import (
 
 // AppSettings holds persisted user preferences.
 type AppSettings struct {
-	Theme       string `json:"theme"`
-	ColumnWidth int    `json:"column_width"`
+	Theme          string   `json:"theme"`
+	ColumnWidth    int      `json:"column_width"`
+	DefaultColumns []string `json:"default_columns,omitempty"`
 }
 
 func defaultSettings() AppSettings {
-	return AppSettings{Theme: "system", ColumnWidth: 280}
+	return AppSettings{
+		Theme:          "system",
+		ColumnWidth:    280,
+		DefaultColumns: []string{"not now", "maybe?", "done"},
+	}
 }
 
 // settingsPath returns the path to settings.json in the workspace dir.
@@ -97,6 +102,9 @@ func (h *Handler) SettingsAPIHandler() http.Handler {
 			}
 			if s.Theme != "dark" && s.Theme != "light" {
 				s.Theme = "system"
+			}
+			if len(s.DefaultColumns) == 0 {
+				s.DefaultColumns = defaultSettings().DefaultColumns
 			}
 			if err := h.saveSettings(s); err != nil {
 				http.Error(w, `{"error":"save failed"}`, http.StatusInternalServerError)

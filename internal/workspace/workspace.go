@@ -2,6 +2,7 @@
 package workspace
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -123,6 +124,16 @@ func (w *Workspace) FindBoardByCardID(cardID string) (*models.Board, error) {
 }
 
 func (w *Workspace) getDefaultColumns() []string {
+	// Try settings.json (UI-configurable).
+	settingsPath := filepath.Join(w.Dir, "settings.json")
+	if data, err := os.ReadFile(settingsPath); err == nil {
+		var s struct {
+			DefaultColumns []string `json:"default_columns"`
+		}
+		if json.Unmarshal(data, &s) == nil && len(s.DefaultColumns) > 0 {
+			return s.DefaultColumns
+		}
+	}
 	// Try project config.
 	configPath := filepath.Join(w.Dir, ".liveboard", "config.yaml")
 	data, err := os.ReadFile(configPath)

@@ -29,6 +29,18 @@
                 </div>
             </div>
         </div>
+        <div class="settings-section">
+            <div class="settings-section-title">New Board Defaults</div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Default columns</div>
+                    <div class="settings-label-hint">Comma-separated column names for new boards</div>
+                </div>
+                <div class="settings-control">
+                    <input type="text" id="settingDefaultColumns" placeholder="not now, maybe?, done" style="width:100%">
+                </div>
+            </div>
+        </div>
         <div class="settings-save-row">
             <button class="btn-primary" id="settingsSave">Save</button>
             <span class="settings-saved-msg" id="settingsSavedMsg">Saved.</span>
@@ -39,6 +51,7 @@
 (function() {
     var themeEl = document.getElementById('settingTheme');
     var widthEl = document.getElementById('settingColumnWidth');
+    var colsEl = document.getElementById('settingDefaultColumns');
     var saveBtn = document.getElementById('settingsSave');
     var savedMsg = document.getElementById('settingsSavedMsg');
 
@@ -48,12 +61,16 @@
         .then(function(s) {
             themeEl.value = s.theme || 'system';
             widthEl.value = s.column_width || 280;
+            colsEl.value = (s.default_columns || ['not now', 'maybe?', 'done']).join(', ');
         });
 
     saveBtn.addEventListener('click', function() {
+        var rawCols = colsEl.value.split(',').map(function(c) { return c.trim(); }).filter(Boolean);
+        if (rawCols.length === 0) rawCols = ['not now', 'maybe?', 'done'];
         var payload = {
             theme: themeEl.value,
-            column_width: parseInt(widthEl.value, 10) || 280
+            column_width: parseInt(widthEl.value, 10) || 280,
+            default_columns: rawCols
         };
 
         fetch('/api/settings', {
