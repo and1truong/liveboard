@@ -463,6 +463,18 @@
         showColumnMenu(btn);
       });
     });
+
+    document.querySelectorAll(".column-header h3").forEach(function (h3) {
+      if (h3.dataset.dblWired) return;
+      h3.dataset.dblWired = "1";
+      h3.addEventListener("dblclick", function (e) {
+        e.stopPropagation();
+        var btn = h3.closest(".column-header").querySelector(".column-menu-btn");
+        if (!btn) return;
+        var slug = window.location.pathname.replace(/^\/board\//, "");
+        startColumnRename(btn, btn.dataset.columnName, slug);
+      });
+    });
   }
 
   document.addEventListener("click", function (e) {
