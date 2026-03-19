@@ -15,6 +15,26 @@
             var w = localStorage.getItem('lb_column_width');
             if (w) document.documentElement.style.setProperty('--column-width', w + 'px');
         })();
+        // Theme-aware favicon
+        document.addEventListener('DOMContentLoaded', function() {
+            var c = getComputedStyle(document.documentElement).getPropertyValue('--color-accent').trim();
+            var svg = '<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">'
+                + '<rect x="10" y="16" width="108" height="96" rx="14" fill="none" stroke="' + c + '" stroke-width="3"/>'
+                + '<line x1="46" y1="28" x2="46" y2="100" stroke="' + c + '" stroke-width="0.8" opacity="0.25"/>'
+                + '<line x1="82" y1="28" x2="82" y2="100" stroke="' + c + '" stroke-width="0.8" opacity="0.25"/>'
+                + '<rect x="18" y="32" width="22" height="8" rx="2" fill="' + c + '" opacity="0.5"/>'
+                + '<rect x="18" y="44" width="22" height="8" rx="2" fill="' + c + '" opacity="0.5"/>'
+                + '<rect x="18" y="56" width="22" height="8" rx="2" fill="' + c + '" opacity="0.5"/>'
+                + '<rect x="53" y="32" width="22" height="8" rx="2" fill="' + c + '" opacity="0.7"/>'
+                + '<rect x="53" y="44" width="22" height="8" rx="2" fill="' + c + '" opacity="0.7"/>'
+                + '<rect x="88" y="32" width="22" height="8" rx="2" fill="' + c + '"/>'
+                + '<circle cx="110" cy="22" r="8" fill="' + c + '" opacity="0.7"/>'
+                + '<circle cx="110" cy="22" r="5" fill="' + c + '"/>'
+                + '<circle cx="110" cy="22" r="2.5" fill="#ffffff"/>'
+                + '</svg>';
+            var link = document.querySelector('link[rel="icon"]');
+            link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
+        });
     </script>
     <script src="/live.js"></script>
     <script src="/static/js/drag.js" defer></script>
