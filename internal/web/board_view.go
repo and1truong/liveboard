@@ -3,6 +3,8 @@ package web
 import (
 	"context"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/jfyne/live"
 
@@ -11,6 +13,7 @@ import (
 
 // BoardViewModel is the state for the board view page.
 type BoardViewModel struct {
+	Title       string        `json:"title"`
 	Board       *models.Board `json:"board"`
 	BoardName   string        `json:"board_name"`
 	Error       string        `json:"error,omitempty"`
@@ -26,19 +29,22 @@ func (h *Handler) mountBoardView(ctx context.Context, _ *live.Socket) (interface
 	if req == nil || req.URL == nil {
 		return BoardViewModel{Error: "Invalid request"}, nil
 	}
-	boardName := req.URL.Query().Get("name")
-	if boardName == "" {
+	// Extract board slug from URL path: /board/{slug}
+	slug := strings.TrimPrefix(req.URL.Path, "/board/")
+	slug, _ = url.PathUnescape(slug)
+	if slug == "" {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	board, err := h.ws.LoadBoard(boardName)
+	board, err := h.ws.LoadBoard(slug)
 	if err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
 	return BoardViewModel{
+		Title:     board.Name + " — LiveBoard",
 		Board:     board,
-		BoardName: boardName,
+		BoardName: board.Name,
 	}, nil
 }
 
@@ -78,6 +84,7 @@ func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Par
 	}
 
 	return BoardViewModel{
+		Title:     boardName + " — LiveBoard",
 		Board:     board,
 		BoardName: boardName,
 	}, nil
@@ -119,6 +126,7 @@ func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Param
 	}
 
 	return BoardViewModel{
+		Title:     boardName + " — LiveBoard",
 		Board:     board,
 		BoardName: boardName,
 	}, nil
@@ -155,6 +163,7 @@ func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Par
 	}
 
 	return BoardViewModel{
+		Title:     boardName + " — LiveBoard",
 		Board:     board,
 		BoardName: boardName,
 	}, nil
@@ -191,6 +200,7 @@ func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live
 	}
 
 	return BoardViewModel{
+		Title:     boardName + " — LiveBoard",
 		Board:     board,
 		BoardName: boardName,
 	}, nil
@@ -227,6 +237,7 @@ func (h *Handler) handleCreateColumn(_ context.Context, _ *live.Socket, p live.P
 	}
 
 	return BoardViewModel{
+		Title:     boardName + " — LiveBoard",
 		Board:     board,
 		BoardName: boardName,
 	}, nil
@@ -246,6 +257,7 @@ func (h *Handler) handleShowAddCard(_ context.Context, _ *live.Socket, p live.Pa
 			return BoardViewModel{Error: err.Error()}, nil
 		}
 		return BoardViewModel{
+			Title:     boardName + " — LiveBoard",
 			Board:     board,
 			BoardName: boardName,
 			Error:     "Column is required",
@@ -257,6 +269,7 @@ func (h *Handler) handleShowAddCard(_ context.Context, _ *live.Socket, p live.Pa
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 	return BoardViewModel{
+		Title:       boardName + " — LiveBoard",
 		Board:       board,
 		BoardName:   boardName,
 		ShowAddCard: column,
@@ -276,6 +289,7 @@ func (h *Handler) handleCancelAddCard(_ context.Context, _ *live.Socket, p live.
 	}
 
 	return BoardViewModel{
+		Title:       boardName + " — LiveBoard",
 		Board:       board,
 		BoardName:   boardName,
 		ShowAddCard: "",
@@ -296,6 +310,7 @@ func (h *Handler) handleBoardUpdate(_ context.Context, _ *live.Socket, msg any) 
 	}
 
 	return BoardViewModel{
+		Title:     boardName + " — LiveBoard",
 		Board:     board,
 		BoardName: boardName,
 	}, nil

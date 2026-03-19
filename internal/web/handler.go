@@ -2,8 +2,10 @@
 package web
 
 import (
+	"bytes"
 	"context"
 	"html/template"
+	"io"
 	"log"
 	"net/http"
 	"path/filepath"
@@ -66,10 +68,26 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 	return h
 }
 
+// withAssignsRenderer is like live.WithTemplateRenderer but passes rc.Assigns
+// (the model) directly to the template instead of the full RenderContext.
+// This lets templates access model fields directly (e.g. {{.Title}}, {{.Board}}).
+func withAssignsRenderer(t *template.Template) live.HandlerConfig {
+	return func(h *live.Handler) error {
+		h.RenderHandler = func(ctx context.Context, rc *live.RenderContext) (io.Reader, error) {
+			var buf bytes.Buffer
+			if err := t.Execute(&buf, rc.Assigns); err != nil {
+				return nil, err
+			}
+			return &buf, nil
+		}
+		return nil
+	}
+}
+
 // BoardListHandler returns an http.Handler for the board list page.
 func (h *Handler) BoardListHandler() http.Handler {
 	boardListHandler := live.NewHandler(
-		live.WithTemplateRenderer(h.boardListTpl),
+		withAssignsRenderer(h.boardListTpl),
 	)
 	boardListHandler.MountHandler = h.mountBoardList
 	boardListHandler.HandleEvent("create-board", h.handleCreateBoard)
@@ -86,7 +104,7 @@ func (h *Handler) BoardListHandler() http.Handler {
 // BoardViewHandler returns an http.Handler for a single board view.
 func (h *Handler) BoardViewHandler() http.Handler {
 	boardViewHandler := live.NewHandler(
-		live.WithTemplateRenderer(h.boardViewTpl),
+		withAssignsRenderer(h.boardViewTpl),
 	)
 	boardViewHandler.MountHandler = h.mountBoardView
 	boardViewHandler.HandleEvent("create-card", h.handleCreateCard)

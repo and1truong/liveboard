@@ -3,12 +3,17 @@ package web
 import (
 	"context"
 	"fmt"
+	"path/filepath"
+	"strings"
 
 	"github.com/jfyne/live"
+
+	"github.com/and1truong/liveboard/pkg/models"
 )
 
 // BoardListModel is the state for the board list page.
 type BoardListModel struct {
+	Title       string         `json:"title"`
 	Boards      []BoardSummary `json:"boards"`
 	Error       string         `json:"error,omitempty"`
 	Creating    bool           `json:"creating,omitempty"`
@@ -18,8 +23,32 @@ type BoardListModel struct {
 // BoardSummary represents a simplified board for list display.
 type BoardSummary struct {
 	Name        string `json:"name"`
+	Slug        string `json:"slug"` // filename stem, used for URLs
 	Description string `json:"description,omitempty"`
 	CardCount   int    `json:"card_count"`
+}
+
+// boardSlug extracts the filename stem from a board's FilePath.
+func boardSlug(b models.Board) string {
+	return strings.TrimSuffix(filepath.Base(b.FilePath), ".md")
+}
+
+// toBoardSummaries converts a slice of boards to BoardSummary.
+func toBoardSummaries(boards []models.Board) []BoardSummary {
+	summaries := make([]BoardSummary, len(boards))
+	for i, b := range boards {
+		cardCount := 0
+		for _, col := range b.Columns {
+			cardCount += len(col.Cards)
+		}
+		summaries[i] = BoardSummary{
+			Name:        b.Name,
+			Slug:        boardSlug(b),
+			Description: b.Description,
+			CardCount:   cardCount,
+		}
+	}
+	return summaries
 }
 
 // mountBoardList initializes the board list model.
@@ -29,44 +58,17 @@ func (h *Handler) mountBoardList(_ context.Context, _ *live.Socket) (interface{}
 		return BoardListModel{Error: err.Error()}, nil
 	}
 
-	summaries := make([]BoardSummary, len(boards))
-	for i, b := range boards {
-		cardCount := 0
-		for _, col := range b.Columns {
-			cardCount += len(col.Cards)
-		}
-		summaries[i] = BoardSummary{
-			Name:        b.Name,
-			Description: b.Description,
-			CardCount:   cardCount,
-		}
-	}
-
-	return BoardListModel{Boards: summaries}, nil
+	return BoardListModel{Title: "LiveBoard", Boards: toBoardSummaries(boards)}, nil
 }
 
 // handleParams handles parameter changes (e.g., URL params).
 func (h *Handler) handleParams(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
-	// Reload boards when params change
 	boards, err := h.ws.ListBoards()
 	if err != nil {
 		return BoardListModel{Error: err.Error()}, nil
 	}
 
-	summaries := make([]BoardSummary, len(boards))
-	for i, b := range boards {
-		cardCount := 0
-		for _, col := range b.Columns {
-			cardCount += len(col.Cards)
-		}
-		summaries[i] = BoardSummary{
-			Name:        b.Name,
-			Description: b.Description,
-			CardCount:   cardCount,
-		}
-	}
-
-	return BoardListModel{Boards: summaries}, nil
+	return BoardListModel{Title: "LiveBoard", Boards: toBoardSummaries(boards)}, nil
 }
 
 // handleCreateBoard creates a new board.
@@ -93,20 +95,7 @@ func (h *Handler) handleCreateBoard(_ context.Context, _ *live.Socket, p live.Pa
 		return BoardListModel{Error: err.Error()}, nil
 	}
 
-	summaries := make([]BoardSummary, len(boards))
-	for i, b := range boards {
-		cardCount := 0
-		for _, col := range b.Columns {
-			cardCount += len(col.Cards)
-		}
-		summaries[i] = BoardSummary{
-			Name:        b.Name,
-			Description: b.Description,
-			CardCount:   cardCount,
-		}
-	}
-
-	return BoardListModel{Boards: summaries}, nil
+	return BoardListModel{Boards: toBoardSummaries(boards)}, nil
 }
 
 // handleDeleteBoard deletes a board.
@@ -133,20 +122,7 @@ func (h *Handler) handleDeleteBoard(_ context.Context, _ *live.Socket, p live.Pa
 		return BoardListModel{Error: err.Error()}, nil
 	}
 
-	summaries := make([]BoardSummary, len(boards))
-	for i, b := range boards {
-		cardCount := 0
-		for _, col := range b.Columns {
-			cardCount += len(col.Cards)
-		}
-		summaries[i] = BoardSummary{
-			Name:        b.Name,
-			Description: b.Description,
-			CardCount:   cardCount,
-		}
-	}
-
-	return BoardListModel{Boards: summaries}, nil
+	return BoardListModel{Boards: toBoardSummaries(boards)}, nil
 }
 
 // handleShowCreateForm shows the create board form.

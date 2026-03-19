@@ -22,7 +22,7 @@
         <div class="boards-grid">
             {{range .Boards}}
             <div class="board-card">
-                <a live-patch="/board/{{.Name}}" class="board-link">
+                <a href="/board/{{.Slug}}" class="board-link">
                     <h3>{{.Name}}</h3>
                     {{if .Description}}
                     <p class="description">{{.Description}}</p>

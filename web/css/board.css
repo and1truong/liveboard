@@ -49,12 +49,12 @@ header h1 a:hover {
     font-size: 0.875rem;
 }
 
-.live-connected {
+.connection-status .live-connected {
     color: #28a745;
     display: none;
 }
 
-.live-disconnected {
+.connection-status .live-disconnected {
     color: #dc3545;
     display: none;
 }
