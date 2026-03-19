@@ -5,17 +5,19 @@ import "time"
 
 // Board represents a Kanban board backed by a single Markdown file.
 type Board struct {
-	Name        string   `yaml:"name" json:"name"`
-	Description string   `yaml:"description,omitempty" json:"description,omitempty"`
-	Tags        []string `yaml:"tags,omitempty" json:"tags,omitempty"`
-	Columns     []Column `yaml:"-" json:"columns"`
-	FilePath    string   `yaml:"-" json:"file_path"`
+	Name         string   `yaml:"name" json:"name"`
+	Description  string   `yaml:"description,omitempty" json:"description,omitempty"`
+	Tags         []string `yaml:"tags,omitempty" json:"tags,omitempty"`
+	ListCollapse []bool   `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
+	Columns      []Column `yaml:"-" json:"columns"`
+	FilePath     string   `yaml:"-" json:"file_path"`
 }
 
 // Column represents a Kanban column (H2 heading in Markdown).
 type Column struct {
-	Name  string `json:"name"`
-	Cards []Card `json:"cards"`
+	Name      string `json:"name"`
+	Collapsed bool   `json:"collapsed"`
+	Cards     []Card `json:"cards"`
 }
 
 // Card represents a task item (list item in Markdown).

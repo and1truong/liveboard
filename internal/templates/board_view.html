@@ -23,12 +23,15 @@
     </div>
 
     <div class="columns-container">
-        {{range $column := .Board.Columns}}
-        <div class="column">
+        {{range $i, $column := .Board.Columns}}
+        <div class="column {{if $column.Collapsed}}collapsed{{end}}">
             <div class="column-header">
+                <button class="column-collapse-btn" live-click="toggle-column-collapse" live-value-col_index="{{$i}}" live-value-name="{{$.BoardSlug}}" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
                 <h3>{{$column.Name}}</h3>
+                {{if $column.Collapsed}}<span class="column-card-count">{{len $column.Cards}}</span>{{end}}
                 <button class="column-menu-btn" data-column-name="{{$column.Name}}" title="Column options">&#8943;</button>
             </div>
+            {{if not $column.Collapsed}}
             <div class="cards" data-column="{{$column.Name}}">
                 {{range $card := .Cards}}
                 <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-card-id="{{.ID}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $i, $t := .Tags}}{{if $i}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
@@ -76,14 +79,15 @@
                 {{end}}
             </div>
 
-            {{if eq $.ShowAddCard .Name}}
-            <form live-submit="create-card" live-value-column="{{.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form">
+            {{if eq $.ShowAddCard $column.Name}}
+            <form live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form">
                 <input type="text" name="title" placeholder="Card title" required autofocus>
                 <button type="submit" class="btn-small btn-primary">Add</button>
                 <button type="button" live-click="cancel-add-card" live-value-name="{{$.BoardSlug}}" class="btn-small">Cancel</button>
             </form>
             {{else}}
-            <button live-click="show-add-card" live-value-column="{{.Name}}" live-value-name="{{$.BoardSlug}}" class="btn-add-card">+ Add Card</button>
+            <button live-click="show-add-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="btn-add-card">+ Add Card</button>
+            {{end}}
             {{end}}
         </div>
         {{end}}

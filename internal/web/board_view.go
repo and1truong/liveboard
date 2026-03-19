@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/jfyne/live"
@@ -369,6 +370,32 @@ func (h *Handler) handleUpdateBoardMeta(_ context.Context, _ *live.Socket, p liv
 
 	h.commitWithHandling(boardPath, fmt.Sprintf("Update board meta: %s", name))
 	h.publishBoardEvent(slug, "board_meta_updated")
+
+	return h.boardViewModel(slug)
+}
+
+// handleToggleColumnCollapse toggles the collapsed state of a column.
+func (h *Handler) handleToggleColumnCollapse(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	colIndexStr, ok := p["col_index"].(string)
+	if !ok {
+		return BoardViewModel{Error: "Column index is required"}, nil
+	}
+	colIndex, err := strconv.Atoi(colIndexStr)
+	if err != nil {
+		return BoardViewModel{Error: "Invalid column index"}, nil
+	}
+
+	boardPath := h.ws.BoardPath(slug)
+	if err := h.eng.ToggleColumnCollapse(boardPath, colIndex); err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	h.publishBoardEvent(slug, "column_collapse_toggled")
 
 	return h.boardViewModel(slug)
 }

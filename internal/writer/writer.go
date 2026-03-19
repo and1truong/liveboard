@@ -17,13 +17,15 @@ func Render(board *models.Board) (string, error) {
 
 	// Write YAML frontmatter.
 	fm := struct {
-		Name        string   `yaml:"name"`
-		Description string   `yaml:"description,omitempty"`
-		Tags        []string `yaml:"tags,omitempty"`
+		Name         string   `yaml:"name"`
+		Description  string   `yaml:"description,omitempty"`
+		Tags         []string `yaml:"tags,omitempty"`
+		ListCollapse []bool   `yaml:"list-collapse,omitempty"`
 	}{
-		Name:        board.Name,
-		Description: board.Description,
-		Tags:        board.Tags,
+		Name:         board.Name,
+		Description:  board.Description,
+		Tags:         board.Tags,
+		ListCollapse: board.ListCollapse,
 	}
 	fmBytes, err := yaml.Marshal(fm)
 	if err != nil {

@@ -124,5 +124,12 @@ func Parse(content string) (*models.Board, error) {
 		currentCol.Cards = append(currentCol.Cards, *currentCard)
 	}
 
+	// Populate collapsed state from front-matter.
+	for i := range board.Columns {
+		if i < len(board.ListCollapse) {
+			board.Columns[i].Collapsed = board.ListCollapse[i]
+		}
+	}
+
 	return board, nil
 }
