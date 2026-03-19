@@ -85,7 +85,7 @@ func Parse(content string) (*models.Board, error) {
 			continue
 		}
 
-		// Card metadata.
+		// Card metadata and body lines.
 		if currentCard != nil {
 			if m := metaRe.FindStringSubmatch(line); m != nil {
 				key := m[1]
@@ -109,6 +109,16 @@ func Parse(content string) (*models.Board, error) {
 						currentCard.Metadata = make(map[string]string)
 					}
 					currentCard.Metadata[key] = val
+				}
+				continue
+			}
+			// Indented non-metadata lines are body text.
+			if strings.HasPrefix(line, "  ") {
+				bodyLine := line[2:]
+				if currentCard.Body == "" {
+					currentCard.Body = bodyLine
+				} else {
+					currentCard.Body += "\n" + bodyLine
 				}
 				continue
 			}

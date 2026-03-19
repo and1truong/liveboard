@@ -69,4 +69,9 @@ func writeCard(b *strings.Builder, card *models.Card) {
 	for k, v := range card.Metadata {
 		fmt.Fprintf(b, "  %s: %s\n", k, v)
 	}
+	if card.Body != "" {
+		for _, line := range strings.Split(card.Body, "\n") {
+			b.WriteString("  " + line + "\n")
+		}
+	}
 }

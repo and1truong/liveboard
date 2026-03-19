@@ -53,16 +53,13 @@
     hideQuickEdit();
 
     var cardRect = card.getBoundingClientRect();
-    var titleEl = card.querySelector(".card-header h4");
-    var bodyEl = card.querySelector(".card-body");
-    var tagsEl = card.querySelectorAll(".card-tags .tag");
     var colIdx = card.dataset.colIdx;
     var cardIdx = card.dataset.cardIdx;
     var slug = window.location.pathname.replace(/^\/board\//, "");
 
-    var currentTitle = titleEl ? titleEl.textContent.trim() : "";
-    var currentBody = bodyEl ? bodyEl.textContent.trim() : "";
-    var currentTags = Array.from(tagsEl).map(function (t) { return t.textContent.trim(); }).join(", ");
+    var currentTitle = card.dataset.cardTitle || "";
+    var currentBody = card.dataset.cardBody || "";
+    var currentTags = card.dataset.cardTags || "";
 
     // Build overlay
     var overlay = document.createElement("div");
