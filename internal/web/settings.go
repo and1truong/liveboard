@@ -10,23 +10,26 @@ import (
 
 // AppSettings holds persisted user preferences.
 type AppSettings struct {
-	Theme          string   `json:"theme"`
-	ColorTheme     string   `json:"color_theme"`
-	ColumnWidth    int      `json:"column_width"`
-	DefaultColumns []string `json:"default_columns,omitempty"`
+	Theme           string   `json:"theme"`
+	ColorTheme      string   `json:"color_theme"`
+	ColumnWidth     int      `json:"column_width"`
+	SidebarPosition string   `json:"sidebar_position"`
+	DefaultColumns  []string `json:"default_columns,omitempty"`
 }
 
 var validColorThemes = map[string]bool{
 	"default": true, "github": true, "gitlab": true,
 	"emerald": true, "rose": true, "sunset": true,
+	"aqua": true, "graphite": true, "macos": true,
 }
 
 func defaultSettings() AppSettings {
 	return AppSettings{
-		Theme:          "system",
-		ColorTheme:     "default",
-		ColumnWidth:    280,
-		DefaultColumns: []string{"not now", "maybe?", "done"},
+		Theme:           "system",
+		ColorTheme:      "aqua",
+		ColumnWidth:     280,
+		SidebarPosition: "left",
+		DefaultColumns:  []string{"not now", "maybe?", "done"},
 	}
 }
 
@@ -112,6 +115,9 @@ func (h *Handler) SettingsAPIHandler() http.Handler {
 			}
 			if !validColorThemes[s.ColorTheme] {
 				s.ColorTheme = "default"
+			}
+			if s.SidebarPosition != "left" && s.SidebarPosition != "right" {
+				s.SidebarPosition = "left"
 			}
 			if len(s.DefaultColumns) == 0 {
 				s.DefaultColumns = defaultSettings().DefaultColumns

@@ -32,6 +32,9 @@
                         <option value="emerald">&#9679; Emerald</option>
                         <option value="rose">&#9679; Rose</option>
                         <option value="sunset">&#9679; Sunset</option>
+                        <option value="aqua">&#9679; Aqua</option>
+                        <option value="graphite">&#9679; Graphite</option>
+                        <option value="macos">&#9679; macOS</option>
                     </select>
                 </div>
             </div>
@@ -44,16 +47,30 @@
                     <input type="number" id="settingColumnWidth" min="180" max="600" step="10">
                 </div>
             </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Sidebar position</div>
+                    <div class="settings-label-hint">Render sidebar on left or right</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settingSidebarPosition">
+                        <option value="left">Left</option>
+                        <option value="right">Right</option>
+                    </select>
+                </div>
+            </div>
         </div>
         <div class="settings-section">
             <div class="settings-section-title">New Board Defaults</div>
             <div class="settings-field">
                 <div>
                     <div class="settings-label">Default columns</div>
-                    <div class="settings-label-hint">Comma-separated column names for new boards</div>
+                    <div class="settings-label-hint">Column names for new boards</div>
                 </div>
-                <div class="settings-control">
-                    <input type="text" id="settingDefaultColumns" placeholder="not now, maybe?, done" style="width:100%">
+                <div class="settings-control" style="width:100%">
+                    <div class="card-modal-tags-container" id="settingDefaultColumnsContainer">
+                        <input type="text" class="card-modal-tags-input" id="settingDefaultColumnsInput" placeholder="Add column...">
+                    </div>
                 </div>
             </div>
         </div>
@@ -68,12 +85,61 @@
     var themeEl = document.getElementById('settingTheme');
     var colorThemeEl = document.getElementById('settingColorTheme');
     var widthEl = document.getElementById('settingColumnWidth');
-    var colsEl = document.getElementById('settingDefaultColumns');
+    var sidebarPosEl = document.getElementById('settingSidebarPosition');
+    var colsContainer = document.getElementById('settingDefaultColumnsContainer');
+    var colsInput = document.getElementById('settingDefaultColumnsInput');
     var saveBtn = document.getElementById('settingsSave');
     var savedMsg = document.getElementById('settingsSavedMsg');
 
+    // Chip-based column input
+    var currentCols = [];
+
+    function renderColChips() {
+        Array.from(colsContainer.querySelectorAll('.card-modal-tag-chip')).forEach(function(el) { el.remove(); });
+        currentCols.forEach(function(col, idx) {
+            var chip = document.createElement('span');
+            chip.className = 'card-modal-tag-chip';
+            chip.textContent = col;
+            var removeBtn = document.createElement('button');
+            removeBtn.className = 'card-modal-tag-chip-remove';
+            removeBtn.type = 'button';
+            removeBtn.innerHTML = '&times;';
+            removeBtn.addEventListener('click', function(e) {
+                e.stopPropagation();
+                currentCols.splice(idx, 1);
+                renderColChips();
+                colsInput.placeholder = currentCols.length ? '' : 'Add column...';
+            });
+            chip.appendChild(removeBtn);
+            colsContainer.insertBefore(chip, colsInput);
+        });
+    }
+
+    function addCol(val) {
+        val = val.trim();
+        if (!val) return;
+        currentCols.push(val);
+        renderColChips();
+        colsInput.value = '';
+        colsInput.placeholder = '';
+    }
+
+    colsInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            var val = colsInput.value.replace(/,/g, '');
+            addCol(val);
+        } else if (e.key === 'Backspace' && !colsInput.value && currentCols.length) {
+            currentCols.pop();
+            renderColChips();
+            colsInput.placeholder = currentCols.length ? '' : 'Add column...';
+        }
+    });
+
+    colsContainer.addEventListener('click', function() { colsInput.focus(); });
+
     // Style the color theme options with their accent colors
-    var themeColors = {default:'#6366f1',github:'#0969da',gitlab:'#6e49cb',emerald:'#059669',rose:'#e11d48',sunset:'#ea580c'};
+    var themeColors = {default:'#6366f1',github:'#0969da',gitlab:'#6e49cb',emerald:'#059669',rose:'#e11d48',sunset:'#ea580c',aqua:'#007AFF',graphite:'#8E8E93',macos:'#007AFF'};
     Array.from(colorThemeEl.options).forEach(function(opt) {
         opt.style.color = themeColors[opt.value] || '';
     });
@@ -85,12 +151,13 @@
             themeEl.value = s.theme || 'system';
             colorThemeEl.value = s.color_theme || 'default';
             widthEl.value = s.column_width || 280;
-            colsEl.value = (s.default_columns || ['not now', 'maybe?', 'done']).join(', ');
+            currentCols = s.default_columns || ['not now', 'maybe?', 'done'];
+            renderColChips();
+            colsInput.placeholder = currentCols.length ? '' : 'Add column...';
         });
 
     saveBtn.addEventListener('click', function() {
-        var rawCols = colsEl.value.split(',').map(function(c) { return c.trim(); }).filter(Boolean);
-        if (rawCols.length === 0) rawCols = ['not now', 'maybe?', 'done'];
+        var rawCols = currentCols.length > 0 ? currentCols : ['not now', 'maybe?', 'done'];
         var payload = {
             theme: themeEl.value,
             color_theme: colorThemeEl.value,
