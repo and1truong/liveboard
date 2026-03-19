@@ -61,6 +61,8 @@ func (s *Server) buildRouter() chi.Router {
 	// Web UI routes
 	r.Handle("/", s.liveHandler.BoardListHandler())
 	r.Handle("/board/{name}", s.liveHandler.BoardViewHandler())
+	r.Handle("/settings", s.liveHandler.SettingsHandler())
+	r.Handle("/api/settings", s.liveHandler.SettingsAPIHandler())
 
 	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {

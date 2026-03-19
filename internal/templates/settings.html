@@ -1,0 +1,84 @@
+{{define "content"}}
+<div class="settings-view">
+    <div class="workspace-header">
+        <span class="workspace-title">Settings</span>
+    </div>
+    <div class="settings-body">
+        <div class="settings-section">
+            <div class="settings-section-title">Appearance</div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Theme</div>
+                    <div class="settings-label-hint">Controls light/dark color scheme</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settingTheme">
+                        <option value="system">System</option>
+                        <option value="light">Light</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Column width</div>
+                    <div class="settings-label-hint">Width of board columns in pixels</div>
+                </div>
+                <div class="settings-control">
+                    <input type="number" id="settingColumnWidth" min="180" max="600" step="10">
+                </div>
+            </div>
+        </div>
+        <div class="settings-save-row">
+            <button class="btn-primary" id="settingsSave">Save</button>
+            <span class="settings-saved-msg" id="settingsSavedMsg">Saved.</span>
+        </div>
+    </div>
+</div>
+<script>
+(function() {
+    var themeEl = document.getElementById('settingTheme');
+    var widthEl = document.getElementById('settingColumnWidth');
+    var saveBtn = document.getElementById('settingsSave');
+    var savedMsg = document.getElementById('settingsSavedMsg');
+
+    // Load from server
+    fetch('/api/settings')
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+            themeEl.value = s.theme || 'system';
+            widthEl.value = s.column_width || 280;
+        });
+
+    saveBtn.addEventListener('click', function() {
+        var payload = {
+            theme: themeEl.value,
+            column_width: parseInt(widthEl.value, 10) || 280
+        };
+
+        fetch('/api/settings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(payload)
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(s) {
+            // Write-through to localStorage for instant apply on next page load
+            localStorage.setItem('lb_theme', s.theme);
+            localStorage.setItem('lb_column_width', String(s.column_width));
+
+            // Apply immediately
+            if (s.theme === 'system') {
+                document.documentElement.removeAttribute('data-theme');
+            } else {
+                document.documentElement.setAttribute('data-theme', s.theme);
+            }
+            document.documentElement.style.setProperty('--column-width', s.column_width + 'px');
+
+            savedMsg.style.display = 'inline';
+            setTimeout(function() { savedMsg.style.display = 'none'; }, 2000);
+        });
+    });
+})();
+</script>
+{{end}}

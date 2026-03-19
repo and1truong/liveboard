@@ -5,6 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
     <link rel="stylesheet" href="/static/css/board.css">
+    <script>
+        (function() {
+            var t = localStorage.getItem('lb_theme');
+            if (t && t !== 'system') document.documentElement.setAttribute('data-theme', t);
+            var w = localStorage.getItem('lb_column_width');
+            if (w) document.documentElement.style.setProperty('--column-width', w + 'px');
+        })();
+    </script>
     <script src="/live.js"></script>
     <script src="/static/js/drag.js" defer></script>
 </head>
@@ -41,6 +49,10 @@
                     <span class="live-connected">&#9679; Live</span>
                     <span class="live-disconnected">&#9679; Offline</span>
                 </div>
+                <a href="/settings" class="sidebar-nav-item sidebar-settings-link{{if eq $.BoardSlug "__settings__"}} active{{end}}">
+                    <span class="nav-icon">&#9881;</span>
+                    <span class="nav-label">Settings</span>
+                </a>
             </div>
         </aside>
         <div class="app-workspace">
