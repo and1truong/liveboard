@@ -38,43 +38,36 @@
                         live-value-name="{{$.BoardSlug}}"></button>
                     {{end}}
                     {{end}}
-                    <div class="card-header">
-                        <h4>{{.Title}}</h4>
-                        {{if .Completed}}
-                        <span class="status-badge completed">&#10003; Done</span>
-                        {{end}}
+                    <div class="card-layout">
+                        <button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>
+                        <div class="card-content">
+                            <h4 class="card-title">{{.Title}}</h4>
+
+                            {{if .Body}}
+                            <p class="card-body">{{.Body}}</p>
+                            {{end}}
+
+                            {{if .Tags}}
+                            <div class="card-tags">
+                                {{range .Tags}}
+                                <span class="tag">{{.}}</span>
+                                {{end}}
+                            </div>
+                            {{end}}
+
+                            {{if or .Assignee .Priority}}
+                            <div class="card-meta-row">
+                                {{if .Assignee}}<span class="card-meta">&#128100; {{.Assignee}}</span>{{end}}
+                                {{if .Priority}}<span class="card-meta">&#9889; {{.Priority}}</span>{{end}}
+                            </div>
+                            {{end}}
+
+                            {{if .Due}}
+                            <p class="card-meta">&#128197; {{.Due}}</p>
+                            {{end}}
+                        </div>
                     </div>
 
-                    {{if .Body}}
-                    <p class="card-body">{{.Body}}</p>
-                    {{end}}
-
-                    {{if .Tags}}
-                    <div class="card-tags">
-                        {{range .Tags}}
-                        <span class="tag">{{.}}</span>
-                        {{end}}
-                    </div>
-                    {{end}}
-
-                    {{if .Assignee}}
-                    <p class="card-meta">&#128100; {{.Assignee}}</p>
-                    {{end}}
-
-                    {{if .Priority}}
-                    <p class="card-meta">&#9889; {{.Priority}}</p>
-                    {{end}}
-
-                    {{if .Due}}
-                    <p class="card-meta">&#128197; {{.Due}}</p>
-                    {{end}}
-
-                    <div class="card-actions">
-                        {{if not .Completed}}
-                        <button live-click="toggle-complete" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small">Complete</button>
-                        {{end}}
-                        <button live-click="delete-card" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small btn-danger">Delete</button>
-                    </div>
                 </div>
                 {{end}}
             </div>
@@ -92,7 +85,7 @@
         {{end}}
 
         <div class="column add-column">
-            <form live-submit="create-column" class="add-column-form">
+            <form live-submit="create-column" live-value-name="{{.BoardSlug}}" class="add-column-form">
                 <input type="text" name="column_name" placeholder="New column name" required>
                 <button type="submit" class="btn-small">+ Add Column</button>
             </form>
