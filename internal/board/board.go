@@ -75,6 +75,29 @@ func (e *Engine) MoveCard(boardPath, cardID, targetColumn string) error {
 	return os.WriteFile(boardPath, []byte(newContent), 0644)
 }
 
+// ReorderCard moves a card to a specific position within a column.
+// If beforeCardID is empty, the card is appended to the end of the column.
+func (e *Engine) ReorderCard(boardPath, cardID, column, beforeCardID string) error {
+	content, err := os.ReadFile(boardPath)
+	if err != nil {
+		return err
+	}
+
+	board, err := parser.Parse(string(content))
+	if err != nil {
+		return err
+	}
+
+	card := findCard(board, cardID)
+	if card == nil {
+		return fmt.Errorf("card %s not found", cardID)
+	}
+
+	newContent := writer.RemoveCard(string(content), cardID)
+	newContent = writer.InsertCardBefore(newContent, card, beforeCardID, column)
+	return os.WriteFile(boardPath, []byte(newContent), 0644)
+}
+
 // CompleteCard marks a card as completed.
 func (e *Engine) CompleteCard(boardPath, cardID string) error {
 	content, err := os.ReadFile(boardPath)

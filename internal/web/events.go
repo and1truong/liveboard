@@ -9,4 +9,5 @@ const (
 	EventColumnCreated = "column_created"
 	EventColumnDeleted = "column_deleted"
 	EventBoardUpdated  = "board_updated"
+	EventCardReordered = "card_reordered"
 )

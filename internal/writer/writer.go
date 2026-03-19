@@ -152,6 +152,35 @@ func MoveCard(content string, cardID string, targetColumn string, card *models.C
 	return AddCard(content, targetColumn, card)
 }
 
+// InsertCardBefore inserts a card immediately before the card with beforeCardID.
+// If beforeCardID is empty, it falls back to appending at the end of targetColumn.
+func InsertCardBefore(content string, card *models.Card, beforeCardID, targetColumn string) string {
+	if beforeCardID == "" {
+		return AddCard(content, targetColumn, card)
+	}
+
+	lines := strings.Split(content, "\n")
+	var result []string
+	inserted := false
+
+	for i := 0; i < len(lines); i++ {
+		if !inserted && cardRe.MatchString(lines[i]) {
+			if i+1 < len(lines) && extractID(lines[i+1]) == beforeCardID {
+				result = append(result, renderCardLines(card)...)
+				result = append(result, "") // blank line separator
+				inserted = true
+			}
+		}
+		result = append(result, lines[i])
+	}
+
+	if !inserted {
+		return AddCard(content, targetColumn, card)
+	}
+
+	return strings.Join(result, "\n")
+}
+
 // UpdateCard replaces a card in-place by ID.
 func UpdateCard(content string, cardID string, card *models.Card) string {
 	lines := strings.Split(content, "\n")

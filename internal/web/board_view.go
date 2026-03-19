@@ -129,6 +129,37 @@ func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Param
 	return h.boardViewModel(slug)
 }
 
+// handleReorderCard moves a card to a specific position within a column.
+func (h *Handler) handleReorderCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	cardID, ok := p["card_id"].(string)
+	if !ok || cardID == "" {
+		return BoardViewModel{Error: "Card ID is required"}, nil
+	}
+
+	column, ok := p["column"].(string)
+	if !ok || column == "" {
+		return BoardViewModel{Error: "Column is required"}, nil
+	}
+
+	beforeCardID, _ := p["before_card_id"].(string)
+
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	boardPath := h.ws.BoardPath(slug)
+	err := h.eng.ReorderCard(boardPath, cardID, column, beforeCardID)
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	h.commitWithHandling(boardPath, fmt.Sprintf("Reorder card %s in %s", cardID, column))
+	h.publishBoardEvent(slug, "card_reordered")
+
+	return h.boardViewModel(slug)
+}
+
 // handleDeleteCard deletes a card.
 func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	cardID, ok := p["card_id"].(string)
