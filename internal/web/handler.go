@@ -92,8 +92,6 @@ func (h *Handler) BoardListHandler() http.Handler {
 	boardListHandler.MountHandler = h.mountBoardList
 	boardListHandler.HandleEvent("create-board", h.handleCreateBoard)
 	boardListHandler.HandleEvent("delete-board", h.handleDeleteBoard)
-	boardListHandler.HandleEvent("show-create-form", h.handleShowCreateForm)
-	boardListHandler.HandleEvent("cancel-create", h.handleCancelCreate)
 	boardListHandler.HandleParams(h.handleParams)
 
 	return live.NewHttpHandler(context.Background(), boardListHandler,
@@ -114,8 +112,6 @@ func (h *Handler) BoardViewHandler() http.Handler {
 	boardViewHandler.HandleEvent("toggle-complete", h.handleToggleComplete)
 	boardViewHandler.HandleEvent("create-column", h.handleCreateColumn)
 	boardViewHandler.HandleEvent("edit-card", h.handleEditCard)
-	boardViewHandler.HandleEvent("show-add-card", h.handleShowAddCard)
-	boardViewHandler.HandleEvent("cancel-add-card", h.handleCancelAddCard)
 	boardViewHandler.HandleEvent("rename-column", h.handleRenameColumn)
 	boardViewHandler.HandleEvent("delete-column", h.handleDeleteColumn)
 	boardViewHandler.HandleEvent("update-board-meta", h.handleUpdateBoardMeta)
@@ -128,7 +124,7 @@ func (h *Handler) BoardViewHandler() http.Handler {
 }
 
 // publishBoardEvent broadcasts a board update to all subscribers.
-func (h *Handler) publishBoardEvent(boardName string, _ string) {
+func (h *Handler) publishBoardEvent(boardName string) {
 	ctx := context.Background()
 	_ = h.pubsub.Publish(ctx, "board_update", live.Event{
 		T:        "board_update",

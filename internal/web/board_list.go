@@ -13,12 +13,10 @@ import (
 
 // BoardListModel is the state for the board list page.
 type BoardListModel struct {
-	Title       string         `json:"title"`
-	Boards      []BoardSummary `json:"boards"`
-	BoardSlug   string         `json:"board_slug"` // always empty; shared with layout template
-	Error       string         `json:"error,omitempty"`
-	Creating    bool           `json:"creating,omitempty"`
-	NeedsReload bool           `json:"needs_reload,omitempty"`
+	Title     string         `json:"title"`
+	Boards    []BoardSummary `json:"boards"`
+	BoardSlug string         `json:"board_slug"` // always empty; shared with layout template
+	Error     string         `json:"error,omitempty"`
 }
 
 // BoardSummary represents a simplified board for list display.
@@ -52,24 +50,23 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 	return summaries
 }
 
-// mountBoardList initializes the board list model.
-func (h *Handler) mountBoardList(_ context.Context, _ *live.Socket) (interface{}, error) {
+// boardListModel loads the board list and returns a populated BoardListModel.
+func (h *Handler) boardListModel() (BoardListModel, error) {
 	boards, err := h.ws.ListBoards()
 	if err != nil {
 		return BoardListModel{Error: err.Error()}, nil
 	}
-
 	return BoardListModel{Title: "LiveBoard", Boards: toBoardSummaries(boards)}, nil
+}
+
+// mountBoardList initializes the board list model.
+func (h *Handler) mountBoardList(_ context.Context, _ *live.Socket) (interface{}, error) {
+	return h.boardListModel()
 }
 
 // handleParams handles parameter changes (e.g., URL params).
 func (h *Handler) handleParams(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
-	boards, err := h.ws.ListBoards()
-	if err != nil {
-		return BoardListModel{Error: err.Error()}, nil
-	}
-
-	return BoardListModel{Title: "LiveBoard", Boards: toBoardSummaries(boards)}, nil
+	return h.boardListModel()
 }
 
 // handleCreateBoard creates a new board.
@@ -84,19 +81,10 @@ func (h *Handler) handleCreateBoard(_ context.Context, _ *live.Socket, p live.Pa
 		return BoardListModel{Error: err.Error()}, nil
 	}
 
-	// Git commit for board creation
-	if h.git != nil {
-		boardPath := h.ws.BoardPath(name)
-		_ = h.git.Commit(boardPath, fmt.Sprintf("Create board: %s", name))
-	}
+	boardPath := h.ws.BoardPath(name)
+	h.commitWithHandling(boardPath, fmt.Sprintf("Create board: %s", name))
 
-	// Reload boards
-	boards, err := h.ws.ListBoards()
-	if err != nil {
-		return BoardListModel{Error: err.Error()}, nil
-	}
-
-	return BoardListModel{Boards: toBoardSummaries(boards)}, nil
+	return h.boardListModel()
 }
 
 // handleDeleteBoard deletes a board.
@@ -111,27 +99,8 @@ func (h *Handler) handleDeleteBoard(_ context.Context, _ *live.Socket, p live.Pa
 		return BoardListModel{Error: err.Error()}, nil
 	}
 
-	// Git commit for board deletion
-	if h.git != nil {
-		boardPath := h.ws.BoardPath(name)
-		_ = h.git.CommitRemove(boardPath, fmt.Sprintf("Delete board: %s", name))
-	}
+	boardPath := h.ws.BoardPath(name)
+	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete board: %s", name))
 
-	// Reload boards
-	boards, err := h.ws.ListBoards()
-	if err != nil {
-		return BoardListModel{Error: err.Error()}, nil
-	}
-
-	return BoardListModel{Boards: toBoardSummaries(boards)}, nil
-}
-
-// handleShowCreateForm shows the create board form.
-func (h *Handler) handleShowCreateForm(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
-	return BoardListModel{Creating: true}, nil
-}
-
-// handleCancelCreate cancels the create board form.
-func (h *Handler) handleCancelCreate(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
-	return BoardListModel{Creating: false}, nil
+	return h.boardListModel()
 }

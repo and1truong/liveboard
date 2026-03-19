@@ -24,7 +24,7 @@
 
     <div class="columns-container">
         {{range $i, $column := .Board.Columns}}
-        <div class="column {{if $column.Collapsed}}collapsed{{end}}">
+        <div class="column {{if $column.Collapsed}}collapsed{{end}}" x-data="{ showForm: false }">
             <div class="column-header">
                 <button class="column-collapse-btn" live-click="toggle-column-collapse" live-value-col_index="{{$i}}" live-value-name="{{$.BoardSlug}}" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
                 {{if $column.Collapsed}}<span class="column-card-count">{{len $column.Cards}}</span>{{end}}
@@ -80,15 +80,12 @@
                 {{end}}
             </div>
 
-            {{if eq $.ShowAddCard $column.Name}}
-            <form live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form">
+            <form x-cloak x-show="showForm" live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form">
                 <input type="text" name="title" placeholder="Card title" required autofocus>
                 <button type="submit" class="btn-small btn-primary">Add</button>
-                <button type="button" live-click="cancel-add-card" live-value-name="{{$.BoardSlug}}" class="btn-small">Cancel</button>
+                <button type="button" @click="showForm = false" class="btn-small">Cancel</button>
             </form>
-            {{else}}
-            <button live-click="show-add-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="btn-add-card">+ Add Card</button>
-            {{end}}
+            <button x-show="!showForm" @click="showForm = true" class="btn-add-card">+ Add Card</button>
             {{end}}
         </div>
         {{end}}
