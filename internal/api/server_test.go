@@ -81,8 +81,8 @@ func TestCreateAndGetBoard(t *testing.T) {
 	if board.Name != "sprint" {
 		t.Fatalf("expected name 'sprint', got %q", board.Name)
 	}
-	if len(board.Columns) != 4 {
-		t.Fatalf("expected 4 default columns, got %d", len(board.Columns))
+	if len(board.Columns) != 3 {
+		t.Fatalf("expected 3 default columns, got %d", len(board.Columns))
 	}
 
 	// Get

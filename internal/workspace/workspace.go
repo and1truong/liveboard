@@ -14,7 +14,7 @@ import (
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
-var defaultColumns = []string{"Backlog", "In Progress", "Review", "Done"}
+var defaultColumns = []string{"not now", "maybe?", "done"}
 
 // Workspace manages boards in a directory.
 type Workspace struct {
