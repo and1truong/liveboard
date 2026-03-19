@@ -1234,6 +1234,35 @@
       btn.className = "card-modal-action-btn";
       var icons = { Labels: "🏷", Dates: "📅", Checklist: "☑", Members: "👤" };
       btn.innerHTML = '<span class="card-modal-action-icon">' + icons[label] + "</span> " + label;
+
+      if (label === "Dates") {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var existing = document.querySelector(".card-modal-datepicker");
+          if (existing) { existing.remove(); return; }
+
+          var picker = createDatePicker(dueValue.current, function (newDue) {
+            dueValue.current = newDue;
+            updateDueDisplay();
+            picker.remove();
+          });
+
+          // Position below the action bar
+          actionBar.style.position = "relative";
+          actionBar.appendChild(picker);
+
+          setTimeout(function () {
+            document.addEventListener("click", function closePicker(ev) {
+              if (!picker.parentNode) { document.removeEventListener("click", closePicker); return; }
+              if (!picker.contains(ev.target) && ev.target !== btn) {
+                picker.remove();
+                document.removeEventListener("click", closePicker);
+              }
+            });
+          }, 0);
+        });
+      }
+
       actionBar.appendChild(btn);
     });
     main.appendChild(actionBar);
@@ -1431,6 +1460,7 @@
           body: bodyInput.value.trim(),
           tags: getTagsValue(),
           priority: priorityValue.current,
+          due: dueValue.current,
           name: slug,
         });
       }
@@ -1550,24 +1580,26 @@
     });
     sidebar.appendChild(priorityGroup);
 
-    // Other metadata (read-only)
-    if (assignee || due) {
-      var metaWrap = document.createElement("div");
-      metaWrap.className = "card-modal-meta-list";
-      if (assignee) {
-        var aEl = document.createElement("div");
-        aEl.className = "card-modal-meta-item";
-        aEl.innerHTML = "👤 " + assignee;
-        metaWrap.appendChild(aEl);
-      }
-      if (due) {
-        var dEl = document.createElement("div");
-        dEl.className = "card-modal-meta-item";
-        dEl.innerHTML = "📅 " + due;
-        metaWrap.appendChild(dEl);
-      }
-      sidebar.appendChild(metaWrap);
+    // Other metadata
+    var metaWrap = document.createElement("div");
+    metaWrap.className = "card-modal-meta-list";
+    if (assignee) {
+      var aEl = document.createElement("div");
+      aEl.className = "card-modal-meta-item";
+      aEl.innerHTML = "👤 " + assignee;
+      metaWrap.appendChild(aEl);
     }
+    var dueDisplayEl = document.createElement("div");
+    dueDisplayEl.className = "card-modal-meta-item";
+    function updateDueDisplay() {
+      dueDisplayEl.innerHTML = dueValue.current
+        ? "📅 " + dueValue.current
+        : "📅 No due date";
+      dueDisplayEl.style.opacity = dueValue.current ? "1" : "0.5";
+    }
+    updateDueDisplay();
+    metaWrap.appendChild(dueDisplayEl);
+    sidebar.appendChild(metaWrap);
 
     modal.appendChild(sidebar);
     backdrop.appendChild(modal);

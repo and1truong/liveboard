@@ -1,6 +1,7 @@
 ---
 name: Family
 description: Household, kids, and family life
+icon: "\U0001F3E0"
 tags:
     - family
     - home
@@ -14,9 +15,9 @@ list-collapse:
 ## Urgent
 
 - [ ] Sign permission slip for field trip
+  assignee: Dad
   priority: high
   due: 2026-03-21
-  assignee: Dad
   Emma's science museum trip on Friday
 
 - [ ] Pay water bill
@@ -24,14 +25,14 @@ list-collapse:
   due: 2026-03-25
 
 - [ ] Schedule pediatrician checkup for Liam
+  tags: health
   priority: medium
   due: 2026-03-28
-  tags: health
   Annual wellness visit, bring vaccination records
 
 - [ ] Fix leaking kitchen faucet
-  priority: medium
   tags: house
+  priority: medium
   Getting worse, check washer first before calling plumber
 
 ## This Week
@@ -61,9 +62,9 @@ list-collapse:
 ## Upcoming
 
 - [ ] Book summer camp registration
+  tags: kids
   priority: high
   due: 2026-04-15
-  tags: kids
   YMCA fills up fast, register both kids
 
 - [ ] Get car inspected

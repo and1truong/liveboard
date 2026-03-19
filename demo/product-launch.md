@@ -1,6 +1,7 @@
 ---
 name: Product Launch
 description: Shipping v1 of FormBot — AI form builder SaaS
+icon: "\U0001F4DA"
 tags:
     - product
     - launch

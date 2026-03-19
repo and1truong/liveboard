@@ -1,6 +1,7 @@
 ---
 name: Personal
 description: Life stuff outside the SaaS grind
+icon: "\U0001F680"
 list-collapse:
     - false
     - false
@@ -11,7 +12,7 @@ list-collapse:
 
 - [ ] Renew domain names
   priority: high
-  due: 2026-04-15
+  due: 2026-03-22
 
 - [ ] Book coworking day pass for Friday
 

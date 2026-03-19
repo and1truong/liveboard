@@ -1,6 +1,7 @@
 ---
 name: Revenue & Ops
 description: MRR growth, billing, and business operations
+icon: "\U0001F381"
 tags:
     - business
     - revenue

@@ -1,6 +1,7 @@
 ---
 name: On-Call Week
 description: Tracking incidents, follow-ups, and handoff for on-call rotation
+icon: "\U0001F514"
 tags:
     - oncall
     - ops

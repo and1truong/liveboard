@@ -1,6 +1,7 @@
 ---
 name: Content Marketing
 description: Content pipeline for growth and building in public
+icon: "\U0001F4BC"
 tags:
     - content
     - growth
@@ -32,8 +33,8 @@ list-collapse:
   tags: blog
   priority: medium
 
-- [ ] Weekly newsletter #12
-  tags: newsletter
+- [ ] Weekly newsletter
+  tags: 12, newsletter
   due: 2026-03-25
 
 - [ ] Twitter thread: March building in public recap
@@ -53,5 +54,5 @@ list-collapse:
 - [x] Changelog v0.9 — conditional logic
   tags: changelog
 
-- [x] Newsletter #11: lessons from my first paying customer
-  tags: newsletter
+- [x] Newsletter : lessons from my first paying customer
+  tags: 11, newsletter
