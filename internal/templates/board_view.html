@@ -27,8 +27,8 @@
         <div class="column {{if $column.Collapsed}}collapsed{{end}}">
             <div class="column-header">
                 <button class="column-collapse-btn" live-click="toggle-column-collapse" live-value-col_index="{{$i}}" live-value-name="{{$.BoardSlug}}" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
-                <h3>{{$column.Name}}</h3>
                 {{if $column.Collapsed}}<span class="column-card-count">{{len $column.Cards}}</span>{{end}}
+                <h3>{{$column.Name}}</h3>
                 <button class="column-menu-btn" data-column-name="{{$column.Name}}" title="Column options">&#8943;</button>
             </div>
             {{if not $column.Collapsed}}

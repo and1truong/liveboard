@@ -861,9 +861,13 @@ body {
 
 .column-card-count {
     font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-    font-weight: 600;
+    font-weight: 700;
+    color: var(--color-text-primary);
+    background: var(--color-border);
+    border-radius: 999px;
+    padding: 1px 6px;
     flex-shrink: 0;
+    line-height: 1.5;
 }
 
 .cards {
