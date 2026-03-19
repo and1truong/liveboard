@@ -115,7 +115,7 @@ func (e *Engine) CompleteCard(boardPath, cardID string) error {
 		return fmt.Errorf("card %s not found", cardID)
 	}
 
-	card.Completed = true
+	card.Completed = !card.Completed
 	newContent := writer.UpdateCard(string(content), cardID, card)
 	return os.WriteFile(boardPath, []byte(newContent), 0644)
 }
