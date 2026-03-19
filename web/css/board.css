@@ -1101,7 +1101,16 @@ body {
     flex-shrink: 0;
 }
 
-.add-card-form input[type="text"],
+
+.add-card-form input[type="text"] {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-base);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+}
+
 .add-column-form input[type="text"] {
     padding: 5px 8px;
     border: 1px solid var(--color-border);
@@ -1536,6 +1545,11 @@ body {
     padding: 3px 0;
 }
 
+/* === BOARD DROPDOWN (mobile only) === */
+.sidebar-board-dropdown {
+    display: none;
+}
+
 /* === RESPONSIVE === */
 @media (max-width: 768px) {
     .app-shell {
@@ -1557,18 +1571,46 @@ body {
     }
 
     .sidebar-nav {
-        display: flex;
-        flex-direction: row;
-        padding: 0;
-        align-items: center;
-        overflow: visible;
-        flex: 0;
+        display: none;
     }
 
-    .sidebar-nav-item {
-        padding: 0 12px;
+    .sidebar-board-dropdown {
+        display: flex;
+        align-items: center;
+        padding: 0 8px;
+    }
+
+    .sidebar-board-dropdown select {
+        padding: 4px 8px;
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-sm);
+        font-family: var(--font-sans);
+        background: var(--color-bg);
+        color: var(--color-text-primary);
+        max-width: 160px;
+        cursor: pointer;
+    }
+
+    .sidebar-board-dropdown select:focus {
+        outline: 2px solid var(--color-accent);
+        outline-offset: -1px;
+        border-color: var(--color-accent);
+    }
+
+    .sidebar-toggle {
+        display: none;
+    }
+
+    .app-sidebar.collapsed {
+        width: 100%;
         height: var(--topbar-height);
-        border-radius: 0;
+    }
+
+    .app-sidebar.collapsed .brand-link,
+    .app-sidebar.collapsed .sidebar-board-dropdown,
+    .app-sidebar.collapsed .sidebar-footer {
+        display: flex;
     }
 
     .sidebar-footer .connection-status {

@@ -24,7 +24,7 @@
 
     <div class="columns-container">
         {{range $i, $column := .Board.Columns}}
-        <div class="column {{if $column.Collapsed}}collapsed{{end}}" x-data="{ showForm: false }">
+        <div class="column {{if $column.Collapsed}}collapsed{{end}}">
             <div class="column-header">
                 <button class="column-collapse-btn" live-click="toggle-column-collapse" live-value-col_index="{{$i}}" live-value-name="{{$.BoardSlug}}" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
                 {{if $column.Collapsed}}<span class="column-card-count">{{len $column.Cards}}</span>{{end}}
@@ -80,12 +80,12 @@
                 {{end}}
             </div>
 
-            <form x-cloak x-show="showForm" live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form">
-                <input type="text" name="title" placeholder="Card title" required autofocus>
-                <button type="submit" class="btn-small btn-primary">Add</button>
-                <button type="button" @click="showForm = false" class="btn-small">Cancel</button>
-            </form>
-            <button x-show="!showForm" @click="showForm = true" class="btn-add-card">+ Add Card</button>
+            <div class="add-card-toggle">
+                <form live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form" style="display:none">
+                    <input type="text" name="title" placeholder="Enter a title..." required onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''}">
+                </form>
+                <button onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';w.querySelector('.btn-add-card').style.display='none';w.querySelector('input[name=title]').focus()" class="btn-add-card">+ Add Card</button>
+            </div>
             {{end}}
         </div>
         {{end}}

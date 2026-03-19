@@ -44,6 +44,15 @@
                     <span class="nav-label">New Board</span>
                 </a>
             </nav>
+            <div class="sidebar-board-dropdown">
+                <select onchange="if(this.value)window.location.href=this.value">
+                    <option value="">Boards</option>
+                    {{range .Boards}}
+                    <option value="/board/{{.Slug}}"{{if eq $.BoardSlug .Slug}} selected{{end}}>{{.Name}}</option>
+                    {{end}}
+                    <option value="/">+ New Board</option>
+                </select>
+            </div>
             <div class="sidebar-footer">
                 <div class="connection-status">
                     <span class="live-connected">&#9679; Live</span>
