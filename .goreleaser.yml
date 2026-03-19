@@ -1,5 +1,7 @@
 version: 2
 
+project_name: liveboard
+
 builds:
   - main: ./cmd/liveboard
     binary: liveboard
@@ -16,7 +18,7 @@ builds:
       - goos: windows
         goarch: arm64
     ldflags:
-      - -s -w
+      - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}}
 
 archives:
   - formats:

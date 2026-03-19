@@ -16,6 +16,11 @@ import (
 )
 
 var (
+	version = "dev"
+	commit  = "none"
+)
+
+var (
 	workDir string
 	ws      *workspace.Workspace
 	eng     *board.Engine
@@ -43,6 +48,7 @@ func main() {
 		},
 	}
 
+	rootCmd.Version = version + " (" + commit + ")"
 	rootCmd.PersistentFlags().StringVarP(&workDir, "dir", "d", "", "workspace directory (default: current directory)")
 
 	rootCmd.AddCommand(boardCmd())
