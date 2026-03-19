@@ -29,7 +29,7 @@
                     {{end}}
                     <p class="card-count">{{.CardCount}} cards</p>
                 </a>
-                <button live-click="delete-board" live-value-name="{{.Name}}" class="btn-delete">Delete</button>
+                <button onclick="if(confirm('Delete board &quot;{{.Name}}&quot;? This cannot be undone.')) { window.Live.send('delete-board', {name: '{{.Name}}'}); }" class="btn-delete">Delete</button>
             </div>
             {{end}}
         </div>
