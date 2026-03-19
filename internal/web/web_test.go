@@ -1,0 +1,446 @@
+package web
+
+import (
+	"encoding/json"
+	"net/http/httptest"
+	"os"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	"github.com/and1truong/liveboard/internal/workspace"
+	"github.com/and1truong/liveboard/pkg/models"
+)
+
+func TestBoardSlug(t *testing.T) {
+	cases := []struct {
+		filePath string
+		want     string
+	}{
+		{"/path/to/my-board.md", "my-board"},
+		{"/path/to/sprint.md", "sprint"},
+		{"simple.md", "simple"},
+		{"/path/to/no-ext", "no-ext"},
+	}
+	for _, tc := range cases {
+		got := boardSlug(models.Board{FilePath: tc.filePath})
+		if got != tc.want {
+			t.Errorf("boardSlug(%q) = %q, want %q", tc.filePath, got, tc.want)
+		}
+	}
+}
+
+func TestToBoardSummaries(t *testing.T) {
+	boards := []models.Board{
+		{
+			Name:        "Sprint 1",
+			Description: "First sprint",
+			Icon:        "🏃",
+			FilePath:    "/boards/sprint-1.md",
+			Columns: []models.Column{
+				{Name: "Todo", Cards: []models.Card{{Title: "A"}, {Title: "B"}}},
+				{Name: "Done", Cards: []models.Card{{Title: "C"}}},
+			},
+		},
+		{
+			Name:     "Empty Board",
+			FilePath: "/boards/empty.md",
+			Columns:  []models.Column{},
+		},
+	}
+
+	summaries := toBoardSummaries(boards)
+
+	if len(summaries) != 2 {
+		t.Fatalf("expected 2 summaries, got %d", len(summaries))
+	}
+
+	s := summaries[0]
+	if s.Name != "Sprint 1" {
+		t.Errorf("name = %q", s.Name)
+	}
+	if s.Slug != "sprint-1" {
+		t.Errorf("slug = %q", s.Slug)
+	}
+	if s.Description != "First sprint" {
+		t.Errorf("description = %q", s.Description)
+	}
+	if s.Icon != "🏃" {
+		t.Errorf("icon = %q", s.Icon)
+	}
+	if s.CardCount != 3 {
+		t.Errorf("card_count = %d, want 3", s.CardCount)
+	}
+
+	if summaries[1].CardCount != 0 {
+		t.Errorf("empty board card_count = %d", summaries[1].CardCount)
+	}
+}
+
+func TestToBoardSummariesEmpty(t *testing.T) {
+	summaries := toBoardSummaries(nil)
+	if len(summaries) != 0 {
+		t.Errorf("expected 0 summaries for nil input, got %d", len(summaries))
+	}
+}
+
+func TestResolveSettings(t *testing.T) {
+	global := AppSettings{
+		ShowCheckbox:   true,
+		NewLineTrigger: "shift-enter",
+		CardPosition:   "append",
+	}
+
+	// No overrides
+	rs := resolveSettings(global, models.BoardSettings{})
+	if !rs.ShowCheckbox {
+		t.Error("expected ShowCheckbox=true from global")
+	}
+	if rs.CardPosition != "append" {
+		t.Errorf("expected CardPosition=append, got %q", rs.CardPosition)
+	}
+	if rs.ExpandColumns {
+		t.Error("expected ExpandColumns=false default")
+	}
+
+	// With overrides
+	showCheckbox := false
+	cardPos := "prepend"
+	expandCols := true
+	bs := models.BoardSettings{
+		ShowCheckbox:  &showCheckbox,
+		CardPosition:  &cardPos,
+		ExpandColumns: &expandCols,
+	}
+
+	rs = resolveSettings(global, bs)
+	if rs.ShowCheckbox {
+		t.Error("expected ShowCheckbox=false from board override")
+	}
+	if rs.CardPosition != "prepend" {
+		t.Errorf("expected CardPosition=prepend, got %q", rs.CardPosition)
+	}
+	if !rs.ExpandColumns {
+		t.Error("expected ExpandColumns=true from board override")
+	}
+}
+
+func TestToBoardSettingsView(t *testing.T) {
+	// All nil
+	v := toBoardSettingsView(models.BoardSettings{})
+	if v.ShowCheckbox != "" || v.CardPosition != "" || v.ExpandColumns != "" {
+		t.Errorf("expected empty strings for nil settings, got %+v", v)
+	}
+
+	// All set
+	showTrue := true
+	showFalse := false
+	cardPos := "prepend"
+
+	v = toBoardSettingsView(models.BoardSettings{
+		ShowCheckbox:  &showTrue,
+		CardPosition:  &cardPos,
+		ExpandColumns: &showFalse,
+	})
+	if v.ShowCheckbox != "true" {
+		t.Errorf("ShowCheckbox = %q, want 'true'", v.ShowCheckbox)
+	}
+	if v.CardPosition != "prepend" {
+		t.Errorf("CardPosition = %q, want 'prepend'", v.CardPosition)
+	}
+	if v.ExpandColumns != "false" {
+		t.Errorf("ExpandColumns = %q, want 'false'", v.ExpandColumns)
+	}
+}
+
+func TestIntParam(t *testing.T) {
+	// Valid
+	params := map[string]interface{}{"col_idx": "5"}
+	v, err := intParam(params, "col_idx")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if v != 5 {
+		t.Errorf("got %d, want 5", v)
+	}
+
+	// Missing key
+	_, err = intParam(params, "missing")
+	if err == nil {
+		t.Error("expected error for missing key")
+	}
+
+	// Non-numeric
+	params = map[string]interface{}{"col_idx": "abc"}
+	_, err = intParam(params, "col_idx")
+	if err == nil {
+		t.Error("expected error for non-numeric value")
+	}
+
+	// Empty string
+	params = map[string]interface{}{"col_idx": ""}
+	_, err = intParam(params, "col_idx")
+	if err == nil {
+		t.Error("expected error for empty string")
+	}
+}
+
+func TestSlugFromParams(t *testing.T) {
+	// Valid
+	params := map[string]interface{}{"name": "my-board"}
+	slug, ok := slugFromParams(params)
+	if !ok || slug != "my-board" {
+		t.Errorf("got slug=%q, ok=%v", slug, ok)
+	}
+
+	// Missing
+	params = map[string]interface{}{}
+	_, ok = slugFromParams(params)
+	if ok {
+		t.Error("expected ok=false for missing name")
+	}
+
+	// Empty
+	params = map[string]interface{}{"name": ""}
+	_, ok = slugFromParams(params)
+	if ok {
+		t.Error("expected ok=false for empty name")
+	}
+
+	// Wrong type
+	params = map[string]interface{}{"name": 123}
+	_, ok = slugFromParams(params)
+	if ok {
+		t.Error("expected ok=false for wrong type")
+	}
+}
+
+func TestDefaultSettings(t *testing.T) {
+	s := defaultSettings()
+	if s.Theme != "system" {
+		t.Errorf("Theme = %q", s.Theme)
+	}
+	if s.ColumnWidth != 280 {
+		t.Errorf("ColumnWidth = %d", s.ColumnWidth)
+	}
+	if len(s.DefaultColumns) != 3 {
+		t.Errorf("DefaultColumns = %v", s.DefaultColumns)
+	}
+	if s.ColorTheme != "aqua" {
+		t.Errorf("ColorTheme = %q", s.ColorTheme)
+	}
+	if s.CardPosition != "append" {
+		t.Errorf("CardPosition = %q", s.CardPosition)
+	}
+}
+
+func TestSettingsAPIHandler(t *testing.T) {
+	dir := t.TempDir()
+
+	// Manually construct a Handler with minimal dependencies for settings tests.
+	h := &Handler{
+		ws: &workspace.Workspace{Dir: dir},
+	}
+
+	handler := h.SettingsAPIHandler()
+
+	// GET returns defaults when no file exists
+	req := httptest.NewRequest("GET", "/api/settings", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("GET: expected 200, got %d", w.Code)
+	}
+
+	var got AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got.Theme != "system" {
+		t.Errorf("default theme = %q", got.Theme)
+	}
+
+	// POST saves settings
+	body := `{"theme":"dark","color_theme":"github","column_width":300,"sidebar_position":"right","show_checkbox":false,"newline_trigger":"enter","card_position":"prepend"}`
+	req = httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if w.Code != 200 {
+		t.Fatalf("POST: expected 200, got %d", w.Code)
+	}
+
+	var saved AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&saved); err != nil {
+		t.Fatal(err)
+	}
+	if saved.Theme != "dark" {
+		t.Errorf("saved theme = %q", saved.Theme)
+	}
+	if saved.ColorTheme != "github" {
+		t.Errorf("saved color_theme = %q", saved.ColorTheme)
+	}
+	if saved.CardPosition != "prepend" {
+		t.Errorf("saved card_position = %q", saved.CardPosition)
+	}
+
+	// Verify it persisted to disk
+	req = httptest.NewRequest("GET", "/api/settings", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	var reloaded AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&reloaded); err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.Theme != "dark" {
+		t.Errorf("reloaded theme = %q", reloaded.Theme)
+	}
+
+	// POST invalid JSON
+	req = httptest.NewRequest("POST", "/api/settings", strings.NewReader("{bad"))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != 400 {
+		t.Fatalf("invalid JSON: expected 400, got %d", w.Code)
+	}
+
+	// Method not allowed
+	req = httptest.NewRequest("PUT", "/api/settings", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+	if w.Code != 405 {
+		t.Fatalf("PUT: expected 405, got %d", w.Code)
+	}
+}
+
+func TestSettingsValidation(t *testing.T) {
+	dir := t.TempDir()
+	h := &Handler{
+		ws: &workspace.Workspace{Dir: dir},
+	}
+
+	handler := h.SettingsAPIHandler()
+
+	// Out of range column width should be reset to 280
+	body := `{"theme":"light","color_theme":"aqua","column_width":50,"sidebar_position":"left","newline_trigger":"shift-enter","card_position":"append"}`
+	req := httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	var s AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&s); err != nil {
+		t.Fatal(err)
+	}
+	if s.ColumnWidth != 280 {
+		t.Errorf("expected column_width reset to 280, got %d", s.ColumnWidth)
+	}
+
+	// Invalid theme should fall back to "system"
+	body = `{"theme":"invalid","color_theme":"invalid_theme","column_width":300,"sidebar_position":"center","newline_trigger":"invalid","card_position":"invalid"}`
+	req = httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if err := json.NewDecoder(w.Body).Decode(&s); err != nil {
+		t.Fatal(err)
+	}
+	if s.Theme != "system" {
+		t.Errorf("theme = %q, want 'system'", s.Theme)
+	}
+	if s.ColorTheme != "default" {
+		t.Errorf("color_theme = %q, want 'default'", s.ColorTheme)
+	}
+	if s.SidebarPosition != "left" {
+		t.Errorf("sidebar_position = %q, want 'left'", s.SidebarPosition)
+	}
+	if s.NewLineTrigger != "shift-enter" {
+		t.Errorf("newline_trigger = %q, want 'shift-enter'", s.NewLineTrigger)
+	}
+	if s.CardPosition != "append" {
+		t.Errorf("card_position = %q, want 'append'", s.CardPosition)
+	}
+}
+
+func TestLoadSaveSettingsRoundTrip(t *testing.T) {
+	dir := t.TempDir()
+	h := &Handler{
+		ws: &workspace.Workspace{Dir: dir},
+	}
+
+	// Load with no file → defaults
+	s := h.loadSettings()
+	if s.Theme != "system" {
+		t.Errorf("default theme = %q", s.Theme)
+	}
+
+	// Save custom settings
+	s.Theme = "dark"
+	s.ColumnWidth = 400
+	if err := h.saveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+
+	// Verify file exists
+	if _, err := os.Stat(filepath.Join(dir, "settings.json")); err != nil {
+		t.Fatalf("settings file not found: %v", err)
+	}
+
+	// Load back
+	loaded := h.loadSettings()
+	if loaded.Theme != "dark" {
+		t.Errorf("loaded theme = %q", loaded.Theme)
+	}
+	if loaded.ColumnWidth != 400 {
+		t.Errorf("loaded column_width = %d", loaded.ColumnWidth)
+	}
+}
+
+func TestValidColorThemes(t *testing.T) {
+	expected := []string{"default", "github", "gitlab", "emerald", "rose", "sunset", "aqua", "graphite", "macos"}
+	for _, theme := range expected {
+		if !validColorThemes[theme] {
+			t.Errorf("expected %q to be valid", theme)
+		}
+	}
+	if validColorThemes["nonexistent"] {
+		t.Error("expected 'nonexistent' to be invalid")
+	}
+}
+
+func TestSettingsAPIEmptyColumns(t *testing.T) {
+	h := &Handler{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	handler := h.SettingsAPIHandler()
+
+	body := `{"theme":"dark","color_theme":"aqua","column_width":280,"sidebar_position":"left","default_columns":[],"newline_trigger":"shift-enter","card_position":"append"}`
+	req := httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	var s AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&s); err != nil {
+		t.Fatal(err)
+	}
+	if len(s.DefaultColumns) == 0 {
+		t.Error("expected default columns to be restored when empty")
+	}
+}
+
+func TestSettingsAPIHighColumnWidth(t *testing.T) {
+	h := &Handler{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	handler := h.SettingsAPIHandler()
+
+	body := `{"theme":"light","color_theme":"aqua","column_width":999,"sidebar_position":"left","newline_trigger":"shift-enter","card_position":"append"}`
+	req := httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	var s AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&s); err != nil {
+		t.Fatal(err)
+	}
+	if s.ColumnWidth != 280 {
+		t.Errorf("expected column_width=280 for out-of-range value, got %d", s.ColumnWidth)
+	}
+}

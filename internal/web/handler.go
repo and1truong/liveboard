@@ -73,7 +73,7 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 // This lets templates access model fields directly (e.g. {{.Title}}, {{.Board}}).
 func withAssignsRenderer(t *template.Template) live.HandlerConfig {
 	return func(h *live.Handler) error {
-		h.RenderHandler = func(ctx context.Context, rc *live.RenderContext) (io.Reader, error) {
+		h.RenderHandler = func(_ context.Context, rc *live.RenderContext) (io.Reader, error) {
 			var buf bytes.Buffer
 			if err := t.Execute(&buf, rc.Assigns); err != nil {
 				return nil, err

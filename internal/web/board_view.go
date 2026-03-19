@@ -247,7 +247,7 @@ func (h *Handler) handleReorderCard(_ context.Context, _ *live.Socket, p live.Pa
 	}
 
 	beforeIdx := -1
-	if s, ok := p["before_idx"].(string); ok && s != "" {
+	if s, okIdx := p["before_idx"].(string); okIdx && s != "" {
 		beforeIdx, _ = strconv.Atoi(s)
 	}
 

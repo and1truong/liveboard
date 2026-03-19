@@ -81,7 +81,7 @@ func (h *Handler) SettingsHandler() http.Handler {
 		))
 	}
 
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		boards, _ := h.ws.ListBoards()
 		model := SettingsModel{
 			Title:     "Settings — LiveBoard",
@@ -99,6 +99,31 @@ func (h *Handler) SettingsHandler() http.Handler {
 	})
 }
 
+// sanitizeSettings clamps and normalizes settings values to valid ranges.
+func sanitizeSettings(s *AppSettings) {
+	if s.ColumnWidth < 180 || s.ColumnWidth > 600 {
+		s.ColumnWidth = 280
+	}
+	if s.Theme != "dark" && s.Theme != "light" {
+		s.Theme = "system"
+	}
+	if !validColorThemes[s.ColorTheme] {
+		s.ColorTheme = "default"
+	}
+	if s.SidebarPosition != "left" && s.SidebarPosition != "right" {
+		s.SidebarPosition = "left"
+	}
+	if len(s.DefaultColumns) == 0 {
+		s.DefaultColumns = defaultSettings().DefaultColumns
+	}
+	if s.NewLineTrigger != "enter" && s.NewLineTrigger != "shift-enter" {
+		s.NewLineTrigger = "shift-enter"
+	}
+	if s.CardPosition != "prepend" && s.CardPosition != "append" {
+		s.CardPosition = "append"
+	}
+}
+
 // SettingsAPIHandler returns an http.Handler for GET/POST /api/settings.
 func (h *Handler) SettingsAPIHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -106,39 +131,19 @@ func (h *Handler) SettingsAPIHandler() http.Handler {
 		switch r.Method {
 		case http.MethodGet:
 			s := h.loadSettings()
-			json.NewEncoder(w).Encode(s)
+			_ = json.NewEncoder(w).Encode(s)
 		case http.MethodPost:
 			var s AppSettings
 			if err := json.NewDecoder(r.Body).Decode(&s); err != nil {
 				http.Error(w, `{"error":"invalid json"}`, http.StatusBadRequest)
 				return
 			}
-			if s.ColumnWidth < 180 || s.ColumnWidth > 600 {
-				s.ColumnWidth = 280
-			}
-			if s.Theme != "dark" && s.Theme != "light" {
-				s.Theme = "system"
-			}
-			if !validColorThemes[s.ColorTheme] {
-				s.ColorTheme = "default"
-			}
-			if s.SidebarPosition != "left" && s.SidebarPosition != "right" {
-				s.SidebarPosition = "left"
-			}
-			if len(s.DefaultColumns) == 0 {
-				s.DefaultColumns = defaultSettings().DefaultColumns
-			}
-			if s.NewLineTrigger != "enter" && s.NewLineTrigger != "shift-enter" {
-				s.NewLineTrigger = "shift-enter"
-			}
-			if s.CardPosition != "prepend" && s.CardPosition != "append" {
-				s.CardPosition = "append"
-			}
+			sanitizeSettings(&s)
 			if err := h.saveSettings(s); err != nil {
 				http.Error(w, `{"error":"save failed"}`, http.StatusInternalServerError)
 				return
 			}
-			json.NewEncoder(w).Encode(s)
+			_ = json.NewEncoder(w).Encode(s)
 		default:
 			http.Error(w, `{"error":"method not allowed"}`, http.StatusMethodNotAllowed)
 		}
