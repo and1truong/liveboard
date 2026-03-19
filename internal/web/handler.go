@@ -113,6 +113,7 @@ func (h *Handler) BoardViewHandler() http.Handler {
 	boardViewHandler.HandleEvent("delete-card", h.handleDeleteCard)
 	boardViewHandler.HandleEvent("toggle-complete", h.handleToggleComplete)
 	boardViewHandler.HandleEvent("create-column", h.handleCreateColumn)
+	boardViewHandler.HandleEvent("edit-card", h.handleEditCard)
 	boardViewHandler.HandleEvent("show-add-card", h.handleShowAddCard)
 	boardViewHandler.HandleEvent("cancel-add-card", h.handleCancelAddCard)
 	boardViewHandler.HandleSelf("board_update", h.handleBoardUpdate)
