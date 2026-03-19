@@ -171,10 +171,11 @@ func TestCardCRUD(t *testing.T) {
 	ts := setupTest(t)
 	defer ts.Close()
 
+	// Create board with default columns: "not now", "maybe?", "done"
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "tasks"})
 
-	// Add card
-	resp := doJSON(t, ts, "POST", "/boards/tasks/columns/Backlog/cards", map[string]string{"title": "Fix bug"})
+	// Add card to first column ("not now")
+	resp := doJSON(t, ts, "POST", "/boards/tasks/columns/not now/cards", map[string]string{"title": "Fix bug"})
 	if resp.StatusCode != 201 {
 		t.Fatalf("expected 201, got %d", resp.StatusCode)
 	}
@@ -184,32 +185,31 @@ func TestCardCRUD(t *testing.T) {
 	if card.Title != "Fix bug" {
 		t.Fatalf("expected title 'Fix bug', got %q", card.Title)
 	}
-	if card.ID == "" {
-		t.Fatal("expected card ID to be set")
-	}
 
-	// Get card
-	resp = doJSON(t, ts, "GET", "/cards/"+card.ID, nil)
+	// Get card via index-based route (col=0, card=0)
+	resp = doJSON(t, ts, "GET", "/boards/tasks/cols/0/cards/0", nil)
 	if resp.StatusCode != 200 {
 		t.Fatalf("expected 200, got %d", resp.StatusCode)
 	}
 
 	var cr cardResponse
 	decodeResp(t, resp, &cr)
-	if cr.Column != "Backlog" {
-		t.Fatalf("expected column 'Backlog', got %q", cr.Column)
+	if cr.Column != "not now" {
+		t.Fatalf("expected column 'not now', got %q", cr.Column)
 	}
 
 	// Delete card
-	resp = doJSON(t, ts, "DELETE", "/cards/"+card.ID, nil)
+	resp = doJSON(t, ts, "DELETE", "/boards/tasks/cols/0/cards/0", nil)
 	if resp.StatusCode != 204 {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
 
-	// Verify deleted
-	resp = doJSON(t, ts, "GET", "/cards/"+card.ID, nil)
-	if resp.StatusCode != 404 {
-		t.Fatalf("expected 404, got %d", resp.StatusCode)
+	// Verify deleted — board should have empty first column
+	resp = doJSON(t, ts, "GET", "/boards/tasks", nil)
+	var board models.Board
+	decodeResp(t, resp, &board)
+	if len(board.Columns[0].Cards) != 0 {
+		t.Fatalf("expected 0 cards after delete, got %d", len(board.Columns[0].Cards))
 	}
 }
 
@@ -219,20 +219,21 @@ func TestMoveCard(t *testing.T) {
 
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "flow"})
 
-	resp := doJSON(t, ts, "POST", "/boards/flow/columns/Backlog/cards", map[string]string{"title": "Task A"})
-	var card models.Card
-	decodeResp(t, resp, &card)
+	// Add card to "not now" (col 0)
+	doJSON(t, ts, "POST", "/boards/flow/columns/not now/cards", map[string]string{"title": "Task A"})
 
-	resp = doJSON(t, ts, "POST", "/cards/"+card.ID+"/move", map[string]string{"column": "Done"})
+	// Move card from col 0, card 0 to "done"
+	resp := doJSON(t, ts, "POST", "/boards/flow/cols/0/cards/0/move", map[string]string{"column": "done"})
 	if resp.StatusCode != 204 {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
 
-	resp = doJSON(t, ts, "GET", "/cards/"+card.ID, nil)
+	// Verify it's in "done" (col 2, card 0)
+	resp = doJSON(t, ts, "GET", "/boards/flow/cols/2/cards/0", nil)
 	var cr cardResponse
 	decodeResp(t, resp, &cr)
-	if cr.Column != "Done" {
-		t.Fatalf("expected column 'Done', got %q", cr.Column)
+	if cr.Column != "done" {
+		t.Fatalf("expected column 'done', got %q", cr.Column)
 	}
 }
 
@@ -240,18 +241,16 @@ func TestCompleteCard(t *testing.T) {
 	ts := setupTest(t)
 	defer ts.Close()
 
-	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "done"})
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "comp"})
 
-	resp := doJSON(t, ts, "POST", "/boards/done/columns/Backlog/cards", map[string]string{"title": "Finish"})
-	var card models.Card
-	decodeResp(t, resp, &card)
+	doJSON(t, ts, "POST", "/boards/comp/columns/not now/cards", map[string]string{"title": "Finish"})
 
-	resp = doJSON(t, ts, "POST", "/cards/"+card.ID+"/complete", nil)
+	resp := doJSON(t, ts, "POST", "/boards/comp/cols/0/cards/0/complete", nil)
 	if resp.StatusCode != 204 {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
 
-	resp = doJSON(t, ts, "GET", "/cards/"+card.ID, nil)
+	resp = doJSON(t, ts, "GET", "/boards/comp/cols/0/cards/0", nil)
 	var cr cardResponse
 	decodeResp(t, resp, &cr)
 	if !cr.Completed {
@@ -265,16 +264,14 @@ func TestTagCard(t *testing.T) {
 
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "tags"})
 
-	resp := doJSON(t, ts, "POST", "/boards/tags/columns/Backlog/cards", map[string]string{"title": "Label me"})
-	var card models.Card
-	decodeResp(t, resp, &card)
+	doJSON(t, ts, "POST", "/boards/tags/columns/not now/cards", map[string]string{"title": "Label me"})
 
-	resp = doJSON(t, ts, "POST", "/cards/"+card.ID+"/tag", map[string]any{"tags": []string{"urgent", "bug"}})
+	resp := doJSON(t, ts, "POST", "/boards/tags/cols/0/cards/0/tag", map[string]any{"tags": []string{"urgent", "bug"}})
 	if resp.StatusCode != 204 {
 		t.Fatalf("expected 204, got %d", resp.StatusCode)
 	}
 
-	resp = doJSON(t, ts, "GET", "/cards/"+card.ID, nil)
+	resp = doJSON(t, ts, "GET", "/boards/tags/cols/0/cards/0", nil)
 	var cr cardResponse
 	decodeResp(t, resp, &cr)
 	if len(cr.Tags) != 2 {
@@ -289,11 +286,6 @@ func TestNotFoundErrors(t *testing.T) {
 	resp := doJSON(t, ts, "GET", "/boards/nonexistent", nil)
 	if resp.StatusCode != 404 {
 		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
-	}
-
-	resp = doJSON(t, ts, "GET", "/cards/00000000-0000-0000-0000-000000000000", nil)
-	if resp.StatusCode != 404 {
-		t.Fatalf("expected 404 for missing card, got %d", resp.StatusCode)
 	}
 }
 

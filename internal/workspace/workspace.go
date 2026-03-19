@@ -104,25 +104,6 @@ func (w *Workspace) BoardPath(name string) string {
 	return filepath.Join(w.Dir, name+".md")
 }
 
-// FindBoardByCardID searches all boards for a card with the given ID.
-// Returns the board and file path.
-func (w *Workspace) FindBoardByCardID(cardID string) (*models.Board, error) {
-	boards, err := w.ListBoards()
-	if err != nil {
-		return nil, err
-	}
-	for _, b := range boards {
-		for _, col := range b.Columns {
-			for _, card := range col.Cards {
-				if card.ID == cardID {
-					return &b, nil
-				}
-			}
-		}
-	}
-	return nil, fmt.Errorf("card %s not found in any board", cardID)
-}
-
 func (w *Workspace) getDefaultColumns() []string {
 	// Try settings.json (UI-configurable).
 	settingsPath := filepath.Join(w.Dir, "settings.json")

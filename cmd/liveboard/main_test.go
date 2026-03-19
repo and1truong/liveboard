@@ -18,7 +18,6 @@ name: CLI Test Board
 ## Backlog
 
 - [ ] Task one
-<!-- liveboard:id=cli-card-001 -->
 
 ## In Progress
 
@@ -60,36 +59,6 @@ func suppressStdout(t *testing.T) {
 		_ = devNull.Close()
 		os.Stdout = old
 	})
-}
-
-// --- Helper function tests ---
-
-func TestShortID_LongID(t *testing.T) {
-	got := shortID("abcdefghijklmnop")
-	if got != "abcdefgh" {
-		t.Errorf("shortID = %q, want %q", got, "abcdefgh")
-	}
-}
-
-func TestShortID_ShortID(t *testing.T) {
-	got := shortID("abc")
-	if got != "abc" {
-		t.Errorf("shortID = %q, want %q", got, "abc")
-	}
-}
-
-func TestShortID_ExactlyEight(t *testing.T) {
-	got := shortID("12345678")
-	if got != "12345678" {
-		t.Errorf("shortID = %q, want %q", got, "12345678")
-	}
-}
-
-func TestShortID_Empty(t *testing.T) {
-	got := shortID("")
-	if got != "" {
-		t.Errorf("shortID(%q) = %q, want %q", "", got, "")
-	}
 }
 
 func TestColumnNames(t *testing.T) {
@@ -240,8 +209,9 @@ func TestCardMoveCmd(t *testing.T) {
 	dir := setupCLI(t)
 	createCLIBoard(t, dir, "myboard")
 
+	// Move card at col=0, card=0 to "In Progress"
 	cmd := cardMoveCmd()
-	if err := cmd.RunE(cmd, []string{"cli-card-001", "In Progress"}); err != nil {
+	if err := cmd.RunE(cmd, []string{"myboard", "0", "0", "In Progress"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -255,13 +225,14 @@ func TestCardMoveCmd(t *testing.T) {
 	}
 }
 
-func TestCardMoveCmd_NotFoundReturnsError(t *testing.T) {
+func TestCardMoveCmd_InvalidIndexReturnsError(t *testing.T) {
 	suppressStdout(t)
-	setupCLI(t)
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "myboard")
 
 	cmd := cardMoveCmd()
-	if err := cmd.RunE(cmd, []string{"nonexistent-id", "Done"}); err == nil {
-		t.Error("expected error for missing card ID")
+	if err := cmd.RunE(cmd, []string{"myboard", "99", "0", "Done"}); err == nil {
+		t.Error("expected error for out-of-range column index")
 	}
 }
 
@@ -271,7 +242,7 @@ func TestCardCompleteCmd(t *testing.T) {
 	createCLIBoard(t, dir, "myboard")
 
 	cmd := cardCompleteCmd()
-	if err := cmd.RunE(cmd, []string{"cli-card-001"}); err != nil {
+	if err := cmd.RunE(cmd, []string{"myboard", "0", "0"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -287,7 +258,7 @@ func TestCardTagCmd(t *testing.T) {
 	createCLIBoard(t, dir, "myboard")
 
 	cmd := cardTagCmd()
-	if err := cmd.RunE(cmd, []string{"cli-card-001", "urgent", "backend"}); err != nil {
+	if err := cmd.RunE(cmd, []string{"myboard", "0", "0", "urgent", "backend"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -303,13 +274,16 @@ func TestCardDeleteCmd(t *testing.T) {
 	createCLIBoard(t, dir, "myboard")
 
 	cmd := cardDeleteCmd()
-	if err := cmd.RunE(cmd, []string{"cli-card-001"}); err != nil {
+	if err := cmd.RunE(cmd, []string{"myboard", "0", "0"}); err != nil {
 		t.Fatal(err)
 	}
 
-	data, _ := os.ReadFile(filepath.Join(dir, "myboard.md"))
-	if strings.Contains(string(data), "cli-card-001") {
-		t.Error("deleted card still present in board file")
+	b, err := ws.LoadBoard("myboard")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(b.Columns[0].Cards) != 0 {
+		t.Error("deleted card still present")
 	}
 }
 
@@ -319,7 +293,7 @@ func TestCardShowCmd(t *testing.T) {
 	createCLIBoard(t, dir, "myboard")
 
 	cmd := cardShowCmd()
-	if err := cmd.RunE(cmd, []string{"cli-card-001"}); err != nil {
+	if err := cmd.RunE(cmd, []string{"myboard", "0", "0"}); err != nil {
 		t.Fatal(err)
 	}
 }

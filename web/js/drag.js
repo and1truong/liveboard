@@ -1,7 +1,7 @@
 // Drag-and-drop for board cards: between columns and within-column reordering.
 // Works with jfyne/live by clicking hidden trigger buttons wired by live.js.
 (function () {
-  var draggingCardId = null;
+  var draggingCard = null; // DOM element being dragged
   var draggingSourceColumn = null;
 
   // === CONTEXT MENU ===
@@ -56,7 +56,8 @@
     var titleEl = card.querySelector(".card-header h4");
     var bodyEl = card.querySelector(".card-body");
     var tagsEl = card.querySelectorAll(".card-tags .tag");
-    var cardId = card.dataset.cardId;
+    var colIdx = card.dataset.colIdx;
+    var cardIdx = card.dataset.cardIdx;
     var slug = window.location.pathname.replace(/^\/board\//, "");
 
     var currentTitle = titleEl ? titleEl.textContent.trim() : "";
@@ -102,7 +103,8 @@
     saveBtn.addEventListener("click", function () {
       if (window.Live) {
         window.Live.send("edit-card", {
-          card_id: cardId,
+          col_idx: colIdx,
+          card_idx: cardIdx,
           title: titleInput.value.trim(),
           body: bodyInput.value.trim(),
           tags: tagsInput.value.trim(),
@@ -602,7 +604,7 @@
 
   // Re-attach context menu listeners on cards
   function attachContextMenu() {
-    document.querySelectorAll(".card[data-card-id]").forEach(function (card) {
+    document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
       if (card.dataset.ctxWired) return;
       card.dataset.ctxWired = "1";
       card.addEventListener("contextmenu", function (e) {
@@ -637,9 +639,9 @@
 
   // Find which card in the zone the cursor is above (for insertion point).
   // Returns the card element to insert before, or null to append at end.
-  function getInsertionTarget(zone, clientY, excludeCardId) {
-    var cards = Array.from(zone.querySelectorAll(".card[data-card-id]")).filter(
-      function (c) { return c.dataset.cardId !== excludeCardId; }
+  function getInsertionTarget(zone, clientY, excludeEl) {
+    var cards = Array.from(zone.querySelectorAll(".card[data-card-idx]")).filter(
+      function (c) { return c !== excludeEl; }
     );
     for (var i = 0; i < cards.length; i++) {
       var rect = cards[i].getBoundingClientRect();
@@ -667,7 +669,8 @@
     hideCardModal();
     hideQuickEdit();
 
-    var cardId = card.dataset.cardId;
+    var colIdx = card.dataset.colIdx;
+    var cardIdx = card.dataset.cardIdx;
     var slug = window.location.pathname.replace(/^\/board\//, "");
     var title = card.dataset.cardTitle || "";
     var body = card.dataset.cardBody || "";
@@ -777,7 +780,8 @@
     saveBtn.addEventListener("click", function () {
       if (window.Live) {
         window.Live.send("edit-card", {
-          card_id: cardId,
+          col_idx: colIdx,
+          card_idx: cardIdx,
           title: titleInput.value.trim(),
           body: bodyInput.value.trim(),
           tags: tagsInput.value.trim(),
@@ -813,7 +817,7 @@
         var btn = card.querySelector('[live-click="toggle-complete"]');
         if (btn) btn.click();
         else if (window.Live) {
-          window.Live.send("toggle-complete", { card_id: cardId, name: slug });
+          window.Live.send("toggle-complete", { col_idx: colIdx, card_idx: cardIdx, name: slug });
         }
       });
       sidebar.appendChild(toggleBtn);
@@ -902,7 +906,7 @@
 
   // Attach card click for modal (distinguish from drag)
   function attachCardClick() {
-    document.querySelectorAll(".card[data-card-id]").forEach(function (card) {
+    document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
       if (card.dataset.modalWired) return;
       card.dataset.modalWired = "1";
 
@@ -953,12 +957,12 @@
 
       card.addEventListener("dragstart", function (e) {
         isDragging = true;
-        draggingCardId = card.dataset.cardId;
+        draggingCard = card;
         var zone = card.closest(".cards[data-column]");
         draggingSourceColumn = zone ? zone.dataset.column : null;
         card.classList.add("dragging");
         e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", card.dataset.cardId);
+        e.dataTransfer.setData("text/plain", card.dataset.colIdx + ":" + card.dataset.cardIdx);
       });
 
       card.addEventListener("dragend", function () {
@@ -967,7 +971,7 @@
         document.querySelectorAll(".cards.drag-over").forEach(function (el) {
           el.classList.remove("drag-over");
         });
-        draggingCardId = null;
+        draggingCard = null;
         draggingSourceColumn = null;
       });
     });
@@ -986,7 +990,7 @@
         if (draggingSourceColumn === targetColumn) {
           // Within-column: show insertion indicator
           zone.classList.remove("drag-over");
-          var beforeCard = getInsertionTarget(zone, e.clientY, draggingCardId);
+          var beforeCard = getInsertionTarget(zone, e.clientY, draggingCard);
           showDropIndicator(zone, beforeCard);
         } else {
           // Cross-column: highlight the whole zone
@@ -1006,14 +1010,19 @@
         e.preventDefault();
         zone.classList.remove("drag-over");
 
-        var cardId = e.dataTransfer.getData("text/plain");
+        var data = e.dataTransfer.getData("text/plain");
         var targetColumn = zone.dataset.column;
-        if (!cardId || !targetColumn) {
+        if (!data || !targetColumn) {
           clearDropIndicators();
           return;
         }
 
-        var card = document.querySelector('.card[data-card-id="' + cardId + '"]');
+        var parts = data.split(":");
+        var srcColIdx = parts[0];
+        var srcCardIdx = parts[1];
+
+        // Find the dragged card element
+        var card = document.querySelector('.card[data-col-idx="' + srcColIdx + '"][data-card-idx="' + srcCardIdx + '"]');
         if (!card) {
           clearDropIndicators();
           return;
@@ -1037,7 +1046,7 @@
           }
           clearDropIndicators();
 
-          var beforeCardId = beforeCard ? beforeCard.dataset.cardId : "";
+          var beforeIdx = beforeCard ? beforeCard.dataset.cardIdx : "-1";
 
           // Skip if card didn't actually move
           var prevSibling = card.previousElementSibling;
@@ -1050,7 +1059,7 @@
           }
           if (
             (beforeCard === null && nextSibling === null) ||
-            (beforeCard && nextSibling && beforeCard.dataset.cardId === nextSibling.dataset.cardId)
+            (beforeCard && nextSibling && beforeCard.dataset.cardIdx === nextSibling.dataset.cardIdx)
           ) {
             return; // no-op
           }
@@ -1058,14 +1067,16 @@
           var slug = window.location.pathname.replace(/^\/board\//, "");
           if (window.Live) {
             window.Live.send("reorder-card", {
-              card_id: cardId,
-              before_card_id: beforeCardId,
+              col_idx: srcColIdx,
+              card_idx: srcCardIdx,
+              before_idx: beforeIdx,
               column: targetColumn,
               name: slug,
             });
           }
         } else {
           // Cross-column move
+          clearDropIndicators();
           var btn = card.querySelector('.move-trigger[data-target="' + targetColumn + '"]');
           if (btn) btn.click();
         }

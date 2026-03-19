@@ -6,8 +6,6 @@ import (
 	"os"
 	"strings"
 
-	"github.com/google/uuid"
-
 	"github.com/and1truong/liveboard/internal/parser"
 	"github.com/and1truong/liveboard/internal/writer"
 	"github.com/and1truong/liveboard/pkg/models"
@@ -35,109 +33,125 @@ func (e *Engine) LoadBoard(path string) (*models.Board, error) {
 	return board, nil
 }
 
-// AddCard adds a new card to the specified column. Returns the new card with assigned ID.
+// renderAndWrite is the common save path: render board to markdown and write to disk.
+func renderAndWrite(board *models.Board, path string) error {
+	content, err := writer.Render(board)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(path, []byte(content), 0644)
+}
+
+// AddCard adds a new card to the specified column.
 func (e *Engine) AddCard(boardPath, columnName, title string) (*models.Card, error) {
-	content, err := os.ReadFile(boardPath)
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return nil, err
 	}
 
-	card := &models.Card{
-		ID:    generateID(),
-		Title: title,
-	}
+	card := &models.Card{Title: title}
 
-	newContent := writer.AddCard(string(content), columnName, card)
-	if err := os.WriteFile(boardPath, []byte(newContent), 0644); err != nil {
-		return nil, err
+	for i := range board.Columns {
+		if board.Columns[i].Name == columnName {
+			board.Columns[i].Cards = append(board.Columns[i].Cards, *card)
+			if err := renderAndWrite(board, boardPath); err != nil {
+				return nil, err
+			}
+			return card, nil
+		}
 	}
-	return card, nil
+	return nil, fmt.Errorf("column %q not found", columnName)
 }
 
 // MoveCard moves a card to a different column.
-func (e *Engine) MoveCard(boardPath, cardID, targetColumn string) error {
-	content, err := os.ReadFile(boardPath)
+func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn string) error {
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
 
-	board, err := parser.Parse(string(content))
-	if err != nil {
+	if err := validateIndices(board, colIdx, cardIdx); err != nil {
 		return err
 	}
 
-	card := findCard(board, cardID)
-	if card == nil {
-		return fmt.Errorf("card %s not found", cardID)
-	}
+	card := board.Columns[colIdx].Cards[cardIdx]
+	board.Columns[colIdx].Cards = removeCardAt(board.Columns[colIdx].Cards, cardIdx)
 
-	newContent := writer.MoveCard(string(content), cardID, targetColumn, card)
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	// Find target column and append.
+	for i := range board.Columns {
+		if board.Columns[i].Name == targetColumn {
+			board.Columns[i].Cards = append(board.Columns[i].Cards, card)
+			return renderAndWrite(board, boardPath)
+		}
+	}
+	return fmt.Errorf("target column %q not found", targetColumn)
 }
 
 // ReorderCard moves a card to a specific position within a column.
-// If beforeCardID is empty, the card is appended to the end of the column.
-func (e *Engine) ReorderCard(boardPath, cardID, column, beforeCardID string) error {
-	content, err := os.ReadFile(boardPath)
+// beforeIdx is the index to insert before; -1 means append to end.
+func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
 
-	board, err := parser.Parse(string(content))
-	if err != nil {
+	if err := validateIndices(board, colIdx, cardIdx); err != nil {
 		return err
 	}
 
-	card := findCard(board, cardID)
-	if card == nil {
-		return fmt.Errorf("card %s not found", cardID)
+	card := board.Columns[colIdx].Cards[cardIdx]
+	board.Columns[colIdx].Cards = removeCardAt(board.Columns[colIdx].Cards, cardIdx)
+
+	// Find target column.
+	targetIdx := -1
+	for i := range board.Columns {
+		if board.Columns[i].Name == targetColumn {
+			targetIdx = i
+			break
+		}
+	}
+	if targetIdx < 0 {
+		return fmt.Errorf("target column %q not found", targetColumn)
 	}
 
-	newContent := writer.RemoveCard(string(content), cardID)
-	newContent = writer.InsertCardBefore(newContent, card, beforeCardID, column)
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	cards := board.Columns[targetIdx].Cards
+	if beforeIdx < 0 || beforeIdx >= len(cards) {
+		cards = append(cards, card)
+	} else {
+		cards = append(cards[:beforeIdx], append([]models.Card{card}, cards[beforeIdx:]...)...)
+	}
+	board.Columns[targetIdx].Cards = cards
+
+	return renderAndWrite(board, boardPath)
 }
 
-// CompleteCard marks a card as completed.
-func (e *Engine) CompleteCard(boardPath, cardID string) error {
-	content, err := os.ReadFile(boardPath)
+// CompleteCard toggles the completed state of a card.
+func (e *Engine) CompleteCard(boardPath string, colIdx, cardIdx int) error {
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
 
-	board, err := parser.Parse(string(content))
-	if err != nil {
+	if err := validateIndices(board, colIdx, cardIdx); err != nil {
 		return err
 	}
 
-	card := findCard(board, cardID)
-	if card == nil {
-		return fmt.Errorf("card %s not found", cardID)
-	}
-
-	card.Completed = !card.Completed
-	newContent := writer.UpdateCard(string(content), cardID, card)
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	board.Columns[colIdx].Cards[cardIdx].Completed = !board.Columns[colIdx].Cards[cardIdx].Completed
+	return renderAndWrite(board, boardPath)
 }
 
 // TagCard adds tags to a card.
-func (e *Engine) TagCard(boardPath, cardID string, tags []string) error {
-	content, err := os.ReadFile(boardPath)
+func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) error {
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
 
-	board, err := parser.Parse(string(content))
-	if err != nil {
+	if err := validateIndices(board, colIdx, cardIdx); err != nil {
 		return err
 	}
 
-	card := findCard(board, cardID)
-	if card == nil {
-		return fmt.Errorf("card %s not found", cardID)
-	}
-
-	// Merge tags (no duplicates).
+	card := &board.Columns[colIdx].Cards[cardIdx]
 	existing := make(map[string]bool)
 	for _, t := range card.Tags {
 		existing[t] = true
@@ -148,62 +162,58 @@ func (e *Engine) TagCard(boardPath, cardID string, tags []string) error {
 		}
 	}
 
-	newContent := writer.UpdateCard(string(content), cardID, card)
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	return renderAndWrite(board, boardPath)
 }
 
 // EditCard updates a card's title, body, and tags in-place.
-func (e *Engine) EditCard(boardPath, cardID, title, body string, tags []string) error {
-	content, err := os.ReadFile(boardPath)
+func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string) error {
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
 
-	board, err := parser.Parse(string(content))
-	if err != nil {
+	if err := validateIndices(board, colIdx, cardIdx); err != nil {
 		return err
 	}
 
-	card := findCard(board, cardID)
-	if card == nil {
-		return fmt.Errorf("card %s not found", cardID)
-	}
-
+	card := &board.Columns[colIdx].Cards[cardIdx]
 	if title != "" {
 		card.Title = title
 	}
 	card.Body = body
 	card.Tags = tags
 
-	newContent := writer.UpdateCard(string(content), cardID, card)
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	return renderAndWrite(board, boardPath)
 }
 
-// DeleteCard removes a card by ID.
-func (e *Engine) DeleteCard(boardPath, cardID string) error {
-	content, err := os.ReadFile(boardPath)
+// DeleteCard removes a card by column and card index.
+func (e *Engine) DeleteCard(boardPath string, colIdx, cardIdx int) error {
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
 
-	newContent := writer.RemoveCard(string(content), cardID)
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	if err := validateIndices(board, colIdx, cardIdx); err != nil {
+		return err
+	}
+
+	board.Columns[colIdx].Cards = removeCardAt(board.Columns[colIdx].Cards, cardIdx)
+	return renderAndWrite(board, boardPath)
 }
 
-// ShowCard returns a card by ID.
-func (e *Engine) ShowCard(boardPath, cardID string) (*models.Card, string, error) {
+// ShowCard returns a card by column and card index.
+func (e *Engine) ShowCard(boardPath string, colIdx, cardIdx int) (*models.Card, string, error) {
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return nil, "", err
 	}
-	for _, col := range board.Columns {
-		for _, card := range col.Cards {
-			if card.ID == cardID {
-				return &card, col.Name, nil
-			}
-		}
+
+	if err := validateIndices(board, colIdx, cardIdx); err != nil {
+		return nil, "", err
 	}
-	return nil, "", fmt.Errorf("card %s not found", cardID)
+
+	card := board.Columns[colIdx].Cards[cardIdx]
+	return &card, board.Columns[colIdx].Name, nil
 }
 
 // AddColumn adds a new column to the board.
@@ -323,11 +333,7 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 	for i, col := range board.Columns {
 		board.ListCollapse[i] = collapseByName[col.Name]
 	}
-	newContent, err := writer.Render(board)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	return renderAndWrite(board, boardPath)
 }
 
 // ToggleColumnCollapse toggles the collapsed state of a column by index.
@@ -348,11 +354,7 @@ func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
 
 	board.ListCollapse[colIndex] = !board.ListCollapse[colIndex]
 
-	newContent, err := writer.Render(board)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	return renderAndWrite(board, boardPath)
 }
 
 // UpdateBoardMeta updates a board's name and description.
@@ -365,29 +367,19 @@ func (e *Engine) UpdateBoardMeta(boardPath, name, description string) error {
 		board.Name = name
 	}
 	board.Description = description
-	newContent, err := writer.Render(board)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(boardPath, []byte(newContent), 0644)
+	return renderAndWrite(board, boardPath)
 }
 
-func findCard(board *models.Board, id string) *models.Card {
-	for _, col := range board.Columns {
-		for i := range col.Cards {
-			if col.Cards[i].ID == id {
-				return &col.Cards[i]
-			}
-		}
+func validateIndices(board *models.Board, colIdx, cardIdx int) error {
+	if colIdx < 0 || colIdx >= len(board.Columns) {
+		return fmt.Errorf("column index %d out of range", colIdx)
+	}
+	if cardIdx < 0 || cardIdx >= len(board.Columns[colIdx].Cards) {
+		return fmt.Errorf("card index %d out of range in column %q", cardIdx, board.Columns[colIdx].Name)
 	}
 	return nil
 }
 
-func generateID() string {
-	id, err := uuid.NewV7()
-	if err != nil {
-		// Fallback to v4 if v7 fails.
-		return uuid.New().String()
-	}
-	return id.String()
+func removeCardAt(cards []models.Card, idx int) []models.Card {
+	return append(cards[:idx], cards[idx+1:]...)
 }

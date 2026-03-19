@@ -13,7 +13,6 @@ name: My Board
 ## Backlog
 
 - [ ] Task one
-<!-- liveboard:id=card-001 -->
 
 ## Done
 `
@@ -94,8 +93,6 @@ func TestListBoards_SkipsReadme(t *testing.T) {
 
 func TestListBoards_SkipsDirectories(t *testing.T) {
 	ws := setupWorkspace(t)
-	// Create a directory with a .md-looking name won't happen in practice,
-	// but a plain directory should be skipped.
 	if err := os.Mkdir(filepath.Join(ws.Dir, "subdir"), 0755); err != nil {
 		t.Fatal(err)
 	}
@@ -184,56 +181,6 @@ func TestLoadBoard(t *testing.T) {
 	}
 	if b.Name != "My Board" {
 		t.Errorf("name = %q, want %q", b.Name, "My Board")
-	}
-}
-
-func TestFindBoardByCardID(t *testing.T) {
-	ws := setupWorkspace(t)
-	createBoardFile(t, ws.Dir, "roadmap")
-
-	b, err := ws.FindBoardByCardID("card-001")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if b.Name != "My Board" {
-		t.Errorf("board name = %q, want %q", b.Name, "My Board")
-	}
-}
-
-func TestFindBoardByCardID_SearchesAllBoards(t *testing.T) {
-	ws := setupWorkspace(t)
-	createBoardFile(t, ws.Dir, "board-a")
-
-	// board-b has a different card ID embedded in the content.
-	boardBContent := `---
-name: Board B
----
-
-## Backlog
-
-- [ ] Another task
-<!-- liveboard:id=card-002 -->
-`
-	if err := os.WriteFile(filepath.Join(ws.Dir, "board-b.md"), []byte(boardBContent), 0644); err != nil {
-		t.Fatal(err)
-	}
-
-	b, err := ws.FindBoardByCardID("card-002")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if b.Name != "Board B" {
-		t.Errorf("board name = %q, want %q", b.Name, "Board B")
-	}
-}
-
-func TestFindBoardByCardID_NotFound(t *testing.T) {
-	ws := setupWorkspace(t)
-	createBoardFile(t, ws.Dir, "roadmap")
-
-	_, err := ws.FindBoardByCardID("nonexistent-id")
-	if err == nil {
-		t.Error("expected error for missing card ID")
 	}
 }
 

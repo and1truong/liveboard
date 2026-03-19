@@ -22,7 +22,6 @@ type Column struct {
 
 // Card represents a task item (list item in Markdown).
 type Card struct {
-	ID        string            `json:"id"`
 	Title     string            `json:"title"`
 	Completed bool              `json:"completed"`
 	Tags      []string          `json:"tags,omitempty"`

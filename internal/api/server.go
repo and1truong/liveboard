@@ -83,14 +83,15 @@ func (s *Server) buildRouter() chi.Router {
 		})
 	})
 
-	r.Route("/cards/{id}", func(r chi.Router) {
+	// Card operations: /boards/{board}/columns/{column}/cards is for adding,
+	// individual card ops use index-based paths:
+	r.Route("/boards/{board}/cols/{colIdx}/cards/{cardIdx}", func(r chi.Router) {
 		r.Use(jsonContentType)
 		r.Get("/", s.getCard)
 		r.Delete("/", s.deleteCard)
 		r.Post("/move", s.moveCard)
 		r.Post("/complete", s.completeCard)
 		r.Post("/tag", s.tagCard)
-		r.Patch("/", s.stubHandler)
 	})
 
 	r.Get("/search", s.stubHandler)

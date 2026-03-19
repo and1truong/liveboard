@@ -4,7 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
+	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
@@ -173,7 +173,7 @@ func cardAddCmd() *cobra.Command {
 			if err != nil {
 				return err
 			}
-			fmt.Printf("Added card %q → %s [%s]\n", title, column, card.ID)
+			fmt.Printf("Added card %q → %s\n", card.Title, column)
 			gitCommit(boardName+".md", fmt.Sprintf("card: add %q → %s", title, column))
 			return nil
 		},
@@ -184,21 +184,26 @@ func cardAddCmd() *cobra.Command {
 
 func cardMoveCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "move <id> <column>",
+		Use:   "move <board> <col_idx> <card_idx> <column>",
 		Short: "Move a card to another column",
-		Args:  cobra.ExactArgs(2),
+		Args:  cobra.ExactArgs(4),
 		RunE: func(_ *cobra.Command, args []string) error {
-			cardID, targetCol := args[0], args[1]
-			b, err := ws.FindBoardByCardID(cardID)
+			boardName := args[0]
+			colIdx, err := strconv.Atoi(args[1])
 			if err != nil {
+				return fmt.Errorf("invalid col_idx: %w", err)
+			}
+			cardIdx, err := strconv.Atoi(args[2])
+			if err != nil {
+				return fmt.Errorf("invalid card_idx: %w", err)
+			}
+			targetCol := args[3]
+			path := ws.BoardPath(boardName)
+			if err := eng.MoveCard(path, colIdx, cardIdx, targetCol); err != nil {
 				return err
 			}
-			if err := eng.MoveCard(b.FilePath, cardID, targetCol); err != nil {
-				return err
-			}
-			fmt.Printf("Moved card %s → %s\n", shortID(cardID), targetCol)
-			relPath := filepath.Base(b.FilePath)
-			gitCommit(relPath, fmt.Sprintf("card: move %s → %s", shortID(cardID), targetCol))
+			fmt.Printf("Moved card → %s\n", targetCol)
+			gitCommit(boardName+".md", fmt.Sprintf("card: move → %s", targetCol))
 			return nil
 		},
 	}
@@ -206,21 +211,25 @@ func cardMoveCmd() *cobra.Command {
 
 func cardCompleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "complete <id>",
+		Use:   "complete <board> <col_idx> <card_idx>",
 		Short: "Mark a card as completed",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(_ *cobra.Command, args []string) error {
-			cardID := args[0]
-			b, err := ws.FindBoardByCardID(cardID)
+			boardName := args[0]
+			colIdx, err := strconv.Atoi(args[1])
 			if err != nil {
+				return fmt.Errorf("invalid col_idx: %w", err)
+			}
+			cardIdx, err := strconv.Atoi(args[2])
+			if err != nil {
+				return fmt.Errorf("invalid card_idx: %w", err)
+			}
+			path := ws.BoardPath(boardName)
+			if err := eng.CompleteCard(path, colIdx, cardIdx); err != nil {
 				return err
 			}
-			if err := eng.CompleteCard(b.FilePath, cardID); err != nil {
-				return err
-			}
-			fmt.Printf("Completed card %s\n", shortID(cardID))
-			relPath := filepath.Base(b.FilePath)
-			gitCommit(relPath, fmt.Sprintf("card: complete %s", shortID(cardID)))
+			fmt.Printf("Toggled card completion\n")
+			gitCommit(boardName+".md", "card: toggle complete")
 			return nil
 		},
 	}
@@ -228,22 +237,26 @@ func cardCompleteCmd() *cobra.Command {
 
 func cardTagCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "tag <id> <tag> [tag...]",
+		Use:   "tag <board> <col_idx> <card_idx> <tag> [tag...]",
 		Short: "Add tags to a card",
-		Args:  cobra.MinimumNArgs(2),
+		Args:  cobra.MinimumNArgs(4),
 		RunE: func(_ *cobra.Command, args []string) error {
-			cardID := args[0]
-			tags := args[1:]
-			b, err := ws.FindBoardByCardID(cardID)
+			boardName := args[0]
+			colIdx, err := strconv.Atoi(args[1])
 			if err != nil {
+				return fmt.Errorf("invalid col_idx: %w", err)
+			}
+			cardIdx, err := strconv.Atoi(args[2])
+			if err != nil {
+				return fmt.Errorf("invalid card_idx: %w", err)
+			}
+			tags := args[3:]
+			path := ws.BoardPath(boardName)
+			if err := eng.TagCard(path, colIdx, cardIdx, tags); err != nil {
 				return err
 			}
-			if err := eng.TagCard(b.FilePath, cardID, tags); err != nil {
-				return err
-			}
-			fmt.Printf("Tagged card %s with: %s\n", shortID(cardID), strings.Join(tags, ", "))
-			relPath := filepath.Base(b.FilePath)
-			gitCommit(relPath, fmt.Sprintf("card: tag %s [%s]", shortID(cardID), strings.Join(tags, ", ")))
+			fmt.Printf("Tagged card with: %s\n", strings.Join(tags, ", "))
+			gitCommit(boardName+".md", fmt.Sprintf("card: tag [%s]", strings.Join(tags, ", ")))
 			return nil
 		},
 	}
@@ -251,16 +264,21 @@ func cardTagCmd() *cobra.Command {
 
 func cardShowCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "show <id>",
+		Use:   "show <board> <col_idx> <card_idx>",
 		Short: "Show card details",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(_ *cobra.Command, args []string) error {
-			cardID := args[0]
-			b, err := ws.FindBoardByCardID(cardID)
+			boardName := args[0]
+			colIdx, err := strconv.Atoi(args[1])
 			if err != nil {
-				return err
+				return fmt.Errorf("invalid col_idx: %w", err)
 			}
-			card, colName, err := eng.ShowCard(b.FilePath, cardID)
+			cardIdx, err := strconv.Atoi(args[2])
+			if err != nil {
+				return fmt.Errorf("invalid card_idx: %w", err)
+			}
+			path := ws.BoardPath(boardName)
+			card, colName, err := eng.ShowCard(path, colIdx, cardIdx)
 			if err != nil {
 				return err
 			}
@@ -269,8 +287,7 @@ func cardShowCmd() *cobra.Command {
 				status = "[x]"
 			}
 			fmt.Printf("%s %s\n", status, card.Title)
-			fmt.Printf("  ID:     %s\n", card.ID)
-			fmt.Printf("  Board:  %s\n", b.Name)
+			fmt.Printf("  Board:  %s\n", boardName)
 			fmt.Printf("  Column: %s\n", colName)
 			if len(card.Tags) > 0 {
 				fmt.Printf("  Tags:   %s\n", strings.Join(card.Tags, ", "))
@@ -291,21 +308,25 @@ func cardShowCmd() *cobra.Command {
 
 func cardDeleteCmd() *cobra.Command {
 	return &cobra.Command{
-		Use:   "delete <id>",
+		Use:   "delete <board> <col_idx> <card_idx>",
 		Short: "Delete a card",
-		Args:  cobra.ExactArgs(1),
+		Args:  cobra.ExactArgs(3),
 		RunE: func(_ *cobra.Command, args []string) error {
-			cardID := args[0]
-			b, err := ws.FindBoardByCardID(cardID)
+			boardName := args[0]
+			colIdx, err := strconv.Atoi(args[1])
 			if err != nil {
+				return fmt.Errorf("invalid col_idx: %w", err)
+			}
+			cardIdx, err := strconv.Atoi(args[2])
+			if err != nil {
+				return fmt.Errorf("invalid card_idx: %w", err)
+			}
+			path := ws.BoardPath(boardName)
+			if err := eng.DeleteCard(path, colIdx, cardIdx); err != nil {
 				return err
 			}
-			if err := eng.DeleteCard(b.FilePath, cardID); err != nil {
-				return err
-			}
-			fmt.Printf("Deleted card %s\n", shortID(cardID))
-			relPath := filepath.Base(b.FilePath)
-			gitCommit(relPath, fmt.Sprintf("card: delete %s", shortID(cardID)))
+			fmt.Printf("Deleted card\n")
+			gitCommit(boardName+".md", "card: delete")
 			return nil
 		},
 	}
@@ -402,11 +423,4 @@ func columnNames(b *models.Board) string {
 		names = append(names, c.Name)
 	}
 	return strings.Join(names, ", ")
-}
-
-func shortID(id string) string {
-	if len(id) > 8 {
-		return id[:8]
-	}
-	return id
 }

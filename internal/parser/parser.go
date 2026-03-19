@@ -13,7 +13,6 @@ import (
 
 var (
 	cardRe    = regexp.MustCompile(`^- \[([ xX])\] (.+)$`)
-	idRe      = regexp.MustCompile(`^<!-- liveboard:id=(\S+) -->$`)
 	metaRe    = regexp.MustCompile(`^  (\w+): (.+)$`)
 	hashTagRe = regexp.MustCompile(`#(\w[\w-]*)`)
 )
@@ -81,12 +80,9 @@ func Parse(content string) (*models.Board, error) {
 			continue
 		}
 
-		// Card ID comment.
-		if currentCard != nil {
-			if m := idRe.FindStringSubmatch(strings.TrimSpace(line)); m != nil {
-				currentCard.ID = m[1]
-				continue
-			}
+		// Skip HTML comments (e.g. legacy liveboard:id lines).
+		if strings.HasPrefix(strings.TrimSpace(line), "<!--") {
+			continue
 		}
 
 		// Card metadata.

@@ -33,20 +33,21 @@
             </div>
             {{if not $column.Collapsed}}
             <div class="cards" data-column="{{$column.Name}}">
-                {{range $card := .Cards}}
-                <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-card-id="{{.ID}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $i, $t := .Tags}}{{if $i}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
+                {{range $j, $card := .Cards}}
+                <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
                     {{range $.Board.Columns}}
                     {{if ne .Name $column.Name}}
                     <button class="move-trigger"
                         data-target="{{.Name}}"
                         live-click="move-card"
-                        live-value-card_id="{{$card.ID}}"
+                        live-value-col_idx="{{$i}}"
+                        live-value-card_idx="{{$j}}"
                         live-value-target_column="{{.Name}}"
                         live-value-name="{{$.BoardSlug}}"></button>
                     {{end}}
                     {{end}}
                     <div class="card-layout">
-                        <button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>
+                        <button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>
                         <div class="card-content">
                             <h4 class="card-title">{{.Title}}</h4>
 

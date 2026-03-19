@@ -13,25 +13,21 @@ tags: [product, roadmap]
 ## Backlog
 
 - [ ] Add OAuth login
-<!-- liveboard:id=id-001 -->
   tags: auth, backend
   priority: high
 
 - [ ] Build mobile layout
-<!-- liveboard:id=id-002 -->
   tags: ui
 
 ## In Progress
 
 - [ ] Implement billing integration
-<!-- liveboard:id=id-003 -->
   tags: payments
   assignee: hong
 
 ## Done
 
 - [x] Create landing page
-<!-- liveboard:id=id-004 -->
 `
 
 func TestParseFrontmatter(t *testing.T) {
@@ -79,9 +75,6 @@ func TestParseCards(t *testing.T) {
 	}
 
 	card := backlog.Cards[0]
-	if card.ID != "id-001" {
-		t.Errorf("card id = %q, want %q", card.ID, "id-001")
-	}
 	if card.Title != "Add OAuth login" {
 		t.Errorf("card title = %q", card.Title)
 	}
@@ -115,7 +108,7 @@ func TestParseCards(t *testing.T) {
 }
 
 func TestParseMinimalBoard(t *testing.T) {
-	md := "## Todo\n\n- [ ] First task\n<!-- liveboard:id=abc -->\n"
+	md := "## Todo\n\n- [ ] First task\n"
 	board, err := Parse(md)
 	if err != nil {
 		t.Fatal(err)
@@ -126,7 +119,26 @@ func TestParseMinimalBoard(t *testing.T) {
 	if len(board.Columns[0].Cards) != 1 {
 		t.Fatalf("cards = %d", len(board.Columns[0].Cards))
 	}
-	if board.Columns[0].Cards[0].ID != "abc" {
-		t.Errorf("id = %q", board.Columns[0].Cards[0].ID)
+	if board.Columns[0].Cards[0].Title != "First task" {
+		t.Errorf("title = %q", board.Columns[0].Cards[0].Title)
+	}
+}
+
+func TestParseLegacyIDComments(t *testing.T) {
+	// Ensure legacy ID comments are gracefully skipped.
+	md := "## Todo\n\n- [ ] Task\n<!-- liveboard:id=old-123 -->\n  tags: a\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns[0].Cards) != 1 {
+		t.Fatalf("cards = %d", len(board.Columns[0].Cards))
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Title != "Task" {
+		t.Errorf("title = %q", card.Title)
+	}
+	if len(card.Tags) != 1 || card.Tags[0] != "a" {
+		t.Errorf("tags = %v", card.Tags)
 	}
 }

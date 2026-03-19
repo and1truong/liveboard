@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"strconv"
 )
 
 func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
@@ -33,7 +34,6 @@ func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 }
 
 type cardResponse struct {
-	ID        string            `json:"id"`
 	Title     string            `json:"title"`
 	Completed bool              `json:"completed"`
 	Tags      []string          `json:"tags,omitempty"`
@@ -46,21 +46,21 @@ type cardResponse struct {
 }
 
 func (s *Server) getCard(w http.ResponseWriter, r *http.Request) {
-	cardID := pathParam(r, "id")
-	board, err := s.ws.FindBoardByCardID(cardID)
+	boardName := pathParam(r, "board")
+	colIdx, cardIdx, err := cardIndicesFromRequest(r)
 	if err != nil {
-		handleError(w, err)
+		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	card, colName, err := s.ws.Engine.ShowCard(board.FilePath, cardID)
+	boardPath := s.ws.BoardPath(boardName)
+	card, colName, err := s.ws.Engine.ShowCard(boardPath, colIdx, cardIdx)
 	if err != nil {
 		handleError(w, err)
 		return
 	}
 
 	respond(w, http.StatusOK, cardResponse{
-		ID:        card.ID,
 		Title:     card.Title,
 		Completed: card.Completed,
 		Tags:      card.Tags,
@@ -74,24 +74,31 @@ func (s *Server) getCard(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) deleteCard(w http.ResponseWriter, r *http.Request) {
-	cardID := pathParam(r, "id")
-	board, err := s.ws.FindBoardByCardID(cardID)
+	boardName := pathParam(r, "board")
+	colIdx, cardIdx, err := cardIndicesFromRequest(r)
 	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	boardPath := s.ws.BoardPath(boardName)
+	if err := s.ws.Engine.DeleteCard(boardPath, colIdx, cardIdx); err != nil {
 		handleError(w, err)
 		return
 	}
 
-	if err := s.ws.Engine.DeleteCard(board.FilePath, cardID); err != nil {
-		handleError(w, err)
-		return
-	}
-
-	s.gitCommit(filepath.Base(board.FilePath), fmt.Sprintf("card: delete %s", shortID(cardID)))
+	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: delete col=%d card=%d", colIdx, cardIdx))
 	respondNoContent(w)
 }
 
 func (s *Server) moveCard(w http.ResponseWriter, r *http.Request) {
-	cardID := pathParam(r, "id")
+	boardName := pathParam(r, "board")
+	colIdx, cardIdx, err := cardIndicesFromRequest(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	var body struct {
 		Column string `json:"column"`
 	}
@@ -104,40 +111,42 @@ func (s *Server) moveCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	board, err := s.ws.FindBoardByCardID(cardID)
-	if err != nil {
+	boardPath := s.ws.BoardPath(boardName)
+	if err := s.ws.Engine.MoveCard(boardPath, colIdx, cardIdx, body.Column); err != nil {
 		handleError(w, err)
 		return
 	}
 
-	if err := s.ws.Engine.MoveCard(board.FilePath, cardID, body.Column); err != nil {
-		handleError(w, err)
-		return
-	}
-
-	s.gitCommit(filepath.Base(board.FilePath), fmt.Sprintf("card: move %s → %s", shortID(cardID), body.Column))
+	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: move → %s", body.Column))
 	respondNoContent(w)
 }
 
 func (s *Server) completeCard(w http.ResponseWriter, r *http.Request) {
-	cardID := pathParam(r, "id")
-	board, err := s.ws.FindBoardByCardID(cardID)
+	boardName := pathParam(r, "board")
+	colIdx, cardIdx, err := cardIndicesFromRequest(r)
 	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	boardPath := s.ws.BoardPath(boardName)
+	if err := s.ws.Engine.CompleteCard(boardPath, colIdx, cardIdx); err != nil {
 		handleError(w, err)
 		return
 	}
 
-	if err := s.ws.Engine.CompleteCard(board.FilePath, cardID); err != nil {
-		handleError(w, err)
-		return
-	}
-
-	s.gitCommit(filepath.Base(board.FilePath), fmt.Sprintf("card: complete %s", shortID(cardID)))
+	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: toggle complete col=%d card=%d", colIdx, cardIdx))
 	respondNoContent(w)
 }
 
 func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
-	cardID := pathParam(r, "id")
+	boardName := pathParam(r, "board")
+	colIdx, cardIdx, err := cardIndicesFromRequest(r)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
+
 	var body struct {
 		Tags []string `json:"tags"`
 	}
@@ -150,24 +159,27 @@ func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	board, err := s.ws.FindBoardByCardID(cardID)
-	if err != nil {
+	boardPath := s.ws.BoardPath(boardName)
+	if err := s.ws.Engine.TagCard(boardPath, colIdx, cardIdx, body.Tags); err != nil {
 		handleError(w, err)
 		return
 	}
 
-	if err := s.ws.Engine.TagCard(board.FilePath, cardID, body.Tags); err != nil {
-		handleError(w, err)
-		return
-	}
-
-	s.gitCommit(filepath.Base(board.FilePath), fmt.Sprintf("card: tag %s", shortID(cardID)))
+	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: tag col=%d card=%d", colIdx, cardIdx))
 	respondNoContent(w)
 }
 
-func shortID(id string) string {
-	if len(id) > 8 {
-		return id[:8]
+func cardIndicesFromRequest(r *http.Request) (int, int, error) {
+	colStr := pathParam(r, "colIdx")
+	cardStr := pathParam(r, "cardIdx")
+
+	colIdx, err := strconv.Atoi(colStr)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid column index: %s", colStr)
 	}
-	return id
+	cardIdx, err := strconv.Atoi(cardStr)
+	if err != nil {
+		return 0, 0, fmt.Errorf("invalid card index: %s", cardStr)
+	}
+	return colIdx, cardIdx, nil
 }

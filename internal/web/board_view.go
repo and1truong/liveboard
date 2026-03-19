@@ -20,7 +20,6 @@ type BoardViewModel struct {
 	BoardSlug   string         `json:"board_slug"` // filename stem for loading
 	Boards      []BoardSummary `json:"boards"`
 	Error       string         `json:"error,omitempty"`
-	SelectedID  string         `json:"selected_id,omitempty"`
 	ShowAddCard string         `json:"show_add_card,omitempty"` // Column name
 	NeedsReload bool           `json:"needs_reload,omitempty"`
 }
@@ -75,6 +74,15 @@ func slugFromParams(p live.Params) (string, bool) {
 	return slug, ok && slug != ""
 }
 
+// intParam extracts an integer parameter from event params.
+func intParam(p live.Params, key string) (int, error) {
+	s, ok := p[key].(string)
+	if !ok || s == "" {
+		return 0, fmt.Errorf("%s is required", key)
+	}
+	return strconv.Atoi(s)
+}
+
 // handleCreateCard creates a new card in a column.
 func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	column, ok := p["column"].(string)
@@ -106,9 +114,14 @@ func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Par
 
 // handleMoveCard moves a card to a different column.
 func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	cardID, ok := p["card_id"].(string)
-	if !ok || cardID == "" {
-		return BoardViewModel{Error: "Card ID is required"}, nil
+	colIdx, err := intParam(p, "col_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	cardIdx, err := intParam(p, "card_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
 	}
 
 	targetColumn, ok := p["target_column"].(string)
@@ -122,12 +135,11 @@ func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Param
 	}
 
 	boardPath := h.ws.BoardPath(slug)
-	err := h.eng.MoveCard(boardPath, cardID, targetColumn)
-	if err != nil {
+	if err := h.eng.MoveCard(boardPath, colIdx, cardIdx, targetColumn); err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	h.commitWithHandling(boardPath, fmt.Sprintf("Move card %s to %s", cardID, targetColumn))
+	h.commitWithHandling(boardPath, fmt.Sprintf("Move card to %s", targetColumn))
 	h.publishBoardEvent(slug, "card_moved")
 
 	return h.boardViewModel(slug)
@@ -135,9 +147,14 @@ func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Param
 
 // handleReorderCard moves a card to a specific position within a column.
 func (h *Handler) handleReorderCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	cardID, ok := p["card_id"].(string)
-	if !ok || cardID == "" {
-		return BoardViewModel{Error: "Card ID is required"}, nil
+	colIdx, err := intParam(p, "col_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	cardIdx, err := intParam(p, "card_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
 	}
 
 	column, ok := p["column"].(string)
@@ -145,7 +162,10 @@ func (h *Handler) handleReorderCard(_ context.Context, _ *live.Socket, p live.Pa
 		return BoardViewModel{Error: "Column is required"}, nil
 	}
 
-	beforeCardID, _ := p["before_card_id"].(string)
+	beforeIdx := -1
+	if s, ok := p["before_idx"].(string); ok && s != "" {
+		beforeIdx, _ = strconv.Atoi(s)
+	}
 
 	slug, ok := slugFromParams(p)
 	if !ok {
@@ -153,12 +173,11 @@ func (h *Handler) handleReorderCard(_ context.Context, _ *live.Socket, p live.Pa
 	}
 
 	boardPath := h.ws.BoardPath(slug)
-	err := h.eng.ReorderCard(boardPath, cardID, column, beforeCardID)
-	if err != nil {
+	if err := h.eng.ReorderCard(boardPath, colIdx, cardIdx, beforeIdx, column); err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	h.commitWithHandling(boardPath, fmt.Sprintf("Reorder card %s in %s", cardID, column))
+	h.commitWithHandling(boardPath, fmt.Sprintf("Reorder card in %s", column))
 	h.publishBoardEvent(slug, "card_reordered")
 
 	return h.boardViewModel(slug)
@@ -166,9 +185,14 @@ func (h *Handler) handleReorderCard(_ context.Context, _ *live.Socket, p live.Pa
 
 // handleDeleteCard deletes a card.
 func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	cardID, ok := p["card_id"].(string)
-	if !ok || cardID == "" {
-		return BoardViewModel{Error: "Card ID is required"}, nil
+	colIdx, err := intParam(p, "col_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	cardIdx, err := intParam(p, "card_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
 	}
 
 	slug, ok := slugFromParams(p)
@@ -177,12 +201,11 @@ func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Par
 	}
 
 	boardPath := h.ws.BoardPath(slug)
-	err := h.eng.DeleteCard(boardPath, cardID)
-	if err != nil {
+	if err := h.eng.DeleteCard(boardPath, colIdx, cardIdx); err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete card %s", cardID))
+	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete card"))
 	h.publishBoardEvent(slug, "card_deleted")
 
 	return h.boardViewModel(slug)
@@ -190,9 +213,14 @@ func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Par
 
 // handleToggleComplete marks a card as completed.
 func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	cardID, ok := p["card_id"].(string)
-	if !ok || cardID == "" {
-		return BoardViewModel{Error: "Card ID is required"}, nil
+	colIdx, err := intParam(p, "col_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	cardIdx, err := intParam(p, "card_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
 	}
 
 	slug, ok := slugFromParams(p)
@@ -201,12 +229,11 @@ func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live
 	}
 
 	boardPath := h.ws.BoardPath(slug)
-	err := h.eng.CompleteCard(boardPath, cardID)
-	if err != nil {
+	if err := h.eng.CompleteCard(boardPath, colIdx, cardIdx); err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	h.commitWithHandling(boardPath, fmt.Sprintf("Complete card %s", cardID))
+	h.commitWithHandling(boardPath, fmt.Sprintf("Toggle card complete"))
 	h.publishBoardEvent(slug, "card_completed")
 
 	return h.boardViewModel(slug)
@@ -214,9 +241,14 @@ func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live
 
 // handleEditCard updates a card's title, body, and tags.
 func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	cardID, ok := p["card_id"].(string)
-	if !ok || cardID == "" {
-		return BoardViewModel{Error: "Card ID is required"}, nil
+	colIdx, err := intParam(p, "col_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	cardIdx, err := intParam(p, "card_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
 	}
 
 	slug, ok := slugFromParams(p)
@@ -237,11 +269,11 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 	}
 
 	boardPath := h.ws.BoardPath(slug)
-	if err := h.eng.EditCard(boardPath, cardID, title, body, tags); err != nil {
+	if err := h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags); err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	h.commitWithHandling(boardPath, fmt.Sprintf("Edit card %s", cardID))
+	h.commitWithHandling(boardPath, fmt.Sprintf("Edit card"))
 	h.publishBoardEvent(slug, "card_updated")
 
 	return h.boardViewModel(slug)

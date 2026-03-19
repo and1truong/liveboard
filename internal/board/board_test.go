@@ -14,7 +14,6 @@ name: Test Board
 ## Backlog
 
 - [ ] Task one
-<!-- liveboard:id=id-001 -->
   tags: backend
 
 ## In Progress
@@ -52,8 +51,8 @@ func TestAddCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if card.ID == "" {
-		t.Error("card ID should be assigned")
+	if card.Title != "New task" {
+		t.Errorf("title = %q", card.Title)
 	}
 
 	// Verify it's in the file.
@@ -65,7 +64,8 @@ func TestAddCard(t *testing.T) {
 
 func TestMoveCard(t *testing.T) {
 	path, eng := setupTestBoard(t)
-	if err := eng.MoveCard(path, "id-001", "In Progress"); err != nil {
+	// Move card at col=0, card=0 to "In Progress"
+	if err := eng.MoveCard(path, 0, 0, "In Progress"); err != nil {
 		t.Fatal(err)
 	}
 
@@ -73,30 +73,22 @@ func TestMoveCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if board == nil {
-		t.Fatal("nil board")
-	}
 	// Should not be in Backlog.
-	for _, card := range board.Columns[0].Cards {
-		if card.ID == "id-001" {
-			t.Error("card still in Backlog")
-		}
+	if len(board.Columns[0].Cards) != 0 {
+		t.Error("card still in Backlog")
 	}
 	// Should be in In Progress.
-	found := false
-	for _, card := range board.Columns[1].Cards {
-		if card.ID == "id-001" {
-			found = true
-		}
+	if len(board.Columns[1].Cards) != 1 {
+		t.Errorf("In Progress cards = %d, want 1", len(board.Columns[1].Cards))
 	}
-	if !found {
-		t.Error("card not found in In Progress")
+	if board.Columns[1].Cards[0].Title != "Task one" {
+		t.Errorf("moved card title = %q", board.Columns[1].Cards[0].Title)
 	}
 }
 
 func TestCompleteCard(t *testing.T) {
 	path, eng := setupTestBoard(t)
-	if err := eng.CompleteCard(path, "id-001"); err != nil {
+	if err := eng.CompleteCard(path, 0, 0); err != nil {
 		t.Fatal(err)
 	}
 
@@ -108,7 +100,7 @@ func TestCompleteCard(t *testing.T) {
 
 func TestTagCard(t *testing.T) {
 	path, eng := setupTestBoard(t)
-	if err := eng.TagCard(path, "id-001", []string{"urgent", "backend"}); err != nil {
+	if err := eng.TagCard(path, 0, 0, []string{"urgent", "backend"}); err != nil {
 		t.Fatal(err)
 	}
 
@@ -116,13 +108,7 @@ func TestTagCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if board == nil {
-		t.Fatal("nil board")
-	}
-	card := findCard(board, "id-001")
-	if card == nil {
-		t.Fatal("card not found")
-	}
+	card := board.Columns[0].Cards[0]
 	// Should have backend + urgent (backend already existed, no duplicates).
 	hasUrgent := false
 	for _, tag := range card.Tags {
@@ -137,12 +123,15 @@ func TestTagCard(t *testing.T) {
 
 func TestDeleteCard(t *testing.T) {
 	path, eng := setupTestBoard(t)
-	if err := eng.DeleteCard(path, "id-001"); err != nil {
+	if err := eng.DeleteCard(path, 0, 0); err != nil {
 		t.Fatal(err)
 	}
 
-	data, _ := os.ReadFile(path)
-	if strings.Contains(string(data), "id-001") {
+	board, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns[0].Cards) != 0 {
 		t.Error("deleted card still present")
 	}
 }
@@ -156,9 +145,6 @@ func TestAddColumn(t *testing.T) {
 	board, err := eng.LoadBoard(path)
 	if err != nil {
 		t.Fatal(err)
-	}
-	if board == nil {
-		t.Fatal("nil board")
 	}
 	if len(board.Columns) != 4 {
 		t.Fatalf("columns = %d, want 4", len(board.Columns))
@@ -178,9 +164,6 @@ func TestDeleteColumn(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if board == nil {
-		t.Fatal("nil board")
-	}
 	if len(board.Columns) != 2 {
 		t.Fatalf("columns = %d, want 2", len(board.Columns))
 	}
@@ -188,7 +171,7 @@ func TestDeleteColumn(t *testing.T) {
 
 func TestShowCard(t *testing.T) {
 	path, eng := setupTestBoard(t)
-	card, col, err := eng.ShowCard(path, "id-001")
+	card, col, err := eng.ShowCard(path, 0, 0)
 	if err != nil {
 		t.Fatal(err)
 	}
