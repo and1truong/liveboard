@@ -92,6 +92,7 @@ func (h *Handler) BoardListHandler() http.Handler {
 	boardListHandler.MountHandler = h.mountBoardList
 	boardListHandler.HandleEvent("create-board", h.handleCreateBoard)
 	boardListHandler.HandleEvent("delete-board", h.handleDeleteBoard)
+	boardListHandler.HandleEvent("set-board-icon", h.handleSetBoardIconList)
 	boardListHandler.HandleParams(h.handleParams)
 
 	return live.NewHttpHandler(context.Background(), boardListHandler,
@@ -118,6 +119,7 @@ func (h *Handler) BoardViewHandler() http.Handler {
 	boardViewHandler.HandleEvent("toggle-column-collapse", h.handleToggleColumnCollapse)
 	boardViewHandler.HandleEvent("sort-column", h.handleSortColumn)
 	boardViewHandler.HandleEvent("update-board-settings", h.handleUpdateBoardSettings)
+	boardViewHandler.HandleEvent("set-board-icon", h.handleSetBoardIcon)
 	boardViewHandler.HandleSelf("board_update", h.handleBoardUpdate)
 
 	return live.NewHttpHandler(context.Background(), boardViewHandler,

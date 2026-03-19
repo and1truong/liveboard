@@ -18,12 +18,14 @@ func Render(board *models.Board) (string, error) {
 	fm := struct {
 		Name         string               `yaml:"name"`
 		Description  string               `yaml:"description,omitempty"`
+		Icon         string               `yaml:"icon,omitempty"`
 		Tags         []string             `yaml:"tags,omitempty"`
 		ListCollapse []bool               `yaml:"list-collapse,omitempty"`
 		Settings     models.BoardSettings `yaml:"settings,omitempty"`
 	}{
 		Name:         board.Name,
 		Description:  board.Description,
+		Icon:         board.Icon,
 		Tags:         board.Tags,
 		ListCollapse: board.ListCollapse,
 		Settings:     board.Settings,

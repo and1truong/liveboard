@@ -15,6 +15,7 @@ type BoardSettings struct {
 type Board struct {
 	Name         string        `yaml:"name" json:"name"`
 	Description  string        `yaml:"description,omitempty" json:"description,omitempty"`
+	Icon         string        `yaml:"icon,omitempty" json:"icon,omitempty"`
 	Tags         []string      `yaml:"tags,omitempty" json:"tags,omitempty"`
 	ListCollapse []bool        `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
 	Settings     BoardSettings `yaml:"settings,omitempty" json:"settings,omitempty"`
