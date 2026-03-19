@@ -74,6 +74,26 @@
     titleInput.className = "qe-title";
     titleInput.value = currentTitle;
     titleInput.rows = 2;
+    // New line trigger: determine if Enter submits or inserts newline
+    titleInput.addEventListener("keydown", function (e) {
+      var trigger = window.__lbNewLineTrigger ? window.__lbNewLineTrigger() : "shift-enter";
+      if (trigger === "shift-enter") {
+        // Enter submits (default)
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          var sb = overlay.querySelector(".btn-primary");
+          if (sb) sb.click();
+        }
+      } else {
+        // Shift+Enter submits
+        if (e.key === "Enter" && e.shiftKey) {
+          e.preventDefault();
+          var sb = overlay.querySelector(".btn-primary");
+          if (sb) sb.click();
+        }
+      }
+      if (e.key === "Escape") hideQuickEdit();
+    });
     overlay.appendChild(titleInput);
 
     // Collect all unique tags from board
@@ -217,6 +237,23 @@
     bodyInput.placeholder = "Description (optional)";
     bodyInput.value = currentBody;
     bodyInput.rows = 2;
+    bodyInput.addEventListener("keydown", function (e) {
+      var trigger = window.__lbNewLineTrigger ? window.__lbNewLineTrigger() : "shift-enter";
+      if (trigger === "shift-enter") {
+        if (e.key === "Enter" && !e.shiftKey) {
+          e.preventDefault();
+          var sb = overlay.querySelector(".btn-primary");
+          if (sb) sb.click();
+        }
+      } else {
+        if (e.key === "Enter" && e.shiftKey) {
+          e.preventDefault();
+          var sb = overlay.querySelector(".btn-primary");
+          if (sb) sb.click();
+        }
+      }
+      if (e.key === "Escape") hideQuickEdit();
+    });
     overlay.appendChild(bodyInput);
 
     // Priority value — updated by context menu
@@ -685,9 +722,8 @@
 
     var nameInput = document.createElement("input");
     nameInput.type = "text";
-    nameInput.className = "card-modal-tags-input";
+    nameInput.className = "card-modal-body";
     nameInput.value = name;
-    nameInput.style.width = "100%";
     main.appendChild(nameInput);
 
     var descLabel = document.createElement("label");
@@ -1010,6 +1046,106 @@
       }
     }
     return null; // append to end
+  }
+
+  // === DATE PICKER ===
+  function createDatePicker(currentDue, onSelect) {
+    var container = document.createElement("div");
+    container.className = "card-modal-datepicker";
+    container.addEventListener("click", function (e) { e.stopPropagation(); });
+
+    var now = new Date();
+    var viewYear = now.getFullYear();
+    var viewMonth = now.getMonth();
+
+    // Parse current due date
+    if (currentDue) {
+      var parts = currentDue.split("-");
+      if (parts.length === 3) {
+        viewYear = parseInt(parts[0], 10);
+        viewMonth = parseInt(parts[1], 10) - 1;
+      }
+    }
+
+    var monthNames = ["January","February","March","April","May","June",
+      "July","August","September","October","November","December"];
+
+    var header = document.createElement("div");
+    header.className = "datepicker-header";
+    var prevBtn = document.createElement("button");
+    prevBtn.className = "datepicker-nav";
+    prevBtn.innerHTML = "&#8249;";
+    prevBtn.addEventListener("click", function () {
+      viewMonth--;
+      if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+      render();
+    });
+    var nextBtn = document.createElement("button");
+    nextBtn.className = "datepicker-nav";
+    nextBtn.innerHTML = "&#8250;";
+    nextBtn.addEventListener("click", function () {
+      viewMonth++;
+      if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+      render();
+    });
+    var monthLabel = document.createElement("span");
+    monthLabel.className = "datepicker-month";
+    header.appendChild(prevBtn);
+    header.appendChild(monthLabel);
+    header.appendChild(nextBtn);
+    container.appendChild(header);
+
+    var weekdays = document.createElement("div");
+    weekdays.className = "datepicker-weekdays";
+    ["Su","Mo","Tu","We","Th","Fr","Sa"].forEach(function (d) {
+      var s = document.createElement("span");
+      s.textContent = d;
+      weekdays.appendChild(s);
+    });
+    container.appendChild(weekdays);
+
+    var grid = document.createElement("div");
+    grid.className = "datepicker-grid";
+    container.appendChild(grid);
+
+    var removeBtn = document.createElement("button");
+    removeBtn.className = "datepicker-remove";
+    removeBtn.textContent = "Remove date";
+    removeBtn.addEventListener("click", function () { onSelect(""); });
+    container.appendChild(removeBtn);
+
+    function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+    function render() {
+      monthLabel.textContent = monthNames[viewMonth] + " " + viewYear;
+      grid.innerHTML = "";
+
+      var firstDay = new Date(viewYear, viewMonth, 1).getDay();
+      var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+      var today = new Date();
+      var todayStr = today.getFullYear() + "-" + pad(today.getMonth() + 1) + "-" + pad(today.getDate());
+
+      for (var i = 0; i < firstDay; i++) {
+        var empty = document.createElement("span");
+        empty.className = "datepicker-day datepicker-day--empty";
+        grid.appendChild(empty);
+      }
+
+      for (var d = 1; d <= daysInMonth; d++) {
+        var dayBtn = document.createElement("button");
+        dayBtn.className = "datepicker-day";
+        dayBtn.textContent = d;
+        var dateStr = viewYear + "-" + pad(viewMonth + 1) + "-" + pad(d);
+        if (dateStr === todayStr) dayBtn.classList.add("datepicker-day--today");
+        if (dateStr === currentDue) dayBtn.classList.add("datepicker-day--selected");
+        dayBtn.dataset.date = dateStr;
+        dayBtn.addEventListener("click", function () { onSelect(this.dataset.date); });
+        grid.appendChild(dayBtn);
+      }
+    }
+
+    render();
+    return container;
   }
 
   // === CARD DETAIL MODAL ===
@@ -1638,4 +1774,115 @@
   new MutationObserver(function () {
     requestAnimationFrame(attach);
   }).observe(document.body, { childList: true, subtree: true });
+
+  // ── Board Settings Panel ──────────────────────────────────────────
+  function initBoardSettingsPanel() {
+    var boardView = document.querySelector(".board-view");
+    if (!boardView) return;
+
+    var gearBtn = boardView.querySelector(".board-settings-btn");
+    var panel = boardView.querySelector(".board-settings-panel");
+    if (!gearBtn || !panel) return;
+
+    var closeBtn = panel.querySelector(".board-settings-close");
+    var slug = boardView.dataset.boardSlug;
+
+    var bsShowCheckbox = document.getElementById("bsShowCheckbox");
+    var bsCardPosition = document.getElementById("bsCardPosition");
+    var bsExpandColumns = document.getElementById("bsExpandColumns");
+
+    // Populate selects from data attributes
+    function populateFromData() {
+      if (bsShowCheckbox) bsShowCheckbox.value = boardView.dataset.bsShowCheckbox || "";
+      if (bsCardPosition) bsCardPosition.value = boardView.dataset.bsCardPosition || "";
+      if (bsExpandColumns) bsExpandColumns.value = boardView.dataset.bsExpandColumns || "false";
+
+      // Show/hide reset buttons
+      updateResetButtons();
+    }
+
+    function updateResetButtons() {
+      panel.querySelectorAll(".btn-reset-setting").forEach(function (btn) {
+        var setting = btn.dataset.setting;
+        var hasOverride = false;
+        if (setting === "show_checkbox") hasOverride = bsShowCheckbox && bsShowCheckbox.value !== "";
+        if (setting === "card_position") hasOverride = bsCardPosition && bsCardPosition.value !== "";
+        btn.style.display = hasOverride ? "" : "none";
+      });
+    }
+
+    function sendBoardSettings() {
+      if (!window.Live) return;
+      var params = { name: slug };
+      if (bsShowCheckbox && bsShowCheckbox.value !== "") {
+        params.show_checkbox = bsShowCheckbox.value;
+      }
+      if (bsCardPosition && bsCardPosition.value !== "") {
+        params.card_position = bsCardPosition.value;
+      }
+      if (bsExpandColumns) {
+        params.expand_columns = bsExpandColumns.value;
+      }
+      window.Live.send("update-board-settings", params);
+    }
+
+    gearBtn.addEventListener("click", function () {
+      var isOpen = panel.style.display !== "none";
+      panel.style.display = isOpen ? "none" : "";
+      if (!isOpen) populateFromData();
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener("click", function () {
+        panel.style.display = "none";
+      });
+    }
+
+    // On change: send update
+    [bsShowCheckbox, bsCardPosition, bsExpandColumns].forEach(function (el) {
+      if (el) {
+        el.addEventListener("change", function () {
+          updateResetButtons();
+          sendBoardSettings();
+        });
+      }
+    });
+
+    // Reset buttons
+    panel.querySelectorAll(".btn-reset-setting").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var setting = btn.dataset.setting;
+        if (setting === "show_checkbox" && bsShowCheckbox) bsShowCheckbox.value = "";
+        if (setting === "card_position" && bsCardPosition) bsCardPosition.value = "";
+        updateResetButtons();
+        sendBoardSettings();
+      });
+    });
+
+    populateFromData();
+  }
+
+  // Initialize board settings on load and after LiveView updates
+  function initBoardSettings() {
+    initBoardSettingsPanel();
+  }
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initBoardSettings);
+  } else {
+    initBoardSettings();
+  }
+  document.addEventListener("live:updated", initBoardSettings);
+
+  // ── New Line Trigger ──────────────────────────────────────────────
+  // Adds keydown handling to textareas based on the newline trigger setting.
+  // "shift-enter" (default): Enter submits, Shift+Enter inserts newline.
+  // "enter": Enter inserts newline, Shift+Enter submits.
+  function getNewLineTrigger() {
+    var boardView = document.querySelector(".board-view");
+    if (boardView) return boardView.dataset.newlineTrigger || "shift-enter";
+    return localStorage.getItem("lb_newline_trigger") || "shift-enter";
+  }
+
+  // Expose globally for use in quick-edit and card modal textareas
+  window.__lbNewLineTrigger = getNewLineTrigger;
 })();

@@ -117,6 +117,7 @@ func (h *Handler) BoardViewHandler() http.Handler {
 	boardViewHandler.HandleEvent("update-board-meta", h.handleUpdateBoardMeta)
 	boardViewHandler.HandleEvent("toggle-column-collapse", h.handleToggleColumnCollapse)
 	boardViewHandler.HandleEvent("sort-column", h.handleSortColumn)
+	boardViewHandler.HandleEvent("update-board-settings", h.handleUpdateBoardSettings)
 	boardViewHandler.HandleSelf("board_update", h.handleBoardUpdate)
 
 	return live.NewHttpHandler(context.Background(), boardViewHandler,

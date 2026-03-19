@@ -61,6 +61,45 @@
             </div>
         </div>
         <div class="settings-section">
+            <div class="settings-section-title">Board Behavior</div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Display card checkbox</div>
+                    <div class="settings-label-hint">Show a checkbox on each card (default for all boards)</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settingShowCheckbox">
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">New line trigger</div>
+                    <div class="settings-label-hint">Which key creates a new line; the opposite submits</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settingNewLineTrigger">
+                        <option value="shift-enter">Shift + Enter</option>
+                        <option value="enter">Enter</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">New card position</div>
+                    <div class="settings-label-hint">Where new cards are added in a column (default for all boards)</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settingCardPosition">
+                        <option value="append">Bottom (append)</option>
+                        <option value="prepend">Top (prepend)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="settings-section">
             <div class="settings-section-title">New Board Defaults</div>
             <div class="settings-field">
                 <div>
@@ -86,6 +125,9 @@
     var colorThemeEl = document.getElementById('settingColorTheme');
     var widthEl = document.getElementById('settingColumnWidth');
     var sidebarPosEl = document.getElementById('settingSidebarPosition');
+    var showCheckboxEl = document.getElementById('settingShowCheckbox');
+    var newLineTriggerEl = document.getElementById('settingNewLineTrigger');
+    var cardPositionEl = document.getElementById('settingCardPosition');
     var colsContainer = document.getElementById('settingDefaultColumnsContainer');
     var colsInput = document.getElementById('settingDefaultColumnsInput');
     var saveBtn = document.getElementById('settingsSave');
@@ -152,6 +194,9 @@
             colorThemeEl.value = s.color_theme || 'default';
             widthEl.value = s.column_width || 280;
             sidebarPosEl.value = s.sidebar_position || 'left';
+            showCheckboxEl.value = s.show_checkbox === false ? 'false' : 'true';
+            newLineTriggerEl.value = s.newline_trigger || 'shift-enter';
+            cardPositionEl.value = s.card_position || 'append';
             currentCols = s.default_columns || ['not now', 'maybe?', 'done'];
             renderColChips();
             colsInput.placeholder = currentCols.length ? '' : 'Add column...';
@@ -164,6 +209,9 @@
             color_theme: colorThemeEl.value,
             column_width: parseInt(widthEl.value, 10) || 280,
             sidebar_position: sidebarPosEl.value,
+            show_checkbox: showCheckboxEl.value === 'true',
+            newline_trigger: newLineTriggerEl.value,
+            card_position: cardPositionEl.value,
             default_columns: rawCols
         };
 
@@ -179,6 +227,7 @@
             localStorage.setItem('lb_color_theme', s.color_theme);
             localStorage.setItem('lb_column_width', String(s.column_width));
             localStorage.setItem('lb_sidebar_position', s.sidebar_position);
+            localStorage.setItem('lb_newline_trigger', s.newline_trigger);
 
             // Apply immediately
             if (s.theme === 'system') {

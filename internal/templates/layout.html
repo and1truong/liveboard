@@ -44,12 +44,6 @@
 <body>
     <div class="app-shell">
         <aside class="app-sidebar" id="appSidebar">
-            <div class="app-brand">
-                <a href="/" class="brand-link">
-                    <svg class="brand-icon" width="28" height="28" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="108" height="96" rx="14" fill="none" stroke="currentColor" stroke-width="3"/><line x1="46" y1="28" x2="46" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.25"/><line x1="82" y1="28" x2="82" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.25"/><rect x="18" y="32" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="18" y="44" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="18" y="56" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="53" y="32" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.7"/><rect x="53" y="44" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.7"/><rect x="88" y="32" width="22" height="8" rx="2" fill="var(--color-accent)"/><circle cx="110" cy="22" r="8" fill="var(--color-accent)" opacity="0.7"/><circle cx="110" cy="22" r="5" fill="var(--color-accent)"/><circle cx="110" cy="22" r="2.5" fill="var(--color-surface, #ffffff)"/></svg>
-                    <span class="brand-name">LiveBoard</span>
-                </a>
-            </div>
             <nav class="sidebar-nav">
                 <div class="sidebar-section-label">Boards</div>
                 {{range .Boards}}
@@ -84,14 +78,32 @@
                 </div>
             </div>
             <div class="sidebar-footer">
-                <div class="connection-status">
-                    <span class="live-connected">&#9679; Live</span>
-                    <span class="live-disconnected">&#9679; Offline</span>
+                <div class="sidebar-popup-menu" id="sidebarPopupMenu">
+                    <a href="/settings" class="sidebar-menu-item{{if eq $.BoardSlug "__settings__"}} active{{end}}">
+                        <span class="menu-icon">&#9881;</span>
+                        <span class="menu-label">Settings</span>
+                    </a>
+                    <div class="sidebar-menu-separator"></div>
+                    <a href="https://github.com/htruong/liveboard" target="_blank" rel="noopener" class="sidebar-menu-item">
+                        <span class="menu-icon">&#9432;</span>
+                        <span class="menu-label">About LiveBoard</span>
+                    </a>
                 </div>
-                <a href="/settings" class="sidebar-nav-item sidebar-settings-link{{if eq $.BoardSlug "__settings__"}} active{{end}}">
-                    <span class="nav-icon">&#9881;</span>
-                    <span class="nav-label">Settings</span>
-                </a>
+                <div class="sidebar-footer-brand">
+                    <a href="/" class="brand-link">
+                        <svg class="brand-icon" width="28" height="28" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="108" height="96" rx="14" fill="none" stroke="currentColor" stroke-width="3"/><line x1="46" y1="28" x2="46" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.25"/><line x1="82" y1="28" x2="82" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.25"/><rect x="18" y="32" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="18" y="44" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="18" y="56" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="53" y="32" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.7"/><rect x="53" y="44" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.7"/><rect x="88" y="32" width="22" height="8" rx="2" fill="var(--color-accent)"/><circle cx="110" cy="22" r="8" fill="var(--color-accent)" opacity="0.7"/><circle cx="110" cy="22" r="5" fill="var(--color-accent)"/><circle cx="110" cy="22" r="2.5" fill="var(--color-surface, #ffffff)"/></svg>
+                        <span class="brand-name">LiveBoard</span>
+                    </a>
+                    <div class="sidebar-footer-right">
+                        <div class="connection-status">
+                            <span class="live-connected">&#9679;</span>
+                            <span class="live-disconnected">&#9679;</span>
+                        </div>
+                        <button class="sidebar-menu-trigger" id="sidebarMenuTrigger" title="Menu">
+                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 7.5L6 10L9 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4.5L6 2L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                        </button>
+                    </div>
+                </div>
             </div>
         </aside>
         <div class="app-workspace">
@@ -118,6 +130,14 @@
         document.addEventListener('click', function(e) {
             var dd = document.getElementById('boardDropdown');
             if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+            var popup = document.getElementById('sidebarPopupMenu');
+            var trigger = document.getElementById('sidebarMenuTrigger');
+            if (popup && trigger && !popup.contains(e.target) && !trigger.contains(e.target)) {
+                popup.classList.remove('open');
+            }
+        });
+        document.getElementById('sidebarMenuTrigger').addEventListener('click', function() {
+            document.getElementById('sidebarPopupMenu').classList.toggle('open');
         });
     </script>
 </body>

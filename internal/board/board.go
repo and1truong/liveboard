@@ -44,7 +44,8 @@ func renderAndWrite(board *models.Board, path string) error {
 }
 
 // AddCard adds a new card to the specified column.
-func (e *Engine) AddCard(boardPath, columnName, title string) (*models.Card, error) {
+// If prepend is true, the card is inserted at the beginning; otherwise appended.
+func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*models.Card, error) {
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return nil, err
@@ -54,7 +55,11 @@ func (e *Engine) AddCard(boardPath, columnName, title string) (*models.Card, err
 
 	for i := range board.Columns {
 		if board.Columns[i].Name == columnName {
-			board.Columns[i].Cards = append(board.Columns[i].Cards, *card)
+			if prepend {
+				board.Columns[i].Cards = append([]models.Card{*card}, board.Columns[i].Cards...)
+			} else {
+				board.Columns[i].Cards = append(board.Columns[i].Cards, *card)
+			}
 			if err := renderAndWrite(board, boardPath); err != nil {
 				return nil, err
 			}
@@ -167,7 +172,7 @@ func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) e
 }
 
 // EditCard updates a card's title, body, tags, and priority in-place.
-func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority string) error {
+func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority, due string) error {
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -184,6 +189,7 @@ func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body str
 	card.Body = body
 	card.Tags = tags
 	card.Priority = priority
+	card.Due = due
 
 	return renderAndWrite(board, boardPath)
 }
@@ -445,4 +451,14 @@ func priorityRank(p string) int {
 	default:
 		return 0
 	}
+}
+
+// UpdateBoardSettings replaces a board's per-board settings overrides.
+func (e *Engine) UpdateBoardSettings(boardPath string, settings models.BoardSettings) error {
+	board, err := e.LoadBoard(boardPath)
+	if err != nil {
+		return err
+	}
+	board.Settings = settings
+	return renderAndWrite(board, boardPath)
 }

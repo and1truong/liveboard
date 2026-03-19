@@ -3,14 +3,23 @@ package models
 
 import "time"
 
+// BoardSettings holds per-board setting overrides.
+// Pointer types allow nil = "inherit global default".
+type BoardSettings struct {
+	ShowCheckbox  *bool   `yaml:"show-checkbox,omitempty" json:"show_checkbox,omitempty"`
+	CardPosition  *string `yaml:"card-position,omitempty" json:"card_position,omitempty"`
+	ExpandColumns *bool   `yaml:"expand-columns,omitempty" json:"expand_columns,omitempty"`
+}
+
 // Board represents a Kanban board backed by a single Markdown file.
 type Board struct {
-	Name         string   `yaml:"name" json:"name"`
-	Description  string   `yaml:"description,omitempty" json:"description,omitempty"`
-	Tags         []string `yaml:"tags,omitempty" json:"tags,omitempty"`
-	ListCollapse []bool   `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
-	Columns      []Column `yaml:"-" json:"columns"`
-	FilePath     string   `yaml:"-" json:"file_path"`
+	Name         string        `yaml:"name" json:"name"`
+	Description  string        `yaml:"description,omitempty" json:"description,omitempty"`
+	Tags         []string      `yaml:"tags,omitempty" json:"tags,omitempty"`
+	ListCollapse []bool        `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
+	Settings     BoardSettings `yaml:"settings,omitempty" json:"settings,omitempty"`
+	Columns      []Column      `yaml:"-" json:"columns"`
+	FilePath     string        `yaml:"-" json:"file_path"`
 }
 
 // Column represents a Kanban column (H2 heading in Markdown).

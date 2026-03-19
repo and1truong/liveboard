@@ -169,7 +169,7 @@ func cardAddCmd() *cobra.Command {
 				column = "Backlog"
 			}
 
-			card, err := eng.AddCard(path, column, title)
+			card, err := eng.AddCard(path, column, title, false)
 			if err != nil {
 				return err
 			}

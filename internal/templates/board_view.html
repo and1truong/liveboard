@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="board-view">
+<div class="board-view" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}">
     {{if .Error}}
     <div class="board-error-banner">{{.Error}}</div>
     {{end}}
@@ -9,6 +9,7 @@
         <div class="board-topbar-left">
             <h2 class="board-title" title="Double-click to edit">{{.Board.Name}}</h2>
             <button class="board-edit-btn" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" title="Edit board name and description">&#9998;</button>
+            <button class="board-settings-btn" title="Board settings">&#9881;</button>
             {{if .Board.Tags}}
             <div class="tags">
                 {{range .Board.Tags}}
@@ -20,6 +21,55 @@
         {{if .Board.Description}}
         <span class="board-description">{{.Board.Description}}</span>
         {{end}}
+    </div>
+
+    <div class="board-settings-panel" style="display:none">
+        <div class="board-settings-panel-header">
+            <span>Board Settings</span>
+            <button class="board-settings-close" title="Close">&times;</button>
+        </div>
+        <div class="board-settings-panel-body">
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Display card checkbox</div>
+                    <div class="settings-label-hint">Override global default for this board</div>
+                </div>
+                <div class="settings-control board-setting-control">
+                    <select id="bsShowCheckbox">
+                        <option value="">Use default</option>
+                        <option value="true">Yes</option>
+                        <option value="false">No</option>
+                    </select>
+                    <button class="btn-reset-setting" data-setting="show_checkbox" title="Reset to global default" style="display:none">&#8634;</button>
+                </div>
+            </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">New card position</div>
+                    <div class="settings-label-hint">Override global default for this board</div>
+                </div>
+                <div class="settings-control board-setting-control">
+                    <select id="bsCardPosition">
+                        <option value="">Use default</option>
+                        <option value="append">Bottom (append)</option>
+                        <option value="prepend">Top (prepend)</option>
+                    </select>
+                    <button class="btn-reset-setting" data-setting="card_position" title="Reset to global default" style="display:none">&#8634;</button>
+                </div>
+            </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Expand lists to full width</div>
+                    <div class="settings-label-hint">Columns stretch to fill available space</div>
+                </div>
+                <div class="settings-control board-setting-control">
+                    <select id="bsExpandColumns">
+                        <option value="false">No</option>
+                        <option value="true">Yes</option>
+                    </select>
+                </div>
+            </div>
+        </div>
     </div>
 
     <div class="columns-container">
@@ -47,7 +97,7 @@
                     {{end}}
                     {{end}}
                     <div class="card-layout">
-                        <button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>
+                        {{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>{{end}}
                         <div class="card-content">
                             <h4 class="card-title">{{.Title}}</h4>
 

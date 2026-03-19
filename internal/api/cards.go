@@ -23,7 +23,7 @@ func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	boardPath := s.ws.BoardPath(boardName)
-	card, err := s.ws.Engine.AddCard(boardPath, colName, body.Title)
+	card, err := s.ws.Engine.AddCard(boardPath, colName, body.Title, false)
 	if err != nil {
 		handleError(w, err)
 		return

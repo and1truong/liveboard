@@ -15,6 +15,9 @@ type AppSettings struct {
 	ColumnWidth     int      `json:"column_width"`
 	SidebarPosition string   `json:"sidebar_position"`
 	DefaultColumns  []string `json:"default_columns,omitempty"`
+	ShowCheckbox    bool     `json:"show_checkbox"`
+	NewLineTrigger  string   `json:"newline_trigger"`
+	CardPosition    string   `json:"card_position"`
 }
 
 var validColorThemes = map[string]bool{
@@ -30,6 +33,9 @@ func defaultSettings() AppSettings {
 		ColumnWidth:     280,
 		SidebarPosition: "left",
 		DefaultColumns:  []string{"not now", "maybe?", "done"},
+		ShowCheckbox:    true,
+		NewLineTrigger:  "shift-enter",
+		CardPosition:    "append",
 	}
 }
 
@@ -121,6 +127,12 @@ func (h *Handler) SettingsAPIHandler() http.Handler {
 			}
 			if len(s.DefaultColumns) == 0 {
 				s.DefaultColumns = defaultSettings().DefaultColumns
+			}
+			if s.NewLineTrigger != "enter" && s.NewLineTrigger != "shift-enter" {
+				s.NewLineTrigger = "shift-enter"
+			}
+			if s.CardPosition != "prepend" && s.CardPosition != "append" {
+				s.CardPosition = "append"
 			}
 			if err := h.saveSettings(s); err != nil {
 				http.Error(w, `{"error":"save failed"}`, http.StatusInternalServerError)

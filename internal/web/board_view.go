@@ -12,14 +12,77 @@ import (
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
+// ResolvedSettings holds the effective settings for a board view,
+// merging global defaults with per-board overrides.
+type ResolvedSettings struct {
+	ShowCheckbox   bool   `json:"show_checkbox"`
+	NewLineTrigger string `json:"newline_trigger"`
+	CardPosition   string `json:"card_position"`
+	ExpandColumns  bool   `json:"expand_columns"`
+}
+
+// BoardSettingsView holds pre-formatted per-board override values for the template.
+// Empty string means "not set" (inherit global).
+type BoardSettingsView struct {
+	ShowCheckbox  string `json:"show_checkbox"`
+	CardPosition  string `json:"card_position"`
+	ExpandColumns string `json:"expand_columns"`
+}
+
 // BoardViewModel is the state for the board view page.
 type BoardViewModel struct {
-	Title     string         `json:"title"`
-	Board     *models.Board  `json:"board"`
-	BoardName string         `json:"board_name"`
-	BoardSlug string         `json:"board_slug"` // filename stem for loading
-	Boards    []BoardSummary `json:"boards"`
-	Error     string         `json:"error,omitempty"`
+	Title          string            `json:"title"`
+	Board          *models.Board     `json:"board"`
+	BoardName      string            `json:"board_name"`
+	BoardSlug      string            `json:"board_slug"` // filename stem for loading
+	Boards         []BoardSummary    `json:"boards"`
+	Error          string            `json:"error,omitempty"`
+	Settings       ResolvedSettings  `json:"settings"`
+	BSView         BoardSettingsView `json:"bs_view"`
+	GlobalSettings AppSettings       `json:"global_settings"`
+}
+
+// resolveSettings merges global defaults with per-board overrides.
+func resolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettings {
+	rs := ResolvedSettings{
+		ShowCheckbox:   global.ShowCheckbox,
+		NewLineTrigger: global.NewLineTrigger,
+		CardPosition:   global.CardPosition,
+		ExpandColumns:  false,
+	}
+	if bs.ShowCheckbox != nil {
+		rs.ShowCheckbox = *bs.ShowCheckbox
+	}
+	if bs.CardPosition != nil {
+		rs.CardPosition = *bs.CardPosition
+	}
+	if bs.ExpandColumns != nil {
+		rs.ExpandColumns = *bs.ExpandColumns
+	}
+	return rs
+}
+
+// toBoardSettingsView converts pointer-based BoardSettings to string values for templates.
+func toBoardSettingsView(bs models.BoardSettings) BoardSettingsView {
+	v := BoardSettingsView{}
+	if bs.ShowCheckbox != nil {
+		if *bs.ShowCheckbox {
+			v.ShowCheckbox = "true"
+		} else {
+			v.ShowCheckbox = "false"
+		}
+	}
+	if bs.CardPosition != nil {
+		v.CardPosition = *bs.CardPosition
+	}
+	if bs.ExpandColumns != nil {
+		if *bs.ExpandColumns {
+			v.ExpandColumns = "true"
+		} else {
+			v.ExpandColumns = "false"
+		}
+	}
+	return v
 }
 
 // boardViewModel loads a board by slug and returns a populated BoardViewModel.
@@ -29,12 +92,16 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
 	}
 	allBoards, _ := h.ws.ListBoards()
+	global := h.loadSettings()
 	return BoardViewModel{
-		Title:     board.Name + " — LiveBoard",
-		Board:     board,
-		BoardName: board.Name,
-		BoardSlug: slug,
-		Boards:    toBoardSummaries(allBoards),
+		Title:          board.Name + " — LiveBoard",
+		Board:          board,
+		BoardName:      board.Name,
+		BoardSlug:      slug,
+		Boards:         toBoardSummaries(allBoards),
+		Settings:       resolveSettings(global, board.Settings),
+		BSView:         toBoardSettingsView(board.Settings),
+		GlobalSettings: global,
 	}, nil
 }
 
@@ -120,8 +187,17 @@ func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Par
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
+	// Resolve card position setting to determine prepend vs append.
+	board, loadErr := h.ws.LoadBoard(slug)
+	prepend := false
+	if loadErr == nil {
+		global := h.loadSettings()
+		rs := resolveSettings(global, board.Settings)
+		prepend = rs.CardPosition == "prepend"
+	}
+
 	return h.mutateBoard(slug, fmt.Sprintf("Add card \"%s\" to %s", title, column), func(boardPath string) error {
-		_, err := h.eng.AddCard(boardPath, column, title)
+		_, err := h.eng.AddCard(boardPath, column, title, prepend)
 		return err
 	})
 }
@@ -250,6 +326,7 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 	body, _ := p["body"].(string)
 	tagsRaw, _ := p["tags"].(string)
 	priority, _ := p["priority"].(string)
+	due, _ := p["due"].(string)
 
 	var tags []string
 	for _, t := range strings.Split(tagsRaw, ",") {
@@ -260,7 +337,7 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 	}
 
 	return h.mutateBoard(slug, "Edit card", func(boardPath string) error {
-		return h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags, priority)
+		return h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags, priority, due)
 	})
 }
 
@@ -380,6 +457,35 @@ func (h *Handler) handleSortColumn(_ context.Context, _ *live.Socket, p live.Par
 
 	return h.mutateBoard(slug, fmt.Sprintf("Sort column by %s", sortBy), func(boardPath string) error {
 		return h.eng.SortColumn(boardPath, colIdx, sortBy)
+	})
+}
+
+// handleUpdateBoardSettings updates per-board setting overrides.
+func (h *Handler) handleUpdateBoardSettings(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	var settings models.BoardSettings
+
+	// Each field is optional. Present = override, absent = inherit global.
+	if v, ok := p["show_checkbox"].(string); ok {
+		b := v == "true"
+		settings.ShowCheckbox = &b
+	}
+	if v, ok := p["card_position"].(string); ok {
+		if v == "prepend" || v == "append" {
+			settings.CardPosition = &v
+		}
+	}
+	if v, ok := p["expand_columns"].(string); ok {
+		b := v == "true"
+		settings.ExpandColumns = &b
+	}
+
+	return h.mutateBoard(slug, "Update board settings", func(boardPath string) error {
+		return h.eng.UpdateBoardSettings(boardPath, settings)
 	})
 }
 
