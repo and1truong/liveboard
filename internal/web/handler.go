@@ -17,11 +17,13 @@ import (
 
 // Handler manages LiveView handlers and shared dependencies.
 type Handler struct {
-	ws     *workspace.Workspace
-	eng    *board.Engine
-	git    *gitpkg.Repository
-	pubsub *live.PubSub
-	tmpl   *template.Template
+	ws           *workspace.Workspace
+	eng          *board.Engine
+	git          *gitpkg.Repository
+	pubsub       *live.PubSub
+	tmplDir      string
+	boardListTpl *template.Template
+	boardViewTpl *template.Template
 }
 
 // NewHandler creates a new web Handler.
@@ -36,24 +38,29 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 	ctx := context.Background()
 	h.pubsub = live.NewPubSub(ctx, live.NewLocalTransport())
 
-	// Create template engine - try multiple paths
-	templatePatterns := []string{
-		filepath.Join("internal", "templates", "*.html"),
-		filepath.Join("templates", "*.html"),
-		"*.html",
+	// Find template directory
+	templateDirs := []string{
+		filepath.Join("internal", "templates"),
+		"templates",
+		".",
 	}
 
-	var err error
-	for _, pattern := range templatePatterns {
-		h.tmpl, err = template.ParseGlob(pattern)
-		if err == nil && h.tmpl != nil {
+	for _, dir := range templateDirs {
+		layoutPath := filepath.Join(dir, "layout.html")
+		if _, err := template.ParseFiles(layoutPath); err == nil {
+			h.tmplDir = dir
 			break
 		}
 	}
 
-	// If no templates found, create an empty template (for tests)
-	if h.tmpl == nil {
-		h.tmpl = template.New("empty")
+	if h.tmplDir != "" {
+		layoutFile := filepath.Join(h.tmplDir, "layout.html")
+		h.boardListTpl = template.Must(template.ParseFiles(layoutFile, filepath.Join(h.tmplDir, "board_list.html")))
+		h.boardViewTpl = template.Must(template.ParseFiles(layoutFile, filepath.Join(h.tmplDir, "board_view.html")))
+	} else {
+		// Empty templates for tests
+		h.boardListTpl = template.New("empty")
+		h.boardViewTpl = template.New("empty")
 	}
 
 	return h
@@ -62,7 +69,7 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 // BoardListHandler returns an http.Handler for the board list page.
 func (h *Handler) BoardListHandler() http.Handler {
 	boardListHandler := live.NewHandler(
-		live.WithTemplateRenderer(h.tmpl),
+		live.WithTemplateRenderer(h.boardListTpl),
 	)
 	boardListHandler.MountHandler = h.mountBoardList
 	boardListHandler.HandleEvent("create-board", h.handleCreateBoard)
@@ -79,7 +86,7 @@ func (h *Handler) BoardListHandler() http.Handler {
 // BoardViewHandler returns an http.Handler for a single board view.
 func (h *Handler) BoardViewHandler() http.Handler {
 	boardViewHandler := live.NewHandler(
-		live.WithTemplateRenderer(h.tmpl),
+		live.WithTemplateRenderer(h.boardViewTpl),
 	)
 	boardViewHandler.MountHandler = h.mountBoardView
 	boardViewHandler.HandleEvent("create-card", h.handleCreateCard)
