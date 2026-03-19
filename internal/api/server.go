@@ -52,6 +52,7 @@ func (s *Server) buildRouter() chi.Router {
 
 	// Serve static assets
 	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {
+		w.Header().Set("Cache-Control", "no-cache")
 		http.StripPrefix("/static/", http.FileServer(http.Dir("web"))).ServeHTTP(w, req)
 	})
 

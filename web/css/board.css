@@ -817,7 +817,7 @@ body {
     justify-content: flex-start;
     margin-bottom: 0;
     padding: 4px 0;
-    gap: 6px;
+    gap: 2px;
     height: 100%;
 }
 
@@ -829,6 +829,8 @@ body {
     overflow: hidden;
     flex-shrink: 1;
     max-height: 240px;
+    text-align: right;
+    padding-bottom: 12px;
 }
 
 .column-collapse-btn {
@@ -841,12 +843,8 @@ body {
     font-size: 0.65rem;
     line-height: 1;
     flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.15s, background 0.12s, color 0.12s;
-}
-
-.column:hover .column-collapse-btn {
     opacity: 1;
+    transition: background 0.12s, color 0.12s;
 }
 
 .column-collapse-btn:hover {
@@ -856,7 +854,17 @@ body {
 }
 
 .column.collapsed .column-collapse-btn {
+    opacity: 0;
+    order: 10;
+    margin-top: auto;
+}
+
+.column.collapsed:hover .column-collapse-btn {
     opacity: 1;
+}
+
+.column.collapsed .column-menu-btn {
+    display: none;
 }
 
 .column-card-count {

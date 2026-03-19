@@ -926,7 +926,22 @@
     }
   });
 
+  var collapsedHeaderClickWired = false;
+  function attachCollapsedColumnClick() {
+    if (collapsedHeaderClickWired) return;
+    collapsedHeaderClickWired = true;
+    document.addEventListener("click", function (e) {
+      var header = e.target.closest(".column-header");
+      if (!header) return;
+      var col = header.closest(".column");
+      if (!col || !col.classList.contains("collapsed")) return;
+      var btn = header.querySelector(".column-collapse-btn");
+      if (btn && e.target !== btn) btn.click();
+    });
+  }
+
   function attach() {
+    attachCollapsedColumnClick();
     attachContextMenu();
     attachCardClick();
     attachColumnMenus();
