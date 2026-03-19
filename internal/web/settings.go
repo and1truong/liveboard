@@ -11,13 +11,20 @@ import (
 // AppSettings holds persisted user preferences.
 type AppSettings struct {
 	Theme          string   `json:"theme"`
+	ColorTheme     string   `json:"color_theme"`
 	ColumnWidth    int      `json:"column_width"`
 	DefaultColumns []string `json:"default_columns,omitempty"`
+}
+
+var validColorThemes = map[string]bool{
+	"default": true, "github": true, "gitlab": true,
+	"emerald": true, "rose": true, "sunset": true,
 }
 
 func defaultSettings() AppSettings {
 	return AppSettings{
 		Theme:          "system",
+		ColorTheme:     "default",
 		ColumnWidth:    280,
 		DefaultColumns: []string{"not now", "maybe?", "done"},
 	}
@@ -102,6 +109,9 @@ func (h *Handler) SettingsAPIHandler() http.Handler {
 			}
 			if s.Theme != "dark" && s.Theme != "light" {
 				s.Theme = "system"
+			}
+			if !validColorThemes[s.ColorTheme] {
+				s.ColorTheme = "default"
 			}
 			if len(s.DefaultColumns) == 0 {
 				s.DefaultColumns = defaultSettings().DefaultColumns

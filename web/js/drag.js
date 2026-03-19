@@ -782,6 +782,7 @@
           title: titleInput.value.trim(),
           body: bodyInput.value.trim(),
           tags: tagsInput.value.trim(),
+          priority: priorityValue.current,
           name: slug,
         });
       }
@@ -858,35 +859,66 @@
       sidebar.appendChild(delBtn);
     }
 
-    // Metadata display
-    if (assignee || priority || due) {
-      var metaSep = document.createElement("div");
-      metaSep.className = "card-modal-sidebar-sep";
-      sidebar.appendChild(metaSep);
+    // Priority section
+    var prioritySep = document.createElement("div");
+    prioritySep.className = "card-modal-sidebar-sep";
+    sidebar.appendChild(prioritySep);
 
-      var metaLabel = document.createElement("div");
-      metaLabel.className = "card-modal-sidebar-label";
-      metaLabel.textContent = "Details";
-      sidebar.appendChild(metaLabel);
+    var priorityLabel = document.createElement("div");
+    priorityLabel.className = "card-modal-sidebar-label";
+    priorityLabel.textContent = "Priority";
+    sidebar.appendChild(priorityLabel);
 
+    var priorityGroup = document.createElement("div");
+    priorityGroup.className = "card-modal-priority-group";
+    var priorityValue = { current: priority || "" };
+    var priorityBtns = [];
+    [
+      { val: "", label: "—", title: "None" },
+      { val: "low", label: "L", title: "Low" },
+      { val: "medium", label: "M", title: "Medium" },
+      { val: "high", label: "H", title: "High" },
+      { val: "critical", label: "!", title: "Critical" },
+    ].forEach(function (item) {
+      var btn = document.createElement("button");
+      btn.className =
+        "card-modal-priority-btn" +
+        (item.val === priorityValue.current
+          ? " card-modal-priority-btn--active"
+          : "") +
+        (item.val ? " card-modal-priority-btn--" + item.val : "");
+      btn.textContent = item.label;
+      btn.title = item.title;
+      btn.addEventListener("click", function () {
+        priorityValue.current = item.val;
+        priorityBtns.forEach(function (b) {
+          b.className = b.className
+            .replace(" card-modal-priority-btn--active", "");
+        });
+        btn.className += " card-modal-priority-btn--active";
+      });
+      priorityGroup.appendChild(btn);
+      priorityBtns.push(btn);
+    });
+    sidebar.appendChild(priorityGroup);
+
+    // Other metadata (read-only)
+    if (assignee || due) {
+      var metaWrap = document.createElement("div");
+      metaWrap.className = "card-modal-meta-list";
       if (assignee) {
         var aEl = document.createElement("div");
         aEl.className = "card-modal-meta-item";
         aEl.innerHTML = "👤 " + assignee;
-        sidebar.appendChild(aEl);
-      }
-      if (priority) {
-        var pEl = document.createElement("div");
-        pEl.className = "card-modal-meta-item";
-        pEl.innerHTML = "⚡ " + priority;
-        sidebar.appendChild(pEl);
+        metaWrap.appendChild(aEl);
       }
       if (due) {
         var dEl = document.createElement("div");
         dEl.className = "card-modal-meta-item";
         dEl.innerHTML = "📅 " + due;
-        sidebar.appendChild(dEl);
+        metaWrap.appendChild(dEl);
       }
+      sidebar.appendChild(metaWrap);
     }
 
     modal.appendChild(sidebar);

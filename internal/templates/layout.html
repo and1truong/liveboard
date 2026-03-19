@@ -4,11 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
+    <link rel="icon" type="image/svg+xml" href="/static/img/liveboard-icon.svg">
     <link rel="stylesheet" href="/static/css/board.css">
     <script>
         (function() {
             var t = localStorage.getItem('lb_theme');
             if (t && t !== 'system') document.documentElement.setAttribute('data-theme', t);
+            var ct = localStorage.getItem('lb_color_theme');
+            if (ct && ct !== 'default') document.documentElement.setAttribute('data-color-theme', ct);
             var w = localStorage.getItem('lb_column_width');
             if (w) document.documentElement.style.setProperty('--column-width', w + 'px');
         })();
@@ -21,14 +24,11 @@
         <aside class="app-sidebar" id="appSidebar">
             <div class="app-brand">
                 <a href="/" class="brand-link">
-                    <span class="brand-icon">&#9644;</span>
+                    <svg class="brand-icon" width="28" height="28" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg"><rect x="10" y="16" width="108" height="96" rx="14" fill="none" stroke="currentColor" stroke-width="3"/><line x1="46" y1="28" x2="46" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.25"/><line x1="82" y1="28" x2="82" y2="100" stroke="currentColor" stroke-width="0.8" opacity="0.25"/><rect x="18" y="32" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="18" y="44" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="18" y="56" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.5"/><rect x="53" y="32" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.7"/><rect x="53" y="44" width="22" height="8" rx="2" fill="var(--color-accent)" opacity="0.7"/><rect x="88" y="32" width="22" height="8" rx="2" fill="var(--color-accent)"/><circle cx="110" cy="22" r="8" fill="var(--color-accent)" opacity="0.7"/><circle cx="110" cy="22" r="5" fill="var(--color-accent)"/><circle cx="110" cy="22" r="2.5" fill="var(--color-surface, #ffffff)"/></svg>
                     <span class="brand-name">LiveBoard</span>
                 </a>
                 <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
-                    <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-                        <rect x="1" y="1" width="5" height="14" rx="1.5" fill="currentColor" opacity="0.9"/>
-                        <rect x="8" y="1" width="7" height="14" rx="1.5" fill="currentColor" opacity="0.35"/>
-                    </svg>
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink: 0;"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
                 </button>
             </div>
             <nav class="sidebar-nav">
@@ -44,14 +44,25 @@
                     <span class="nav-label">New Board</span>
                 </a>
             </nav>
-            <div class="sidebar-board-dropdown">
-                <select onchange="if(this.value)window.location.href=this.value">
-                    <option value="">Boards</option>
+            <div class="sidebar-board-dropdown" id="boardDropdown">
+                <button class="dropdown-trigger" onclick="this.closest('.sidebar-board-dropdown').classList.toggle('open')">
+                    <span class="dropdown-trigger-label">{{if .BoardSlug}}{{range .Boards}}{{if eq $.BoardSlug .Slug}}{{.Name}}{{end}}{{end}}{{else}}Boards{{end}}</span>
+                    <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <div class="dropdown-menu">
+                    <div class="dropdown-label">Boards</div>
                     {{range .Boards}}
-                    <option value="/board/{{.Slug}}"{{if eq $.BoardSlug .Slug}} selected{{end}}>{{.Name}}</option>
+                    <a href="/board/{{.Slug}}" class="dropdown-item{{if eq $.BoardSlug .Slug}} active{{end}}">
+                        <span class="nav-icon">&#9783;</span>
+                        {{.Name}}
+                    </a>
                     {{end}}
-                    <option value="/">+ New Board</option>
-                </select>
+                    <div class="dropdown-separator"></div>
+                    <a href="/" class="dropdown-item dropdown-item-muted">
+                        <span class="nav-icon">+</span>
+                        New Board
+                    </a>
+                </div>
             </div>
             <div class="sidebar-footer">
                 <div class="connection-status">
@@ -82,6 +93,10 @@
                 localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
             });
         })();
+        document.addEventListener('click', function(e) {
+            var dd = document.getElementById('boardDropdown');
+            if (dd && !dd.contains(e.target)) dd.classList.remove('open');
+        });
     </script>
 </body>
 </html>

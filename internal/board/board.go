@@ -165,8 +165,8 @@ func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) e
 	return renderAndWrite(board, boardPath)
 }
 
-// EditCard updates a card's title, body, and tags in-place.
-func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string) error {
+// EditCard updates a card's title, body, tags, and priority in-place.
+func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority string) error {
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -182,6 +182,7 @@ func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body str
 	}
 	card.Body = body
 	card.Tags = tags
+	card.Priority = priority
 
 	return renderAndWrite(board, boardPath)
 }

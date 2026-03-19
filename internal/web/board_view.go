@@ -249,6 +249,7 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 	title, _ := p["title"].(string)
 	body, _ := p["body"].(string)
 	tagsRaw, _ := p["tags"].(string)
+	priority, _ := p["priority"].(string)
 
 	var tags []string
 	for _, t := range strings.Split(tagsRaw, ",") {
@@ -259,7 +260,7 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 	}
 
 	return h.mutateBoard(slug, "Edit card", func(boardPath string) error {
-		return h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags)
+		return h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags, priority)
 	})
 }
 
