@@ -151,6 +151,7 @@
             themeEl.value = s.theme || 'system';
             colorThemeEl.value = s.color_theme || 'default';
             widthEl.value = s.column_width || 280;
+            sidebarPosEl.value = s.sidebar_position || 'left';
             currentCols = s.default_columns || ['not now', 'maybe?', 'done'];
             renderColChips();
             colsInput.placeholder = currentCols.length ? '' : 'Add column...';
@@ -162,6 +163,7 @@
             theme: themeEl.value,
             color_theme: colorThemeEl.value,
             column_width: parseInt(widthEl.value, 10) || 280,
+            sidebar_position: sidebarPosEl.value,
             default_columns: rawCols
         };
 
@@ -176,6 +178,7 @@
             localStorage.setItem('lb_theme', s.theme);
             localStorage.setItem('lb_color_theme', s.color_theme);
             localStorage.setItem('lb_column_width', String(s.column_width));
+            localStorage.setItem('lb_sidebar_position', s.sidebar_position);
 
             // Apply immediately
             if (s.theme === 'system') {
@@ -189,6 +192,11 @@
                 document.documentElement.removeAttribute('data-color-theme');
             }
             document.documentElement.style.setProperty('--column-width', s.column_width + 'px');
+            if (s.sidebar_position === 'right') {
+                document.documentElement.setAttribute('data-sidebar-position', 'right');
+            } else {
+                document.documentElement.removeAttribute('data-sidebar-position');
+            }
 
             savedMsg.style.display = 'inline';
             setTimeout(function() { savedMsg.style.display = 'none'; }, 2000);

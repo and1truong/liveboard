@@ -628,6 +628,22 @@ body {
     color: var(--color-text-primary);
 }
 
+/* Sidebar on right side */
+[data-sidebar-position="right"] .app-shell {
+    flex-direction: row-reverse;
+}
+[data-sidebar-position="right"] .app-sidebar {
+    border-right: none;
+    border-left: 1px solid var(--color-border);
+}
+[data-sidebar-position="right"] .app-sidebar.collapsed {
+    border-left: none;
+}
+[data-sidebar-position="right"] .sidebar-toggle {
+    left: auto;
+    right: 0;
+}
+
 .sidebar-nav {
     flex: 1;
     padding: 8px 0;

@@ -14,6 +14,8 @@
             if (ct && ct !== 'default') document.documentElement.setAttribute('data-color-theme', ct);
             var w = localStorage.getItem('lb_column_width');
             if (w) document.documentElement.style.setProperty('--column-width', w + 'px');
+            var sp = localStorage.getItem('lb_sidebar_position');
+            if (sp === 'right') document.documentElement.setAttribute('data-sidebar-position', 'right');
         })();
         // Theme-aware favicon
         document.addEventListener('DOMContentLoaded', function() {
