@@ -13,14 +13,15 @@ import (
 
 // BoardViewModel is the state for the board view page.
 type BoardViewModel struct {
-	Title       string        `json:"title"`
-	Board       *models.Board `json:"board"`
-	BoardName   string        `json:"board_name"`
-	BoardSlug   string        `json:"board_slug"` // filename stem for loading
-	Error       string        `json:"error,omitempty"`
-	SelectedID  string        `json:"selected_id,omitempty"`
-	ShowAddCard string        `json:"show_add_card,omitempty"` // Column name
-	NeedsReload bool          `json:"needs_reload,omitempty"`
+	Title       string         `json:"title"`
+	Board       *models.Board  `json:"board"`
+	BoardName   string         `json:"board_name"`
+	BoardSlug   string         `json:"board_slug"` // filename stem for loading
+	Boards      []BoardSummary `json:"boards"`
+	Error       string         `json:"error,omitempty"`
+	SelectedID  string         `json:"selected_id,omitempty"`
+	ShowAddCard string         `json:"show_add_card,omitempty"` // Column name
+	NeedsReload bool           `json:"needs_reload,omitempty"`
 }
 
 // boardViewModel loads a board by slug and returns a populated BoardViewModel.
@@ -29,11 +30,13 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	if err != nil {
 		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
 	}
+	allBoards, _ := h.ws.ListBoards()
 	return BoardViewModel{
 		Title:     board.Name + " — LiveBoard",
 		Board:     board,
 		BoardName: board.Name,
 		BoardSlug: slug,
+		Boards:    toBoardSummaries(allBoards),
 	}, nil
 }
 
@@ -204,6 +207,41 @@ func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live
 
 	h.commitWithHandling(boardPath, fmt.Sprintf("Complete card %s", cardID))
 	h.publishBoardEvent(slug, "card_completed")
+
+	return h.boardViewModel(slug)
+}
+
+// handleEditCard updates a card's title, body, and tags.
+func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	cardID, ok := p["card_id"].(string)
+	if !ok || cardID == "" {
+		return BoardViewModel{Error: "Card ID is required"}, nil
+	}
+
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	title, _ := p["title"].(string)
+	body, _ := p["body"].(string)
+	tagsRaw, _ := p["tags"].(string)
+
+	var tags []string
+	for _, t := range strings.Split(tagsRaw, ",") {
+		t = strings.TrimSpace(t)
+		if t != "" {
+			tags = append(tags, t)
+		}
+	}
+
+	boardPath := h.ws.BoardPath(slug)
+	if err := h.eng.EditCard(boardPath, cardID, title, body, tags); err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	h.commitWithHandling(boardPath, fmt.Sprintf("Edit card %s", cardID))
+	h.publishBoardEvent(slug, "card_updated")
 
 	return h.boardViewModel(slug)
 }

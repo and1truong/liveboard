@@ -15,6 +15,7 @@ import (
 type BoardListModel struct {
 	Title       string         `json:"title"`
 	Boards      []BoardSummary `json:"boards"`
+	BoardSlug   string         `json:"board_slug"` // always empty; shared with layout template
 	Error       string         `json:"error,omitempty"`
 	Creating    bool           `json:"creating,omitempty"`
 	NeedsReload bool           `json:"needs_reload,omitempty"`
