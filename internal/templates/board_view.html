@@ -1,6 +1,11 @@
 {{define "content"}}
 <div class="board-view">
     <div class="container">
+        {{if .Error}}
+        <div class="error">{{.Error}}</div>
+        {{end}}
+
+        {{if .Board}}
         <div class="board-header">
             <div>
                 <h2>{{.Board.Name}}</h2>
@@ -18,17 +23,23 @@
             <a href="/" class="btn-secondary">← Back to Boards</a>
         </div>
 
-        {{if .Error}}
-        <div class="error">{{.Error}}</div>
-        {{end}}
-
         <div class="columns-container">
             {{range $column := .Board.Columns}}
             <div class="column">
                 <h3>{{$column.Name}}</h3>
-                <div class="cards">
-                    {{range .Cards}}
-                    <div class="card {{if .Completed}}completed{{end}}">
+                <div class="cards" data-column="{{$column.Name}}">
+                    {{range $card := .Cards}}
+                    <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-card-id="{{.ID}}">
+                        {{range $.Board.Columns}}
+                        {{if ne .Name $column.Name}}
+                        <button class="move-trigger"
+                            data-target="{{.Name}}"
+                            live-click="move-card"
+                            live-value-card_id="{{$card.ID}}"
+                            live-value-target_column="{{.Name}}"
+                            live-value-name="{{$.BoardSlug}}"></button>
+                        {{end}}
+                        {{end}}
                         <div class="card-header">
                             <h4>{{.Title}}</h4>
                             {{if .Completed}}
@@ -62,17 +73,9 @@
 
                         <div class="card-actions">
                             {{if not .Completed}}
-                            <button live-click="toggle-complete" live-value-card_id="{{.ID}}" class="btn-small">Complete</button>
+                            <button live-click="toggle-complete" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small">Complete</button>
                             {{end}}
-                            <select live-change="move-card" live-value-card_id="{{.ID}}" class="move-select">
-                                <option value="">Move to...</option>
-                                {{range $.Board.Columns}}
-                                {{if ne .Name $column.Name}}
-                                <option value="{{.Name}}">{{.Name}}</option>
-                                {{end}}
-                                {{end}}
-                            </select>
-                            <button live-click="delete-card" live-value-card_id="{{.ID}}" class="btn-small btn-danger">Delete</button>
+                            <button live-click="delete-card" live-value-card_id="{{.ID}}" live-value-name="{{$.BoardSlug}}" class="btn-small btn-danger">Delete</button>
                         </div>
                     </div>
                     {{end}}
@@ -97,6 +100,7 @@
                 </form>
             </div>
         </div>
+        {{end}}
     </div>
 </div>
 {{end}}

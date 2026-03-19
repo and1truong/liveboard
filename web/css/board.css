@@ -310,11 +310,42 @@ main {
     border-radius: 6px;
     padding: 1rem;
     box-shadow: 0 1px 4px rgba(0,0,0,0.1);
-    transition: box-shadow 0.2s;
+    transition: box-shadow 0.2s, opacity 0.2s;
+}
+
+.card[draggable] {
+    cursor: grab;
+}
+
+.card[draggable]:active {
+    cursor: grabbing;
+}
+
+.card.dragging {
+    opacity: 0.4;
 }
 
 .card:hover {
     box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.move-trigger {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+    padding: 0;
+}
+
+/* Drop zone highlight */
+.cards.drag-over {
+    background: #e3f2fd;
+    border-radius: 6px;
+    outline: 2px dashed #0066cc;
+    outline-offset: -2px;
+    min-height: 60px;
 }
 
 .card.completed {

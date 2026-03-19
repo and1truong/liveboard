@@ -16,36 +16,59 @@ type BoardViewModel struct {
 	Title       string        `json:"title"`
 	Board       *models.Board `json:"board"`
 	BoardName   string        `json:"board_name"`
+	BoardSlug   string        `json:"board_slug"` // filename stem for loading
 	Error       string        `json:"error,omitempty"`
 	SelectedID  string        `json:"selected_id,omitempty"`
 	ShowAddCard string        `json:"show_add_card,omitempty"` // Column name
 	NeedsReload bool          `json:"needs_reload,omitempty"`
 }
 
-// mountBoardView initializes the board view model.
-func (h *Handler) mountBoardView(ctx context.Context, _ *live.Socket) (interface{}, error) {
-	// Get board name from URL
-	req := live.Request(ctx)
-	if req == nil || req.URL == nil {
-		return BoardViewModel{Error: "Invalid request"}, nil
-	}
-	// Extract board slug from URL path: /board/{slug}
-	slug := strings.TrimPrefix(req.URL.Path, "/board/")
-	slug, _ = url.PathUnescape(slug)
-	if slug == "" {
-		return BoardViewModel{Error: "Board name is required"}, nil
-	}
-
+// boardViewModel loads a board by slug and returns a populated BoardViewModel.
+func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	board, err := h.ws.LoadBoard(slug)
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
 	}
-
 	return BoardViewModel{
 		Title:     board.Name + " — LiveBoard",
 		Board:     board,
 		BoardName: board.Name,
+		BoardSlug: slug,
 	}, nil
+}
+
+// mountBoardView initializes the board view model.
+func (h *Handler) mountBoardView(ctx context.Context, s *live.Socket) (interface{}, error) {
+	var slug string
+
+	// On websocket reconnect, reuse slug from existing assigns
+	if s != nil {
+		if m, ok := s.Assigns().(BoardViewModel); ok && m.BoardSlug != "" {
+			slug = m.BoardSlug
+		}
+	}
+
+	// Initial HTTP mount: extract board slug from URL path
+	if slug == "" {
+		req := live.Request(ctx)
+		if req == nil || req.URL == nil {
+			return BoardViewModel{Error: "Invalid request"}, nil
+		}
+		slug = strings.TrimPrefix(req.URL.Path, "/board/")
+		slug, _ = url.PathUnescape(slug)
+	}
+
+	if slug == "" {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	return h.boardViewModel(slug)
+}
+
+// slugFromParams extracts the board slug from event params.
+func slugFromParams(p live.Params) (string, bool) {
+	slug, ok := p["name"].(string)
+	return slug, ok && slug != ""
 }
 
 // handleCreateCard creates a new card in a column.
@@ -60,34 +83,21 @@ func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Par
 		return BoardViewModel{Error: "Card title is required"}, nil
 	}
 
-	boardName, ok := p["name"].(string)
-	if !ok || boardName == "" {
+	slug, ok := slugFromParams(p)
+	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	boardPath := h.ws.BoardPath(boardName)
+	boardPath := h.ws.BoardPath(slug)
 	_, err := h.eng.AddCard(boardPath, column, title)
 	if err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	// Git commit for card creation
 	h.commitWithHandling(boardPath, fmt.Sprintf("Add card \"%s\" to %s", title, column))
+	h.publishBoardEvent(slug, "card_created")
 
-	// Publish update to all subscribers
-	h.publishBoardEvent(boardName, "card_created")
-
-	// Reload board
-	board, err := h.ws.LoadBoard(boardName)
-	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
-	}
-
-	return BoardViewModel{
-		Title:     boardName + " — LiveBoard",
-		Board:     board,
-		BoardName: boardName,
-	}, nil
+	return h.boardViewModel(slug)
 }
 
 // handleMoveCard moves a card to a different column.
@@ -102,34 +112,21 @@ func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Param
 		return BoardViewModel{Error: "Target column is required"}, nil
 	}
 
-	boardName, ok := p["name"].(string)
-	if !ok || boardName == "" {
+	slug, ok := slugFromParams(p)
+	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	boardPath := h.ws.BoardPath(boardName)
+	boardPath := h.ws.BoardPath(slug)
 	err := h.eng.MoveCard(boardPath, cardID, targetColumn)
 	if err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	// Git commit for card move
 	h.commitWithHandling(boardPath, fmt.Sprintf("Move card %s to %s", cardID, targetColumn))
+	h.publishBoardEvent(slug, "card_moved")
 
-	// Publish update to all subscribers
-	h.publishBoardEvent(boardName, "card_moved")
-
-	// Reload board
-	board, err := h.ws.LoadBoard(boardName)
-	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
-	}
-
-	return BoardViewModel{
-		Title:     boardName + " — LiveBoard",
-		Board:     board,
-		BoardName: boardName,
-	}, nil
+	return h.boardViewModel(slug)
 }
 
 // handleDeleteCard deletes a card.
@@ -139,34 +136,21 @@ func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Par
 		return BoardViewModel{Error: "Card ID is required"}, nil
 	}
 
-	boardName, ok := p["name"].(string)
-	if !ok || boardName == "" {
+	slug, ok := slugFromParams(p)
+	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	boardPath := h.ws.BoardPath(boardName)
+	boardPath := h.ws.BoardPath(slug)
 	err := h.eng.DeleteCard(boardPath, cardID)
 	if err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	// Git commit for card deletion
 	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete card %s", cardID))
+	h.publishBoardEvent(slug, "card_deleted")
 
-	// Publish update to all subscribers
-	h.publishBoardEvent(boardName, "card_deleted")
-
-	// Reload board
-	board, err := h.ws.LoadBoard(boardName)
-	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
-	}
-
-	return BoardViewModel{
-		Title:     boardName + " — LiveBoard",
-		Board:     board,
-		BoardName: boardName,
-	}, nil
+	return h.boardViewModel(slug)
 }
 
 // handleToggleComplete marks a card as completed.
@@ -176,34 +160,21 @@ func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live
 		return BoardViewModel{Error: "Card ID is required"}, nil
 	}
 
-	boardName, ok := p["name"].(string)
-	if !ok || boardName == "" {
+	slug, ok := slugFromParams(p)
+	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	boardPath := h.ws.BoardPath(boardName)
+	boardPath := h.ws.BoardPath(slug)
 	err := h.eng.CompleteCard(boardPath, cardID)
 	if err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	// Git commit for card completion
 	h.commitWithHandling(boardPath, fmt.Sprintf("Complete card %s", cardID))
+	h.publishBoardEvent(slug, "card_completed")
 
-	// Publish update to all subscribers
-	h.publishBoardEvent(boardName, "card_completed")
-
-	// Reload board
-	board, err := h.ws.LoadBoard(boardName)
-	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
-	}
-
-	return BoardViewModel{
-		Title:     boardName + " — LiveBoard",
-		Board:     board,
-		BoardName: boardName,
-	}, nil
+	return h.boardViewModel(slug)
 }
 
 // handleCreateColumn creates a new column.
@@ -213,105 +184,60 @@ func (h *Handler) handleCreateColumn(_ context.Context, _ *live.Socket, p live.P
 		return BoardViewModel{Error: "Column name is required"}, nil
 	}
 
-	boardName, ok := p["name"].(string)
-	if !ok || boardName == "" {
+	slug, ok := slugFromParams(p)
+	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	boardPath := h.ws.BoardPath(boardName)
+	boardPath := h.ws.BoardPath(slug)
 	err := h.eng.AddColumn(boardPath, colName)
 	if err != nil {
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 
-	// Git commit for column creation
 	h.commitWithHandling(boardPath, fmt.Sprintf("Add column: %s", colName))
+	h.publishBoardEvent(slug, "column_created")
 
-	// Publish update to all subscribers
-	h.publishBoardEvent(boardName, "column_created")
-
-	// Reload board
-	board, err := h.ws.LoadBoard(boardName)
-	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
-	}
-
-	return BoardViewModel{
-		Title:     boardName + " — LiveBoard",
-		Board:     board,
-		BoardName: boardName,
-	}, nil
+	return h.boardViewModel(slug)
 }
 
 // handleShowAddCard shows the add card form for a column.
 func (h *Handler) handleShowAddCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	boardName, ok := p["name"].(string)
-	if !ok || boardName == "" {
+	slug, ok := slugFromParams(p)
+	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	column, ok := p["column"].(string)
-	if !ok || column == "" {
-		board, err := h.ws.LoadBoard(boardName)
-		if err != nil {
-			return BoardViewModel{Error: err.Error()}, nil
-		}
-		return BoardViewModel{
-			Title:     boardName + " — LiveBoard",
-			Board:     board,
-			BoardName: boardName,
-			Error:     "Column is required",
-		}, nil
-	}
+	column, _ := p["column"].(string)
 
-	board, err := h.ws.LoadBoard(boardName)
+	m, err := h.boardViewModel(slug)
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		return m, err
 	}
-	return BoardViewModel{
-		Title:       boardName + " — LiveBoard",
-		Board:       board,
-		BoardName:   boardName,
-		ShowAddCard: column,
-	}, nil
+	if column == "" {
+		m.Error = "Column is required"
+	} else {
+		m.ShowAddCard = column
+	}
+	return m, nil
 }
 
 // handleCancelAddCard cancels the add card form.
 func (h *Handler) handleCancelAddCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	boardName, ok := p["name"].(string)
-	if !ok || boardName == "" {
+	slug, ok := slugFromParams(p)
+	if !ok {
 		return BoardViewModel{Error: "Board name is required"}, nil
 	}
 
-	board, err := h.ws.LoadBoard(boardName)
-	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
-	}
-
-	return BoardViewModel{
-		Title:       boardName + " — LiveBoard",
-		Board:       board,
-		BoardName:   boardName,
-		ShowAddCard: "",
-	}, nil
+	return h.boardViewModel(slug)
 }
 
 // handleBoardUpdate handles PubSub messages for real-time updates.
 func (h *Handler) handleBoardUpdate(_ context.Context, _ *live.Socket, msg any) (interface{}, error) {
-	// Reload board on any PubSub message
-	boardName, ok := msg.(string)
+	slug, ok := msg.(string)
 	if !ok {
 		return nil, fmt.Errorf("invalid message type")
 	}
 
-	board, err := h.ws.LoadBoard(boardName)
-	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
-	}
-
-	return BoardViewModel{
-		Title:     boardName + " — LiveBoard",
-		Board:     board,
-		BoardName: boardName,
-	}, nil
+	return h.boardViewModel(slug)
 }
