@@ -27,7 +27,7 @@
             <h3>{{$column.Name}}</h3>
             <div class="cards" data-column="{{$column.Name}}">
                 {{range $card := .Cards}}
-                <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-card-id="{{.ID}}">
+                <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-card-id="{{.ID}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $i, $t := .Tags}}{{if $i}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
                     {{range $.Board.Columns}}
                     {{if ne .Name $column.Name}}
                     <button class="move-trigger"
@@ -80,13 +80,13 @@
             </div>
 
             {{if eq $.ShowAddCard .Name}}
-            <form live-submit="create-card" live-value-column="{{.Name}}" class="add-card-form">
+            <form live-submit="create-card" live-value-column="{{.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form">
                 <input type="text" name="title" placeholder="Card title" required autofocus>
                 <button type="submit" class="btn-small btn-primary">Add</button>
-                <button type="button" live-click="cancel-add-card" class="btn-small">Cancel</button>
+                <button type="button" live-click="cancel-add-card" live-value-name="{{$.BoardSlug}}" class="btn-small">Cancel</button>
             </form>
             {{else}}
-            <button live-click="show-add-card" live-value-column="{{.Name}}" class="btn-add-card">+ Add Card</button>
+            <button live-click="show-add-card" live-value-column="{{.Name}}" live-value-name="{{$.BoardSlug}}" class="btn-add-card">+ Add Card</button>
             {{end}}
         </div>
         {{end}}
