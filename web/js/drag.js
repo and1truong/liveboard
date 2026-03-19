@@ -60,6 +60,7 @@
     var currentTitle = card.dataset.cardTitle || "";
     var currentBody = card.dataset.cardBody || "";
     var currentTags = card.dataset.cardTags || "";
+    var currentPriority = card.dataset.cardPriority || "";
 
     // Build overlay
     var overlay = document.createElement("div");
@@ -75,14 +76,141 @@
     titleInput.rows = 2;
     overlay.appendChild(titleInput);
 
-    if (currentTags || true) {
-      var tagsInput = document.createElement("input");
-      tagsInput.className = "qe-tags";
-      tagsInput.type = "text";
-      tagsInput.placeholder = "Tags (comma-separated)";
-      tagsInput.value = currentTags;
-      overlay.appendChild(tagsInput);
+    // Collect all unique tags from board
+    var qeAllTags = [];
+    document.querySelectorAll(".card[data-card-tags]").forEach(function (c) {
+      (c.dataset.cardTags || "").split(",").forEach(function (s) {
+        s = s.trim();
+        if (s && qeAllTags.indexOf(s) === -1) qeAllTags.push(s);
+      });
+    });
+    qeAllTags.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+
+    var qeTags = [];
+    if (currentTags) {
+      currentTags.split(",").forEach(function (s) {
+        s = s.trim();
+        if (s && qeTags.indexOf(s) === -1) qeTags.push(s);
+      });
     }
+
+    var qeTagsContainer = document.createElement("div");
+    qeTagsContainer.className = "card-modal-tags-container qe-tags-container";
+
+    var qeTagsInput = document.createElement("input");
+    qeTagsInput.className = "card-modal-tags-input";
+    qeTagsInput.type = "text";
+    qeTagsInput.placeholder = qeTags.length ? "" : "Add tags...";
+
+    var qeDropdown = document.createElement("div");
+    qeDropdown.className = "card-modal-tags-dropdown";
+    var qeDropIdx = -1;
+
+    function qeGetTagsValue() { return qeTags.join(", "); }
+
+    function qeRenderChips() {
+      Array.from(qeTagsContainer.querySelectorAll(".card-modal-tag-chip")).forEach(function (el) { el.remove(); });
+      qeTags.forEach(function (tag, idx) {
+        var chip = document.createElement("span");
+        chip.className = "card-modal-tag-chip";
+        chip.textContent = tag;
+        var rm = document.createElement("button");
+        rm.className = "card-modal-tag-chip-remove";
+        rm.type = "button";
+        rm.innerHTML = "&times;";
+        rm.addEventListener("click", function (e) {
+          e.stopPropagation();
+          qeTags.splice(idx, 1);
+          qeRenderChips();
+          qeTagsInput.placeholder = qeTags.length ? "" : "Add tags...";
+        });
+        chip.appendChild(rm);
+        qeTagsContainer.insertBefore(chip, qeTagsInput);
+      });
+    }
+
+    function qeAddTag(tag) {
+      tag = tag.trim();
+      if (!tag || qeTags.indexOf(tag) !== -1) return;
+      qeTags.push(tag);
+      qeRenderChips();
+      qeTagsInput.value = "";
+      qeTagsInput.placeholder = "";
+      qeHideDropdown();
+    }
+
+    function qeShowDropdown(filter) {
+      qeDropdown.innerHTML = "";
+      qeDropIdx = -1;
+      var f = (filter || "").toLowerCase();
+      var suggestions = qeAllTags.filter(function (t) {
+        return qeTags.indexOf(t) === -1 && (!f || t.toLowerCase().indexOf(f) !== -1);
+      });
+      if (suggestions.length === 0) {
+        if (f) {
+          var hint = document.createElement("div");
+          hint.className = "card-modal-tags-dropdown-empty";
+          hint.textContent = 'Press Enter to add "' + filter + '"';
+          qeDropdown.appendChild(hint);
+        }
+        qeDropdown.classList.toggle("open", !!f);
+        return;
+      }
+      suggestions.forEach(function (t) {
+        var item = document.createElement("div");
+        item.className = "card-modal-tags-dropdown-item";
+        item.textContent = t;
+        item.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          qeAddTag(t);
+          qeTagsInput.focus();
+        });
+        qeDropdown.appendChild(item);
+      });
+      qeDropdown.classList.add("open");
+    }
+
+    function qeHideDropdown() {
+      qeDropdown.classList.remove("open");
+      qeDropIdx = -1;
+    }
+
+    qeTagsInput.addEventListener("input", function () { qeShowDropdown(qeTagsInput.value); });
+    qeTagsInput.addEventListener("focus", function () { qeShowDropdown(qeTagsInput.value); });
+    qeTagsInput.addEventListener("blur", function () { setTimeout(qeHideDropdown, 150); });
+
+    qeTagsInput.addEventListener("keydown", function (e) {
+      var items = qeDropdown.querySelectorAll(".card-modal-tags-dropdown-item");
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        qeDropIdx = Math.min(qeDropIdx + 1, items.length - 1);
+        items.forEach(function (it, i) { it.classList.toggle("active", i === qeDropIdx); });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        qeDropIdx = Math.max(qeDropIdx - 1, 0);
+        items.forEach(function (it, i) { it.classList.toggle("active", i === qeDropIdx); });
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (qeDropIdx >= 0 && items[qeDropIdx]) {
+          qeAddTag(items[qeDropIdx].textContent);
+        } else if (qeTagsInput.value.trim()) {
+          qeAddTag(qeTagsInput.value);
+        }
+        qeTagsInput.focus();
+      } else if (e.key === "Backspace" && !qeTagsInput.value && qeTags.length) {
+        qeTags.pop();
+        qeRenderChips();
+        qeTagsInput.placeholder = qeTags.length ? "" : "Add tags...";
+      } else if (e.key === "Escape") {
+        qeHideDropdown();
+      }
+    });
+
+    qeTagsContainer.addEventListener("click", function () { qeTagsInput.focus(); });
+    qeTagsContainer.appendChild(qeTagsInput);
+    qeTagsContainer.appendChild(qeDropdown);
+    qeRenderChips();
+    overlay.appendChild(qeTagsContainer);
 
     var bodyInput = document.createElement("textarea");
     bodyInput.className = "qe-body";
@@ -90,6 +218,9 @@
     bodyInput.value = currentBody;
     bodyInput.rows = 2;
     overlay.appendChild(bodyInput);
+
+    // Priority value — updated by context menu
+    var qePriorityValue = { current: currentPriority };
 
     var actions = document.createElement("div");
     actions.className = "qe-actions";
@@ -104,7 +235,8 @@
           card_idx: cardIdx,
           title: titleInput.value.trim(),
           body: bodyInput.value.trim(),
-          tags: tagsInput.value.trim(),
+          tags: qeGetTagsValue(),
+          priority: qePriorityValue.current,
           name: slug,
         });
       }
@@ -128,10 +260,10 @@
     titleInput.selectionStart = titleInput.value.length;
 
     // Build context menu to the right of the overlay
-    buildContextMenuForCard(card, cardRect);
+    buildContextMenuForCard(card, cardRect, qePriorityValue);
   }
 
-  function buildContextMenuForCard(card, cardRect) {
+  function buildContextMenuForCard(card, cardRect, priorityRef) {
     if (!ctxMenu) ctxMenu = buildContextMenu();
     ctxTargetCard = card;
     ctxMenu.innerHTML = "";
@@ -167,6 +299,47 @@
         }));
       });
       ctxMenu.appendChild(sub);
+    }
+
+    // Priority selector
+    if (priorityRef) {
+      var psep = document.createElement("div");
+      psep.className = "ctx-separator";
+      ctxMenu.appendChild(psep);
+
+      var plabel = document.createElement("div");
+      plabel.className = "ctx-submenu-label";
+      plabel.textContent = "Priority";
+      ctxMenu.appendChild(plabel);
+
+      var pgroup = document.createElement("div");
+      pgroup.className = "card-modal-priority-group ctx-priority-group";
+      var pbtns = [];
+      [
+        { val: "", label: "—", title: "None" },
+        { val: "low", label: "L", title: "Low" },
+        { val: "medium", label: "M", title: "Medium" },
+        { val: "high", label: "H", title: "High" },
+        { val: "critical", label: "!", title: "Critical" },
+      ].forEach(function (item) {
+        var btn = document.createElement("button");
+        btn.className =
+          "card-modal-priority-btn" +
+          (item.val === priorityRef.current ? " card-modal-priority-btn--active" : "") +
+          (item.val ? " card-modal-priority-btn--" + item.val : "");
+        btn.textContent = item.label;
+        btn.title = item.title;
+        btn.addEventListener("click", function () {
+          priorityRef.current = item.val;
+          pbtns.forEach(function (b) {
+            b.className = b.className.replace(" card-modal-priority-btn--active", "");
+          });
+          btn.className += " card-modal-priority-btn--active";
+        });
+        pgroup.appendChild(btn);
+        pbtns.push(btn);
+      });
+      ctxMenu.appendChild(pgroup);
     }
 
     var deleteBtn = card.querySelector('[live-click="delete-card"]');
@@ -285,6 +458,34 @@
         }
       }
     }));
+
+    // Sort submenu
+    var colEl = btn.closest(".column");
+    var colIdx = colEl ? Array.from(colEl.parentNode.children).filter(function (c) { return c.classList.contains("column") && !c.classList.contains("add-column"); }).indexOf(colEl) : -1;
+
+    if (colIdx >= 0) {
+      var sortSep = document.createElement("div");
+      sortSep.className = "ctx-separator";
+      colCtxMenu.appendChild(sortSep);
+
+      var sortLabel = document.createElement("div");
+      sortLabel.className = "ctx-submenu-label";
+      sortLabel.textContent = "Sort";
+      colCtxMenu.appendChild(sortLabel);
+
+      var sortSub = document.createElement("div");
+      sortSub.className = "ctx-submenu";
+      sortSub.appendChild(makeColItem("🔤", "By Name", false, function () {
+        if (window.Live) window.Live.send("sort-column", { col_idx: String(colIdx), sort_by: "name", name: slug });
+      }));
+      sortSub.appendChild(makeColItem("⚡", "By Priority", false, function () {
+        if (window.Live) window.Live.send("sort-column", { col_idx: String(colIdx), sort_by: "priority", name: slug });
+      }));
+      sortSub.appendChild(makeColItem("📅", "By Due Date", false, function () {
+        if (window.Live) window.Live.send("sort-column", { col_idx: String(colIdx), sort_by: "due", name: slug });
+      }));
+      colCtxMenu.appendChild(sortSub);
+    }
 
     var sep = document.createElement("div");
     sep.className = "ctx-separator";
@@ -450,7 +651,7 @@
   }
 
   // === BOARD EDIT MODAL ===
-  function showBoardEditModal(name, description) {
+  function showBoardEditModal(name, description, tags) {
     var slug = window.location.pathname.replace(/^\/board\//, "");
 
     var backdrop = document.createElement("div");
@@ -501,6 +702,167 @@
     descInput.rows = 3;
     main.appendChild(descInput);
 
+    // Tags section
+    var tagsLabel = document.createElement("label");
+    tagsLabel.style.cssText = "display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:12px;margin-bottom:4px;";
+    tagsLabel.textContent = "Tags";
+    main.appendChild(tagsLabel);
+
+    // Collect all unique tags from card tags + existing board tags for autocomplete
+    var allSuggestions = [];
+    document.querySelectorAll(".card[data-card-tags]").forEach(function (c) {
+      (c.dataset.cardTags || "").split(",").forEach(function (s) {
+        s = s.trim();
+        if (s && allSuggestions.indexOf(s) === -1) allSuggestions.push(s);
+      });
+    });
+    allSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+
+    // Parse current board tags
+    var currentTags = [];
+    if (tags) {
+      tags.split(",").forEach(function (s) {
+        s = s.trim();
+        if (s && currentTags.indexOf(s) === -1) currentTags.push(s);
+      });
+    }
+    // Ensure current tags also appear in suggestions pool
+    currentTags.forEach(function (t) {
+      if (allSuggestions.indexOf(t) === -1) allSuggestions.push(t);
+    });
+    allSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+
+    var tagsContainer = document.createElement("div");
+    tagsContainer.className = "card-modal-tags-container";
+
+    var tagsInput = document.createElement("input");
+    tagsInput.className = "card-modal-tags-input";
+    tagsInput.type = "text";
+    tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+
+    var tagsDropdown = document.createElement("div");
+    tagsDropdown.className = "card-modal-tags-dropdown";
+    var dropdownActiveIdx = -1;
+
+    function getTagsValue() {
+      return currentTags.join(", ");
+    }
+
+    function renderChips() {
+      Array.from(tagsContainer.querySelectorAll(".card-modal-tag-chip")).forEach(function (el) { el.remove(); });
+      currentTags.forEach(function (tag, idx) {
+        var chip = document.createElement("span");
+        chip.className = "card-modal-tag-chip";
+        chip.textContent = tag;
+        var removeBtn = document.createElement("button");
+        removeBtn.className = "card-modal-tag-chip-remove";
+        removeBtn.type = "button";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          currentTags.splice(idx, 1);
+          renderChips();
+          tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+        });
+        chip.appendChild(removeBtn);
+        tagsContainer.insertBefore(chip, tagsInput);
+      });
+    }
+
+    function addTag(tag) {
+      tag = tag.trim();
+      if (!tag || currentTags.indexOf(tag) !== -1) return;
+      currentTags.push(tag);
+      renderChips();
+      tagsInput.value = "";
+      tagsInput.placeholder = "";
+      hideDropdown();
+    }
+
+    function showDropdown(filter) {
+      tagsDropdown.innerHTML = "";
+      dropdownActiveIdx = -1;
+      var f = (filter || "").toLowerCase();
+      var suggestions = allSuggestions.filter(function (t) {
+        return currentTags.indexOf(t) === -1 && (!f || t.toLowerCase().indexOf(f) !== -1);
+      });
+      if (suggestions.length === 0) {
+        if (f) {
+          var hint = document.createElement("div");
+          hint.className = "card-modal-tags-dropdown-empty";
+          hint.textContent = 'Press Enter to add "' + filter + '"';
+          tagsDropdown.appendChild(hint);
+        }
+        tagsDropdown.classList.toggle("open", !!f);
+        return;
+      }
+      suggestions.forEach(function (t) {
+        var item = document.createElement("div");
+        item.className = "card-modal-tags-dropdown-item";
+        item.textContent = t;
+        item.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          addTag(t);
+          tagsInput.focus();
+        });
+        tagsDropdown.appendChild(item);
+      });
+      tagsDropdown.classList.add("open");
+    }
+
+    function hideDropdown() {
+      tagsDropdown.classList.remove("open");
+      dropdownActiveIdx = -1;
+    }
+
+    tagsInput.addEventListener("input", function () {
+      showDropdown(tagsInput.value);
+    });
+
+    tagsInput.addEventListener("focus", function () {
+      showDropdown(tagsInput.value);
+    });
+
+    tagsInput.addEventListener("blur", function () {
+      setTimeout(hideDropdown, 150);
+    });
+
+    tagsInput.addEventListener("keydown", function (e) {
+      var items = tagsDropdown.querySelectorAll(".card-modal-tags-dropdown-item");
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        dropdownActiveIdx = Math.min(dropdownActiveIdx + 1, items.length - 1);
+        items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        dropdownActiveIdx = Math.max(dropdownActiveIdx - 1, 0);
+        items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (dropdownActiveIdx >= 0 && items[dropdownActiveIdx]) {
+          addTag(items[dropdownActiveIdx].textContent);
+        } else if (tagsInput.value.trim()) {
+          addTag(tagsInput.value);
+        }
+        tagsInput.focus();
+      } else if (e.key === "Backspace" && !tagsInput.value && currentTags.length) {
+        currentTags.pop();
+        renderChips();
+        tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+      } else if (e.key === "Escape") {
+        hideDropdown();
+      }
+    });
+
+    tagsContainer.addEventListener("click", function () {
+      tagsInput.focus();
+    });
+
+    tagsContainer.appendChild(tagsInput);
+    tagsContainer.appendChild(tagsDropdown);
+    renderChips();
+    main.appendChild(tagsContainer);
+
     var saveRow = document.createElement("div");
     saveRow.className = "card-modal-save-row";
 
@@ -514,6 +876,7 @@
         window.Live.send("update-board-meta", {
           board_name: newName,
           description: descInput.value.trim(),
+          tags: getTagsValue(),
           name: slug,
         });
       }
@@ -542,7 +905,7 @@
       btn.dataset.editWired = "1";
       btn.addEventListener("click", function (e) {
         e.stopPropagation();
-        showBoardEditModal(btn.dataset.boardName, btn.dataset.boardDescription || "");
+        showBoardEditModal(btn.dataset.boardName, btn.dataset.boardDescription || "", btn.dataset.boardTags || "");
       });
     }
 
@@ -552,7 +915,7 @@
       titleEl.addEventListener("dblclick", function (e) {
         e.stopPropagation();
         var b = document.querySelector(".board-edit-btn");
-        showBoardEditModal(b ? b.dataset.boardName : titleEl.textContent.trim(), b ? b.dataset.boardDescription || "" : "");
+        showBoardEditModal(b ? b.dataset.boardName : titleEl.textContent.trim(), b ? b.dataset.boardDescription || "" : "", b ? b.dataset.boardTags || "" : "");
       });
     }
   }
@@ -761,12 +1124,160 @@
     tagsHeader.innerHTML = '<span class="card-modal-section-icon">🏷</span> Tags';
     main.appendChild(tagsHeader);
 
+    // Collect all unique tags from all cards on the board
+    var allBoardTags = [];
+    var allCards = document.querySelectorAll(".card[data-card-tags]");
+    allCards.forEach(function (c) {
+      var t = c.dataset.cardTags || "";
+      t.split(",").forEach(function (s) {
+        s = s.trim();
+        if (s && allBoardTags.indexOf(s) === -1) allBoardTags.push(s);
+      });
+    });
+    allBoardTags.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+
+    // Parse current tags
+    var currentTags = [];
+    if (tags) {
+      tags.split(",").forEach(function (s) {
+        s = s.trim();
+        if (s && currentTags.indexOf(s) === -1) currentTags.push(s);
+      });
+    }
+
+    // Tag container (chips + input + dropdown)
+    var tagsContainer = document.createElement("div");
+    tagsContainer.className = "card-modal-tags-container";
+
     var tagsInput = document.createElement("input");
     tagsInput.className = "card-modal-tags-input";
     tagsInput.type = "text";
-    tagsInput.placeholder = "Tags (comma-separated)";
-    tagsInput.value = tags;
-    main.appendChild(tagsInput);
+    tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+
+    var tagsDropdown = document.createElement("div");
+    tagsDropdown.className = "card-modal-tags-dropdown";
+    var dropdownActiveIdx = -1;
+
+    function getTagsValue() {
+      return currentTags.join(", ");
+    }
+
+    function renderChips() {
+      // Remove existing chips
+      Array.from(tagsContainer.querySelectorAll(".card-modal-tag-chip")).forEach(function (el) { el.remove(); });
+      currentTags.forEach(function (tag, idx) {
+        var chip = document.createElement("span");
+        chip.className = "card-modal-tag-chip";
+        chip.textContent = tag;
+        var removeBtn = document.createElement("button");
+        removeBtn.className = "card-modal-tag-chip-remove";
+        removeBtn.type = "button";
+        removeBtn.innerHTML = "&times;";
+        removeBtn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          currentTags.splice(idx, 1);
+          renderChips();
+          tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+        });
+        chip.appendChild(removeBtn);
+        tagsContainer.insertBefore(chip, tagsInput);
+      });
+    }
+
+    function addTag(tag) {
+      tag = tag.trim();
+      if (!tag || currentTags.indexOf(tag) !== -1) return;
+      currentTags.push(tag);
+      renderChips();
+      tagsInput.value = "";
+      tagsInput.placeholder = "";
+      hideDropdown();
+    }
+
+    function showDropdown(filter) {
+      tagsDropdown.innerHTML = "";
+      dropdownActiveIdx = -1;
+      var f = (filter || "").toLowerCase();
+      var suggestions = allBoardTags.filter(function (t) {
+        return currentTags.indexOf(t) === -1 && (!f || t.toLowerCase().indexOf(f) !== -1);
+      });
+      if (suggestions.length === 0) {
+        if (f) {
+          var hint = document.createElement("div");
+          hint.className = "card-modal-tags-dropdown-empty";
+          hint.textContent = 'Press Enter to add "' + filter + '"';
+          tagsDropdown.appendChild(hint);
+        }
+        tagsDropdown.classList.toggle("open", !!f);
+        return;
+      }
+      suggestions.forEach(function (t) {
+        var item = document.createElement("div");
+        item.className = "card-modal-tags-dropdown-item";
+        item.textContent = t;
+        item.addEventListener("mousedown", function (e) {
+          e.preventDefault();
+          addTag(t);
+          tagsInput.focus();
+        });
+        tagsDropdown.appendChild(item);
+      });
+      tagsDropdown.classList.add("open");
+    }
+
+    function hideDropdown() {
+      tagsDropdown.classList.remove("open");
+      dropdownActiveIdx = -1;
+    }
+
+    tagsInput.addEventListener("input", function () {
+      showDropdown(tagsInput.value);
+    });
+
+    tagsInput.addEventListener("focus", function () {
+      showDropdown(tagsInput.value);
+    });
+
+    tagsInput.addEventListener("blur", function () {
+      // Small delay to allow mousedown on dropdown items
+      setTimeout(hideDropdown, 150);
+    });
+
+    tagsInput.addEventListener("keydown", function (e) {
+      var items = tagsDropdown.querySelectorAll(".card-modal-tags-dropdown-item");
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        dropdownActiveIdx = Math.min(dropdownActiveIdx + 1, items.length - 1);
+        items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        dropdownActiveIdx = Math.max(dropdownActiveIdx - 1, 0);
+        items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
+      } else if (e.key === "Enter") {
+        e.preventDefault();
+        if (dropdownActiveIdx >= 0 && items[dropdownActiveIdx]) {
+          addTag(items[dropdownActiveIdx].textContent);
+        } else if (tagsInput.value.trim()) {
+          addTag(tagsInput.value);
+        }
+        tagsInput.focus();
+      } else if (e.key === "Backspace" && !tagsInput.value && currentTags.length) {
+        currentTags.pop();
+        renderChips();
+        tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+      } else if (e.key === "Escape") {
+        hideDropdown();
+      }
+    });
+
+    tagsContainer.addEventListener("click", function () {
+      tagsInput.focus();
+    });
+
+    tagsContainer.appendChild(tagsInput);
+    tagsContainer.appendChild(tagsDropdown);
+    renderChips();
+    main.appendChild(tagsContainer);
 
     // Save button
     var saveRow = document.createElement("div");
@@ -781,7 +1292,7 @@
           card_idx: cardIdx,
           title: titleInput.value.trim(),
           body: bodyInput.value.trim(),
-          tags: tagsInput.value.trim(),
+          tags: getTagsValue(),
           priority: priorityValue.current,
           name: slug,
         });

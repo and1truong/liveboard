@@ -320,7 +320,7 @@ func (h *Handler) handleDeleteColumn(_ context.Context, _ *live.Socket, p live.P
 	})
 }
 
-// handleUpdateBoardMeta updates a board's name and description.
+// handleUpdateBoardMeta updates a board's name, description, and tags.
 func (h *Handler) handleUpdateBoardMeta(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
 	slug, ok := slugFromParams(p)
 	if !ok {
@@ -329,9 +329,18 @@ func (h *Handler) handleUpdateBoardMeta(_ context.Context, _ *live.Socket, p liv
 
 	name, _ := p["board_name"].(string)
 	description, _ := p["description"].(string)
+	tagsRaw, _ := p["tags"].(string)
+
+	var tags []string
+	for _, t := range strings.Split(tagsRaw, ",") {
+		t = strings.TrimSpace(t)
+		if t != "" {
+			tags = append(tags, t)
+		}
+	}
 
 	return h.mutateBoard(slug, fmt.Sprintf("Update board meta: %s", name), func(boardPath string) error {
-		return h.eng.UpdateBoardMeta(boardPath, name, description)
+		return h.eng.UpdateBoardMeta(boardPath, name, description, tags)
 	})
 }
 
@@ -349,6 +358,28 @@ func (h *Handler) handleToggleColumnCollapse(_ context.Context, _ *live.Socket, 
 
 	return h.mutateBoard(slug, "Toggle column collapse", func(boardPath string) error {
 		return h.eng.ToggleColumnCollapse(boardPath, colIndex)
+	})
+}
+
+// handleSortColumn sorts cards in a column by a given key.
+func (h *Handler) handleSortColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	colIdx, err := intParam(p, "col_idx")
+	if err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	sortBy, ok := p["sort_by"].(string)
+	if !ok || sortBy == "" {
+		return BoardViewModel{Error: "sort_by is required"}, nil
+	}
+
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	return h.mutateBoard(slug, fmt.Sprintf("Sort column by %s", sortBy), func(boardPath string) error {
+		return h.eng.SortColumn(boardPath, colIdx, sortBy)
 	})
 }
 

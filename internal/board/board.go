@@ -4,6 +4,7 @@ package board
 import (
 	"fmt"
 	"os"
+	"sort"
 	"strings"
 
 	"github.com/and1truong/liveboard/internal/parser"
@@ -358,8 +359,8 @@ func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
 	return renderAndWrite(board, boardPath)
 }
 
-// UpdateBoardMeta updates a board's name and description.
-func (e *Engine) UpdateBoardMeta(boardPath, name, description string) error {
+// UpdateBoardMeta updates a board's name, description, and tags.
+func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []string) error {
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -368,6 +369,7 @@ func (e *Engine) UpdateBoardMeta(boardPath, name, description string) error {
 		board.Name = name
 	}
 	board.Description = description
+	board.Tags = tags
 	return renderAndWrite(board, boardPath)
 }
 
@@ -383,4 +385,64 @@ func validateIndices(board *models.Board, colIdx, cardIdx int) error {
 
 func removeCardAt(cards []models.Card, idx int) []models.Card {
 	return append(cards[:idx], cards[idx+1:]...)
+}
+
+// SortColumn sorts the cards in a column by the given key.
+// Supported keys: "name", "priority", "due".
+func (e *Engine) SortColumn(boardPath string, colIdx int, sortBy string) error {
+	board, err := e.LoadBoard(boardPath)
+	if err != nil {
+		return err
+	}
+
+	if colIdx < 0 || colIdx >= len(board.Columns) {
+		return fmt.Errorf("column index %d out of range", colIdx)
+	}
+
+	cards := board.Columns[colIdx].Cards
+
+	switch sortBy {
+	case "name":
+		sort.SliceStable(cards, func(i, j int) bool {
+			return strings.ToLower(cards[i].Title) < strings.ToLower(cards[j].Title)
+		})
+	case "priority":
+		sort.SliceStable(cards, func(i, j int) bool {
+			return priorityRank(cards[i].Priority) > priorityRank(cards[j].Priority)
+		})
+	case "due":
+		sort.SliceStable(cards, func(i, j int) bool {
+			a, b := cards[i].Due, cards[j].Due
+			if a == "" && b == "" {
+				return false
+			}
+			if a == "" {
+				return false
+			}
+			if b == "" {
+				return true
+			}
+			return a < b
+		})
+	default:
+		return fmt.Errorf("unknown sort key %q", sortBy)
+	}
+
+	board.Columns[colIdx].Cards = cards
+	return renderAndWrite(board, boardPath)
+}
+
+func priorityRank(p string) int {
+	switch strings.ToLower(p) {
+	case "critical":
+		return 4
+	case "high":
+		return 3
+	case "medium":
+		return 2
+	case "low":
+		return 1
+	default:
+		return 0
+	}
 }
