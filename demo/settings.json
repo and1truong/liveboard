@@ -1,0 +1,14 @@
+{
+  "theme": "system",
+  "color_theme": "macos",
+  "column_width": 512,
+  "sidebar_position": "left",
+  "default_columns": [
+    "todo",
+    "doing",
+    "done"
+  ],
+  "show_checkbox": false,
+  "newline_trigger": "shift-enter",
+  "card_position": "append"
+}
