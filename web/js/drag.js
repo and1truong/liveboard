@@ -1174,6 +1174,7 @@
     var assignee = card.dataset.cardAssignee || "";
     var priority = card.dataset.cardPriority || "";
     var due = card.dataset.cardDue || "";
+    var dueValue = { current: due };
     var completed = card.dataset.cardCompleted === "true";
     var columnName = card.dataset.cardColumn || "";
 
