@@ -324,6 +324,117 @@ html[data-color-theme="sunset"][data-theme="dark"] {
     --color-border-dashed:  #5c4630;
 }
 
+/* === AQUA THEME (Classic Mac OS X) === */
+html[data-color-theme="aqua"] {
+    --color-accent:         #007AFF;
+    --color-accent-hover:   #0062CC;
+    --color-accent-muted:   #D6EAFF;
+    --color-accent-text:    #0055B3;
+    --color-bg:             #ECECEC;
+    --color-surface:        #FFFFFF;
+    --color-column-bg:      #E0E0E4;
+    --color-border:         #C8C8CC;
+    --color-border-dashed:  #AEAEB2;
+}
+@media (prefers-color-scheme: dark) {
+    html[data-color-theme="aqua"]:not([data-theme]) {
+        --color-accent:         #0A84FF;
+        --color-accent-hover:   #409CFF;
+        --color-accent-muted:   #001A33;
+        --color-accent-text:    #64B5FF;
+        --color-bg:             #1C1C1E;
+        --color-surface:        #2C2C2E;
+        --color-column-bg:      #38383A;
+        --color-border:         #48484A;
+        --color-border-dashed:  #636366;
+    }
+}
+html[data-color-theme="aqua"][data-theme="dark"] {
+    --color-accent:         #0A84FF;
+    --color-accent-hover:   #409CFF;
+    --color-accent-muted:   #001A33;
+    --color-accent-text:    #64B5FF;
+    --color-bg:             #1C1C1E;
+    --color-surface:        #2C2C2E;
+    --color-column-bg:      #38383A;
+    --color-border:         #48484A;
+    --color-border-dashed:  #636366;
+}
+
+/* === GRAPHITE THEME (Mac OS X Graphite) === */
+html[data-color-theme="graphite"] {
+    --color-accent:         #8E8E93;
+    --color-accent-hover:   #6E6E73;
+    --color-accent-muted:   #E8E8ED;
+    --color-accent-text:    #636366;
+    --color-bg:             #F2F2F7;
+    --color-surface:        #FFFFFF;
+    --color-column-bg:      #E5E5EA;
+    --color-border:         #D1D1D6;
+    --color-border-dashed:  #C7C7CC;
+}
+@media (prefers-color-scheme: dark) {
+    html[data-color-theme="graphite"]:not([data-theme]) {
+        --color-accent:         #98989D;
+        --color-accent-hover:   #AEAEB2;
+        --color-accent-muted:   #1C1C1E;
+        --color-accent-text:    #C7C7CC;
+        --color-bg:             #000000;
+        --color-surface:        #1C1C1E;
+        --color-column-bg:      #2C2C2E;
+        --color-border:         #38383A;
+        --color-border-dashed:  #48484A;
+    }
+}
+html[data-color-theme="graphite"][data-theme="dark"] {
+    --color-accent:         #98989D;
+    --color-accent-hover:   #AEAEB2;
+    --color-accent-muted:   #1C1C1E;
+    --color-accent-text:    #C7C7CC;
+    --color-bg:             #000000;
+    --color-surface:        #1C1C1E;
+    --color-column-bg:      #2C2C2E;
+    --color-border:         #38383A;
+    --color-border-dashed:  #48484A;
+}
+
+/* === MACOS THEME (Modern Sonoma/Sequoia) === */
+html[data-color-theme="macos"] {
+    --color-accent:         #007AFF;
+    --color-accent-hover:   #0062CC;
+    --color-accent-muted:   #E8F0FE;
+    --color-accent-text:    #0055B3;
+    --color-bg:             #F5F5F7;
+    --color-surface:        #FFFFFF;
+    --color-column-bg:      #EBEBED;
+    --color-border:         #D2D2D7;
+    --color-border-dashed:  #C6C6CB;
+}
+@media (prefers-color-scheme: dark) {
+    html[data-color-theme="macos"]:not([data-theme]) {
+        --color-accent:         #0A84FF;
+        --color-accent-hover:   #409CFF;
+        --color-accent-muted:   #0A1A2E;
+        --color-accent-text:    #64B5FF;
+        --color-bg:             #1D1D1F;
+        --color-surface:        #2C2C2E;
+        --color-column-bg:      #3A3A3C;
+        --color-border:         #48484A;
+        --color-border-dashed:  #545456;
+    }
+}
+html[data-color-theme="macos"][data-theme="dark"] {
+    --color-accent:         #0A84FF;
+    --color-accent-hover:   #409CFF;
+    --color-accent-muted:   #0A1A2E;
+    --color-accent-text:    #64B5FF;
+    --color-bg:             #1D1D1F;
+    --color-surface:        #2C2C2E;
+    --color-column-bg:      #3A3A3C;
+    --color-border:         #48484A;
+    --color-border-dashed:  #545456;
+}
+
 /* === SETTINGS PAGE === */
 .settings-view {
     display: flex;
@@ -452,21 +563,8 @@ body {
 }
 
 .app-sidebar.collapsed {
-    width: 44px;
-}
-
-.app-sidebar.collapsed .brand-link {
-    display: none;
-}
-
-.app-sidebar.collapsed .app-brand {
-    justify-content: center;
-    padding: 0;
-}
-
-.app-sidebar.collapsed .sidebar-nav,
-.app-sidebar.collapsed .sidebar-footer {
-    display: none;
+    width: 0;
+    border-right: none;
 }
 
 .app-brand {
@@ -506,17 +604,23 @@ body {
 }
 
 .sidebar-toggle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: var(--topbar-height);
+    width: 40px;
     background: none;
     border: none;
     cursor: pointer;
     color: var(--color-text-muted);
     padding: 5px;
-    border-radius: var(--radius-sm);
+    border-radius: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
     transition: background 0.12s, color 0.12s;
+    z-index: 10;
 }
 
 .sidebar-toggle:hover {
@@ -571,9 +675,6 @@ body {
     color: var(--color-accent);
 }
 
-.app-sidebar.collapsed .sidebar-section-label {
-    display: none;
-}
 
 .nav-icon {
     font-size: 0.85rem;
@@ -623,6 +724,7 @@ body {
     flex-direction: column;
     overflow: hidden;
     min-width: 0;
+    position: relative;
 }
 
 .workspace-content {
@@ -645,7 +747,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 24px;
+    padding: 0 24px 0 48px;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
@@ -850,7 +952,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 0 20px;
+    padding: 0 20px 0 48px;
     background: var(--color-surface);
     border-bottom: 1px solid var(--color-border);
     flex-shrink: 0;
@@ -982,10 +1084,65 @@ body {
     opacity: 1;
 }
 
-.column.add-column {
-    background: transparent;
-    border: 2px dashed var(--color-border-dashed);
+/* === FAB: Add Column === */
+.fab-add-column {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 100;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: var(--color-accent-text);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    transition: all 0.2s ease;
+}
+
+.fab-add-column:hover {
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    transform: scale(1.05);
+}
+
+.fab-icon {
+    font-size: 24px;
+    line-height: 1;
+    color: #fff;
+    transition: transform 0.2s ease;
+    user-select: none;
+}
+
+.fab-column-form {
+    position: absolute;
+    bottom: 56px;
+    right: 0;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
+    padding: 12px;
+    min-width: 220px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    flex-direction: column;
+    gap: 8px;
+}
+
+.fab-column-form input[type="text"] {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    background: var(--color-surface);
+    color: var(--color-text-primary);
+}
+
+.fab-column-form input[type="text"]:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -1px;
+    border-color: var(--color-accent);
 }
 
 .column.collapsed {
@@ -1296,26 +1453,10 @@ body {
     color: var(--color-text-primary);
 }
 
-.add-column-form input[type="text"] {
-    padding: 5px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
-    background: var(--color-surface);
-    color: var(--color-text-primary);
-}
-
-.add-card-form input[type="text"]:focus,
-.add-column-form input[type="text"]:focus {
+.add-card-form input[type="text"]:focus {
     outline: 2px solid var(--color-accent);
     outline-offset: -1px;
     border-color: var(--color-accent);
-}
-
-.add-column-form {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
 }
 
 /* === ERROR === */
@@ -1393,6 +1534,15 @@ body {
     border-color: var(--color-accent);
 }
 
+.ctx-priority-group {
+    margin: 4px 8px;
+}
+
+.ctx-priority-group .card-modal-priority-btn {
+    padding: 3px 0;
+    font-size: var(--font-size-xs);
+}
+
 .qe-actions {
     display: flex;
     gap: 4px;
@@ -1466,7 +1616,7 @@ body {
     display: flex;
     flex-direction: column;
     gap: 1px;
-    padding-left: 28px;
+    padding-left: 0;
 }
 
 .ctx-submenu-label {
@@ -2050,12 +2200,12 @@ body {
     .app-sidebar.collapsed {
         width: 100%;
         height: var(--topbar-height);
+        border-right: none;
     }
 
-    .app-sidebar.collapsed .brand-link,
-    .app-sidebar.collapsed .sidebar-board-dropdown,
-    .app-sidebar.collapsed .sidebar-footer {
-        display: flex;
+    .workspace-header,
+    .board-topbar {
+        padding-left: 24px;
     }
 
     .sidebar-footer .connection-status {

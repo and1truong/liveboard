@@ -8,7 +8,7 @@
     <div class="board-topbar">
         <div class="board-topbar-left">
             <h2 class="board-title" title="Double-click to edit">{{.Board.Name}}</h2>
-            <button class="board-edit-btn" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" title="Edit board name and description">&#9998;</button>
+            <button class="board-edit-btn" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" title="Edit board name and description">&#9998;</button>
             {{if .Board.Tags}}
             <div class="tags">
                 {{range .Board.Tags}}
@@ -90,12 +90,15 @@
         </div>
         {{end}}
 
-        <div class="column add-column">
-            <form live-submit="create-column" live-value-name="{{.BoardSlug}}" class="add-column-form">
-                <input type="text" name="column_name" placeholder="New column name" required>
-                <button type="submit" class="btn-small">+ Add Column</button>
-            </form>
-        </div>
+    </div>
+
+    <div class="fab-add-column" onclick="var f=this.querySelector('.fab-column-form'),ic=this.querySelector('.fab-icon'),open=f.style.display==='flex';f.style.display=open?'none':'flex';ic.style.transform=open?'':'rotate(45deg)';if(!open)f.querySelector('input').focus()">
+        <span class="fab-icon">+</span>
+        <form live-submit="create-column" live-value-name="{{.BoardSlug}}" class="fab-column-form" style="display:none" onclick="event.stopPropagation()">
+            <input type="text" name="column_name" placeholder="Column name" required
+                   onkeydown="if(event.key==='Escape'){this.value='';var p=this.closest('.fab-add-column');p.querySelector('.fab-column-form').style.display='none';p.querySelector('.fab-icon').style.transform=''}">
+            <button type="submit" class="btn-small">Add</button>
+        </form>
     </div>
     {{end}}
 </div>
