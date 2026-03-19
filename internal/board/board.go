@@ -379,6 +379,16 @@ func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []str
 	return renderAndWrite(board, boardPath)
 }
 
+// UpdateBoardIcon sets the emoji icon for a board.
+func (e *Engine) UpdateBoardIcon(boardPath, icon string) error {
+	board, err := e.LoadBoard(boardPath)
+	if err != nil {
+		return err
+	}
+	board.Icon = icon
+	return renderAndWrite(board, boardPath)
+}
+
 func validateIndices(board *models.Board, colIdx, cardIdx int) error {
 	if colIdx < 0 || colIdx >= len(board.Columns) {
 		return fmt.Errorf("column index %d out of range", colIdx)

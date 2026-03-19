@@ -47,7 +47,7 @@ func TestLoadBoard(t *testing.T) {
 
 func TestAddCard(t *testing.T) {
 	path, eng := setupTestBoard(t)
-	card, err := eng.AddCard(path, "Backlog", "New task")
+	card, err := eng.AddCard(path, "Backlog", "New task", false)
 	if err != nil {
 		t.Fatal(err)
 	}

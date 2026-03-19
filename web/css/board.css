@@ -1850,6 +1850,119 @@ body {
     font-size: 0.85rem;
 }
 
+/* Date Picker */
+.card-modal-datepicker {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 280px;
+    user-select: none;
+}
+
+.datepicker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+}
+
+.datepicker-nav {
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    padding: 4px 8px;
+    color: var(--color-text-primary);
+    border-radius: 4px;
+}
+
+.datepicker-nav:hover {
+    background: var(--color-column-bg);
+}
+
+.datepicker-month {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.datepicker-weekdays {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    text-align: center;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+    margin-bottom: 4px;
+}
+
+.datepicker-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 2px;
+}
+
+.datepicker-day {
+    background: none;
+    border: none;
+    padding: 6px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-primary);
+}
+
+.datepicker-day:hover {
+    background: var(--color-column-bg);
+}
+
+.datepicker-day--today {
+    font-weight: 700;
+    outline: 1px solid var(--color-border);
+}
+
+.datepicker-day--selected {
+    background: var(--color-accent);
+    color: #fff;
+}
+
+.datepicker-day--selected:hover {
+    background: var(--color-accent);
+    opacity: 0.9;
+}
+
+.datepicker-day--empty {
+    cursor: default;
+}
+
+.datepicker-day--empty:hover {
+    background: none;
+}
+
+.datepicker-remove {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    color: var(--color-danger);
+    text-align: center;
+}
+
+.datepicker-remove:hover {
+    background: rgba(255, 0, 0, 0.05);
+}
+
 .card-modal-section-header {
     display: flex;
     align-items: center;

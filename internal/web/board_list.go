@@ -24,6 +24,7 @@ type BoardSummary struct {
 	Name        string `json:"name"`
 	Slug        string `json:"slug"` // filename stem, used for URLs
 	Description string `json:"description,omitempty"`
+	Icon        string `json:"icon,omitempty"`
 	CardCount   int    `json:"card_count"`
 }
 
@@ -44,6 +45,7 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 			Name:        b.Name,
 			Slug:        boardSlug(b),
 			Description: b.Description,
+			Icon:        b.Icon,
 			CardCount:   cardCount,
 		}
 	}
@@ -83,6 +85,24 @@ func (h *Handler) handleCreateBoard(_ context.Context, _ *live.Socket, p live.Pa
 
 	boardPath := h.ws.BoardPath(name)
 	h.commitWithHandling(boardPath, fmt.Sprintf("Create board: %s", name))
+
+	return h.boardListModel()
+}
+
+// handleSetBoardIconList sets the emoji icon for a board (from the board list page).
+func (h *Handler) handleSetBoardIconList(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	slug, ok := slugFromParams(p)
+	if !ok || slug == "" {
+		return BoardListModel{Error: "Board name is required"}, nil
+	}
+
+	icon, _ := p["icon"].(string)
+
+	boardPath := h.ws.BoardPath(slug)
+	if err := h.eng.UpdateBoardIcon(boardPath, icon); err != nil {
+		return BoardListModel{Error: err.Error()}, nil
+	}
+	h.commitWithHandling(boardPath, "Set board icon")
 
 	return h.boardListModel()
 }

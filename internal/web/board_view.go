@@ -489,6 +489,20 @@ func (h *Handler) handleUpdateBoardSettings(_ context.Context, _ *live.Socket, p
 	})
 }
 
+// handleSetBoardIcon sets the emoji icon for a board.
+func (h *Handler) handleSetBoardIcon(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	icon, _ := p["icon"].(string)
+
+	return h.mutateBoard(slug, "Set board icon", func(boardPath string) error {
+		return h.eng.UpdateBoardIcon(boardPath, icon)
+	})
+}
+
 // handleBoardUpdate handles PubSub messages for real-time updates.
 func (h *Handler) handleBoardUpdate(_ context.Context, _ *live.Socket, msg any) (interface{}, error) {
 	slug, ok := msg.(string)

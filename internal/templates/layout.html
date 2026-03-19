@@ -48,7 +48,7 @@
                 <div class="sidebar-section-label">Boards</div>
                 {{range .Boards}}
                 <a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}">
-                    <span class="nav-icon">&#9783;</span>
+                    <span class="nav-icon emoji-picker-trigger" data-board-slug="{{.Slug}}" onclick="event.preventDefault();event.stopPropagation();openEmojiPicker(this,'{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
                     <span class="nav-label">{{.Name}}</span>
                 </a>
                 {{end}}
@@ -66,7 +66,7 @@
                     <div class="dropdown-label">Boards</div>
                     {{range .Boards}}
                     <a href="/board/{{.Slug}}" class="dropdown-item{{if eq $.BoardSlug .Slug}} active{{end}}">
-                        <span class="nav-icon">&#9783;</span>
+                        <span class="nav-icon">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
                         {{.Name}}
                     </a>
                     {{end}}
@@ -84,7 +84,7 @@
                         <span class="menu-label">Settings</span>
                     </a>
                     <div class="sidebar-menu-separator"></div>
-                    <a href="https://github.com/htruong/liveboard" target="_blank" rel="noopener" class="sidebar-menu-item">
+                    <a href="https://github.com/and1truong/liveboard" target="_blank" rel="noopener" class="sidebar-menu-item">
                         <span class="menu-icon">&#9432;</span>
                         <span class="menu-label">About LiveBoard</span>
                     </a>
@@ -138,6 +138,66 @@
         });
         document.getElementById('sidebarMenuTrigger').addEventListener('click', function() {
             document.getElementById('sidebarPopupMenu').classList.toggle('open');
+        });
+
+        // Emoji picker for board icons
+        var emojiList = ['📋','📌','📝','📊','📈','🎯','🚀','💡','🔥','⭐','❤️','💼','🏠','🎨','🎵','📚','🔧','⚡','🌟','🎮','🧪','📦','🔔','💬','🌈','🍀','🦊','🐱','🐶','🌻','🌙','☀️','🏔️','🌊','🎪','🏆','💎','🔑','🎁','🧩'];
+
+        function openEmojiPicker(trigger, slug) {
+            var existing = document.getElementById('emojiPickerPopup');
+            if (existing) {
+                existing.remove();
+                return;
+            }
+
+            var popup = document.createElement('div');
+            popup.id = 'emojiPickerPopup';
+            popup.className = 'emoji-picker-popup';
+
+            var grid = document.createElement('div');
+            grid.className = 'emoji-picker-grid';
+
+            // Add clear option
+            var clearBtn = document.createElement('button');
+            clearBtn.className = 'emoji-picker-item emoji-picker-clear';
+            clearBtn.textContent = '✕';
+            clearBtn.title = 'Remove icon';
+            clearBtn.onclick = function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                window.Live.send('set-board-icon', {name: slug, icon: ''});
+                popup.remove();
+            };
+            grid.appendChild(clearBtn);
+
+            emojiList.forEach(function(emoji) {
+                var btn = document.createElement('button');
+                btn.className = 'emoji-picker-item';
+                btn.textContent = emoji;
+                btn.onclick = function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    window.Live.send('set-board-icon', {name: slug, icon: emoji});
+                    popup.remove();
+                };
+                grid.appendChild(btn);
+            });
+
+            popup.appendChild(grid);
+
+            // Position relative to trigger
+            var rect = trigger.getBoundingClientRect();
+            popup.style.top = rect.top + 'px';
+            popup.style.left = (rect.right + 8) + 'px';
+
+            document.body.appendChild(popup);
+        }
+
+        document.addEventListener('click', function(e) {
+            var picker = document.getElementById('emojiPickerPopup');
+            if (picker && !picker.contains(e.target) && !e.target.classList.contains('emoji-picker-trigger')) {
+                picker.remove();
+            }
         });
     </script>
 </body>
