@@ -450,6 +450,114 @@
     textarea.focus();
   }
 
+  // === BOARD EDIT MODAL ===
+  function showBoardEditModal(name, description) {
+    var slug = window.location.pathname.replace(/^\/board\//, "");
+
+    var backdrop = document.createElement("div");
+    backdrop.className = "card-modal-backdrop";
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === backdrop) backdrop.remove();
+    });
+
+    var modal = document.createElement("div");
+    modal.className = "card-modal";
+    modal.style.maxWidth = "480px";
+
+    var closeBtn = document.createElement("button");
+    closeBtn.className = "card-modal-close";
+    closeBtn.innerHTML = "&times;";
+    closeBtn.addEventListener("click", function () { backdrop.remove(); });
+    modal.appendChild(closeBtn);
+
+    var main = document.createElement("div");
+    main.className = "card-modal-main";
+
+    var hdr = document.createElement("div");
+    hdr.className = "card-modal-section-header";
+    hdr.innerHTML = '<span class="card-modal-section-icon">&#9998;</span> Edit Board';
+    main.appendChild(hdr);
+
+    var nameLabel = document.createElement("label");
+    nameLabel.style.cssText = "display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:12px;margin-bottom:4px;";
+    nameLabel.textContent = "Board name";
+    main.appendChild(nameLabel);
+
+    var nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "card-modal-tags-input";
+    nameInput.value = name;
+    nameInput.style.width = "100%";
+    main.appendChild(nameInput);
+
+    var descLabel = document.createElement("label");
+    descLabel.style.cssText = "display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:12px;margin-bottom:4px;";
+    descLabel.textContent = "Description";
+    main.appendChild(descLabel);
+
+    var descInput = document.createElement("textarea");
+    descInput.className = "card-modal-body";
+    descInput.placeholder = "Board description (optional)";
+    descInput.value = description;
+    descInput.rows = 3;
+    main.appendChild(descInput);
+
+    var saveRow = document.createElement("div");
+    saveRow.className = "card-modal-save-row";
+
+    var saveBtn = document.createElement("button");
+    saveBtn.className = "btn-primary btn-small";
+    saveBtn.textContent = "Save";
+    saveBtn.addEventListener("click", function () {
+      var newName = nameInput.value.trim();
+      if (!newName) return;
+      if (window.Live) {
+        window.Live.send("update-board-meta", {
+          board_name: newName,
+          description: descInput.value.trim(),
+          name: slug,
+        });
+      }
+      backdrop.remove();
+    });
+    saveRow.appendChild(saveBtn);
+
+    var cancelBtn = document.createElement("button");
+    cancelBtn.className = "btn-small";
+    cancelBtn.style.marginLeft = "8px";
+    cancelBtn.textContent = "Cancel";
+    cancelBtn.addEventListener("click", function () { backdrop.remove(); });
+    saveRow.appendChild(cancelBtn);
+
+    main.appendChild(saveRow);
+    modal.appendChild(main);
+    backdrop.appendChild(modal);
+    document.body.appendChild(backdrop);
+    nameInput.focus();
+    nameInput.select();
+  }
+
+  function attachBoardEdit() {
+    var btn = document.querySelector(".board-edit-btn");
+    if (btn && !btn.dataset.editWired) {
+      btn.dataset.editWired = "1";
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        showBoardEditModal(btn.dataset.boardName, btn.dataset.boardDescription || "");
+      });
+    }
+
+    var titleEl = document.querySelector(".board-title");
+    if (titleEl && !titleEl.dataset.dblWired) {
+      titleEl.dataset.dblWired = "1";
+      titleEl.addEventListener("dblclick", function (e) {
+        e.stopPropagation();
+        var b = document.querySelector(".board-edit-btn");
+        showBoardEditModal(b ? b.dataset.boardName : titleEl.textContent.trim(), b ? b.dataset.boardDescription || "" : "");
+      });
+    }
+  }
+
   function attachColumnMenus() {
     document.querySelectorAll(".column-menu-btn").forEach(function (btn) {
       if (btn.dataset.colMenuWired) return;
@@ -822,6 +930,7 @@
     attachContextMenu();
     attachCardClick();
     attachColumnMenus();
+    attachBoardEdit();
     // Cards: draggable
     document.querySelectorAll(".card[draggable]").forEach(function (card) {
       if (card.dataset.dragWired) return;

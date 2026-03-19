@@ -698,6 +698,28 @@ body {
     text-overflow: ellipsis;
 }
 
+.board-edit-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: var(--color-text-tertiary);
+    font-size: var(--font-size-sm);
+    padding: 2px 5px;
+    border-radius: var(--radius-sm);
+    opacity: 0;
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.board-topbar:hover .board-edit-btn {
+    opacity: 1;
+}
+
+.board-edit-btn:hover {
+    color: var(--color-text-primary);
+    background: var(--color-hover);
+}
+
 .board-error-banner {
     background: var(--color-danger-bg);
     color: var(--color-danger-text);

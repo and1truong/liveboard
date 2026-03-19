@@ -313,6 +313,23 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 	return os.WriteFile(boardPath, []byte(newContent), 0644)
 }
 
+// UpdateBoardMeta updates a board's name and description.
+func (e *Engine) UpdateBoardMeta(boardPath, name, description string) error {
+	board, err := e.LoadBoard(boardPath)
+	if err != nil {
+		return err
+	}
+	if name != "" {
+		board.Name = name
+	}
+	board.Description = description
+	newContent, err := writer.Render(board)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(boardPath, []byte(newContent), 0644)
+}
+
 func findCard(board *models.Board, id string) *models.Card {
 	for _, col := range board.Columns {
 		for i := range col.Cards {

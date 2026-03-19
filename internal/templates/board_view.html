@@ -7,7 +7,8 @@
     {{if .Board}}
     <div class="board-topbar">
         <div class="board-topbar-left">
-            <h2 class="board-title">{{.Board.Name}}</h2>
+            <h2 class="board-title" title="Double-click to edit">{{.Board.Name}}</h2>
+            <button class="board-edit-btn" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" title="Edit board name and description">&#9998;</button>
             {{if .Board.Tags}}
             <div class="tags">
                 {{range .Board.Tags}}

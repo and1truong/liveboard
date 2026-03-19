@@ -352,6 +352,27 @@ func (h *Handler) handleDeleteColumn(_ context.Context, _ *live.Socket, p live.P
 	return h.boardViewModel(slug)
 }
 
+// handleUpdateBoardMeta updates a board's name and description.
+func (h *Handler) handleUpdateBoardMeta(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
+	slug, ok := slugFromParams(p)
+	if !ok {
+		return BoardViewModel{Error: "Board name is required"}, nil
+	}
+
+	name, _ := p["board_name"].(string)
+	description, _ := p["description"].(string)
+
+	boardPath := h.ws.BoardPath(slug)
+	if err := h.eng.UpdateBoardMeta(boardPath, name, description); err != nil {
+		return BoardViewModel{Error: err.Error()}, nil
+	}
+
+	h.commitWithHandling(boardPath, fmt.Sprintf("Update board meta: %s", name))
+	h.publishBoardEvent(slug, "board_meta_updated")
+
+	return h.boardViewModel(slug)
+}
+
 // handleBoardUpdate handles PubSub messages for real-time updates.
 func (h *Handler) handleBoardUpdate(_ context.Context, _ *live.Socket, msg any) (interface{}, error) {
 	slug, ok := msg.(string)
