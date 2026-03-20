@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"mime"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -386,8 +387,8 @@ func TestGetCardInvalidIndices(t *testing.T) {
 
 	// Out of range
 	resp = doJSON(t, ts, "GET", "/boards/idx/cols/99/cards/0", nil)
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -528,8 +529,8 @@ func TestDeleteCardOutOfRange(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "del"})
 
 	resp := doJSON(t, ts, "DELETE", "/boards/del/cols/0/cards/99", nil)
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range card, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -541,8 +542,8 @@ func TestCompleteCardOutOfRange(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "cmp"})
 
 	resp := doJSON(t, ts, "POST", "/boards/cmp/cols/0/cards/99/complete", nil)
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range card, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -764,8 +765,8 @@ func TestTagCardOutOfRange(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "tgor"})
 
 	resp := doJSON(t, ts, "POST", "/boards/tgor/cols/0/cards/99/tag", map[string]any{"tags": []string{"x"}})
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range card, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -777,8 +778,8 @@ func TestMoveCardOutOfRange(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "mvor"})
 
 	resp := doJSON(t, ts, "POST", "/boards/mvor/cols/0/cards/99/move", map[string]string{"column": "done"})
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range card, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -886,10 +887,17 @@ func TestMoveCardToNonexistentColumn(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards/mvnc/columns/not now/cards", map[string]string{"title": "T"})
 
 	resp := doJSON(t, ts, "POST", "/boards/mvnc/cols/0/cards/0/move", map[string]string{"column": "nonexistent"})
-	if resp.StatusCode == 204 {
-		t.Fatal("expected error when moving to nonexistent column, got 204")
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for nonexistent target column, got %d", resp.StatusCode)
 	}
-	_ = resp.Body.Close()
+	var errResp ErrorResponse
+	decodeResp(t, resp, &errResp)
+	if errResp.Status != 404 {
+		t.Fatalf("expected error status 404, got %d", errResp.Status)
+	}
+	if errResp.Error == "" {
+		t.Fatal("expected non-empty error message")
+	}
 }
 
 func TestMoveColumnNonexistentColumn(t *testing.T) {
@@ -899,10 +907,17 @@ func TestMoveColumnNonexistentColumn(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "mvcolnf"})
 
 	resp := doJSON(t, ts, "POST", "/boards/mvcolnf/columns/nonexistent/move", map[string]string{"after": "done"})
-	if resp.StatusCode == 204 {
-		t.Fatal("expected error when moving nonexistent column, got 204")
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for nonexistent column, got %d", resp.StatusCode)
 	}
-	_ = resp.Body.Close()
+	var errResp ErrorResponse
+	decodeResp(t, resp, &errResp)
+	if errResp.Status != 404 {
+		t.Fatalf("expected error status 404, got %d", errResp.Status)
+	}
+	if errResp.Error == "" {
+		t.Fatal("expected non-empty error message")
+	}
 }
 
 func TestErrorResponseFormat(t *testing.T) {
@@ -930,8 +945,12 @@ func TestJSONContentTypeHeader(t *testing.T) {
 
 	resp := doJSON(t, ts, "GET", "/boards", nil)
 	ct := resp.Header.Get("Content-Type")
-	if ct != "application/json" {
-		t.Fatalf("expected Content-Type 'application/json', got %q", ct)
+	mediaType, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		t.Fatalf("failed to parse Content-Type %q: %v", ct, err)
+	}
+	if mediaType != "application/json" {
+		t.Fatalf("expected media type 'application/json', got %q", mediaType)
 	}
 	_ = resp.Body.Close()
 }
