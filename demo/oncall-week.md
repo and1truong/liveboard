@@ -14,18 +14,18 @@ list-collapse:
 
 ## Active Incidents
 
+- [ ] Elevated 5xx on /api/checkout since deploy v2.14.3
+  tags: incident, api
+  assignee: John Doe
+  priority: high
+  Rolled back to v2.14.2. Root cause TBD — suspect connection pool exhaustion.
+
 - [ ] Redis cluster memory pressure on prod-cache-03
   tags: incident, redis
   assignee: John Doe
   priority: critical
   due: 2026-03-20
   OOM kills started at 03:12 UTC. Scaled to 8GB, monitoring.
-
-- [ ] Elevated 5xx on /api/checkout since deploy v2.14.3
-  tags: incident, api
-  assignee: John Doe
-  priority: high
-  Rolled back to v2.14.2. Root cause TBD — suspect connection pool exhaustion.
 
 ## Investigating
 

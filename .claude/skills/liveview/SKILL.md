@@ -235,6 +235,17 @@ For reusable, self-contained UI pieces with their own state and events, use `git
 
 Three levels: model-based inline errors, handler-level `ErrorHandler`, and client-side JS hooks. Read `references/error-handling.md` for the full pattern with code examples and selection guidance.
 
+## Dropdown / Autocomplete Inputs
+
+When building chip-based inputs with dropdowns (tags, autocomplete, etc.), always bind **both `click` and `focus`** to show the dropdown:
+
+```javascript
+input.addEventListener("focus", function () { showDropdown(input.value); });
+input.addEventListener("click", function () { showDropdown(input.value); });
+```
+
+**Why both?** Dropdown item selection typically uses `mousedown` with `preventDefault()` to avoid triggering blur on the input. This means the input never loses focus, so clicking it again won't re-fire `focus`. The `click` listener ensures the dropdown always reopens.
+
 ## Common Patterns in This Project
 
 - **UI state toggles**: Use model fields like `ShowAddCard string` to control conditional rendering

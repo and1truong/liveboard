@@ -62,12 +62,18 @@
     var currentTags = card.dataset.cardTags || "";
     var currentPriority = card.dataset.cardPriority || "";
 
-    // Build overlay
+    // Build overlay — in table mode, align to the card-content cell, not the full row
+    var posRect = cardRect;
+    var cardCell = card.querySelector(".table-cell-card");
+    if (cardCell) {
+      posRect = cardCell.getBoundingClientRect();
+    }
+
     var overlay = document.createElement("div");
     overlay.className = "quick-edit-overlay";
-    overlay.style.left = cardRect.left + "px";
+    overlay.style.left = posRect.left + "px";
     overlay.style.top = cardRect.top + "px";
-    overlay.style.width = cardRect.width + "px";
+    overlay.style.width = posRect.width + "px";
     overlay.style.minHeight = cardRect.height + "px";
 
     var titleInput = document.createElement("textarea");
@@ -197,6 +203,7 @@
 
     qeTagsInput.addEventListener("input", function () { qeShowDropdown(qeTagsInput.value); });
     qeTagsInput.addEventListener("focus", function () { qeShowDropdown(qeTagsInput.value); });
+    qeTagsInput.addEventListener("click", function () { qeShowDropdown(qeTagsInput.value); });
     qeTagsInput.addEventListener("blur", function () { setTimeout(qeHideDropdown, 150); });
 
     qeTagsInput.addEventListener("keydown", function (e) {
@@ -859,6 +866,10 @@
       showDropdown(tagsInput.value);
     });
 
+    tagsInput.addEventListener("click", function () {
+      showDropdown(tagsInput.value);
+    });
+
     tagsInput.addEventListener("blur", function () {
       setTimeout(hideDropdown, 150);
     });
@@ -1404,6 +1415,10 @@
       showDropdown(tagsInput.value);
     });
 
+    tagsInput.addEventListener("click", function () {
+      showDropdown(tagsInput.value);
+    });
+
     tagsInput.addEventListener("blur", function () {
       // Small delay to allow mousedown on dropdown items
       setTimeout(hideDropdown, 150);
@@ -1667,7 +1682,7 @@
       card.addEventListener("dragstart", function (e) {
         isDragging = true;
         draggingCard = card;
-        var zone = card.closest(".cards[data-column]");
+        var zone = card.closest(".cards[data-column], .table-group-cards[data-column]");
         draggingSourceColumn = zone ? zone.dataset.column : null;
         card.classList.add("dragging");
         e.dataTransfer.effectAllowed = "move";
@@ -1677,7 +1692,7 @@
       card.addEventListener("dragend", function () {
         card.classList.remove("dragging");
         clearDropIndicators();
-        document.querySelectorAll(".cards.drag-over").forEach(function (el) {
+        document.querySelectorAll(".cards.drag-over, .table-group-cards.drag-over").forEach(function (el) {
           el.classList.remove("drag-over");
         });
         draggingCard = null;
@@ -1685,8 +1700,8 @@
       });
     });
 
-    // Drop zones: .cards containers
-    document.querySelectorAll(".cards[data-column]").forEach(function (zone) {
+    // Drop zones: .cards containers (board view) and .table-group-cards (table view)
+    document.querySelectorAll(".cards[data-column], .table-group-cards[data-column]").forEach(function (zone) {
       if (zone.dataset.dropWired) return;
       zone.dataset.dropWired = "1";
 
@@ -1737,7 +1752,7 @@
           return;
         }
 
-        var sourceZone = card.closest(".cards[data-column]");
+        var sourceZone = card.closest(".cards[data-column], .table-group-cards[data-column]");
         var sourceColumn = sourceZone ? sourceZone.dataset.column : null;
 
         if (sourceColumn === targetColumn) {
@@ -1823,12 +1838,14 @@
     var bsShowCheckbox = document.getElementById("bsShowCheckbox");
     var bsCardPosition = document.getElementById("bsCardPosition");
     var bsExpandColumns = document.getElementById("bsExpandColumns");
+    var bsViewMode = document.getElementById("bsViewMode");
 
     // Populate selects from data attributes
     function populateFromData() {
       if (bsShowCheckbox) bsShowCheckbox.value = boardView.dataset.bsShowCheckbox || "";
       if (bsCardPosition) bsCardPosition.value = boardView.dataset.bsCardPosition || "";
       if (bsExpandColumns) bsExpandColumns.value = boardView.dataset.bsExpandColumns || "false";
+      if (bsViewMode) bsViewMode.value = boardView.dataset.bsViewMode || boardView.dataset.viewMode || "board";
 
       // Show/hide reset buttons
       updateResetButtons();
@@ -1856,6 +1873,9 @@
       if (bsExpandColumns) {
         params.expand_columns = bsExpandColumns.value;
       }
+      if (bsViewMode) {
+        params.view_mode = bsViewMode.value;
+      }
       window.Live.send("update-board-settings", params);
     }
 
@@ -1872,7 +1892,7 @@
     }
 
     // On change: send update
-    [bsShowCheckbox, bsCardPosition, bsExpandColumns].forEach(function (el) {
+    [bsShowCheckbox, bsCardPosition, bsExpandColumns, bsViewMode].forEach(function (el) {
       if (el) {
         el.addEventListener("change", function () {
           updateResetButtons();

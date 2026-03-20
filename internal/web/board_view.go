@@ -19,6 +19,7 @@ type ResolvedSettings struct {
 	NewLineTrigger string `json:"newline_trigger"`
 	CardPosition   string `json:"card_position"`
 	ExpandColumns  bool   `json:"expand_columns"`
+	ViewMode       string `json:"view_mode"`
 }
 
 // BoardSettingsView holds pre-formatted per-board override values for the template.
@@ -27,6 +28,7 @@ type BoardSettingsView struct {
 	ShowCheckbox  string `json:"show_checkbox"`
 	CardPosition  string `json:"card_position"`
 	ExpandColumns string `json:"expand_columns"`
+	ViewMode      string `json:"view_mode"`
 }
 
 // BoardViewModel is the state for the board view page.
@@ -49,6 +51,7 @@ func resolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettin
 		NewLineTrigger: global.NewLineTrigger,
 		CardPosition:   global.CardPosition,
 		ExpandColumns:  false,
+		ViewMode:       "board",
 	}
 	if bs.ShowCheckbox != nil {
 		rs.ShowCheckbox = *bs.ShowCheckbox
@@ -58,6 +61,9 @@ func resolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettin
 	}
 	if bs.ExpandColumns != nil {
 		rs.ExpandColumns = *bs.ExpandColumns
+	}
+	if bs.ViewMode != nil {
+		rs.ViewMode = *bs.ViewMode
 	}
 	return rs
 }
@@ -81,6 +87,9 @@ func toBoardSettingsView(bs models.BoardSettings) BoardSettingsView {
 		} else {
 			v.ExpandColumns = "false"
 		}
+	}
+	if bs.ViewMode != nil {
+		v.ViewMode = *bs.ViewMode
 	}
 	return v
 }
@@ -482,6 +491,11 @@ func (h *Handler) handleUpdateBoardSettings(_ context.Context, _ *live.Socket, p
 	if v, ok := p["expand_columns"].(string); ok {
 		b := v == "true"
 		settings.ExpandColumns = &b
+	}
+	if v, ok := p["view_mode"].(string); ok {
+		if v == "board" || v == "table" {
+			settings.ViewMode = &v
+		}
 	}
 
 	return h.mutateBoard(slug, "Update board settings", func(boardPath string) error {

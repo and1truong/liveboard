@@ -10,6 +10,9 @@ list-collapse:
     - false
     - false
     - false
+settings:
+    expand-columns: false
+    view-mode: table
 ---
 
 ## Urgent
@@ -24,22 +27,22 @@ list-collapse:
   priority: high
   due: 2026-03-25
 
+- [ ] Fix leaking kitchen faucet
+  tags: house
+  priority: medium
+  Getting worse, check washer first before calling plumber
+
 - [ ] Schedule pediatrician checkup for Liam
   tags: health
   priority: medium
   due: 2026-03-28
   Annual wellness visit, bring vaccination records
 
-- [ ] Fix leaking kitchen faucet
-  tags: house
-  priority: medium
-  Getting worse, check washer first before calling plumber
+- [ ] bug fixes
+  tags: cooking, errands, finance
+  priority: low
 
 ## This Week
-
-- [ ] Grocery run
-  tags: errands
-  Milk, eggs, chicken thighs, broccoli, snack bars for lunches
 
 - [ ] Mow the lawn
   tags: house
@@ -49,6 +52,10 @@ list-collapse:
   tags: kids
   due: 2026-04-05
   She wants the LEGO botanical set
+
+- [ ] Grocery run
+  tags: errands
+  Milk, eggs, chicken thighs, broccoli, snack bars for lunches
 
 - [ ] Prep meal plans for next week
   tags: cooking

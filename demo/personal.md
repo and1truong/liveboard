@@ -6,6 +6,9 @@ list-collapse:
     - false
     - false
     - true
+settings:
+    expand-columns: false
+    view-mode: table
 ---
 
 ## This Week
