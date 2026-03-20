@@ -10,7 +10,7 @@
         <div class="error">{{.Error}}</div>
         {{end}}
 
-        <form x-show="creating" live-submit="create-board" class="create-board-form">
+        <form x-show="creating" live-submit="create-board" class="create-board-form" @submit="$nextTick(() => { creating = false; $el.reset() })">
             <input type="text" name="name" placeholder="Board name" required autofocus>
             <button type="submit" class="btn-primary">Create</button>
             <button type="button" @click="creating = false" class="btn-secondary">Cancel</button>
