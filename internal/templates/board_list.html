@@ -1,8 +1,8 @@
 {{define "content"}}
-<div class="board-list" x-data="{ creating: false }">
+<div class="board-list">
     <div class="workspace-header">
         <h2 class="workspace-title">My Boards</h2>
-        <button @click="creating = true" class="btn-primary">+ New Board</button>
+        <button onclick="var f=document.getElementById('createBoardForm');f.style.display='';f.querySelector('input[name=name]').focus()" class="btn-primary">+ New Board</button>
     </div>
 
     <div class="workspace-body">
@@ -10,10 +10,10 @@
         <div class="error">{{.Error}}</div>
         {{end}}
 
-        <form x-show="creating" live-submit="create-board" class="create-board-form" @submit="$nextTick(() => { creating = false; $el.reset() })">
-            <input type="text" name="name" placeholder="Board name" required autofocus>
+        <form id="createBoardForm" style="display:none" live-submit="create-board" class="create-board-form" onsubmit="var f=this;requestAnimationFrame(function(){f.style.display='none';f.reset()})">
+            <input type="text" name="name" placeholder="Board name" required onkeydown="if(event.key==='Escape'){this.value='';this.closest('form').style.display='none'}">
             <button type="submit" class="btn-primary">Create</button>
-            <button type="button" @click="creating = false" class="btn-secondary">Cancel</button>
+            <button type="button" onclick="var f=this.closest('form');f.reset();f.style.display='none'" class="btn-secondary">Cancel</button>
         </form>
 
         {{if .Boards}}
