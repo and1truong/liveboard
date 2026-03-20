@@ -1510,6 +1510,16 @@ body {
     transform: rotate(-45deg) translateY(-1px);
 }
 
+.card-drag-handle {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    line-height: 1;
+    cursor: grab;
+    user-select: none;
+    margin-top: 2px;
+    letter-spacing: -1px;
+}
 
 .status-badge {
     font-size: var(--font-size-xs);

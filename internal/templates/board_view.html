@@ -97,7 +97,7 @@
                     {{end}}
                     {{end}}
                     <div class="card-layout">
-                        {{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>{{end}}
+                        {{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}
                         <div class="card-content">
                             <h4 class="card-title">{{.Title}}</h4>
 
