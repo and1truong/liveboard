@@ -52,6 +52,10 @@
                     <span class="nav-label">{{.Name}}</span>
                 </a>
                 {{end}}
+                <a href="/search-ui" class="sidebar-nav-item{{if eq $.BoardSlug "__search__"}} active{{end}}">
+                    <span class="nav-icon">&#128269;</span>
+                    <span class="nav-label">Search</span>
+                </a>
                 <a href="/" class="sidebar-nav-item sidebar-new-board">
                     <span class="nav-icon">+</span>
                     <span class="nav-label">New Board</span>

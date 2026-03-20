@@ -30,6 +30,7 @@ func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: add %q to %s/%s", body.Title, boardName, colName))
+	s.reindexBoard(boardName)
 	respondCreated(w, card)
 }
 
@@ -88,6 +89,7 @@ func (s *Server) deleteCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: delete col=%d card=%d", colIdx, cardIdx))
+	s.reindexBoard(boardName)
 	respondNoContent(w)
 }
 
@@ -118,6 +120,7 @@ func (s *Server) moveCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: move → %s", body.Column))
+	s.reindexBoard(boardName)
 	respondNoContent(w)
 }
 
@@ -166,6 +169,7 @@ func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: tag col=%d card=%d", colIdx, cardIdx))
+	s.reindexBoard(boardName)
 	respondNoContent(w)
 }
 

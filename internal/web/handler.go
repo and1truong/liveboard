@@ -14,6 +14,7 @@ import (
 
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
+	"github.com/and1truong/liveboard/internal/search"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
 
@@ -22,10 +23,12 @@ type Handler struct {
 	ws           *workspace.Workspace
 	eng          *board.Engine
 	git          *gitpkg.Repository
+	search       *search.Index
 	pubsub       *live.PubSub
 	tmplDir      string
 	boardListTpl *template.Template
 	boardViewTpl *template.Template
+	searchTpl    *template.Template
 }
 
 // NewHandler creates a new web Handler.
@@ -59,6 +62,10 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 		layoutFile := filepath.Join(h.tmplDir, "layout.html")
 		h.boardListTpl = template.Must(template.ParseFiles(layoutFile, filepath.Join(h.tmplDir, "board_list.html")))
 		h.boardViewTpl = template.Must(template.ParseFiles(layoutFile, filepath.Join(h.tmplDir, "board_view.html")))
+		searchTplPath := filepath.Join(h.tmplDir, "search.html")
+		if _, err := template.ParseFiles(searchTplPath); err == nil {
+			h.searchTpl = template.Must(template.ParseFiles(layoutFile, searchTplPath))
+		}
 	} else {
 		// Empty templates for tests
 		h.boardListTpl = template.New("empty")
@@ -154,4 +161,40 @@ func (h *Handler) commitRemoveWithHandling(boardPath, msg string) {
 	if err := h.git.CommitRemove(boardPath, msg); err != nil {
 		log.Printf("git commit remove failed for %s: %v", boardPath, err)
 	}
+}
+
+// SetSearch sets the search index for the handler.
+func (h *Handler) SetSearch(idx *search.Index) {
+	h.search = idx
+}
+
+// reindexBoard re-indexes a single board in the search index.
+func (h *Handler) reindexBoard(slug string) {
+	if h.search == nil {
+		return
+	}
+	_ = h.search.RemoveBoard(slug)
+	board, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		return
+	}
+	_ = h.search.IndexBoard(slug, board)
+}
+
+// SearchHandler returns an http.Handler for the search page.
+func (h *Handler) SearchHandler() http.Handler {
+	tpl := h.searchTpl
+	if tpl == nil {
+		tpl = template.New("empty")
+	}
+
+	searchHandler := live.NewHandler(
+		withAssignsRenderer(tpl),
+	)
+	searchHandler.MountHandler = h.mountSearch
+	searchHandler.HandleEvent("search", h.handleSearch)
+
+	return live.NewHttpHandler(context.Background(), searchHandler,
+		live.WithSocketStateStore(live.NewMemorySocketStateStore(context.Background())),
+	)
 }

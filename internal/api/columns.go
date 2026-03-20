@@ -43,6 +43,7 @@ func (s *Server) deleteColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("column: delete %q from %s", colName, boardName))
+	s.reindexBoard(boardName)
 	respondNoContent(w)
 }
 

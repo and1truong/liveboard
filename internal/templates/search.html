@@ -1,0 +1,40 @@
+{{define "content"}}
+<div class="board-list">
+    <div class="workspace-header">
+        <h2 class="workspace-title">Search</h2>
+    </div>
+
+    <div class="workspace-body">
+        {{if .Error}}
+        <div class="error">{{.Error}}</div>
+        {{end}}
+
+        <form live-submit="search" class="search-form" style="margin-bottom: 1.5rem;">
+            <input type="text" name="query" placeholder="Search cards across all boards..." value="{{.Query}}" autofocus
+                   style="width: 100%; max-width: 500px; padding: 0.5rem 0.75rem; border: 1px solid var(--color-border); border-radius: 6px; background: var(--color-bg); color: var(--color-text); font-size: 0.95rem;"
+                   oninput="clearTimeout(this._t);var f=this.closest('form');this._t=setTimeout(function(){f.dispatchEvent(new Event('submit',{bubbles:true}))},300)">
+            <button type="submit" class="btn-primary" style="margin-left: 0.5rem;">Search</button>
+        </form>
+
+        {{if .Results}}
+        <div class="search-results" style="display: flex; flex-direction: column; gap: 0.5rem;">
+            {{range .Results}}
+            <a href="/board/{{.BoardSlug}}" class="search-result-card" style="display: block; padding: 0.75rem 1rem; border: 1px solid var(--color-border); border-radius: 8px; background: var(--color-card-bg, var(--color-bg)); text-decoration: none; color: var(--color-text); transition: border-color 0.15s;">
+                <div style="font-weight: 600; margin-bottom: 0.25rem;">{{.CardTitle}}</div>
+                <div style="font-size: 0.8rem; color: var(--color-text-secondary, #888);">
+                    {{.BoardName}} &rarr; {{.ColumnName}}
+                </div>
+                {{if index .Fragments "body"}}
+                <div style="font-size: 0.85rem; margin-top: 0.25rem; color: var(--color-text-secondary, #888);">
+                    ...{{index .Fragments "body"}}...
+                </div>
+                {{end}}
+            </a>
+            {{end}}
+        </div>
+        {{else if .Query}}
+        <p style="color: var(--color-text-secondary, #888);">No results found for "{{.Query}}"</p>
+        {{end}}
+    </div>
+</div>
+{{end}}

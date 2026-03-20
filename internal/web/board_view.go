@@ -121,6 +121,7 @@ func (h *Handler) mutateBoard(slug, msg string, op func(string) error) (interfac
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 	h.commitWithHandling(boardPath, msg)
+	h.reindexBoard(slug)
 	h.publishBoardEvent(slug)
 	return h.boardViewModel(slug)
 }
@@ -132,6 +133,7 @@ func (h *Handler) mutateBoardRemove(slug, msg string, op func(string) error) (in
 		return BoardViewModel{Error: err.Error()}, nil
 	}
 	h.commitRemoveWithHandling(boardPath, msg)
+	h.reindexBoard(slug)
 	h.publishBoardEvent(slug)
 	return h.boardViewModel(slug)
 }

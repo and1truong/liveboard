@@ -64,5 +64,8 @@ func (s *Server) deleteBoard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	s.gitCommitRemove(relPath, fmt.Sprintf("board: delete %s", name))
+	if s.search != nil {
+		_ = s.search.RemoveBoard(name)
+	}
 	respondNoContent(w)
 }

@@ -9,6 +9,7 @@ import (
 
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
+	"github.com/and1truong/liveboard/internal/search"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
@@ -18,6 +19,7 @@ type Server struct {
 	ws          *workspace.Workspace
 	eng         *board.Engine
 	git         *gitpkg.Repository
+	search      *search.Index
 	liveHandler *web.Handler
 	router      chi.Router
 }
@@ -30,8 +32,61 @@ func NewServer(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repositor
 		git:         git,
 		liveHandler: web.NewHandler(ws, eng, git),
 	}
+
+	// Initialize search index and populate from existing boards.
+	if idx, err := search.NewIndex(""); err == nil {
+		s.search = idx
+		s.liveHandler.SetSearch(idx)
+		s.rebuildSearchIndex()
+	}
+
 	s.router = s.buildRouter()
 	return s
+}
+
+// rebuildSearchIndex indexes all boards in the workspace.
+func (s *Server) rebuildSearchIndex() {
+	if s.search == nil {
+		return
+	}
+	boards, err := s.ws.ListBoards()
+	if err != nil {
+		return
+	}
+	for _, b := range boards {
+		slug := boardSlugFromPath(b.FilePath)
+		_ = s.search.IndexBoard(slug, &b)
+	}
+}
+
+// reindexBoard re-indexes a single board after mutation.
+func (s *Server) reindexBoard(slug string) {
+	if s.search == nil {
+		return
+	}
+	_ = s.search.RemoveBoard(slug)
+	board, err := s.ws.LoadBoard(slug)
+	if err != nil {
+		return
+	}
+	_ = s.search.IndexBoard(slug, board)
+}
+
+// boardSlugFromPath extracts the slug from a board file path.
+func boardSlugFromPath(path string) string {
+	base := path
+	// Find last path separator
+	for i := len(path) - 1; i >= 0; i-- {
+		if path[i] == '/' || path[i] == '\\' {
+			base = path[i+1:]
+			break
+		}
+	}
+	// Remove .md extension
+	if len(base) > 3 && base[len(base)-3:] == ".md" {
+		return base[:len(base)-3]
+	}
+	return base
 }
 
 // Router returns the http.Handler for use with httptest.
@@ -62,6 +117,7 @@ func (s *Server) buildRouter() chi.Router {
 	// Web UI routes
 	r.Handle("/", s.liveHandler.BoardListHandler())
 	r.Handle("/board/{name}", s.liveHandler.BoardViewHandler())
+	r.Handle("/search-ui", s.liveHandler.SearchHandler())
 	r.Handle("/settings", s.liveHandler.SettingsHandler())
 	r.Handle("/api/settings", s.liveHandler.SettingsAPIHandler())
 
@@ -94,7 +150,7 @@ func (s *Server) buildRouter() chi.Router {
 		r.Post("/tag", s.tagCard)
 	})
 
-	r.Get("/search", s.stubHandler)
+	r.Get("/search", s.searchHandler)
 	r.Get("/events", s.stubHandler)
 	r.Get("/events/ws", s.stubHandler)
 

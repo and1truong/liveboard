@@ -3,6 +3,7 @@ module github.com/and1truong/liveboard
 go 1.24.7
 
 require (
+	github.com/blevesearch/bleve/v2 v2.5.7
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/go-git/go-git/v5 v5.17.0
 	github.com/jfyne/live v0.16.3
