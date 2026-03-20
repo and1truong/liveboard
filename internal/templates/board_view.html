@@ -131,7 +131,7 @@
             </div>
 
             <div class="add-card-toggle">
-                <form live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form" style="display:none">
+                <form live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form" style="display:none" onsubmit="var f=this;requestAnimationFrame(function(){f.querySelector('input[name=title]').value=''})">
                     <input type="text" name="title" placeholder="Enter a title..." required onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''}">
                 </form>
                 <button onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';w.querySelector('.btn-add-card').style.display='none';w.querySelector('input[name=title]').focus()" class="btn-add-card">+ Add Card</button>
