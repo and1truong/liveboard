@@ -55,7 +55,7 @@
     var cardRect = card.getBoundingClientRect();
     var colIdx = card.dataset.colIdx;
     var cardIdx = card.dataset.cardIdx;
-    var slug = window.location.pathname.replace(/^\/board\//, "");
+    var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
 
     var currentTitle = card.dataset.cardTitle || "";
     var currentBody = card.dataset.cardBody || "";
@@ -482,7 +482,7 @@
     colCtxMenu._forBtn = btn;
 
     var columnName = btn.dataset.columnName;
-    var slug = window.location.pathname.replace(/^\/board\//, "");
+    var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
 
     colCtxMenu.appendChild(makeColItem("✏️", "Edit", false, function () {
       startColumnRename(btn, columnName, slug);
@@ -689,7 +689,7 @@
 
   // === BOARD EDIT MODAL ===
   function showBoardEditModal(name, description, tags) {
-    var slug = window.location.pathname.replace(/^\/board\//, "");
+    var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
 
     var backdrop = document.createElement("div");
     backdrop.className = "card-modal-backdrop";
@@ -977,7 +977,7 @@
         e.stopPropagation();
         var btn = h3.closest(".column-header").querySelector(".column-menu-btn");
         if (!btn) return;
-        var slug = window.location.pathname.replace(/^\/board\//, "");
+        var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
         startColumnRename(btn, btn.dataset.columnName, slug);
       });
     });
@@ -1167,7 +1167,7 @@
 
     var colIdx = card.dataset.colIdx;
     var cardIdx = card.dataset.cardIdx;
-    var slug = window.location.pathname.replace(/^\/board\//, "");
+    var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
     var title = card.dataset.cardTitle || "";
     var body = card.dataset.cardBody || "";
     var tags = card.dataset.cardTags || "";
@@ -1773,7 +1773,7 @@
             return; // no-op
           }
 
-          var slug = window.location.pathname.replace(/^\/board\//, "");
+          var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
           if (window.Live) {
             window.Live.send("reorder-card", {
               col_idx: srcColIdx,
