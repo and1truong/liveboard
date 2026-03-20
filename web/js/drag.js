@@ -123,6 +123,12 @@
           if (sb) sb.click();
         }
       }
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        var sb = overlay.querySelector(".btn-primary");
+        if (sb) sb.click();
+        return;
+      }
       if (e.key === "Escape") hideQuickEdit();
     });
     overlay.appendChild(titleInput);
@@ -283,6 +289,12 @@
           var sb = overlay.querySelector(".btn-primary");
           if (sb) sb.click();
         }
+      }
+      if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault();
+        var sb = overlay.querySelector(".btn-primary");
+        if (sb) sb.click();
+        return;
       }
       if (e.key === "Escape") hideQuickEdit();
     });
