@@ -1,6 +1,12 @@
 PORT ?= 7070
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: dev release-port
+.PHONY: build dev release-port
+
+build:
+	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o liveboard ./cmd/liveboard
 
 release-port:
 	-lsof -ti :$(PORT) | xargs kill -9 2>/dev/null
