@@ -1401,7 +1401,8 @@ body {
     min-height: 60px;
 }
 
-.move-trigger {
+.move-trigger,
+.delete-trigger {
     position: absolute;
     width: 1px;
     height: 1px;

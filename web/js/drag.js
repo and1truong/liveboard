@@ -38,6 +38,31 @@
     return btn;
   }
 
+  function makeDeleteItem(triggerBtn, beforeDelete) {
+    var btn = document.createElement("button");
+    btn.className = "ctx-item ctx-danger";
+    btn.setAttribute("role", "menuitem");
+    btn.innerHTML = '<span class="ctx-icon">🗑</span>Delete';
+    var armed = false;
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (armed) {
+        hideContextMenu();
+        if (beforeDelete) beforeDelete();
+        triggerBtn.click();
+        return;
+      }
+      btn.disabled = true;
+      btn.innerHTML = '<span class="ctx-icon">⏳</span>Deleting…';
+      setTimeout(function () {
+        armed = true;
+        btn.disabled = false;
+        btn.innerHTML = '<span class="ctx-icon">🗑</span>Confirm delete';
+      }, 1000);
+    });
+    return btn;
+  }
+
   // === QUICK EDIT OVERLAY ===
   var qeOverlay = null;
 
@@ -391,10 +416,7 @@
       var sep2 = document.createElement("div");
       sep2.className = "ctx-separator";
       ctxMenu.appendChild(sep2);
-      ctxMenu.appendChild(makeItem("🗑", "Delete", true, function () {
-        hideQuickEdit();
-        deleteBtn.click();
-      }));
+      ctxMenu.appendChild(makeDeleteItem(deleteBtn, function () { hideQuickEdit(); }));
     }
 
     ctxMenu.classList.add("visible");
@@ -450,9 +472,7 @@
       var sep2 = document.createElement("div");
       sep2.className = "ctx-separator";
       ctxMenu.appendChild(sep2);
-      ctxMenu.appendChild(makeItem("🗑", "Delete", true, function () {
-        deleteBtn.click();
-      }));
+      ctxMenu.appendChild(makeDeleteItem(deleteBtn, null));
     }
 
     ctxMenu.classList.add("visible");

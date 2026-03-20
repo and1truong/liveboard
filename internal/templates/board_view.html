@@ -101,6 +101,7 @@
                     live-value-name="{{$.BoardSlug}}"></button>
                 {{end}}
                 {{end}}
+                <button class="delete-trigger" live-click="delete-card" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}"></button>
                 <div class="table-cell table-cell-list">{{if eq $j 0}}{{$column.Name}}{{end}}</div>
                 <div class="table-cell table-cell-status">{{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}</div>
                 <div class="table-cell table-cell-card">
@@ -154,6 +155,7 @@
                         live-value-name="{{$.BoardSlug}}"></button>
                     {{end}}
                     {{end}}
+                    <button class="delete-trigger" live-click="delete-card" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}"></button>
                     <div class="card-layout">
                         {{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}
                         <div class="card-content">
