@@ -16,6 +16,8 @@
             <button type="button" onclick="var f=this.closest('form');f.reset();f.style.display='none'" class="btn-secondary">Cancel</button>
         </form>
 
+        <script>(function(){if(location.hash==='#new-board'){var f=document.getElementById('createBoardForm');f.style.display='';f.querySelector('input[name=name]').focus();history.replaceState(null,'','/');}})()</script>
+
         {{if .Boards}}
         <div class="boards-grid">
             {{range .Boards}}
