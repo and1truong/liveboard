@@ -11,18 +11,26 @@ import (
 )
 
 func serveCmd() *cobra.Command {
-	var port int
+	var (
+		host string
+		port int
+	)
 
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the REST API and Web UI server",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			srv := api.NewServer(ws, ws.Engine, gitRepo)
-			addr := fmt.Sprintf(":%d", port)
-			fmt.Printf("LiveBoard Web UI: http://localhost:%d\n", port)
-			fmt.Printf("REST API: http://localhost:%d/boards\n", port)
+			addr := fmt.Sprintf("%s:%d", host, port)
+			fmt.Printf("LiveBoard Web UI: http://%s:%d\n", host, port)
+			fmt.Printf("REST API: http://%s:%d/boards\n", host, port)
 			return srv.Start(addr)
 		},
+	}
+
+	defaultHost := "127.0.0.1"
+	if v := os.Getenv("LIVEBOARD_HOST"); v != "" {
+		defaultHost = v
 	}
 
 	defaultPort := 7070
@@ -32,6 +40,7 @@ func serveCmd() *cobra.Command {
 		}
 	}
 
+	cmd.Flags().StringVar(&host, "host", defaultHost, "server host")
 	cmd.Flags().IntVarP(&port, "port", "p", defaultPort, "server port")
 	return cmd
 }
