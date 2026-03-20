@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+
+	tmplfs "github.com/and1truong/liveboard/internal/templates"
 )
 
 // AppSettings holds persisted user preferences.
@@ -73,13 +75,7 @@ type SettingsModel struct {
 
 // SettingsHandler returns an http.Handler for the settings page.
 func (h *Handler) SettingsHandler() http.Handler {
-	var tpl *template.Template
-	if h.tmplDir != "" {
-		tpl = template.Must(template.ParseFiles(
-			filepath.Join(h.tmplDir, "layout.html"),
-			filepath.Join(h.tmplDir, "settings.html"),
-		))
-	}
+	tpl := template.Must(template.ParseFS(tmplfs.FS, "layout.html", "settings.html"))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		boards, _ := h.ws.ListBoards()
@@ -89,10 +85,6 @@ func (h *Handler) SettingsHandler() http.Handler {
 			BoardSlug: "__settings__",
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
-		if tpl == nil {
-			http.Error(w, "template not found", http.StatusInternalServerError)
-			return
-		}
 		if err := tpl.Execute(w, model); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}

@@ -8,12 +8,12 @@ import (
 	"io"
 	"log"
 	"net/http"
-	"path/filepath"
 
 	"github.com/jfyne/live"
 
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
+	tmplfs "github.com/and1truong/liveboard/internal/templates"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
 
@@ -23,7 +23,6 @@ type Handler struct {
 	eng          *board.Engine
 	git          *gitpkg.Repository
 	pubsub       *live.PubSub
-	tmplDir      string
 	boardListTpl *template.Template
 	boardViewTpl *template.Template
 }
@@ -40,30 +39,8 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 	ctx := context.Background()
 	h.pubsub = live.NewPubSub(ctx, live.NewLocalTransport())
 
-	// Find template directory
-	templateDirs := []string{
-		filepath.Join("internal", "templates"),
-		"templates",
-		".",
-	}
-
-	for _, dir := range templateDirs {
-		layoutPath := filepath.Join(dir, "layout.html")
-		if _, err := template.ParseFiles(layoutPath); err == nil {
-			h.tmplDir = dir
-			break
-		}
-	}
-
-	if h.tmplDir != "" {
-		layoutFile := filepath.Join(h.tmplDir, "layout.html")
-		h.boardListTpl = template.Must(template.ParseFiles(layoutFile, filepath.Join(h.tmplDir, "board_list.html")))
-		h.boardViewTpl = template.Must(template.ParseFiles(layoutFile, filepath.Join(h.tmplDir, "board_view.html")))
-	} else {
-		// Empty templates for tests
-		h.boardListTpl = template.New("empty")
-		h.boardViewTpl = template.New("empty")
-	}
+	h.boardListTpl = template.Must(template.ParseFS(tmplfs.FS, "layout.html", "board_list.html"))
+	h.boardViewTpl = template.Must(template.ParseFS(tmplfs.FS, "layout.html", "board_view.html"))
 
 	return h
 }
