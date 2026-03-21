@@ -26,10 +26,12 @@ document.addEventListener('alpine:init', function () {
         this.tcInput = '';
         this.tcDropdownOpen = true;
         this.tcActiveIdx = -1;
+        this.$dispatch('tags-changed');
       },
 
       removeTag: function (idx) {
         this.tags.splice(idx, 1);
+        this.$dispatch('tags-changed');
       },
 
       showDropdown: function () {
@@ -58,6 +60,7 @@ document.addEventListener('alpine:init', function () {
           }
         } else if (e.key === 'Backspace' && !this.tcInput && this.tags.length) {
           this.tags.pop();
+          this.$dispatch('tags-changed');
         } else if (e.key === 'Escape') {
           this.tcDropdownOpen = false;
           this.tcActiveIdx = -1;

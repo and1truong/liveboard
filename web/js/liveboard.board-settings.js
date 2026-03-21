@@ -13,8 +13,6 @@ document.addEventListener('alpine:init', function () {
       viewMode: 'board',
       cardDisplayMode: '',
       slug: '',
-      savedVisible: false,
-      _savedTimer: null,
 
       toggle: function () {
         if (this.open) { this.open = false; return; }
@@ -68,15 +66,6 @@ document.addEventListener('alpine:init', function () {
           target: '#board-content',
           swap: 'innerHTML'
         });
-        this.showSaved();
-      },
-
-
-      showSaved: function () {
-        var self = this;
-        this.savedVisible = true;
-        clearTimeout(this._savedTimer);
-        this._savedTimer = setTimeout(function () { self.savedVisible = false; }, 2000);
       },
 
       sendSettings: function () {

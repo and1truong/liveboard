@@ -8,13 +8,11 @@ document.addEventListener('alpine:init', function () {
       fontFamily: 'system',
       columnWidth: 280,
       sidebarPosition: 'left',
-      showCheckbox: 'true',
+      showCheckbox: true,
       newLineTrigger: 'shift-enter',
       cardPosition: 'append',
       cardDisplayMode: 'full',
       defaultColumns: [],
-      savedVisible: false,
-      _savedTimer: null,
 
       fontMap: {
         'system': { css: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif", gf: '' },
@@ -37,7 +35,7 @@ document.addEventListener('alpine:init', function () {
             self.fontFamily = s.font_family || 'system';
             self.columnWidth = s.column_width || 280;
             self.sidebarPosition = s.sidebar_position || 'left';
-            self.showCheckbox = s.show_checkbox === false ? 'false' : 'true';
+            self.showCheckbox = s.show_checkbox !== false;
             self.newLineTrigger = s.newline_trigger || 'shift-enter';
             self.cardPosition = s.card_position || 'append';
             self.cardDisplayMode = s.card_display_mode || 'full';
@@ -76,7 +74,7 @@ document.addEventListener('alpine:init', function () {
           font_family: this.fontFamily,
           column_width: parseInt(this.columnWidth, 10) || 280,
           sidebar_position: this.sidebarPosition,
-          show_checkbox: this.showCheckbox === 'true',
+          show_checkbox: !!this.showCheckbox,
           newline_trigger: this.newLineTrigger,
           card_position: this.cardPosition,
           card_display_mode: this.cardDisplayMode,
@@ -112,9 +110,7 @@ document.addEventListener('alpine:init', function () {
             if (brandEl) brandEl.textContent = s.site_name;
             document.title = 'Settings \u2014 ' + s.site_name;
 
-            self.savedVisible = true;
-            clearTimeout(self._savedTimer);
-            self._savedTimer = setTimeout(function () { self.savedVisible = false; }, 2000);
+            // auto-save: no flash message needed
           });
       },
 
