@@ -1,17 +1,22 @@
 ---
+version: 20
 name: Sprint 14
 description: Two-week sprint — ship billing and onboarding
 icon: "\U0001F3AF"
 tags:
     - sprint
     - engineering
+members:
+    - Maya
+    - htruong
+    - Jane Doe
 list-collapse:
     - false
     - false
     - false
-    - true
+    - false
 settings:
-    expand-columns: false
+    expand-columns: true
     view-mode: board
 ---
 
@@ -20,11 +25,16 @@ settings:
 - [ ] Rate limiting middleware
   tags: backend, api
   priority: medium
-  Add token bucket rate limiter to public API endpoints. 100 req/min per API key.
+  Add **token bucket** rate limiter to public API endpoints.
+  - 100 req/min per API key
+  - Return `429 Too Many Requests` with retry header
+  See [design doc](https://example.com) for details.
 
 - [ ] Webhook retry with exponential backoff
   tags: backend, webhooks
+  assignee: Jane Doe
   priority: low
+  due: 2026-03-08
   Currently we fire-and-forget. Need retry queue with 3 attempts.
 
 - [ ] Dark mode toggle in user settings
@@ -34,6 +44,20 @@ settings:
 - [ ] Add OpenAPI spec generation
   tags: backend, docs
   priority: medium
+
+## Review
+
+- [ ] Add CSRF token to all mutation endpoints
+  tags: backend, security
+  assignee: Maya
+  priority: high
+  PR #247 — needs security review before merge
+
+- [ ] Refactor card parser to handle nested markdown
+  tags: backend, parser
+  assignee: Hieu
+  priority: medium
+  PR #243 — passes all tests, needs code review
 
 ## In Progress
 
@@ -49,27 +73,13 @@ settings:
   assignee: Maya
   priority: high
   due: 2026-03-25
-  Three-step wizard. First step collects workspace name and invites. Use the stepper component from the design system.
+  Three-step wizard. **First** step collects workspace name and invites. Use the stepper component from the design system.
 
 - [ ] Fix N+1 query in board listing endpoint
   tags: backend, performance
   assignee: Hieu
   priority: high
   `GET /api/boards` fires a query per board for member count. Batch it.
-
-## Review
-
-- [ ] Add CSRF token to all mutation endpoints
-  tags: backend, security
-  assignee: Maya
-  priority: high
-  PR #247 — needs security review before merge
-
-- [ ] Refactor card parser to handle nested markdown
-  tags: backend, parser
-  assignee: Hieu
-  priority: medium
-  PR #243 — passes all tests, needs code review
 
 ## Done
 
