@@ -6,10 +6,10 @@ tags:
     - oncall
     - ops
 list-collapse:
-    - false
-    - false
-    - false
     - true
+    - false
+    - false
+    - false
 ---
 
 ## Active Incidents

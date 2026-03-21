@@ -97,7 +97,7 @@ Cards support inline metadata below the list item:
 
 ## Web UI
 
-The built-in web UI is a [LiveView](https://github.com/jfyne/live) application — real-time updates with no separate frontend build.
+The built-in web UI uses [HTMX](https://htmx.org/) with Server-Sent Events — real-time updates with no separate frontend build.
 
 <p align="center">
   <img src="web/img/liveboard-logo-dark.svg" alt="LiveBoard Dark" width="240">
@@ -180,7 +180,7 @@ board: create infra
                      │
          ┌───────────▼────────────┐
          │    API Layer (chi)     │
-         │   REST + LiveView     │
+         │   REST + HTMX/SSE    │
          └───────────┬────────────┘
                      │
       ┌──────────────┼──────────────┐
@@ -213,7 +213,7 @@ liveboard/
 │   ├── git/              go-git auto-commit integration
 │   ├── parser/           Markdown → Board model
 │   ├── writer/           Board model → Markdown
-│   ├── web/              LiveView handlers + views
+│   ├── web/              HTMX handlers + SSE broker
 │   ├── workspace/        Folder scanning, board resolution
 │   └── templates/        HTML templates
 ├── pkg/models/           Board, Column, Card types
@@ -233,7 +233,7 @@ liveboard/
 |---|---|
 | Language | Go 1.24 |
 | HTTP router | [chi/v5](https://github.com/go-chi/chi) |
-| Real-time UI | [jfyne/live](https://github.com/jfyne/live) (LiveView) |
+| Real-time UI | [HTMX](https://htmx.org/) + Server-Sent Events |
 | CLI | [cobra](https://github.com/spf13/cobra) |
 | Git | [go-git/v5](https://github.com/go-git/go-git) |
 | Config | [yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) |
