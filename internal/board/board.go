@@ -2,22 +2,65 @@
 package board
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/and1truong/liveboard/internal/parser"
 	"github.com/and1truong/liveboard/internal/writer"
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
+// ErrVersionConflict is returned when a mutation's client version doesn't match the board's current version.
+var ErrVersionConflict = errors.New("board version conflict")
+
 // Engine provides CRUD operations on boards backed by Markdown files.
-type Engine struct{}
+type Engine struct {
+	mu    sync.Mutex
+	locks map[string]*sync.Mutex
+}
 
 // New creates a new Engine instance.
 func New() *Engine {
-	return &Engine{}
+	return &Engine{locks: make(map[string]*sync.Mutex)}
+}
+
+// boardLock returns the per-board mutex, creating one if needed.
+func (e *Engine) boardLock(boardPath string) *sync.Mutex {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	if e.locks[boardPath] == nil {
+		e.locks[boardPath] = &sync.Mutex{}
+	}
+	return e.locks[boardPath]
+}
+
+// MutateBoard serializes access to a board, checks the client version against the
+// on-disk version (skip if clientVersion < 0), applies the mutation, increments the
+// version, and writes the result to disk.
+func (e *Engine) MutateBoard(boardPath string, clientVersion int, fn func(*models.Board) error) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
+	board, err := e.LoadBoard(boardPath)
+	if err != nil {
+		return err
+	}
+
+	if clientVersion >= 0 && board.Version != clientVersion {
+		return ErrVersionConflict
+	}
+
+	if err := fn(board); err != nil {
+		return err
+	}
+
+	board.Version++
+	return renderAndWrite(board, boardPath)
 }
 
 // LoadBoard reads and parses a board file.
@@ -227,65 +270,57 @@ func (e *Engine) ShowCard(boardPath string, colIdx, cardIdx int) (*models.Card, 
 
 // AddColumn adds a new column to the board.
 func (e *Engine) AddColumn(boardPath, colName string) error {
-	content, err := os.ReadFile(boardPath)
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
-
-	s := string(content)
-	// Append column at end.
-	if !strings.HasSuffix(s, "\n") {
-		s += "\n"
-	}
-	s += "\n## " + colName + "\n"
-
-	return os.WriteFile(boardPath, []byte(s), 0644)
+	board.Columns = append(board.Columns, models.Column{Name: colName})
+	return renderAndWrite(board, boardPath)
 }
 
 // DeleteColumn removes a column and all its cards.
 func (e *Engine) DeleteColumn(boardPath, colName string) error {
-	content, err := os.ReadFile(boardPath)
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
-
-	lines := strings.Split(string(content), "\n")
-	var result []string
-	skip := false
-	target := "## " + colName
-
-	for _, line := range lines {
-		if strings.TrimSpace(line) == target {
-			skip = true
+	found := false
+	var cols []models.Column
+	for i, col := range board.Columns {
+		if col.Name == colName {
+			found = true
+			// Remove corresponding collapse state if present.
+			if i < len(board.ListCollapse) {
+				board.ListCollapse = append(board.ListCollapse[:i], board.ListCollapse[i+1:]...)
+			}
 			continue
 		}
-		if skip && strings.HasPrefix(line, "## ") {
-			skip = false
-		}
-		if !skip {
-			result = append(result, line)
-		}
+		cols = append(cols, col)
 	}
-
-	return os.WriteFile(boardPath, []byte(strings.Join(result, "\n")), 0644)
+	if !found {
+		return nil // idempotent: no-op if column doesn't exist
+	}
+	board.Columns = cols
+	return renderAndWrite(board, boardPath)
 }
 
 // RenameColumn renames a column in-place.
 func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
-	content, err := os.ReadFile(boardPath)
+	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
 	}
-
-	lines := strings.Split(string(content), "\n")
-	target := "## " + oldName
-	for i, line := range lines {
-		if strings.TrimSpace(line) == target {
-			lines[i] = "## " + newName
+	found := false
+	for i := range board.Columns {
+		if board.Columns[i].Name == oldName {
+			board.Columns[i].Name = newName
+			found = true
 		}
 	}
-
-	return os.WriteFile(boardPath, []byte(strings.Join(lines, "\n")), 0644)
+	if !found {
+		return fmt.Errorf("column %q not found", oldName)
+	}
+	return renderAndWrite(board, boardPath)
 }
 
 // MoveColumn reorders a column to be after another column.

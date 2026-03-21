@@ -2980,3 +2980,23 @@ textarea.settings-input {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+
+/* === CONFLICT TOAST === */
+.conflict-toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-accent);
+    color: #fff;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    z-index: 10000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+.conflict-toast-hide {
+    opacity: 0;
+}

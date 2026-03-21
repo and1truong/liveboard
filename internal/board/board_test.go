@@ -698,3 +698,221 @@ name: Due Test
 		t.Errorf("expected 'Has Due' first, got %q", cards[0].Title)
 	}
 }
+
+// --- Optimistic concurrency (MutateBoard) tests ---
+
+func loadBoardOrFail(t *testing.T, eng *Engine, path string) *models.Board {
+	t.Helper()
+	b, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return b
+}
+
+func TestMutateBoardVersionIncrement(t *testing.T) {
+	path, eng := setupTestBoard(t)
+
+	// Board starts at version 0 (no version field in testBoard).
+	b := loadBoardOrFail(t, eng, path)
+	if b.Version != 0 {
+		t.Fatalf("initial version = %d, want 0", b.Version)
+	}
+
+	// Mutate with version check (client knows version 0).
+	if err := eng.MutateBoard(path, 0, func(b *models.Board) error {
+		b.Name = "Mutated"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	b = loadBoardOrFail(t, eng, path)
+	if b.Version != 1 {
+		t.Errorf("version after first mutation = %d, want 1", b.Version)
+	}
+	if b.Name != "Mutated" {
+		t.Errorf("name = %q, want 'Mutated'", b.Name)
+	}
+
+	// Second mutation at version 1.
+	if err := eng.MutateBoard(path, 1, func(b *models.Board) error {
+		b.Name = "Mutated Again"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	b = loadBoardOrFail(t, eng, path)
+	if b.Version != 2 {
+		t.Errorf("version after second mutation = %d, want 2", b.Version)
+	}
+}
+
+func TestMutateBoardVersionConflict(t *testing.T) {
+	path, eng := setupTestBoard(t)
+
+	// Advance to version 1.
+	if err := eng.MutateBoard(path, 0, func(b *models.Board) error {
+		b.Name = "V1"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// Try to mutate with stale version 0 — should get ErrVersionConflict.
+	err := eng.MutateBoard(path, 0, func(b *models.Board) error {
+		b.Name = "Should Not Apply"
+		return nil
+	})
+	if err != ErrVersionConflict {
+		t.Fatalf("expected ErrVersionConflict, got %v", err)
+	}
+
+	// Board should still be at version 1 with name "V1".
+	b := loadBoardOrFail(t, eng, path)
+	if b.Version != 1 {
+		t.Errorf("version = %d, want 1", b.Version)
+	}
+	if b.Name != "V1" {
+		t.Errorf("name = %q, want 'V1'", b.Name)
+	}
+}
+
+func TestMutateBoardSkipVersionCheck(t *testing.T) {
+	path, eng := setupTestBoard(t)
+
+	// Advance to version 1.
+	if err := eng.MutateBoard(path, -1, func(b *models.Board) error {
+		b.Name = "V1"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	// With clientVersion=-1, version check is skipped even though board is at version 1.
+	if err := eng.MutateBoard(path, -1, func(b *models.Board) error {
+		b.Name = "Skipped Check"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	b := loadBoardOrFail(t, eng, path)
+	if b.Name != "Skipped Check" {
+		t.Errorf("name = %q, want 'Skipped Check'", b.Name)
+	}
+	if b.Version != 2 {
+		t.Errorf("version = %d, want 2", b.Version)
+	}
+}
+
+func TestMutateBoardBackwardCompatNoVersion(t *testing.T) {
+	// Board file without a version field — should default to version 0.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "legacy.md")
+	content := `---
+name: Legacy Board
+---
+
+## Todo
+
+- [ ] Old task
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+	eng := New()
+
+	b := loadBoardOrFail(t, eng, path)
+	if b.Version != 0 {
+		t.Fatalf("legacy board version = %d, want 0", b.Version)
+	}
+
+	// Client sends version 0 — should match and succeed.
+	if err := eng.MutateBoard(path, 0, func(b *models.Board) error {
+		b.Name = "Upgraded"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	b = loadBoardOrFail(t, eng, path)
+	if b.Version != 1 {
+		t.Errorf("version = %d, want 1", b.Version)
+	}
+	if b.Name != "Upgraded" {
+		t.Errorf("name = %q", b.Name)
+	}
+
+	// Verify version is now in the file.
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(data), "version: 1") {
+		t.Error("version field not written to file")
+	}
+}
+
+func TestMutateBoardMutationError(t *testing.T) {
+	path, eng := setupTestBoard(t)
+
+	// If the mutation function returns an error, version should not increment.
+	err := eng.MutateBoard(path, 0, func(b *models.Board) error {
+		return os.ErrPermission
+	})
+	if err == nil {
+		t.Fatal("expected error")
+	}
+
+	b := loadBoardOrFail(t, eng, path)
+	if b.Version != 0 {
+		t.Errorf("version should remain 0 on failed mutation, got %d", b.Version)
+	}
+}
+
+func TestMutateBoardWithVersionedFile(t *testing.T) {
+	// Board file that already has a version field.
+	dir := t.TempDir()
+	path := filepath.Join(dir, "versioned.md")
+	content := `---
+version: 5
+name: Versioned Board
+---
+
+## Col
+
+- [ ] Item
+`
+	if err := os.WriteFile(path, []byte(content), 0644); err != nil {
+		t.Fatal(err)
+	}
+	eng := New()
+
+	b := loadBoardOrFail(t, eng, path)
+	if b.Version != 5 {
+		t.Fatalf("version = %d, want 5", b.Version)
+	}
+
+	// Correct version — should succeed.
+	if err := eng.MutateBoard(path, 5, func(b *models.Board) error {
+		b.Name = "Updated"
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	b = loadBoardOrFail(t, eng, path)
+	if b.Version != 6 {
+		t.Errorf("version = %d, want 6", b.Version)
+	}
+
+	// Wrong version — should conflict.
+	err := eng.MutateBoard(path, 5, func(b *models.Board) error {
+		return nil
+	})
+	if err != ErrVersionConflict {
+		t.Fatalf("expected ErrVersionConflict, got %v", err)
+	}
+}

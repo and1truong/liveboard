@@ -16,6 +16,7 @@ func Render(board *models.Board) (string, error) {
 
 	// Write YAML frontmatter.
 	fm := struct {
+		Version      int                  `yaml:"version"`
 		Name         string               `yaml:"name"`
 		Description  string               `yaml:"description,omitempty"`
 		Icon         string               `yaml:"icon,omitempty"`
@@ -24,6 +25,7 @@ func Render(board *models.Board) (string, error) {
 		ListCollapse []bool               `yaml:"list-collapse,omitempty"`
 		Settings     models.BoardSettings `yaml:"settings,omitempty"`
 	}{
+		Version:      board.Version,
 		Name:         board.Name,
 		Description:  board.Description,
 		Icon:         board.Icon,

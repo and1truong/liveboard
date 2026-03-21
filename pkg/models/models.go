@@ -14,6 +14,7 @@ type BoardSettings struct {
 
 // Board represents a Kanban board backed by a single Markdown file.
 type Board struct {
+	Version      int           `yaml:"version" json:"version"`
 	Name         string        `yaml:"name" json:"name"`
 	Description  string        `yaml:"description,omitempty" json:"description,omitempty"`
 	Icon         string        `yaml:"icon,omitempty" json:"icon,omitempty"`

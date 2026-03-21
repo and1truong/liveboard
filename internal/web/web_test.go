@@ -461,7 +461,7 @@ func TestBoardViewModel(t *testing.T) {
 func TestMutateBoardError(t *testing.T) {
 	h, slug := setupHandlerWithBoard(t)
 
-	model, err := h.mutateBoard(slug, "test", func(_ string) error {
+	model, err := h.mutateBoard(slug, "test", -1, func(_ *models.Board) error {
 		return os.ErrNotExist
 	})
 	if err != nil {
@@ -475,7 +475,7 @@ func TestMutateBoardError(t *testing.T) {
 func TestMutateBoardRemoveError(t *testing.T) {
 	h, slug := setupHandlerWithBoard(t)
 
-	model, err := h.mutateBoardRemove(slug, "test", func(_ string) error {
+	model, err := h.mutateBoardRemove(slug, "test", -1, func(_ *models.Board) error {
 		return os.ErrNotExist
 	})
 	if err != nil {
@@ -483,6 +483,119 @@ func TestMutateBoardRemoveError(t *testing.T) {
 	}
 	if model.Error == "" {
 		t.Error("expected error from failed op")
+	}
+}
+
+// --- Optimistic concurrency tests ---
+
+func TestFormVersion(t *testing.T) {
+	// Present and valid
+	req := httptest.NewRequest("POST", "/", strings.NewReader("version=3"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if v := formVersion(req); v != 3 {
+		t.Errorf("formVersion = %d, want 3", v)
+	}
+
+	// Missing — returns -1 (skip check)
+	req = httptest.NewRequest("POST", "/", strings.NewReader("other=1"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if v := formVersion(req); v != -1 {
+		t.Errorf("formVersion = %d, want -1 for missing", v)
+	}
+
+	// Invalid — returns -1
+	req = httptest.NewRequest("POST", "/", strings.NewReader("version=abc"))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	if v := formVersion(req); v != -1 {
+		t.Errorf("formVersion = %d, want -1 for invalid", v)
+	}
+}
+
+func TestMutateBoardVersionConflictReturnsError(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// First mutation at version 0 — succeeds.
+	_, err := h.mutateBoard(slug, "test", 0, func(b *models.Board) error {
+		b.Name = "V1"
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Second mutation with stale version 0 — should return ErrVersionConflict.
+	_, err = h.mutateBoard(slug, "test", 0, func(b *models.Board) error {
+		b.Name = "Should Fail"
+		return nil
+	})
+	if err != board.ErrVersionConflict {
+		t.Fatalf("expected ErrVersionConflict, got %v", err)
+	}
+}
+
+func TestMutateBoardNoVersionSkipsCheck(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Mutate without version (-1) — should always succeed.
+	_, err := h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+		b.Name = "No Version"
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Again with -1 — should still succeed even though version changed.
+	_, err = h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+		b.Name = "Still No Version"
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBoardViewModelIncludesVersion(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	model, err := h.boardViewModel(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.Version != 0 {
+		t.Errorf("initial version = %d, want 0", model.Version)
+	}
+
+	// Mutate to increment version.
+	_, _ = h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+		b.Name = "V1"
+		return nil
+	})
+
+	model, err = h.boardViewModel(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.Version != 1 {
+		t.Errorf("version after mutation = %d, want 1", model.Version)
+	}
+}
+
+func TestMutateBoardRemoveVersionConflict(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	// Advance version.
+	_, _ = h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+		b.Name = "V1"
+		return nil
+	})
+
+	// Remove with stale version — should conflict.
+	_, err := h.mutateBoardRemove(slug, "test", 0, func(b *models.Board) error {
+		return nil
+	})
+	if err != board.ErrVersionConflict {
+		t.Fatalf("expected ErrVersionConflict, got %v", err)
 	}
 }
 

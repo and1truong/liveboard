@@ -4,6 +4,52 @@
   var draggingCard = null; // DOM element being dragged
   var draggingSourceColumn = null;
 
+  // === OPTIMISTIC CONCURRENCY ===
+  function getBoardVersion() {
+    var el = document.getElementById("board-version");
+    return el ? el.value : "0";
+  }
+
+  // Auto-inject version into all HTMX form submissions (hx-post, hx-vals).
+  document.body.addEventListener("htmx:configRequest", function (e) {
+    var el = document.getElementById("board-version");
+    if (el) {
+      e.detail.parameters["version"] = el.value;
+    }
+  });
+
+  // Handle 409 Conflict: allow the swap (server sends fresh HTML) and show toast.
+  document.body.addEventListener("htmx:beforeSwap", function (e) {
+    if (e.detail.xhr && e.detail.xhr.status === 409) {
+      e.detail.shouldSwap = true;
+      e.detail.isError = false;
+      showConflictToast();
+    }
+  });
+
+  // After any swap, sync the board version from the hidden input.
+  document.body.addEventListener("htmx:afterSwap", function (e) {
+    var versionEl = document.getElementById("board-version");
+    var boardView = document.querySelector(".board-view");
+    if (versionEl && boardView) {
+      boardView.dataset.boardVersion = versionEl.value;
+    }
+  });
+
+  function showConflictToast() {
+    var existing = document.getElementById("conflict-toast");
+    if (existing) existing.remove();
+    var toast = document.createElement("div");
+    toast.id = "conflict-toast";
+    toast.className = "conflict-toast";
+    toast.textContent = "Board was updated. Refreshed to latest.";
+    document.body.appendChild(toast);
+    setTimeout(function () {
+      toast.classList.add("conflict-toast-hide");
+      setTimeout(function () { toast.remove(); }, 300);
+    }, 2000);
+  }
+
   // === CONTEXT MENU ===
   var ctxMenu = null;
   var ctxTargetCard = null;
@@ -319,6 +365,7 @@
           tags: qeGetTagsValue(),
           priority: qePriorityValue.current,
           name: slug,
+          version: getBoardVersion(),
         },
         target: '#board-content',
         swap: 'innerHTML'
@@ -532,7 +579,7 @@
     colCtxMenu.appendChild(makeColItem("🗑", "Delete", true, function () {
       if (window.confirm('Delete column "' + columnName + '" and all its cards?')) {
         htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/delete', {
-          values: { column_name: columnName, name: slug },
+          values: { column_name: columnName, name: slug, version: getBoardVersion() },
           target: '#board-content',
           swap: 'innerHTML'
         });
@@ -556,13 +603,13 @@
       var sortSub = document.createElement("div");
       sortSub.className = "ctx-submenu";
       sortSub.appendChild(makeColItem("🔤", "By Name", false, function () {
-        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "name", name: slug }, target: '#board-content', swap: 'innerHTML' });
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "name", name: slug, version: getBoardVersion() }, target: '#board-content', swap: 'innerHTML' });
       }));
       sortSub.appendChild(makeColItem("⚡", "By Priority", false, function () {
-        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "priority", name: slug }, target: '#board-content', swap: 'innerHTML' });
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "priority", name: slug, version: getBoardVersion() }, target: '#board-content', swap: 'innerHTML' });
       }));
       sortSub.appendChild(makeColItem("📅", "By Due Date", false, function () {
-        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "due", name: slug }, target: '#board-content', swap: 'innerHTML' });
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "due", name: slug, version: getBoardVersion() }, target: '#board-content', swap: 'innerHTML' });
       }));
       colCtxMenu.appendChild(sortSub);
     }
@@ -644,7 +691,7 @@
       var newName = input.value.trim();
       input.replaceWith(h3);
       if (save && newName && newName !== currentName) {
-        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/rename', { values: { old_name: currentName, new_name: newName, name: slug }, target: '#board-content', swap: 'innerHTML' });
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/rename', { values: { old_name: currentName, new_name: newName, name: slug, version: getBoardVersion() }, target: '#board-content', swap: 'innerHTML' });
       }
     }
 
@@ -1375,6 +1422,7 @@
           due: dueValue.current,
           assignee: assigneeValue.current,
           name: slug,
+          version: getBoardVersion(),
         },
         target: '#board-content',
         swap: 'innerHTML'
@@ -1406,7 +1454,7 @@
       toggleBtn.addEventListener("click", function () {
         hideCardModal();
         htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/complete', {
-          values: { col_idx: colIdx, card_idx: cardIdx, name: slug },
+          values: { col_idx: colIdx, card_idx: cardIdx, name: slug, version: getBoardVersion() },
           target: '#board-content',
           swap: 'innerHTML'
         });
@@ -1691,6 +1739,7 @@
             before_idx: beforeIdx,
             column: targetColumn,
             name: slug,
+            version: getBoardVersion(),
           },
           target: '#board-content',
           swap: 'innerHTML'
@@ -1916,6 +1965,7 @@
             description: bsBoardDescription ? bsBoardDescription.value.trim() : "",
             tags: currentTags.join(", "),
             name: slug,
+            version: getBoardVersion(),
           },
           target: '#board-content',
           swap: 'innerHTML'
@@ -1939,7 +1989,7 @@
     }
 
     function sendBoardSettings() {
-      var params = { name: slug };
+      var params = { name: slug, version: getBoardVersion() };
       if (bsShowCheckbox && bsShowCheckbox.value !== "") {
         params.show_checkbox = bsShowCheckbox.value;
       }
