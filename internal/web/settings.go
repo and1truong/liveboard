@@ -99,32 +99,32 @@ func (h *Handler) SettingsHandler() http.Handler {
 	})
 }
 
+// oneOf returns val if it matches one of the allowed values, otherwise def.
+func oneOf(val, def string, allowed ...string) string {
+	for _, a := range allowed {
+		if val == a {
+			return val
+		}
+	}
+	return def
+}
+
 // sanitizeSettings clamps and normalizes settings values to valid ranges.
 func sanitizeSettings(s *AppSettings) {
 	if s.ColumnWidth < 180 || s.ColumnWidth > 600 {
 		s.ColumnWidth = 280
 	}
-	if s.Theme != "dark" && s.Theme != "light" {
-		s.Theme = "system"
-	}
+	s.Theme = oneOf(s.Theme, "system", "dark", "light")
 	if !validColorThemes[s.ColorTheme] {
 		s.ColorTheme = "default"
 	}
-	if s.SidebarPosition != "left" && s.SidebarPosition != "right" {
-		s.SidebarPosition = "left"
-	}
+	s.SidebarPosition = oneOf(s.SidebarPosition, "left", "left", "right")
 	if len(s.DefaultColumns) == 0 {
 		s.DefaultColumns = defaultSettings().DefaultColumns
 	}
-	if s.NewLineTrigger != "enter" && s.NewLineTrigger != "shift-enter" {
-		s.NewLineTrigger = "shift-enter"
-	}
-	if s.CardPosition != "prepend" && s.CardPosition != "append" {
-		s.CardPosition = "append"
-	}
-	if s.CardDisplayMode != "full" && s.CardDisplayMode != "hide" && s.CardDisplayMode != "trim" {
-		s.CardDisplayMode = "full"
-	}
+	s.NewLineTrigger = oneOf(s.NewLineTrigger, "shift-enter", "enter", "shift-enter")
+	s.CardPosition = oneOf(s.CardPosition, "append", "prepend", "append")
+	s.CardDisplayMode = oneOf(s.CardDisplayMode, "full", "full", "hide", "trim")
 	s.SiteName = strings.TrimSpace(s.SiteName)
 	if s.SiteName == "" {
 		s.SiteName = "LiveBoard"

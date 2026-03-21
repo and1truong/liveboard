@@ -426,7 +426,7 @@ func TestToggleColumnCollapse(t *testing.T) {
 	}
 
 	// Toggle off
-	if err := eng.ToggleColumnCollapse(path, 0); err != nil {
+	if err = eng.ToggleColumnCollapse(path, 0); err != nil {
 		t.Fatal(err)
 	}
 	board, err = eng.LoadBoard(path)
@@ -885,7 +885,7 @@ func TestMutateBoardMutationError(t *testing.T) {
 	path, eng := setupTestBoard(t)
 
 	// If the mutation function returns an error, version should not increment.
-	err := eng.MutateBoard(path, 0, func(b *models.Board) error {
+	err := eng.MutateBoard(path, 0, func(_ *models.Board) error {
 		return os.ErrPermission
 	})
 	if err == nil {
@@ -935,7 +935,7 @@ name: Versioned Board
 	}
 
 	// Wrong version — should conflict.
-	err := eng.MutateBoard(path, 5, func(b *models.Board) error {
+	err := eng.MutateBoard(path, 5, func(_ *models.Board) error {
 		return nil
 	})
 	if err != ErrVersionConflict {

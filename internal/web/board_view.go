@@ -482,6 +482,28 @@ func (h *Handler) HandleToggleComplete(w http.ResponseWriter, r *http.Request) {
 	h.renderBoardContent(w, model)
 }
 
+// splitTags splits a comma-separated string into trimmed, non-empty tags.
+func splitTags(raw string) []string {
+	var tags []string
+	for _, t := range strings.Split(raw, ",") {
+		t = strings.TrimSpace(t)
+		if t != "" {
+			tags = append(tags, t)
+		}
+	}
+	return tags
+}
+
+// ensureMember adds member to the board's member list if not already present.
+func ensureMember(b *models.Board, member string) {
+	for _, m := range b.Members {
+		if m == member {
+			return
+		}
+	}
+	b.Members = append(b.Members, member)
+}
+
 // HandleEditCard handles POST /board/{slug}/cards/edit.
 func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
 	slug := slugFromRequest(r)
@@ -509,18 +531,10 @@ func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
 
 	title := r.FormValue("title")
 	body := r.FormValue("body")
-	tagsRaw := r.FormValue("tags")
+	tags := splitTags(r.FormValue("tags"))
 	priority := r.FormValue("priority")
 	due := r.FormValue("due")
 	assignee := r.FormValue("assignee")
-
-	var tags []string
-	for _, t := range strings.Split(tagsRaw, ",") {
-		t = strings.TrimSpace(t)
-		if t != "" {
-			tags = append(tags, t)
-		}
-	}
 
 	version := formVersion(r)
 	model, mutErr := h.mutateBoard(slug, "Edit card", version, func(b *models.Board) error {
@@ -536,19 +550,8 @@ func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
 		card.Priority = priority
 		card.Due = due
 		card.Assignee = assignee
-
-		// If an assignee was set, ensure they're in the board's member list.
 		if assignee != "" {
-			found := false
-			for _, m := range b.Members {
-				if m == assignee {
-					found = true
-					break
-				}
-			}
-			if !found {
-				b.Members = append(b.Members, assignee)
-			}
+			ensureMember(b, assignee)
 		}
 		return nil
 	})
@@ -800,6 +803,58 @@ func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
 	h.renderBoardContent(w, model)
 }
 
+// reorderColumns moves colName after afterCol (or to front if afterCol is empty)
+// and rebuilds ListCollapse to match the new order.
+func reorderColumns(b *models.Board, colName, afterCol string) error {
+	// Align ListCollapse with columns.
+	for len(b.ListCollapse) < len(b.Columns) {
+		b.ListCollapse = append(b.ListCollapse, false)
+	}
+
+	// Build collapse state map.
+	collapseByName := make(map[string]bool, len(b.Columns))
+	for i, col := range b.Columns {
+		collapseByName[col.Name] = b.ListCollapse[i]
+	}
+
+	// Find and remove the column being moved.
+	var movingCol *models.Column
+	var remaining []models.Column
+	for _, col := range b.Columns {
+		if col.Name == colName {
+			c := col
+			movingCol = &c
+		} else {
+			remaining = append(remaining, col)
+		}
+	}
+	if movingCol == nil {
+		return fmt.Errorf("column %q not found", colName)
+	}
+
+	// Rebuild: if afterCol is empty, prepend; otherwise insert after afterCol.
+	var reordered []models.Column
+	if afterCol == "" {
+		reordered = append([]models.Column{*movingCol}, remaining...)
+	} else {
+		for _, col := range remaining {
+			reordered = append(reordered, col)
+			if col.Name == afterCol {
+				reordered = append(reordered, *movingCol)
+			}
+		}
+	}
+
+	b.Columns = reordered
+
+	// Rebuild ListCollapse to match new order.
+	b.ListCollapse = make([]bool, len(b.Columns))
+	for i, col := range b.Columns {
+		b.ListCollapse[i] = collapseByName[col.Name]
+	}
+	return nil
+}
+
 // HandleMoveColumn handles POST /board/{slug}/columns/move.
 func (h *Handler) HandleMoveColumn(w http.ResponseWriter, r *http.Request) {
 	slug := slugFromRequest(r)
@@ -821,53 +876,7 @@ func (h *Handler) HandleMoveColumn(w http.ResponseWriter, r *http.Request) {
 
 	version := formVersion(r)
 	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Move column %q", colName), version, func(b *models.Board) error {
-		// Align ListCollapse with columns.
-		for len(b.ListCollapse) < len(b.Columns) {
-			b.ListCollapse = append(b.ListCollapse, false)
-		}
-
-		// Build collapse state map.
-		collapseByName := make(map[string]bool, len(b.Columns))
-		for i, col := range b.Columns {
-			collapseByName[col.Name] = b.ListCollapse[i]
-		}
-
-		// Find and remove the column being moved.
-		var movingCol *models.Column
-		var remaining []models.Column
-		for _, col := range b.Columns {
-			if col.Name == colName {
-				c := col
-				movingCol = &c
-			} else {
-				remaining = append(remaining, col)
-			}
-		}
-		if movingCol == nil {
-			return fmt.Errorf("column %q not found", colName)
-		}
-
-		// Rebuild: if afterCol is empty, prepend; otherwise insert after afterCol.
-		var reordered []models.Column
-		if afterCol == "" {
-			reordered = append([]models.Column{*movingCol}, remaining...)
-		} else {
-			for _, col := range remaining {
-				reordered = append(reordered, col)
-				if col.Name == afterCol {
-					reordered = append(reordered, *movingCol)
-				}
-			}
-		}
-
-		b.Columns = reordered
-
-		// Rebuild ListCollapse to match new order.
-		b.ListCollapse = make([]bool, len(b.Columns))
-		for i, col := range b.Columns {
-			b.ListCollapse[i] = collapseByName[col.Name]
-		}
-		return nil
+		return reorderColumns(b, colName, afterCol)
 	})
 	if errors.Is(mutErr, board.ErrVersionConflict) {
 		h.handleConflict(w, slug)

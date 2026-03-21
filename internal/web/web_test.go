@@ -749,7 +749,7 @@ func TestMutateBoardRemoveVersionConflict(t *testing.T) {
 	})
 
 	// Remove with stale version — should conflict.
-	_, err := h.mutateBoardRemove(slug, "test", 0, func(b *models.Board) error {
+	_, err := h.mutateBoardRemove(slug, "test", 0, func(_ *models.Board) error {
 		return nil
 	})
 	if err != board.ErrVersionConflict {
@@ -757,12 +757,12 @@ func TestMutateBoardRemoveVersionConflict(t *testing.T) {
 	}
 }
 
-func TestCommitWithHandlingNilGit(t *testing.T) {
+func TestCommitWithHandlingNilGit(_ *testing.T) {
 	h := &Handler{git: nil}
 	h.commitWithHandling("/path", "msg")
 }
 
-func TestCommitRemoveWithHandlingNilGit(t *testing.T) {
+func TestCommitRemoveWithHandlingNilGit(_ *testing.T) {
 	h := &Handler{git: nil}
 	h.commitRemoveWithHandling("/path", "msg")
 }

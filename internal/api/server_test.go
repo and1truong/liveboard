@@ -968,7 +968,7 @@ func TestStaticCacheHeaders(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		got := resp.Header.Get("Cache-Control")
 		if got != "public, max-age=3600" {
@@ -985,7 +985,7 @@ func TestStaticCacheHeaders(t *testing.T) {
 		if err != nil {
 			t.Fatal(err)
 		}
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 
 		got := resp.Header.Get("Cache-Control")
 		if got != "no-cache, no-store" {

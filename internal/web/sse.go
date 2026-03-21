@@ -86,7 +86,7 @@ func (b *SSEBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	defer b.Unsubscribe(slug, ch)
 
 	// Send initial connection event
-	fmt.Fprintf(w, "event: connected\ndata: ok\n\n")
+	_, _ = fmt.Fprintf(w, "event: connected\ndata: ok\n\n")
 	flusher.Flush()
 
 	for {
@@ -94,7 +94,7 @@ func (b *SSEBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case <-r.Context().Done():
 			return
 		case <-ch:
-			fmt.Fprintf(w, "event: board-update\ndata: refresh\n\n")
+			_, _ = fmt.Fprintf(w, "event: board-update\ndata: refresh\n\n")
 			flusher.Flush()
 		}
 	}
