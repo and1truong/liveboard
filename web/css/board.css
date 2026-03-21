@@ -1230,54 +1230,57 @@ select:focus {
     opacity: 1;
 }
 
-/* === FAB: Add Column === */
-.fab-add-column {
-    position: fixed;
-    bottom: 24px;
-    right: 24px;
-    z-index: 100;
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: var(--color-accent);
-    color: var(--color-accent-text);
+/* === Sidebar: Add Column Bar === */
+.add-column-bar {
+    flex-shrink: 0;
+    width: 40px;
+    min-height: 120px;
+    align-self: stretch;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-    transition: all 0.2s ease;
+    transition: background 0.2s ease, width 0.2s ease;
+    position: relative;
 }
 
-.fab-add-column:hover {
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-    transform: scale(1.05);
+.add-column-bar:hover {
+    background: var(--color-border);
 }
 
-.fab-icon {
-    font-size: 24px;
-    line-height: 1;
-    color: #fff;
-    transition: transform 0.2s ease;
+.add-column-bar.expanded {
+    width: 220px;
+    cursor: default;
+}
+
+.add-column-bar-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-text-secondary);
     user-select: none;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
 }
 
-.fab-column-form {
-    position: absolute;
-    bottom: 56px;
-    right: 0;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg);
-    padding: 12px;
-    min-width: 220px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+.add-column-bar.expanded .add-column-bar-label {
+    display: none;
+}
+
+.add-column-bar-form {
     flex-direction: column;
     gap: 8px;
+    padding: 12px;
+    width: 100%;
 }
 
-.fab-column-form input[type="text"] {
+.add-column-bar-form input[type="text"] {
     background: var(--color-surface);
+    width: 100%;
 }
 
 .column.collapsed {

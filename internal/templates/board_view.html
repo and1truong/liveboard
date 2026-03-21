@@ -113,7 +113,7 @@
     {{if eq .Settings.ViewMode "table"}}
     <div class="table-container">
         {{range $i, $column := .Board.Columns}}
-        <div class="table-group-cards" data-column="{{$column.Name}}">
+        <div class="table-group-cards" draggable="true" data-column="{{$column.Name}}">
             {{range $j, $card := .Cards}}
             <div class="table-row card {{if .Completed}}completed{{end}}" draggable="true" data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
                 {{range $.Board.Columns}}
@@ -155,11 +155,18 @@
             </div>
         </div>
         {{end}}
+        <div class="table-add-column add-card-toggle" style="margin-top: 8px">
+            <form hx-post="/board/{{.BoardSlug}}/columns" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none">
+                <input type="text" name="column_name" placeholder="List name" required
+                       onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''}">
+            </form>
+            <a href="javascript:void(0)" class="table-add-card-link" onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';this.style.display='none';w.querySelector('input[name=column_name]').focus()">+ Add list</a>
+        </div>
     </div>
     {{else}}
     <div class="columns-container">
         {{range $i, $column := .Board.Columns}}
-        <div class="column {{if $column.Collapsed}}collapsed{{end}}">
+        <div class="column {{if $column.Collapsed}}collapsed{{end}}" draggable="true" data-column-name="{{$column.Name}}">
             <div class="column-header">
                 <button class="column-collapse-btn" hx-post="/board/{{$.BoardSlug}}/columns/collapse" hx-vals='{"col_index":"{{$i}}"}' hx-target="#board-content" hx-swap="innerHTML" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
                 {{if $column.Collapsed}}<span class="column-card-count">{{len $column.Cards}}</span>{{end}}
@@ -226,16 +233,15 @@
         </div>
         {{end}}
 
+        <div class="add-column-bar" onclick="var f=this.querySelector('.add-column-bar-form'),open=f.style.display==='flex';f.style.display=open?'none':'flex';this.classList.toggle('expanded',!open);if(!open)f.querySelector('input').focus()">
+            <span class="add-column-bar-label">+ Add list</span>
+            <form hx-post="/board/{{.BoardSlug}}/columns" hx-target="#board-content" hx-swap="innerHTML" class="add-column-bar-form" style="display:none" onclick="event.stopPropagation()">
+                <input type="text" name="column_name" placeholder="List name" required
+                       onkeydown="if(event.key==='Escape'){this.value='';var p=this.closest('.add-column-bar');p.querySelector('.add-column-bar-form').style.display='none';p.classList.remove('expanded')}">
+                <button type="submit" class="btn-small">Add</button>
+            </form>
+        </div>
     </div>
     {{end}}
-
-    <div class="fab-add-column" onclick="var f=this.querySelector('.fab-column-form'),ic=this.querySelector('.fab-icon'),open=f.style.display==='flex';f.style.display=open?'none':'flex';ic.style.transform=open?'':'rotate(45deg)';if(!open)f.querySelector('input').focus()">
-        <span class="fab-icon">+</span>
-        <form hx-post="/board/{{.BoardSlug}}/columns" hx-target="#board-content" hx-swap="innerHTML" class="fab-column-form" style="display:none" onclick="event.stopPropagation()">
-            <input type="text" name="column_name" placeholder="Column name" required
-                   onkeydown="if(event.key==='Escape'){this.value='';var p=this.closest('.fab-add-column');p.querySelector('.fab-column-form').style.display='none';p.querySelector('.fab-icon').style.transform=''}">
-            <button type="submit" class="btn-small">Add</button>
-        </form>
-    </div>
     {{end}}
 {{end}}
