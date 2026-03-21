@@ -232,9 +232,10 @@
         {{range $i, $column := .Board.Columns}}
         <div class="column {{if $column.Collapsed}}collapsed{{end}}" draggable="true" data-column-name="{{$column.Name}}">
             <div class="column-header">
+                <span class="column-drag-handle">&#10303;</span>
                 <button class="column-collapse-btn" hx-post="/board/{{$.BoardSlug}}/columns/collapse" hx-vals='{"col_index":"{{$i}}"}' hx-target="#board-content" hx-swap="innerHTML" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
-                {{if $column.Collapsed}}<span class="column-card-count">{{len $column.Cards}}</span>{{end}}
                 <h3>{{$column.Name}}</h3>
+                <span class="column-card-count">{{len $column.Cards}}</span>
                 <button class="column-menu-btn" data-column-name="{{$column.Name}}" title="Column options">&#8943;</button>
             </div>
             {{if not $column.Collapsed}}
@@ -291,7 +292,7 @@
                     <input type="hidden" name="column" value="{{$column.Name}}">
                     <input type="text" name="title" placeholder="Enter a title..." required onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''}">
                 </form>
-                <button onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';w.querySelector('.btn-add-card').style.display='none';w.querySelector('input[name=title]').focus()" class="btn-add-card">+ Add Card</button>
+                <button onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';w.querySelector('.btn-add-card').style.display='none';w.querySelector('input[name=title]').focus()" class="btn-add-card">+Add a card</button>
             </div>
             {{end}}
         </div>

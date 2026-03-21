@@ -891,6 +891,21 @@ select:focus {
     color: var(--color-accent-text);
 }
 
+.nav-label-group {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+    flex: 1;
+}
+
+.nav-meta {
+    font-size: 10px;
+    font-weight: 400;
+    color: var(--color-text-muted);
+    line-height: 1.2;
+    opacity: 0.7;
+}
+
 .sidebar-section-label {
     font-size: var(--font-size-xs);
     font-weight: 700;
@@ -1350,19 +1365,14 @@ select:focus {
     font-size: 1rem;
     line-height: 1;
     flex-shrink: 0;
-    opacity: 0;
-    transition: opacity 0.15s, background 0.12s, color 0.12s;
-    letter-spacing: 0.05em;
-}
-
-.column:hover .column-menu-btn {
     opacity: 1;
+    transition: background 0.12s, color 0.12s;
+    letter-spacing: 0.05em;
 }
 
 .column-menu-btn:hover {
     background: var(--color-border);
     color: var(--color-text-primary);
-    opacity: 1;
 }
 
 /* === Sidebar: Add Column Bar === */
@@ -1448,6 +1458,30 @@ select:focus {
     padding-bottom: 12px;
 }
 
+.column-drag-handle {
+    flex-shrink: 0;
+    color: var(--color-text-muted);
+    font-size: 14px;
+    line-height: 1;
+    cursor: grab;
+    user-select: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    letter-spacing: -1px;
+}
+
+.column:hover .column-drag-handle {
+    opacity: 1;
+}
+
+.column-drag-handle:active {
+    cursor: grabbing;
+}
+
+.column.collapsed .column-drag-handle {
+    display: none;
+}
+
 .column-collapse-btn {
     background: none;
     border: none;
@@ -1484,13 +1518,18 @@ select:focus {
 
 .column-card-count {
     font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-muted);
+    flex-shrink: 0;
+    line-height: 1.5;
+}
+
+.column.collapsed .column-card-count {
     font-weight: 700;
     color: var(--color-text-primary);
     background: var(--color-border);
     border-radius: 999px;
     padding: 1px 6px;
-    flex-shrink: 0;
-    line-height: 1.5;
 }
 
 .cards {
