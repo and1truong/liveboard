@@ -3,6 +3,8 @@ package api
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
+	"mime"
 	"net/http"
 	"net/http/httptest"
 	"strings"
@@ -385,8 +387,8 @@ func TestGetCardInvalidIndices(t *testing.T) {
 
 	// Out of range
 	resp = doJSON(t, ts, "GET", "/boards/idx/cols/99/cards/0", nil)
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -527,8 +529,8 @@ func TestDeleteCardOutOfRange(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "del"})
 
 	resp := doJSON(t, ts, "DELETE", "/boards/del/cols/0/cards/99", nil)
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range card, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -540,8 +542,8 @@ func TestCompleteCardOutOfRange(t *testing.T) {
 	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "cmp"})
 
 	resp := doJSON(t, ts, "POST", "/boards/cmp/cols/0/cards/99/complete", nil)
-	if resp.StatusCode != 500 {
-		t.Fatalf("expected 500 for out-of-range card, got %d", resp.StatusCode)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
 	}
 	_ = resp.Body.Close()
 }
@@ -553,6 +555,402 @@ func TestDeleteBoardNotFound(t *testing.T) {
 	resp := doJSON(t, ts, "DELETE", "/boards/nonexistent", nil)
 	if resp.StatusCode != 404 {
 		t.Fatalf("expected 404, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+// --- PATCH column stub ---
+
+func TestPatchColumnStub(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "pboard"})
+
+	resp := doJSON(t, ts, "PATCH", "/boards/pboard/columns/not now", map[string]string{"name": "later"})
+	if resp.StatusCode != 501 {
+		t.Fatalf("expected 501 for PATCH column stub, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+// --- Not-found error paths ---
+
+func TestAddColumnBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "POST", "/boards/ghost/columns", map[string]string{"name": "Col"})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestDeleteColumnNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "dcol"})
+
+	// Deleting a nonexistent column is idempotent (no-op returns 204)
+	resp := doJSON(t, ts, "DELETE", "/boards/dcol/columns/nonexistent", nil)
+	if resp.StatusCode != 204 {
+		t.Fatalf("expected 204 for idempotent delete, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestMoveColumnBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "POST", "/boards/ghost/columns/x/move", map[string]string{"after": "y"})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestAddCardBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "POST", "/boards/ghost/columns/todo/cards", map[string]string{"title": "T"})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestAddCardColumnNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "acnf"})
+
+	resp := doJSON(t, ts, "POST", "/boards/acnf/columns/nonexistent/cards", map[string]string{"title": "T"})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing column, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestGetCardBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "GET", "/boards/ghost/cols/0/cards/0", nil)
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestDeleteCardBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "DELETE", "/boards/ghost/cols/0/cards/0", nil)
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestMoveCardBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "POST", "/boards/ghost/cols/0/cards/0/move", map[string]string{"column": "done"})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestCompleteCardBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "POST", "/boards/ghost/cols/0/cards/0/complete", nil)
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestTagCardBoardNotFound(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "POST", "/boards/ghost/cols/0/cards/0/tag", map[string]any{"tags": []string{"x"}})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for missing board, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+// --- Additional invalid-index tests ---
+
+func TestGetCardInvalidCardIndex(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "cidx"})
+
+	resp := doJSON(t, ts, "GET", "/boards/cidx/cols/0/cards/abc", nil)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for non-numeric card index, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestDeleteCardInvalidIndices(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "didx"})
+
+	resp := doJSON(t, ts, "DELETE", "/boards/didx/cols/abc/cards/0", nil)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for non-numeric col index, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestMoveCardInvalidIndices(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "midx"})
+
+	resp := doJSON(t, ts, "POST", "/boards/midx/cols/abc/cards/0/move", map[string]string{"column": "done"})
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for non-numeric col index, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestCompleteCardInvalidIndices(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "cpidx"})
+
+	resp := doJSON(t, ts, "POST", "/boards/cpidx/cols/0/cards/abc/complete", nil)
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for non-numeric card index, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestTagCardInvalidIndices(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "tgidx"})
+
+	resp := doJSON(t, ts, "POST", "/boards/tgidx/cols/abc/cards/0/tag", map[string]any{"tags": []string{"x"}})
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for non-numeric col index, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestTagCardOutOfRange(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "tgor"})
+
+	resp := doJSON(t, ts, "POST", "/boards/tgor/cols/0/cards/99/tag", map[string]any{"tags": []string{"x"}})
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+func TestMoveCardOutOfRange(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "mvor"})
+
+	resp := doJSON(t, ts, "POST", "/boards/mvor/cols/0/cards/99/move", map[string]string{"column": "done"})
+	if resp.StatusCode != 400 {
+		t.Fatalf("expected 400 for out-of-range card, got %d", resp.StatusCode)
+	}
+	_ = resp.Body.Close()
+}
+
+// --- Behavioral / integration tests ---
+
+func TestCompleteCardToggleBack(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "toggle"})
+	doJSON(t, ts, "POST", "/boards/toggle/columns/not now/cards", map[string]string{"title": "Task"})
+
+	// Complete
+	resp := doJSON(t, ts, "POST", "/boards/toggle/cols/0/cards/0/complete", nil)
+	if resp.StatusCode != 204 {
+		t.Fatalf("expected 204, got %d", resp.StatusCode)
+	}
+
+	resp = doJSON(t, ts, "GET", "/boards/toggle/cols/0/cards/0", nil)
+	var cr cardResponse
+	decodeResp(t, resp, &cr)
+	if !cr.Completed {
+		t.Fatal("expected card to be completed")
+	}
+
+	// Toggle back to incomplete
+	resp = doJSON(t, ts, "POST", "/boards/toggle/cols/0/cards/0/complete", nil)
+	if resp.StatusCode != 204 {
+		t.Fatalf("expected 204, got %d", resp.StatusCode)
+	}
+
+	resp = doJSON(t, ts, "GET", "/boards/toggle/cols/0/cards/0", nil)
+	decodeResp(t, resp, &cr)
+	if cr.Completed {
+		t.Fatal("expected card to be uncompleted after second toggle")
+	}
+}
+
+func TestMultipleCardsOrdering(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "order"})
+
+	doJSON(t, ts, "POST", "/boards/order/columns/not now/cards", map[string]string{"title": "First"})
+	doJSON(t, ts, "POST", "/boards/order/columns/not now/cards", map[string]string{"title": "Second"})
+	doJSON(t, ts, "POST", "/boards/order/columns/not now/cards", map[string]string{"title": "Third"})
+
+	// Verify card ordering by index
+	for i, expected := range []string{"First", "Second", "Third"} {
+		resp := doJSON(t, ts, "GET", fmt.Sprintf("/boards/order/cols/0/cards/%d", i), nil)
+		if resp.StatusCode != 200 {
+			t.Fatalf("expected 200 for card %d, got %d", i, resp.StatusCode)
+		}
+		var cr cardResponse
+		decodeResp(t, resp, &cr)
+		if cr.Title != expected {
+			t.Fatalf("card %d: expected %q, got %q", i, expected, cr.Title)
+		}
+	}
+}
+
+func TestDeleteCardShiftsIndices(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "shift"})
+
+	doJSON(t, ts, "POST", "/boards/shift/columns/not now/cards", map[string]string{"title": "A"})
+	doJSON(t, ts, "POST", "/boards/shift/columns/not now/cards", map[string]string{"title": "B"})
+	doJSON(t, ts, "POST", "/boards/shift/columns/not now/cards", map[string]string{"title": "C"})
+
+	// Delete middle card (index 1 = "B")
+	resp := doJSON(t, ts, "DELETE", "/boards/shift/cols/0/cards/1", nil)
+	if resp.StatusCode != 204 {
+		t.Fatalf("expected 204, got %d", resp.StatusCode)
+	}
+
+	// Card at index 1 should now be "C"
+	resp = doJSON(t, ts, "GET", "/boards/shift/cols/0/cards/1", nil)
+	if resp.StatusCode != 200 {
+		t.Fatalf("expected 200, got %d", resp.StatusCode)
+	}
+	var cr cardResponse
+	decodeResp(t, resp, &cr)
+	if cr.Title != "C" {
+		t.Fatalf("expected card at index 1 to be 'C' after delete, got %q", cr.Title)
+	}
+
+	// Only 2 cards remain
+	resp = doJSON(t, ts, "GET", "/boards/shift", nil)
+	var board models.Board
+	decodeResp(t, resp, &board)
+	if len(board.Columns[0].Cards) != 2 {
+		t.Fatalf("expected 2 cards after delete, got %d", len(board.Columns[0].Cards))
+	}
+}
+
+func TestMoveCardToNonexistentColumn(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "mvnc"})
+	doJSON(t, ts, "POST", "/boards/mvnc/columns/not now/cards", map[string]string{"title": "T"})
+
+	resp := doJSON(t, ts, "POST", "/boards/mvnc/cols/0/cards/0/move", map[string]string{"column": "nonexistent"})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for nonexistent target column, got %d", resp.StatusCode)
+	}
+	var errResp ErrorResponse
+	decodeResp(t, resp, &errResp)
+	if errResp.Status != 404 {
+		t.Fatalf("expected error status 404, got %d", errResp.Status)
+	}
+	if errResp.Error == "" {
+		t.Fatal("expected non-empty error message")
+	}
+}
+
+func TestMoveColumnNonexistentColumn(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "mvcolnf"})
+
+	resp := doJSON(t, ts, "POST", "/boards/mvcolnf/columns/nonexistent/move", map[string]string{"after": "done"})
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404 for nonexistent column, got %d", resp.StatusCode)
+	}
+	var errResp ErrorResponse
+	decodeResp(t, resp, &errResp)
+	if errResp.Status != 404 {
+		t.Fatalf("expected error status 404, got %d", errResp.Status)
+	}
+	if errResp.Error == "" {
+		t.Fatal("expected non-empty error message")
+	}
+}
+
+func TestErrorResponseFormat(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "GET", "/boards/nonexistent", nil)
+	if resp.StatusCode != 404 {
+		t.Fatalf("expected 404, got %d", resp.StatusCode)
+	}
+
+	var errResp ErrorResponse
+	decodeResp(t, resp, &errResp)
+	if errResp.Status != 404 {
+		t.Fatalf("expected status field 404, got %d", errResp.Status)
+	}
+	if errResp.Error == "" {
+		t.Fatal("expected non-empty error message")
+	}
+}
+
+func TestJSONContentTypeHeader(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	resp := doJSON(t, ts, "GET", "/boards", nil)
+	ct := resp.Header.Get("Content-Type")
+	mediaType, _, err := mime.ParseMediaType(ct)
+	if err != nil {
+		t.Fatalf("failed to parse Content-Type %q: %v", ct, err)
+	}
+	if mediaType != "application/json" {
+		t.Fatalf("expected media type 'application/json', got %q", mediaType)
 	}
 	_ = resp.Body.Close()
 }

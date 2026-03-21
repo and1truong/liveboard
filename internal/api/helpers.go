@@ -46,6 +46,8 @@ func handleError(w http.ResponseWriter, err error) {
 		status = http.StatusNotFound
 	} else if strings.Contains(msg, "already exists") {
 		status = http.StatusConflict
+	} else if strings.Contains(msg, "out of range") {
+		status = http.StatusBadRequest
 	}
 	respondError(w, status, msg)
 }
