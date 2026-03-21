@@ -281,7 +281,7 @@ func TestReorderCardInvalidIndices(t *testing.T) {
 func TestEditCard(t *testing.T) {
 	path, eng := setupMultiCardBoard(t)
 
-	err := eng.EditCard(path, 0, 0, "Updated Title", "Some body text", []string{"tag1", "tag2"}, "medium", "2025-06-01")
+	err := eng.EditCard(path, 0, 0, "Updated Title", "Some body text", []string{"tag1", "tag2"}, "medium", "2025-06-01", "alice")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -312,7 +312,7 @@ func TestEditCardPartialUpdate(t *testing.T) {
 	path, eng := setupMultiCardBoard(t)
 
 	// Empty title means keep existing
-	err := eng.EditCard(path, 0, 0, "", "", nil, "", "")
+	err := eng.EditCard(path, 0, 0, "", "", nil, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -329,7 +329,7 @@ func TestEditCardPartialUpdate(t *testing.T) {
 func TestEditCardInvalidIndex(t *testing.T) {
 	path, eng := setupMultiCardBoard(t)
 
-	err := eng.EditCard(path, 0, 99, "X", "", nil, "", "")
+	err := eng.EditCard(path, 0, 99, "X", "", nil, "", "", "")
 	if err == nil {
 		t.Fatal("expected error for invalid card index")
 	}

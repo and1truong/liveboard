@@ -171,8 +171,8 @@ func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) e
 	return renderAndWrite(board, boardPath)
 }
 
-// EditCard updates a card's title, body, tags, and priority in-place.
-func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority, due string) error {
+// EditCard updates a card's title, body, tags, priority, due, and assignee in-place.
+func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority, due, assignee string) error {
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -190,6 +190,7 @@ func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body str
 	card.Tags = tags
 	card.Priority = priority
 	card.Due = due
+	card.Assignee = assignee
 
 	return renderAndWrite(board, boardPath)
 }
@@ -376,6 +377,16 @@ func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []str
 	}
 	board.Description = description
 	board.Tags = tags
+	return renderAndWrite(board, boardPath)
+}
+
+// UpdateBoardMembers sets the member list for a board.
+func (e *Engine) UpdateBoardMembers(boardPath string, members []string) error {
+	board, err := e.LoadBoard(boardPath)
+	if err != nil {
+		return err
+	}
+	board.Members = members
 	return renderAndWrite(board, boardPath)
 }
 

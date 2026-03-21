@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="board-view" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}">
+<div class="board-view" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}">
     {{if .Error}}
     <div class="board-error-banner">{{.Error}}</div>
     {{end}}
@@ -23,7 +23,8 @@
         {{end}}
     </div>
 
-    <div class="board-settings-panel" style="display:none">
+    <div class="board-settings-backdrop" style="display:none">
+    <div class="board-settings-panel">
         <div class="board-settings-panel-header">
             <span>Board Settings</span>
             <button class="board-settings-close" title="Close">&times;</button>
@@ -82,6 +83,7 @@
                 </div>
             </div>
         </div>
+    </div>
     </div>
 
     {{if eq .Settings.ViewMode "table"}}

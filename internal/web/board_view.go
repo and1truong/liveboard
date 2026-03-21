@@ -336,6 +336,7 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 	tagsRaw, _ := p["tags"].(string)
 	priority, _ := p["priority"].(string)
 	due, _ := p["due"].(string)
+	assignee, _ := p["assignee"].(string)
 
 	var tags []string
 	for _, t := range strings.Split(tagsRaw, ",") {
@@ -346,7 +347,27 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 	}
 
 	return h.mutateBoard(slug, "Edit card", func(boardPath string) error {
-		return h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags, priority, due)
+		if err := h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags, priority, due, assignee); err != nil {
+			return err
+		}
+		// If an assignee was set, ensure they're in the board's member list.
+		if assignee != "" {
+			board, err := h.eng.LoadBoard(boardPath)
+			if err != nil {
+				return nil // card saved, member sync is best-effort
+			}
+			found := false
+			for _, m := range board.Members {
+				if m == assignee {
+					found = true
+					break
+				}
+			}
+			if !found {
+				_ = h.eng.UpdateBoardMembers(boardPath, append(board.Members, assignee))
+			}
+		}
+		return nil
 	})
 }
 

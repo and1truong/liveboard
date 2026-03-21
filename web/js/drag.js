@@ -1191,6 +1191,100 @@
     return container;
   }
 
+  // === MEMBERS PICKER ===
+  function createMembersPicker(currentAssignee, onSelect) {
+    var container = document.createElement("div");
+    container.className = "card-modal-memberspicker";
+    container.addEventListener("click", function (e) { e.stopPropagation(); });
+
+    // Collect members from board data attribute and from all card assignees.
+    var boardView = document.querySelector(".board-view");
+    var boardMembersRaw = boardView ? (boardView.dataset.boardMembers || "") : "";
+    var boardMembers = boardMembersRaw ? boardMembersRaw.split(",").map(function (s) { return s.trim(); }).filter(Boolean) : [];
+
+    // Also collect assignees from all cards on the board.
+    var allCards = document.querySelectorAll("[data-card-assignee]");
+    allCards.forEach(function (c) {
+      var a = c.dataset.cardAssignee;
+      if (a && boardMembers.indexOf(a) === -1) {
+        boardMembers.push(a);
+      }
+    });
+
+    // Sort alphabetically.
+    boardMembers.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+
+    function render() {
+      container.innerHTML = "";
+
+      // Title
+      var title = document.createElement("div");
+      title.className = "memberspicker-title";
+      title.textContent = "Assign Member";
+      container.appendChild(title);
+
+      // Input for adding new member
+      var inputRow = document.createElement("div");
+      inputRow.className = "memberspicker-input-row";
+      var input = document.createElement("input");
+      input.type = "text";
+      input.className = "memberspicker-input";
+      input.placeholder = "Add new member...";
+      var addBtn = document.createElement("button");
+      addBtn.className = "memberspicker-add-btn";
+      addBtn.textContent = "+";
+      addBtn.addEventListener("click", function () {
+        var name = input.value.trim();
+        if (!name) return;
+        if (boardMembers.indexOf(name) === -1) {
+          boardMembers.push(name);
+          boardMembers.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+        }
+        input.value = "";
+        render();
+      });
+      input.addEventListener("keydown", function (e) {
+        if (e.key === "Enter") { e.preventDefault(); addBtn.click(); }
+      });
+      inputRow.appendChild(input);
+      inputRow.appendChild(addBtn);
+      container.appendChild(inputRow);
+
+      // Member list
+      if (boardMembers.length > 0) {
+        var list = document.createElement("div");
+        list.className = "memberspicker-list";
+
+        boardMembers.forEach(function (member) {
+          var item = document.createElement("button");
+          item.className = "memberspicker-item" + (member === currentAssignee ? " memberspicker-item--active" : "");
+          item.innerHTML = '<span class="memberspicker-avatar">' + member.charAt(0).toUpperCase() + "</span> " + member;
+          item.addEventListener("click", function () {
+            onSelect(member);
+          });
+          list.appendChild(item);
+        });
+
+        container.appendChild(list);
+      } else {
+        var empty = document.createElement("div");
+        empty.className = "memberspicker-empty";
+        empty.textContent = "No members yet. Add one above.";
+        container.appendChild(empty);
+      }
+
+      // Clear assignee button
+      var clearBtn = document.createElement("button");
+      clearBtn.className = "memberspicker-clear";
+      clearBtn.textContent = "Clear assignee";
+      clearBtn.addEventListener("click", function () { onSelect(""); });
+      container.appendChild(clearBtn);
+    }
+
+    render();
+    return container;
+  }
+
   // === CARD DETAIL MODAL ===
   var cardModal = null;
   var cardModalBackdrop = null;
@@ -1218,6 +1312,7 @@
     var priority = card.dataset.cardPriority || "";
     var due = card.dataset.cardDue || "";
     var dueValue = { current: due };
+    var assigneeValue = { current: assignee };
     var completed = card.dataset.cardCompleted === "true";
     var columnName = card.dataset.cardColumn || "";
 
@@ -1291,6 +1386,33 @@
           });
 
           // Position below the action bar
+          actionBar.style.position = "relative";
+          actionBar.appendChild(picker);
+
+          setTimeout(function () {
+            document.addEventListener("click", function closePicker(ev) {
+              if (!picker.parentNode) { document.removeEventListener("click", closePicker); return; }
+              if (!picker.contains(ev.target) && ev.target !== btn) {
+                picker.remove();
+                document.removeEventListener("click", closePicker);
+              }
+            });
+          }, 0);
+        });
+      }
+
+      if (label === "Members") {
+        btn.addEventListener("click", function (e) {
+          e.stopPropagation();
+          var existing = document.querySelector(".card-modal-memberspicker");
+          if (existing) { existing.remove(); return; }
+
+          var picker = createMembersPicker(assigneeValue.current, function (member) {
+            assigneeValue.current = member;
+            updateAssigneeDisplay();
+            picker.remove();
+          });
+
           actionBar.style.position = "relative";
           actionBar.appendChild(picker);
 
@@ -1508,6 +1630,7 @@
           tags: getTagsValue(),
           priority: priorityValue.current,
           due: dueValue.current,
+          assignee: assigneeValue.current,
           name: slug,
         });
       }
@@ -1630,12 +1753,16 @@
     // Other metadata
     var metaWrap = document.createElement("div");
     metaWrap.className = "card-modal-meta-list";
-    if (assignee) {
-      var aEl = document.createElement("div");
-      aEl.className = "card-modal-meta-item";
-      aEl.innerHTML = "👤 " + assignee;
-      metaWrap.appendChild(aEl);
+    var assigneeDisplayEl = document.createElement("div");
+    assigneeDisplayEl.className = "card-modal-meta-item";
+    function updateAssigneeDisplay() {
+      assigneeDisplayEl.innerHTML = assigneeValue.current
+        ? "👤 " + assigneeValue.current
+        : "👤 No assignee";
+      assigneeDisplayEl.style.opacity = assigneeValue.current ? "1" : "0.5";
     }
+    updateAssigneeDisplay();
+    metaWrap.appendChild(assigneeDisplayEl);
     var dueDisplayEl = document.createElement("div");
     dueDisplayEl.className = "card-modal-meta-item";
     function updateDueDisplay() {
@@ -1861,8 +1988,9 @@
     if (!boardView) return;
 
     var gearBtn = boardView.querySelector(".board-settings-btn");
+    var backdrop = boardView.querySelector(".board-settings-backdrop");
     var panel = boardView.querySelector(".board-settings-panel");
-    if (!gearBtn || !panel) return;
+    if (!gearBtn || !backdrop || !panel) return;
 
     var closeBtn = panel.querySelector(".board-settings-close");
     var slug = boardView.dataset.boardSlug;
@@ -1911,17 +2039,32 @@
       window.Live.send("update-board-settings", params);
     }
 
+    function openSettings() {
+      backdrop.style.display = "";
+      populateFromData();
+    }
+    function closeSettings() {
+      backdrop.style.display = "none";
+    }
+
     gearBtn.addEventListener("click", function () {
-      var isOpen = panel.style.display !== "none";
-      panel.style.display = isOpen ? "none" : "";
-      if (!isOpen) populateFromData();
+      var isOpen = backdrop.style.display !== "none";
+      if (isOpen) closeSettings(); else openSettings();
     });
 
     if (closeBtn) {
-      closeBtn.addEventListener("click", function () {
-        panel.style.display = "none";
-      });
+      closeBtn.addEventListener("click", closeSettings);
     }
+
+    backdrop.addEventListener("click", function (e) {
+      if (e.target === backdrop) closeSettings();
+    });
+
+    document.addEventListener("keydown", function (e) {
+      if (e.key === "Escape" && backdrop.style.display !== "none") {
+        closeSettings();
+      }
+    });
 
     // On change: send update
     [bsShowCheckbox, bsCardPosition, bsExpandColumns, bsViewMode].forEach(function (el) {

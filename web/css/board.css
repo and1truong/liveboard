@@ -2023,6 +2023,131 @@ body {
     background: rgba(255, 0, 0, 0.05);
 }
 
+/* Members Picker */
+.card-modal-memberspicker {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 1000;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+    width: 240px;
+}
+
+.memberspicker-title {
+    font-weight: 600;
+    font-size: var(--font-size-sm);
+    margin-bottom: 8px;
+    color: var(--color-text-primary);
+}
+
+.memberspicker-input-row {
+    display: flex;
+    gap: 4px;
+    margin-bottom: 8px;
+}
+
+.memberspicker-input {
+    flex: 1;
+    padding: 5px 8px;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    font-size: var(--font-size-xs);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+}
+
+.memberspicker-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+}
+
+.memberspicker-add-btn {
+    padding: 4px 10px;
+    background: var(--color-accent);
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+}
+
+.memberspicker-add-btn:hover {
+    opacity: 0.9;
+}
+
+.memberspicker-list {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.memberspicker-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    background: none;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-primary);
+    text-align: left;
+}
+
+.memberspicker-item:hover {
+    background: var(--color-border);
+}
+
+.memberspicker-item--active {
+    background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+    font-weight: 600;
+}
+
+.memberspicker-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--color-accent);
+    color: #fff;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+}
+
+.memberspicker-empty {
+    padding: 12px 0;
+    text-align: center;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-secondary);
+}
+
+.memberspicker-clear {
+    display: block;
+    width: 100%;
+    margin-top: 8px;
+    padding: 6px;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: var(--font-size-xs);
+    color: var(--color-danger);
+    text-align: center;
+}
+
+.memberspicker-clear:hover {
+    background: rgba(255, 0, 0, 0.05);
+}
+
 .card-modal-section-header {
     display: flex;
     align-items: center;
@@ -2572,28 +2697,42 @@ body {
 }
 
 /* Board settings panel */
+.board-settings-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1100;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 80px 16px;
+    overflow-y: auto;
+}
 .board-settings-panel {
-    background: var(--color-bg-secondary);
-    border-bottom: 1px solid var(--color-border);
-    padding: 12px 20px;
-    flex-shrink: 0;
+    background: var(--color-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.12);
+    width: 100%;
+    max-width: 480px;
+    padding: 20px 24px;
+    position: relative;
 }
 .board-settings-panel-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 10px;
+    margin-bottom: 16px;
     font-weight: 600;
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-base);
     color: var(--color-text-primary);
 }
 .board-settings-close {
     background: none;
     border: none;
     cursor: pointer;
-    font-size: 18px;
+    font-size: 20px;
     color: var(--color-text-tertiary);
-    padding: 0 4px;
+    padding: 2px 6px;
     border-radius: var(--radius-sm);
 }
 .board-settings-close:hover {
@@ -2602,12 +2741,10 @@ body {
 }
 .board-settings-panel-body {
     display: flex;
-    flex-wrap: wrap;
-    gap: 8px 32px;
+    flex-direction: column;
+    gap: 12px;
 }
 .board-settings-panel-body .settings-field {
-    flex: 0 0 auto;
-    min-width: 200px;
     padding: 4px 0;
     border-bottom: none;
 }

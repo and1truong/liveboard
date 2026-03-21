@@ -5,7 +5,7 @@ tmp_dir = "tmp"
   cmd = "go build -o ./tmp/main ./cmd/liveboard"
   bin = "./tmp/main"
   args_bin = ["serve"]
-  include_ext = ["go", "html"]
+  include_ext = ["go", "html", "css", "js"]
   exclude_dir = ["tmp", "vendor"]
   delay = 500
 

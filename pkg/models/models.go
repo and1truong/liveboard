@@ -19,6 +19,7 @@ type Board struct {
 	Icon         string        `yaml:"icon,omitempty" json:"icon,omitempty"`
 	Tags         []string      `yaml:"tags,omitempty" json:"tags,omitempty"`
 	ListCollapse []bool        `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
+	Members      []string      `yaml:"members,omitempty" json:"members,omitempty"`
 	Settings     BoardSettings `yaml:"settings,omitempty" json:"settings,omitempty"`
 	Columns      []Column      `yaml:"-" json:"columns"`
 	FilePath     string        `yaml:"-" json:"file_path"`
