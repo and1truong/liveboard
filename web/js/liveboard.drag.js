@@ -1,0 +1,392 @@
+// LiveBoard: card + column drag-and-drop, attach() orchestrator.
+(function () {
+  var LB = window.LB;
+  var draggingCard = null;
+  var draggingSourceColumn = null;
+  var draggingColumnEl = null;
+
+  // Global dismiss handler (needs private refs from context-menu and column-menu)
+  document.addEventListener("click", function (e) {
+    if (LB._colCtxMenuVisible && LB._colCtxMenuVisible() && !LB._colCtxMenuContains(e.target)) {
+      LB.hideColumnMenu();
+    }
+    if (LB._hasQeOverlay && LB._hasQeOverlay() && !LB._qeOverlayContains(e.target) && !LB._ctxMenuContains(e.target)) {
+      LB.hideQuickEdit();
+    } else if (!(LB._hasQeOverlay && LB._hasQeOverlay()) && LB._hasCtxMenu && LB._hasCtxMenu() && !LB._ctxMenuContains(e.target)) {
+      LB.hideContextMenu();
+    }
+  });
+
+  function attach() {
+    LB.attachCollapsedColumnClick();
+    LB.attachContextMenu();
+    LB.attachCardClick();
+    LB.attachColumnMenus();
+    LB.attachBoardTitleDblClick();
+    LB.initBoardSettingsPanel();
+
+    // Cards: draggable
+    document.querySelectorAll(".card[draggable]").forEach(function (card) {
+      if (card.dataset.dragWired) return;
+      card.dataset.dragWired = "1";
+
+      card.addEventListener("dragstart", function (e) {
+        LB.isDragging = true;
+        draggingCard = card;
+        var zone = card.closest(".cards[data-column], .table-group-cards[data-column]");
+        draggingSourceColumn = zone ? zone.dataset.column : null;
+        card.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", card.dataset.colIdx + ":" + card.dataset.cardIdx);
+      });
+
+      card.addEventListener("dragend", function () {
+        card.classList.remove("dragging");
+        LB.clearDropIndicators();
+        document.querySelectorAll(".cards.drag-over, .table-group-cards.drag-over").forEach(function (el) {
+          el.classList.remove("drag-over");
+        });
+        draggingCard = null;
+        draggingSourceColumn = null;
+      });
+    });
+
+    // Drop zones: .cards containers (board view) and .table-group-cards (table view)
+    document.querySelectorAll(".cards[data-column], .table-group-cards[data-column]").forEach(function (zone) {
+      if (zone.dataset.dropWired) return;
+      zone.dataset.dropWired = "1";
+
+      zone.addEventListener("dragover", function (e) {
+        if (draggingColumnEl) return; // ignore column drags on card zones
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        zone.classList.remove("drag-over");
+        var beforeCard = LB.getInsertionTarget(zone, e.clientY, draggingCard);
+        LB.showDropIndicator(zone, beforeCard);
+      });
+
+      zone.addEventListener("dragleave", function (e) {
+        if (!zone.contains(e.relatedTarget)) {
+          zone.classList.remove("drag-over");
+          LB.clearDropIndicators();
+        }
+      });
+
+      zone.addEventListener("drop", function (e) {
+        if (draggingColumnEl) return; // ignore column drags on card zones
+        e.preventDefault();
+        zone.classList.remove("drag-over");
+
+        var data = e.dataTransfer.getData("text/plain");
+        var targetColumn = zone.dataset.column;
+        if (!data || !targetColumn) {
+          LB.clearDropIndicators();
+          return;
+        }
+
+        var parts = data.split(":");
+        var srcColIdx = parts[0];
+        var srcCardIdx = parts[1];
+
+        // Find the dragged card element
+        var card = document.querySelector('.card[data-col-idx="' + srcColIdx + '"][data-card-idx="' + srcCardIdx + '"]');
+        if (!card) {
+          LB.clearDropIndicators();
+          return;
+        }
+
+        var sourceZone = card.closest(".cards[data-column], .table-group-cards[data-column]");
+        var sourceColumn = sourceZone ? sourceZone.dataset.column : null;
+
+        var indicator = zone.querySelector(".drop-indicator");
+        var beforeCard = null;
+        if (indicator) {
+          var next = indicator.nextElementSibling;
+          while (next && !next.classList.contains("card")) {
+            next = next.nextElementSibling;
+          }
+          if (next && next.classList.contains("card")) {
+            beforeCard = next;
+          }
+        }
+        LB.clearDropIndicators();
+
+        var beforeIdx = beforeCard ? beforeCard.dataset.cardIdx : "-1";
+
+        // Skip if card didn't actually move (same column, same position)
+        if (sourceColumn === targetColumn) {
+          var prevSibling = card.previousElementSibling;
+          while (prevSibling && !prevSibling.classList.contains("card")) {
+            prevSibling = prevSibling.previousElementSibling;
+          }
+          var nextSibling = card.nextElementSibling;
+          while (nextSibling && !nextSibling.classList.contains("card")) {
+            nextSibling = nextSibling.nextElementSibling;
+          }
+          if (
+            (beforeCard === null && nextSibling === null) ||
+            (beforeCard && nextSibling && beforeCard.dataset.cardIdx === nextSibling.dataset.cardIdx)
+          ) {
+            return; // no-op
+          }
+        }
+
+        var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/reorder', {
+          values: {
+            col_idx: srcColIdx,
+            card_idx: srcCardIdx,
+            before_idx: beforeIdx,
+            column: targetColumn,
+            name: slug,
+            version: LB.getBoardVersion(),
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
+      });
+    });
+
+    // ── Column drag-and-drop ──────────────────────────────────────────
+    function clearColumnDropIndicators() {
+      document.querySelectorAll(".column-drop-indicator").forEach(function (el) {
+        el.remove();
+      });
+    }
+
+    function getColumnInsertionTarget(container, clientX, excludeEl, isTable) {
+      var selector = isTable ? ".table-group-cards[data-column]" : ".column[data-column-name]";
+      var columns = Array.from(container.querySelectorAll(selector)).filter(
+        function (c) { return c !== excludeEl; }
+      );
+      for (var i = 0; i < columns.length; i++) {
+        var rect = columns[i].getBoundingClientRect();
+        var mid = isTable ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
+        var pos = isTable ? clientX : clientX; // clientX for board, clientY for table
+        if (pos < mid) {
+          return columns[i];
+        }
+      }
+      return null;
+    }
+
+    function showColumnDropIndicator(container, beforeCol, isTable) {
+      clearColumnDropIndicators();
+      var indicator = document.createElement("div");
+      indicator.className = "column-drop-indicator" + (isTable ? " column-drop-indicator-horizontal" : "");
+      if (beforeCol) {
+        container.insertBefore(indicator, beforeCol);
+      } else {
+        // Append before add-column element
+        var addCol = container.querySelector(".add-column-bar, .table-add-column");
+        if (addCol) {
+          container.insertBefore(indicator, addCol);
+        } else {
+          container.appendChild(indicator);
+        }
+      }
+    }
+
+    // Board mode: columns
+    document.querySelectorAll(".column[draggable][data-column-name]").forEach(function (col) {
+      if (col.dataset.colDragWired) return;
+      col.dataset.colDragWired = "1";
+
+      col.addEventListener("dragstart", function (e) {
+        // Only drag from the column header area
+        var header = col.querySelector(".column-header");
+        if (header && !header.contains(e.target)) {
+          e.preventDefault();
+          return;
+        }
+        // Don't start column drag if a card is being dragged
+        if (draggingCard) {
+          e.preventDefault();
+          return;
+        }
+        draggingColumnEl = col;
+        col.classList.add("column-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-column", col.dataset.columnName);
+      });
+
+      col.addEventListener("dragend", function () {
+        col.classList.remove("column-dragging");
+        clearColumnDropIndicators();
+        draggingColumnEl = null;
+      });
+    });
+
+    // Board mode: drop zone is .columns-container
+    document.querySelectorAll(".columns-container").forEach(function (container) {
+      if (container.dataset.colDropWired) return;
+      container.dataset.colDropWired = "1";
+
+      container.addEventListener("dragover", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        var beforeCol = getColumnInsertionTarget(container, e.clientX, draggingColumnEl, false);
+        showColumnDropIndicator(container, beforeCol, false);
+      });
+
+      container.addEventListener("dragleave", function (e) {
+        if (!draggingColumnEl) return;
+        if (!container.contains(e.relatedTarget)) {
+          clearColumnDropIndicators();
+        }
+      });
+
+      container.addEventListener("drop", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        var colName = draggingColumnEl.dataset.columnName;
+
+        // Determine after_column from indicator position
+        var indicator = container.querySelector(".column-drop-indicator");
+        var afterCol = "";
+        if (indicator) {
+          var prev = indicator.previousElementSibling;
+          while (prev && !prev.classList.contains("column")) {
+            prev = prev.previousElementSibling;
+          }
+          if (prev && prev.dataset.columnName) {
+            afterCol = prev.dataset.columnName;
+          }
+        }
+        clearColumnDropIndicators();
+
+        // Skip if column didn't actually move
+        if (afterCol === colName) return;
+        var prevSib = draggingColumnEl.previousElementSibling;
+        while (prevSib && !prevSib.classList.contains("column")) {
+          prevSib = prevSib.previousElementSibling;
+        }
+        if (afterCol === "" && !prevSib) return; // already first
+        if (prevSib && prevSib.dataset.columnName === afterCol) return; // same position
+
+        var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/move', {
+          values: {
+            column: colName,
+            after_column: afterCol,
+            version: LB.getBoardVersion(),
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
+      });
+    });
+
+    // Table mode: column groups
+    document.querySelectorAll(".table-group-cards[draggable][data-column]").forEach(function (group) {
+      if (group.dataset.colDragWired) return;
+      group.dataset.colDragWired = "1";
+
+      group.addEventListener("dragstart", function (e) {
+        // Only allow drag from first row's list cell
+        var listCell = group.querySelector(".table-cell-list");
+        if (listCell && !listCell.contains(e.target)) {
+          // Allow drag from any part of the group header area
+        }
+        if (draggingCard) {
+          e.preventDefault();
+          return;
+        }
+        draggingColumnEl = group;
+        group.classList.add("column-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-column", group.dataset.column);
+      });
+
+      group.addEventListener("dragend", function () {
+        group.classList.remove("column-dragging");
+        clearColumnDropIndicators();
+        draggingColumnEl = null;
+      });
+    });
+
+    // Table mode: drop zone is .table-container
+    document.querySelectorAll(".table-container").forEach(function (container) {
+      if (container.dataset.colDropWired) return;
+      container.dataset.colDropWired = "1";
+
+      container.addEventListener("dragover", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        // Use clientY for table mode (vertical groups)
+        var groups = Array.from(container.querySelectorAll(".table-group-cards[data-column]")).filter(
+          function (g) { return g !== draggingColumnEl; }
+        );
+        var beforeGroup = null;
+        for (var i = 0; i < groups.length; i++) {
+          var rect = groups[i].getBoundingClientRect();
+          if (e.clientY < rect.top + rect.height / 2) {
+            beforeGroup = groups[i];
+            break;
+          }
+        }
+        showColumnDropIndicator(container, beforeGroup, true);
+      });
+
+      container.addEventListener("dragleave", function (e) {
+        if (!draggingColumnEl) return;
+        if (!container.contains(e.relatedTarget)) {
+          clearColumnDropIndicators();
+        }
+      });
+
+      container.addEventListener("drop", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        var colName = draggingColumnEl.dataset.column;
+
+        var indicator = container.querySelector(".column-drop-indicator");
+        var afterCol = "";
+        if (indicator) {
+          var prev = indicator.previousElementSibling;
+          while (prev && !prev.classList.contains("table-group-cards")) {
+            prev = prev.previousElementSibling;
+          }
+          if (prev && prev.dataset.column) {
+            afterCol = prev.dataset.column;
+          }
+        }
+        clearColumnDropIndicators();
+
+        // Skip no-ops
+        if (afterCol === colName) return;
+        var prevSib = draggingColumnEl.previousElementSibling;
+        while (prevSib && !prevSib.classList.contains("table-group-cards")) {
+          prevSib = prevSib.previousElementSibling;
+        }
+        if (afterCol === "" && !prevSib) return;
+        if (prevSib && prevSib.dataset.column === afterCol) return;
+
+        var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/move', {
+          values: {
+            column: colName,
+            after_column: afterCol,
+            version: LB.getBoardVersion(),
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
+      });
+    });
+  }
+
+  // Attach on load
+  if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", attach);
+  } else {
+    attach();
+  }
+
+  // Re-attach after HTMX swaps
+  document.addEventListener("htmx:afterSettle", function () {
+    requestAnimationFrame(attach);
+  });
+})();
