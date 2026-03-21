@@ -1,4 +1,5 @@
 ---
+version: 10
 name: Revenue & Ops
 description: MRR growth, billing, and business operations
 icon: "\U0001F381"
@@ -8,7 +9,10 @@ tags:
 list-collapse:
     - false
     - false
-    - true
+    - false
+settings:
+    expand-columns: false
+    view-mode: board
 ---
 
 ## Todo
