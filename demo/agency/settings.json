@@ -1,14 +1,10 @@
 {
-  "site_name": "LiveBoard",
+  "site_name": "StudioBoard",
   "theme": "light",
   "color_theme": "rose",
   "column_width": 512,
   "sidebar_position": "left",
-  "default_columns": [
-    "todo",
-    "doing",
-    "done"
-  ],
+  "default_columns": ["briefing", "in-progress", "review", "approved"],
   "show_checkbox": false,
   "newline_trigger": "shift-enter",
   "card_position": "append"

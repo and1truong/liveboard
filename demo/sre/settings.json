@@ -1,0 +1,11 @@
+{
+  "site_name": "SREBoard",
+  "theme": "dark",
+  "color_theme": "amber",
+  "column_width": 512,
+  "sidebar_position": "left",
+  "default_columns": ["active", "investigating", "mitigated", "resolved"],
+  "show_checkbox": false,
+  "newline_trigger": "shift-enter",
+  "card_position": "prepend"
+}

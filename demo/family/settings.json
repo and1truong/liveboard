@@ -1,0 +1,11 @@
+{
+  "site_name": "HomeBoard",
+  "theme": "light",
+  "color_theme": "green",
+  "column_width": 512,
+  "sidebar_position": "left",
+  "default_columns": ["todo", "this-week", "done"],
+  "show_checkbox": true,
+  "newline_trigger": "shift-enter",
+  "card_position": "append"
+}
