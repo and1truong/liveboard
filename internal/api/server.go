@@ -82,6 +82,7 @@ func (s *Server) buildRouter() chi.Router {
 	r.Post("/board/{slug}/columns/delete", s.webHandler.HandleDeleteColumn)
 	r.Post("/board/{slug}/columns/collapse", s.webHandler.HandleToggleColumnCollapse)
 	r.Post("/board/{slug}/columns/sort", s.webHandler.HandleSortColumn)
+	r.Post("/board/{slug}/columns/move", s.webHandler.HandleMoveColumn)
 	r.Post("/board/{slug}/meta", s.webHandler.HandleUpdateBoardMeta)
 	r.Post("/board/{slug}/settings", s.webHandler.HandleUpdateBoardSettings)
 	r.Post("/board/{slug}/icon", s.webHandler.HandleSetBoardIcon)
