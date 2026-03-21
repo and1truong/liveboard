@@ -69,11 +69,19 @@ document.addEventListener('alpine:init', function () {
         if (e.key === 'ArrowDown') {
           e.preventDefault();
           if (count > 0) this.activeIdx = (this.activeIdx + 1) % count;
+          this.$nextTick(function () {
+            var el = document.querySelector('.cmd-palette-item.active');
+            if (el) el.scrollIntoView({ block: 'nearest' });
+          });
           return;
         }
         if (e.key === 'ArrowUp') {
           e.preventDefault();
           if (count > 0) this.activeIdx = (this.activeIdx - 1 + count) % count;
+          this.$nextTick(function () {
+            var el = document.querySelector('.cmd-palette-item.active');
+            if (el) el.scrollIntoView({ block: 'nearest' });
+          });
           return;
         }
         if (e.key === 'Enter') {
