@@ -100,14 +100,14 @@
                     </a>
                 </div>
             </div>
-            <div class="sidebar-footer">
-                <div class="sidebar-popup-menu" x-data="{ open: false }" :class="{ open: open }" @click.outside="open = false" id="sidebarPopupMenu">
+            <div class="sidebar-footer" x-data="{ open: false }" @click.outside="open = false">
+                <div class="sidebar-popup-menu" :class="{ open: open }" id="sidebarPopupMenu">
                     <a href="/settings" class="sidebar-menu-item{{if eq $.BoardSlug "__settings__"}} active{{end}}">
                         <span class="menu-icon">&#9881;</span>
                         <span class="menu-label">Settings</span>
                     </a>
                     <div class="sidebar-menu-separator"></div>
-                    <a href="https://github.com/and1truong/liveboard" target="_blank" rel="noopener" class="sidebar-menu-item">
+                    <a href="https://and1truong.github.io/liveboard/" target="_blank" rel="noopener" class="sidebar-menu-item">
                         <span class="menu-icon">&#9432;</span>
                         <span class="menu-label">About {{.SiteName}}</span>
                     </a>
@@ -118,7 +118,7 @@
                         <span class="brand-name">{{.SiteName}}</span>
                     </a>
                     <div class="sidebar-footer-right">
-                        <button class="sidebar-menu-trigger" @click="Alpine.$data($el.closest('.sidebar-footer').querySelector('.sidebar-popup-menu')).open = !Alpine.$data($el.closest('.sidebar-footer').querySelector('.sidebar-popup-menu')).open" title="Menu">
+                        <button class="sidebar-menu-trigger" @click="open = !open" title="Menu">
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 7.5L6 10L9 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4.5L6 2L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                     </div>
