@@ -16,6 +16,7 @@ type AppSettings struct {
 	SiteName        string   `json:"site_name"`
 	Theme           string   `json:"theme"`
 	ColorTheme      string   `json:"color_theme"`
+	FontFamily      string   `json:"font_family"`
 	ColumnWidth     int      `json:"column_width"`
 	SidebarPosition string   `json:"sidebar_position"`
 	DefaultColumns  []string `json:"default_columns,omitempty"`
@@ -31,11 +32,18 @@ var validColorThemes = map[string]bool{
 	"aqua": true, "graphite": true, "macos": true,
 }
 
+var validFonts = map[string]bool{
+	"system": true, "inter": true, "ibm-plex-sans": true,
+	"source-sans-3": true, "nunito-sans": true, "dm-sans": true,
+	"rubik": true,
+}
+
 func defaultSettings() AppSettings {
 	return AppSettings{
 		SiteName:        "LiveBoard",
 		Theme:           "system",
 		ColorTheme:      "aqua",
+		FontFamily:      "system",
 		ColumnWidth:     280,
 		SidebarPosition: "left",
 		DefaultColumns:  []string{"not now", "maybe?", "done"},
@@ -117,6 +125,9 @@ func sanitizeSettings(s *AppSettings) {
 	s.Theme = oneOf(s.Theme, "system", "dark", "light")
 	if !validColorThemes[s.ColorTheme] {
 		s.ColorTheme = "default"
+	}
+	if !validFonts[s.FontFamily] {
+		s.FontFamily = "system"
 	}
 	s.SidebarPosition = oneOf(s.SidebarPosition, "left", "left", "right")
 	if len(s.DefaultColumns) == 0 {

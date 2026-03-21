@@ -52,6 +52,23 @@
             </div>
             <div class="settings-field">
                 <div>
+                    <div class="settings-label">Font</div>
+                    <div class="settings-label-hint">Typeface used across the app</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settingFontFamily">
+                        <option value="system">System Default</option>
+                        <option value="inter">Inter</option>
+                        <option value="ibm-plex-sans">IBM Plex Sans</option>
+                        <option value="source-sans-3">Source Sans 3</option>
+                        <option value="nunito-sans">Nunito Sans</option>
+                        <option value="dm-sans">DM Sans</option>
+                        <option value="rubik">Rubik</option>
+                    </select>
+                </div>
+            </div>
+            <div class="settings-field">
+                <div>
                     <div class="settings-label">Column width</div>
                     <div class="settings-label-hint">Width of board columns in pixels</div>
                 </div>
@@ -149,6 +166,7 @@
     var siteNameEl = document.getElementById('settingSiteName');
     var themeEl = document.getElementById('settingTheme');
     var colorThemeEl = document.getElementById('settingColorTheme');
+    var fontFamilyEl = document.getElementById('settingFontFamily');
     var widthEl = document.getElementById('settingColumnWidth');
     var sidebarPosEl = document.getElementById('settingSidebarPosition');
     var showCheckboxEl = document.getElementById('settingShowCheckbox');
@@ -207,6 +225,31 @@
 
     colsContainer.addEventListener('click', function() { colsInput.focus(); });
 
+    // Font family mapping
+    var fontMap = {
+        'system': {css: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif", gf: ''},
+        'inter': {css: "'Inter', sans-serif", gf: 'Inter'},
+        'ibm-plex-sans': {css: "'IBM Plex Sans', sans-serif", gf: 'IBM+Plex+Sans'},
+        'source-sans-3': {css: "'Source Sans 3', sans-serif", gf: 'Source+Sans+3'},
+        'nunito-sans': {css: "'Nunito Sans', sans-serif", gf: 'Nunito+Sans'},
+        'dm-sans': {css: "'DM Sans', sans-serif", gf: 'DM+Sans'},
+        'rubik': {css: "'Rubik', sans-serif", gf: 'Rubik'}
+    };
+
+    function applyFont(key) {
+        var f = fontMap[key] || fontMap['system'];
+        document.documentElement.style.setProperty('--font-sans', f.css);
+        var existing = document.getElementById('lb-google-font');
+        if (existing) existing.remove();
+        if (f.gf) {
+            var link = document.createElement('link');
+            link.id = 'lb-google-font';
+            link.rel = 'stylesheet';
+            link.href = 'https://fonts.googleapis.com/css2?family=' + f.gf + ':wght@400;500;600;700&display=swap';
+            document.head.appendChild(link);
+        }
+    }
+
     // Style the color theme options with their accent colors
     var themeColors = {default:'#6366f1',github:'#0969da',gitlab:'#6e49cb',emerald:'#059669',rose:'#e11d48',sunset:'#ea580c',aqua:'#007AFF',graphite:'#8E8E93',macos:'#007AFF'};
     Array.from(colorThemeEl.options).forEach(function(opt) {
@@ -220,6 +263,7 @@
             siteNameEl.value = s.site_name || 'LiveBoard';
             themeEl.value = s.theme || 'system';
             colorThemeEl.value = s.color_theme || 'default';
+            fontFamilyEl.value = s.font_family || 'system';
             widthEl.value = s.column_width || 280;
             sidebarPosEl.value = s.sidebar_position || 'left';
             showCheckboxEl.value = s.show_checkbox === false ? 'false' : 'true';
@@ -237,6 +281,7 @@
             site_name: siteNameEl.value.trim() || 'LiveBoard',
             theme: themeEl.value,
             color_theme: colorThemeEl.value,
+            font_family: fontFamilyEl.value,
             column_width: parseInt(widthEl.value, 10) || 280,
             sidebar_position: sidebarPosEl.value,
             show_checkbox: showCheckboxEl.value === 'true',
@@ -259,6 +304,7 @@
             localStorage.setItem('lb_color_theme', s.color_theme);
             localStorage.setItem('lb_column_width', String(s.column_width));
             localStorage.setItem('lb_sidebar_position', s.sidebar_position);
+            localStorage.setItem('lb_font_family', s.font_family);
             localStorage.setItem('lb_newline_trigger', s.newline_trigger);
 
             // Apply immediately
@@ -272,6 +318,7 @@
             } else {
                 document.documentElement.removeAttribute('data-color-theme');
             }
+            applyFont(s.font_family || 'system');
             document.documentElement.style.setProperty('--column-width', s.column_width + 'px');
             if (s.sidebar_position === 'right') {
                 document.documentElement.setAttribute('data-sidebar-position', 'right');

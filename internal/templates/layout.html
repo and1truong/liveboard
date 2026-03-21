@@ -16,6 +16,13 @@
             if (w) document.documentElement.style.setProperty('--column-width', w + 'px');
             var sp = localStorage.getItem('lb_sidebar_position');
             if (sp === 'right') document.documentElement.setAttribute('data-sidebar-position', 'right');
+            var ff = localStorage.getItem('lb_font_family');
+            if (ff && ff !== 'system') {
+                var fm = {'inter':"'Inter',sans-serif",'ibm-plex-sans':"'IBM Plex Sans',sans-serif",'source-sans-3':"'Source Sans 3',sans-serif",'nunito-sans':"'Nunito Sans',sans-serif",'dm-sans':"'DM Sans',sans-serif",'rubik':"'Rubik',sans-serif"};
+                var gf = {'inter':'Inter','ibm-plex-sans':'IBM+Plex+Sans','source-sans-3':'Source+Sans+3','nunito-sans':'Nunito+Sans','dm-sans':'DM+Sans','rubik':'Rubik'};
+                if (fm[ff]) document.documentElement.style.setProperty('--font-sans', fm[ff]);
+                if (gf[ff]) { var l=document.createElement('link');l.rel='stylesheet';l.id='lb-google-font';l.href='https://fonts.googleapis.com/css2?family='+gf[ff]+':wght@400;500;600;700&display=swap';document.head.appendChild(l); }
+            }
         })();
         // Theme-aware favicon
         document.addEventListener('DOMContentLoaded', function() {
