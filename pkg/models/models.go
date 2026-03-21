@@ -25,6 +25,8 @@ type Board struct {
 	Settings     BoardSettings `yaml:"settings,omitempty" json:"settings,omitempty"`
 	Columns      []Column      `yaml:"-" json:"columns"`
 	FilePath     string        `yaml:"-" json:"file_path"`
+	CreatedAt    time.Time     `yaml:"-" json:"created_at"`
+	UpdatedAt    time.Time     `yaml:"-" json:"updated_at"`
 }
 
 // Column represents a Kanban column (H2 heading in Markdown).

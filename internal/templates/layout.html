@@ -70,9 +70,12 @@
             <nav class="sidebar-nav">
                 <div class="sidebar-section-label">Boards</div>
                 {{range .Boards}}
-                <a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}">
+                <a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}" title="{{.CreatedFull}}&#10;{{.UpdatedFull}}">
                     <span class="nav-icon emoji-picker-trigger" @click.prevent.stop="show($el, '{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
-                    <span class="nav-label">{{.Name}}</span>
+                    <span class="nav-label-group">
+                        <span class="nav-label">{{.Name}}</span>
+                        <span class="nav-meta">{{.UpdatedAgo}}</span>
+                    </span>
                 </a>
                 {{end}}
                 <a href="/#new-board" class="sidebar-nav-item sidebar-new-board">

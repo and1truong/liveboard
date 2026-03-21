@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -20,16 +21,54 @@ type BoardListModel struct {
 
 // BoardSummary represents a simplified board for list display.
 type BoardSummary struct {
-	Name        string `json:"name"`
-	Slug        string `json:"slug"` // filename stem, used for URLs
-	Description string `json:"description,omitempty"`
-	Icon        string `json:"icon,omitempty"`
-	CardCount   int    `json:"card_count"`
+	Name        string    `json:"name"`
+	Slug        string    `json:"slug"` // filename stem, used for URLs
+	Description string    `json:"description,omitempty"`
+	Icon        string    `json:"icon,omitempty"`
+	CardCount   int       `json:"card_count"`
+	CreatedAt   time.Time `json:"created_at"`
+	UpdatedAt   time.Time `json:"updated_at"`
+	CreatedAgo  string    `json:"created_ago"`
+	UpdatedAgo  string    `json:"updated_ago"`
+	CreatedFull string    `json:"created_full"`
+	UpdatedFull string    `json:"updated_full"`
 }
 
 // boardSlug extracts the filename stem from a board's FilePath.
 func boardSlug(b models.Board) string {
 	return strings.TrimSuffix(filepath.Base(b.FilePath), ".md")
+}
+
+// relativeTime returns a human-readable relative time string.
+func relativeTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	d := time.Since(t)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		m := int(d.Minutes())
+		if m == 1 {
+			return "1m ago"
+		}
+		return fmt.Sprintf("%dm ago", m)
+	case d < 24*time.Hour:
+		h := int(d.Hours())
+		if h == 1 {
+			return "1h ago"
+		}
+		return fmt.Sprintf("%dh ago", h)
+	case d < 30*24*time.Hour:
+		days := int(d.Hours() / 24)
+		if days == 1 {
+			return "1d ago"
+		}
+		return fmt.Sprintf("%dd ago", days)
+	default:
+		return t.Format("Jan 2, 2006")
+	}
 }
 
 // toBoardSummaries converts a slice of boards to BoardSummary.
@@ -46,6 +85,12 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 			Description: b.Description,
 			Icon:        b.Icon,
 			CardCount:   cardCount,
+			CreatedAt:   b.CreatedAt,
+			UpdatedAt:   b.UpdatedAt,
+			CreatedAgo:  relativeTime(b.CreatedAt),
+			UpdatedAgo:  relativeTime(b.UpdatedAt),
+			CreatedFull: b.CreatedAt.Format("Created: Jan 2, 2006 3:04 PM"),
+			UpdatedFull: b.UpdatedAt.Format("Updated: Jan 2, 2006 3:04 PM"),
 		}
 	}
 	return summaries

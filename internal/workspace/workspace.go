@@ -52,6 +52,10 @@ func (w *Workspace) ListBoards() ([]models.Board, error) {
 		if err != nil {
 			continue // Skip unparseable files.
 		}
+		if fi, err := entry.Info(); err == nil {
+			b.UpdatedAt = fi.ModTime()
+			b.CreatedAt = fileBirthTime(fi)
+		}
 		boards = append(boards, *b)
 	}
 	return boards, nil
