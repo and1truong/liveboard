@@ -41,13 +41,13 @@
             <div class="settings-section bs-section">
                 <div class="settings-field-stacked">
                     <label class="settings-label-stacked" for="bsBoardName">Board name</label>
-                    <input type="text" id="bsBoardName" class="settings-input" maxlength="100" x-model="boardName" @input.debounce.500ms="saveMeta()" />
+                    <input type="text" id="bsBoardName" class="settings-input" maxlength="100" x-model="boardName" />
                 </div>
                 <div class="settings-field-stacked">
                     <label class="settings-label-stacked" for="bsBoardDescription">Description</label>
-                    <textarea id="bsBoardDescription" class="settings-input" rows="2" placeholder="Board description (optional)" x-model="boardDescription" @input.debounce.500ms="saveMeta()"></textarea>
+                    <textarea id="bsBoardDescription" class="settings-input" rows="2" placeholder="Board description (optional)" x-model="boardDescription"></textarea>
                 </div>
-                <div class="settings-field-stacked" @tags-changed="saveMeta()">
+                <div class="settings-field-stacked">
                     <label class="settings-label-stacked">Tags</label>
                     <div class="card-modal-tags-container" x-data="tagChips()" data-bs-tags @click="$refs.input.focus()">
                         <template x-for="(tag, idx) in tags" :key="tag">
@@ -74,11 +74,11 @@
                     <div class="settings-control">
                         <div class="settings-segmented">
                             <label :class="{ active: viewMode === 'board' }">
-                                <input type="radio" name="bs-viewMode" value="board" x-model="viewMode" @change="sendSettings()">
+                                <input type="radio" name="bs-viewMode" value="board" x-model="viewMode">
                                 <span>Board</span>
                             </label>
                             <label :class="{ active: viewMode === 'table' }">
-                                <input type="radio" name="bs-viewMode" value="table" x-model="viewMode" @change="sendSettings()">
+                                <input type="radio" name="bs-viewMode" value="table" x-model="viewMode">
                                 <span>Table</span>
                             </label>
                         </div>
@@ -91,7 +91,7 @@
                     </div>
                     <div class="settings-control">
                         <label class="settings-toggle">
-                            <input type="checkbox" :checked="expandColumns === 'true'" @change="expandColumns = $event.target.checked ? 'true' : 'false'; sendSettings()">
+                            <input type="checkbox" :checked="expandColumns === 'true'" @change="expandColumns = $event.target.checked ? 'true' : 'false'">
                             <span class="settings-toggle-track"></span>
                         </label>
                     </div>
@@ -104,15 +104,15 @@
                     <div class="settings-control">
                         <div class="settings-segmented">
                             <label :class="{ active: showCheckbox === '' }">
-                                <input type="radio" name="bs-showCheckbox" value="" x-model="showCheckbox" @change="resetSetting('show_checkbox')">
+                                <input type="radio" name="bs-showCheckbox" value="" x-model="showCheckbox">
                                 <span>Default</span>
                             </label>
                             <label :class="{ active: showCheckbox === 'true' }">
-                                <input type="radio" name="bs-showCheckbox" value="true" x-model="showCheckbox" @change="sendSettings()">
+                                <input type="radio" name="bs-showCheckbox" value="true" x-model="showCheckbox">
                                 <span>On</span>
                             </label>
                             <label :class="{ active: showCheckbox === 'false' }">
-                                <input type="radio" name="bs-showCheckbox" value="false" x-model="showCheckbox" @change="sendSettings()">
+                                <input type="radio" name="bs-showCheckbox" value="false" x-model="showCheckbox">
                                 <span>Off</span>
                             </label>
                         </div>
@@ -126,15 +126,15 @@
                     <div class="settings-control">
                         <div class="settings-segmented">
                             <label :class="{ active: cardPosition === '' }">
-                                <input type="radio" name="bs-cardPosition" value="" x-model="cardPosition" @change="resetSetting('card_position')">
+                                <input type="radio" name="bs-cardPosition" value="" x-model="cardPosition">
                                 <span>Default</span>
                             </label>
                             <label :class="{ active: cardPosition === 'append' }">
-                                <input type="radio" name="bs-cardPosition" value="append" x-model="cardPosition" @change="sendSettings()">
+                                <input type="radio" name="bs-cardPosition" value="append" x-model="cardPosition">
                                 <span>Bottom</span>
                             </label>
                             <label :class="{ active: cardPosition === 'prepend' }">
-                                <input type="radio" name="bs-cardPosition" value="prepend" x-model="cardPosition" @change="sendSettings()">
+                                <input type="radio" name="bs-cardPosition" value="prepend" x-model="cardPosition">
                                 <span>Top</span>
                             </label>
                         </div>
@@ -148,23 +148,26 @@
                     <div class="settings-control">
                         <div class="settings-segmented">
                             <label :class="{ active: cardDisplayMode === '' }">
-                                <input type="radio" name="bs-cardDisplayMode" value="" x-model="cardDisplayMode" @change="resetSetting('card_display_mode')">
+                                <input type="radio" name="bs-cardDisplayMode" value="" x-model="cardDisplayMode">
                                 <span>Default</span>
                             </label>
                             <label :class="{ active: cardDisplayMode === 'full' }">
-                                <input type="radio" name="bs-cardDisplayMode" value="full" x-model="cardDisplayMode" @change="sendSettings()">
+                                <input type="radio" name="bs-cardDisplayMode" value="full" x-model="cardDisplayMode">
                                 <span>Show</span>
                             </label>
                             <label :class="{ active: cardDisplayMode === 'hide' }">
-                                <input type="radio" name="bs-cardDisplayMode" value="hide" x-model="cardDisplayMode" @change="sendSettings()">
+                                <input type="radio" name="bs-cardDisplayMode" value="hide" x-model="cardDisplayMode">
                                 <span>Hide</span>
                             </label>
                             <label :class="{ active: cardDisplayMode === 'trim' }">
-                                <input type="radio" name="bs-cardDisplayMode" value="trim" x-model="cardDisplayMode" @change="sendSettings()">
+                                <input type="radio" name="bs-cardDisplayMode" value="trim" x-model="cardDisplayMode">
                                 <span>Trim</span>
                             </label>
                         </div>
                     </div>
+                </div>
+                <div class="board-settings-apply">
+                    <button class="btn-apply-settings" @click="applySettings()">Apply settings</button>
                 </div>
             </div>
         </div>

@@ -2923,6 +2923,25 @@ input.card-modal-tags-input::placeholder {
     color: var(--color-text-primary);
     background: var(--color-hover);
 }
+.board-settings-apply {
+    padding: 12px 0 4px;
+    margin-top: 8px;
+    border-top: 1px solid var(--color-border);
+}
+.btn-apply-settings {
+    width: 100%;
+    padding: 8px 16px;
+    background: var(--color-accent, #4a9eff);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+}
+.btn-apply-settings:hover {
+    opacity: 0.9;
+}
 .board-settings-panel-body {
     display: flex;
     flex-direction: column;
