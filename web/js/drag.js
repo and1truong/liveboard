@@ -1876,19 +1876,9 @@
       zone.addEventListener("dragover", function (e) {
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
-
-        var targetColumn = zone.dataset.column;
-
-        if (draggingSourceColumn === targetColumn) {
-          // Within-column: show insertion indicator
-          zone.classList.remove("drag-over");
-          var beforeCard = getInsertionTarget(zone, e.clientY, draggingCard);
-          showDropIndicator(zone, beforeCard);
-        } else {
-          // Cross-column: highlight the whole zone
-          clearDropIndicators();
-          zone.classList.add("drag-over");
-        }
+        zone.classList.remove("drag-over");
+        var beforeCard = getInsertionTarget(zone, e.clientY, draggingCard);
+        showDropIndicator(zone, beforeCard);
       });
 
       zone.addEventListener("dragleave", function (e) {
@@ -1923,24 +1913,23 @@
         var sourceZone = card.closest(".cards[data-column], .table-group-cards[data-column]");
         var sourceColumn = sourceZone ? sourceZone.dataset.column : null;
 
-        if (sourceColumn === targetColumn) {
-          // Within-column reorder
-          var indicator = zone.querySelector(".drop-indicator");
-          var beforeCard = null;
-          if (indicator) {
-            var next = indicator.nextElementSibling;
-            while (next && !next.classList.contains("card")) {
-              next = next.nextElementSibling;
-            }
-            if (next && next.classList.contains("card")) {
-              beforeCard = next;
-            }
+        var indicator = zone.querySelector(".drop-indicator");
+        var beforeCard = null;
+        if (indicator) {
+          var next = indicator.nextElementSibling;
+          while (next && !next.classList.contains("card")) {
+            next = next.nextElementSibling;
           }
-          clearDropIndicators();
+          if (next && next.classList.contains("card")) {
+            beforeCard = next;
+          }
+        }
+        clearDropIndicators();
 
-          var beforeIdx = beforeCard ? beforeCard.dataset.cardIdx : "-1";
+        var beforeIdx = beforeCard ? beforeCard.dataset.cardIdx : "-1";
 
-          // Skip if card didn't actually move
+        // Skip if card didn't actually move (same column, same position)
+        if (sourceColumn === targetColumn) {
           var prevSibling = card.previousElementSibling;
           while (prevSibling && !prevSibling.classList.contains("card")) {
             prevSibling = prevSibling.previousElementSibling;
@@ -1955,25 +1944,20 @@
           ) {
             return; // no-op
           }
-
-          var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
-          htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/reorder', {
-            values: {
-              col_idx: srcColIdx,
-              card_idx: srcCardIdx,
-              before_idx: beforeIdx,
-              column: targetColumn,
-              name: slug,
-            },
-            target: '#board-content',
-            swap: 'innerHTML'
-          });
-        } else {
-          // Cross-column move
-          clearDropIndicators();
-          var btn = card.querySelector('.move-trigger[data-target="' + targetColumn + '"]');
-          if (btn) btn.click();
         }
+
+        var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/reorder', {
+          values: {
+            col_idx: srcColIdx,
+            card_idx: srcCardIdx,
+            before_idx: beforeIdx,
+            column: targetColumn,
+            name: slug,
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
       });
     });
   }
