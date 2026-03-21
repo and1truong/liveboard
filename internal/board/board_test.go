@@ -374,6 +374,32 @@ func TestMoveColumn(t *testing.T) {
 	}
 }
 
+func TestMoveColumnPrepend(t *testing.T) {
+	path, eng := setupTestBoard(t)
+
+	// Move "Done" to first position (Backlog, In Progress, Done → Done, Backlog, In Progress)
+	if err := eng.MoveColumn(path, "Done", ""); err != nil {
+		t.Fatal(err)
+	}
+
+	board, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns) != 3 {
+		t.Fatalf("expected 3 columns, got %d", len(board.Columns))
+	}
+	if board.Columns[0].Name != "Done" {
+		t.Errorf("col 0 = %q, want 'Done'", board.Columns[0].Name)
+	}
+	if board.Columns[1].Name != "Backlog" {
+		t.Errorf("col 1 = %q, want 'Backlog'", board.Columns[1].Name)
+	}
+	if board.Columns[2].Name != "In Progress" {
+		t.Errorf("col 2 = %q, want 'In Progress'", board.Columns[2].Name)
+	}
+}
+
 func TestMoveColumnNotFound(t *testing.T) {
 	path, eng := setupTestBoard(t)
 

@@ -361,12 +361,16 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 		return fmt.Errorf("column %q not found", colName)
 	}
 
-	// Insert after the specified column.
+	// Insert after the specified column (empty afterCol = prepend).
 	var reordered []models.Column
-	for _, col := range remaining {
-		reordered = append(reordered, col)
-		if col.Name == afterCol {
-			reordered = append(reordered, *movingCol)
+	if afterCol == "" {
+		reordered = append([]models.Column{*movingCol}, remaining...)
+	} else {
+		for _, col := range remaining {
+			reordered = append(reordered, col)
+			if col.Name == afterCol {
+				reordered = append(reordered, *movingCol)
+			}
 		}
 	}
 

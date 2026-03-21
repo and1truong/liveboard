@@ -194,10 +194,17 @@
       if (col.dataset.colDragWired) return;
       col.dataset.colDragWired = "1";
 
+      // Track mousedown origin so dragstart can check if it came from the header.
+      // e.target in dragstart is always the draggable element (.column), not the
+      // element under the cursor, so we can't use it directly.
+      col.addEventListener("mousedown", function (e) {
+        var header = col.querySelector(".column-header");
+        col._dragFromHeader = header && header.contains(e.target);
+      });
+
       col.addEventListener("dragstart", function (e) {
         // Only drag from the column header area
-        var header = col.querySelector(".column-header");
-        if (header && !header.contains(e.target)) {
+        if (!col._dragFromHeader) {
           e.preventDefault();
           return;
         }
@@ -286,11 +293,6 @@
       group.dataset.colDragWired = "1";
 
       group.addEventListener("dragstart", function (e) {
-        // Only allow drag from first row's list cell
-        var listCell = group.querySelector(".table-cell-list");
-        if (listCell && !listCell.contains(e.target)) {
-          // Allow drag from any part of the group header area
-        }
         if (draggingCard) {
           e.preventDefault();
           return;
