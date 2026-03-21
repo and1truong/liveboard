@@ -38,9 +38,11 @@
         card.classList.add("dragging");
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", card.dataset.colIdx + ":" + card.dataset.cardIdx);
+        e.stopPropagation();
       });
 
       card.addEventListener("dragend", function () {
+        LB.isDragging = false;
         card.classList.remove("dragging");
         LB.clearDropIndicators();
         document.querySelectorAll(".cards.drag-over, .table-group-cards.drag-over").forEach(function (el) {
