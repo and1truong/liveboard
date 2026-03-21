@@ -250,7 +250,6 @@ liveboard/
 - [x] Git auto-commit
 - [x] Web UI with drag-and-drop
 - [x] Theming (dark/light + color themes)
-- [ ] TUI ([bubbletea](https://github.com/charmbracelet/bubbletea))
 - [ ] Full-text search ([bleve](https://github.com/blevesearch/bleve))
 - [ ] Event bus + SSE/WebSocket
 - [ ] AI agent layer
