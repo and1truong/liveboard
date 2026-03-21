@@ -5,9 +5,17 @@
   var draggingSourceColumn = null;
 
   // === OPTIMISTIC CONCURRENCY ===
+  var _conflictRetrying = false;
+
   function getBoardVersion() {
     var el = document.getElementById("board-version");
     return el ? el.value : "0";
+  }
+
+  function extractVersionFromResponse(html) {
+    var doc = new DOMParser().parseFromString(html, "text/html");
+    var el = doc.getElementById("board-version");
+    return el ? el.value || el.getAttribute("value") : null;
   }
 
   // Auto-inject version into all HTMX form submissions (hx-post, hx-vals).
@@ -18,17 +26,50 @@
     }
   });
 
-  // Handle 409 Conflict: allow the swap (server sends fresh HTML) and show toast.
+  // Handle 409 Conflict: retry once with fresh version, then fall back to swap + toast.
   document.body.addEventListener("htmx:beforeSwap", function (e) {
-    if (e.detail.xhr && e.detail.xhr.status === 409) {
+    if (!e.detail.xhr || e.detail.xhr.status !== 409) return;
+
+    // Retry also got 409 — give up, swap fresh HTML and notify user.
+    if (_conflictRetrying) {
+      _conflictRetrying = false;
       e.detail.shouldSwap = true;
       e.detail.isError = false;
       showConflictToast();
+      return;
     }
+
+    var newVersion = extractVersionFromResponse(e.detail.xhr.responseText);
+    if (!newVersion) {
+      e.detail.shouldSwap = true;
+      e.detail.isError = false;
+      showConflictToast();
+      return;
+    }
+
+    // Suppress swap — we will retry the request.
+    e.detail.shouldSwap = false;
+    e.detail.isError = false;
+
+    // Update stored version so htmx:configRequest picks it up.
+    var versionEl = document.getElementById("board-version");
+    if (versionEl) versionEl.value = newVersion;
+
+    var cfg = e.detail.requestConfig;
+    var params = Object.assign({}, cfg.parameters);
+    params.version = newVersion;
+
+    _conflictRetrying = true;
+    htmx.ajax(cfg.verb, cfg.path, {
+      values: params,
+      target: "#board-content",
+      swap: "innerHTML",
+    });
   });
 
   // After any swap, sync the board version from the hidden input.
   document.body.addEventListener("htmx:afterSwap", function (e) {
+    _conflictRetrying = false;
     var versionEl = document.getElementById("board-version");
     var boardView = document.querySelector(".board-view");
     if (versionEl && boardView) {
@@ -1079,6 +1120,7 @@
   var cardModal = null;
   var cardModalBackdrop = null;
   var isDragging = false;
+  var draggingColumnEl = null; // DOM element of column being dragged
 
   function hideCardModal() {
     if (cardModalBackdrop) {
@@ -1659,6 +1701,7 @@
       zone.dataset.dropWired = "1";
 
       zone.addEventListener("dragover", function (e) {
+        if (draggingColumnEl) return; // ignore column drags on card zones
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
         zone.classList.remove("drag-over");
@@ -1674,6 +1717,7 @@
       });
 
       zone.addEventListener("drop", function (e) {
+        if (draggingColumnEl) return; // ignore column drags on card zones
         e.preventDefault();
         zone.classList.remove("drag-over");
 
@@ -1739,6 +1783,236 @@
             before_idx: beforeIdx,
             column: targetColumn,
             name: slug,
+            version: getBoardVersion(),
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
+      });
+    });
+
+    // ── Column drag-and-drop ──────────────────────────────────────────
+    function clearColumnDropIndicators() {
+      document.querySelectorAll(".column-drop-indicator").forEach(function (el) {
+        el.remove();
+      });
+    }
+
+    function getColumnInsertionTarget(container, clientX, excludeEl, isTable) {
+      var selector = isTable ? ".table-group-cards[data-column]" : ".column[data-column-name]";
+      var columns = Array.from(container.querySelectorAll(selector)).filter(
+        function (c) { return c !== excludeEl; }
+      );
+      for (var i = 0; i < columns.length; i++) {
+        var rect = columns[i].getBoundingClientRect();
+        var mid = isTable ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
+        var pos = isTable ? clientX : clientX; // clientX for board, clientY for table
+        if (pos < mid) {
+          return columns[i];
+        }
+      }
+      return null;
+    }
+
+    function showColumnDropIndicator(container, beforeCol, isTable) {
+      clearColumnDropIndicators();
+      var indicator = document.createElement("div");
+      indicator.className = "column-drop-indicator" + (isTable ? " column-drop-indicator-horizontal" : "");
+      if (beforeCol) {
+        container.insertBefore(indicator, beforeCol);
+      } else {
+        // Append before add-column element
+        var addCol = container.querySelector(".add-column-bar, .table-add-column");
+        if (addCol) {
+          container.insertBefore(indicator, addCol);
+        } else {
+          container.appendChild(indicator);
+        }
+      }
+    }
+
+    // Board mode: columns
+    document.querySelectorAll(".column[draggable][data-column-name]").forEach(function (col) {
+      if (col.dataset.colDragWired) return;
+      col.dataset.colDragWired = "1";
+
+      col.addEventListener("dragstart", function (e) {
+        // Only drag from the column header area
+        var header = col.querySelector(".column-header");
+        if (header && !header.contains(e.target)) {
+          e.preventDefault();
+          return;
+        }
+        // Don't start column drag if a card is being dragged
+        if (draggingCard) {
+          e.preventDefault();
+          return;
+        }
+        draggingColumnEl = col;
+        col.classList.add("column-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-column", col.dataset.columnName);
+      });
+
+      col.addEventListener("dragend", function () {
+        col.classList.remove("column-dragging");
+        clearColumnDropIndicators();
+        draggingColumnEl = null;
+      });
+    });
+
+    // Board mode: drop zone is .columns-container
+    document.querySelectorAll(".columns-container").forEach(function (container) {
+      if (container.dataset.colDropWired) return;
+      container.dataset.colDropWired = "1";
+
+      container.addEventListener("dragover", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        var beforeCol = getColumnInsertionTarget(container, e.clientX, draggingColumnEl, false);
+        showColumnDropIndicator(container, beforeCol, false);
+      });
+
+      container.addEventListener("dragleave", function (e) {
+        if (!draggingColumnEl) return;
+        if (!container.contains(e.relatedTarget)) {
+          clearColumnDropIndicators();
+        }
+      });
+
+      container.addEventListener("drop", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        var colName = draggingColumnEl.dataset.columnName;
+
+        // Determine after_column from indicator position
+        var indicator = container.querySelector(".column-drop-indicator");
+        var afterCol = "";
+        if (indicator) {
+          var prev = indicator.previousElementSibling;
+          while (prev && !prev.classList.contains("column")) {
+            prev = prev.previousElementSibling;
+          }
+          if (prev && prev.dataset.columnName) {
+            afterCol = prev.dataset.columnName;
+          }
+        }
+        clearColumnDropIndicators();
+
+        // Skip if column didn't actually move
+        if (afterCol === colName) return;
+        var prevSib = draggingColumnEl.previousElementSibling;
+        while (prevSib && !prevSib.classList.contains("column")) {
+          prevSib = prevSib.previousElementSibling;
+        }
+        if (afterCol === "" && !prevSib) return; // already first
+        if (prevSib && prevSib.dataset.columnName === afterCol) return; // same position
+
+        var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/move', {
+          values: {
+            column: colName,
+            after_column: afterCol,
+            version: getBoardVersion(),
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
+      });
+    });
+
+    // Table mode: column groups
+    document.querySelectorAll(".table-group-cards[draggable][data-column]").forEach(function (group) {
+      if (group.dataset.colDragWired) return;
+      group.dataset.colDragWired = "1";
+
+      group.addEventListener("dragstart", function (e) {
+        // Only allow drag from first row's list cell
+        var listCell = group.querySelector(".table-cell-list");
+        if (listCell && !listCell.contains(e.target)) {
+          // Allow drag from any part of the group header area
+        }
+        if (draggingCard) {
+          e.preventDefault();
+          return;
+        }
+        draggingColumnEl = group;
+        group.classList.add("column-dragging");
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("application/x-column", group.dataset.column);
+      });
+
+      group.addEventListener("dragend", function () {
+        group.classList.remove("column-dragging");
+        clearColumnDropIndicators();
+        draggingColumnEl = null;
+      });
+    });
+
+    // Table mode: drop zone is .table-container
+    document.querySelectorAll(".table-container").forEach(function (container) {
+      if (container.dataset.colDropWired) return;
+      container.dataset.colDropWired = "1";
+
+      container.addEventListener("dragover", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = "move";
+        // Use clientY for table mode (vertical groups)
+        var groups = Array.from(container.querySelectorAll(".table-group-cards[data-column]")).filter(
+          function (g) { return g !== draggingColumnEl; }
+        );
+        var beforeGroup = null;
+        for (var i = 0; i < groups.length; i++) {
+          var rect = groups[i].getBoundingClientRect();
+          if (e.clientY < rect.top + rect.height / 2) {
+            beforeGroup = groups[i];
+            break;
+          }
+        }
+        showColumnDropIndicator(container, beforeGroup, true);
+      });
+
+      container.addEventListener("dragleave", function (e) {
+        if (!draggingColumnEl) return;
+        if (!container.contains(e.relatedTarget)) {
+          clearColumnDropIndicators();
+        }
+      });
+
+      container.addEventListener("drop", function (e) {
+        if (!draggingColumnEl) return;
+        e.preventDefault();
+        var colName = draggingColumnEl.dataset.column;
+
+        var indicator = container.querySelector(".column-drop-indicator");
+        var afterCol = "";
+        if (indicator) {
+          var prev = indicator.previousElementSibling;
+          while (prev && !prev.classList.contains("table-group-cards")) {
+            prev = prev.previousElementSibling;
+          }
+          if (prev && prev.dataset.column) {
+            afterCol = prev.dataset.column;
+          }
+        }
+        clearColumnDropIndicators();
+
+        // Skip no-ops
+        if (afterCol === colName) return;
+        var prevSib = draggingColumnEl.previousElementSibling;
+        while (prevSib && !prevSib.classList.contains("table-group-cards")) {
+          prevSib = prevSib.previousElementSibling;
+        }
+        if (afterCol === "" && !prevSib) return;
+        if (prevSib && prevSib.dataset.column === afterCol) return;
+
+        var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/move', {
+          values: {
+            column: colName,
+            after_column: afterCol,
             version: getBoardVersion(),
           },
           target: '#board-content',
@@ -1926,6 +2200,7 @@
     var bsCardPosition = document.getElementById("bsCardPosition");
     var bsExpandColumns = document.getElementById("bsExpandColumns");
     var bsViewMode = document.getElementById("bsViewMode");
+    var bsCardDisplayMode = document.getElementById("bsCardDisplayMode");
 
     // Populate all fields from data attributes
     function populateFromData() {
@@ -1949,6 +2224,7 @@
       if (bsCardPosition) bsCardPosition.value = boardView.dataset.bsCardPosition || "";
       if (bsExpandColumns) bsExpandColumns.value = boardView.dataset.bsExpandColumns || "false";
       if (bsViewMode) bsViewMode.value = boardView.dataset.bsViewMode || boardView.dataset.viewMode || "board";
+      if (bsCardDisplayMode) bsCardDisplayMode.value = boardView.dataset.bsCardDisplayMode || "";
 
       // Show/hide reset buttons
       updateResetButtons();
@@ -1984,6 +2260,7 @@
         var hasOverride = false;
         if (setting === "show_checkbox") hasOverride = bsShowCheckbox && bsShowCheckbox.value !== "";
         if (setting === "card_position") hasOverride = bsCardPosition && bsCardPosition.value !== "";
+        if (setting === "card_display_mode") hasOverride = bsCardDisplayMode && bsCardDisplayMode.value !== "";
         btn.style.display = hasOverride ? "" : "none";
       });
     }
@@ -2001,6 +2278,9 @@
       }
       if (bsViewMode) {
         params.view_mode = bsViewMode.value;
+      }
+      if (bsCardDisplayMode && bsCardDisplayMode.value !== "") {
+        params.card_display_mode = bsCardDisplayMode.value;
       }
       htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/settings', {
         values: params,
@@ -2037,7 +2317,7 @@
     }, opts);
 
     // On change: send update
-    [bsShowCheckbox, bsCardPosition, bsExpandColumns, bsViewMode].forEach(function (el) {
+    [bsShowCheckbox, bsCardPosition, bsExpandColumns, bsViewMode, bsCardDisplayMode].forEach(function (el) {
       if (el) {
         el.addEventListener("change", function () {
           updateResetButtons();
@@ -2052,6 +2332,7 @@
         var setting = btn.dataset.setting;
         if (setting === "show_checkbox" && bsShowCheckbox) bsShowCheckbox.value = "";
         if (setting === "card_position" && bsCardPosition) bsCardPosition.value = "";
+        if (setting === "card_display_mode" && bsCardDisplayMode) bsCardDisplayMode.value = "";
         updateResetButtons();
         sendBoardSettings();
       }, opts);

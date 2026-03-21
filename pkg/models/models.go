@@ -6,10 +6,11 @@ import "time"
 // BoardSettings holds per-board setting overrides.
 // Pointer types allow nil = "inherit global default".
 type BoardSettings struct {
-	ShowCheckbox  *bool   `yaml:"show-checkbox,omitempty" json:"show_checkbox,omitempty"`
-	CardPosition  *string `yaml:"card-position,omitempty" json:"card_position,omitempty"`
-	ExpandColumns *bool   `yaml:"expand-columns,omitempty" json:"expand_columns,omitempty"`
-	ViewMode      *string `yaml:"view-mode,omitempty" json:"view_mode,omitempty"`
+	ShowCheckbox    *bool   `yaml:"show-checkbox,omitempty" json:"show_checkbox,omitempty"`
+	CardPosition    *string `yaml:"card-position,omitempty" json:"card_position,omitempty"`
+	ExpandColumns   *bool   `yaml:"expand-columns,omitempty" json:"expand_columns,omitempty"`
+	ViewMode        *string `yaml:"view-mode,omitempty" json:"view_mode,omitempty"`
+	CardDisplayMode *string `yaml:"card-display-mode,omitempty" json:"card_display_mode,omitempty"`
 }
 
 // Board represents a Kanban board backed by a single Markdown file.

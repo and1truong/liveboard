@@ -110,6 +110,19 @@
                     </select>
                 </div>
             </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Card body display</div>
+                    <div class="settings-label-hint">How card body content is shown on boards (default for all boards)</div>
+                </div>
+                <div class="settings-control">
+                    <select id="settingCardDisplayMode">
+                        <option value="full">Show all</option>
+                        <option value="hide">Hide body</option>
+                        <option value="trim">Trim (3 lines)</option>
+                    </select>
+                </div>
+            </div>
         </div>
         <div class="settings-section">
             <div class="settings-section-title">New Board Defaults</div>
@@ -141,6 +154,7 @@
     var showCheckboxEl = document.getElementById('settingShowCheckbox');
     var newLineTriggerEl = document.getElementById('settingNewLineTrigger');
     var cardPositionEl = document.getElementById('settingCardPosition');
+    var cardDisplayModeEl = document.getElementById('settingCardDisplayMode');
     var colsContainer = document.getElementById('settingDefaultColumnsContainer');
     var colsInput = document.getElementById('settingDefaultColumnsInput');
     var saveBtn = document.getElementById('settingsSave');
@@ -211,6 +225,7 @@
             showCheckboxEl.value = s.show_checkbox === false ? 'false' : 'true';
             newLineTriggerEl.value = s.newline_trigger || 'shift-enter';
             cardPositionEl.value = s.card_position || 'append';
+            cardDisplayModeEl.value = s.card_display_mode || 'full';
             currentCols = s.default_columns || ['not now', 'maybe?', 'done'];
             renderColChips();
             colsInput.placeholder = currentCols.length ? '' : 'Add column...';
@@ -227,6 +242,7 @@
             show_checkbox: showCheckboxEl.value === 'true',
             newline_trigger: newLineTriggerEl.value,
             card_position: cardPositionEl.value,
+            card_display_mode: cardDisplayModeEl.value,
             default_columns: rawCols
         };
 

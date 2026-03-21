@@ -22,6 +22,7 @@ type AppSettings struct {
 	ShowCheckbox    bool     `json:"show_checkbox"`
 	NewLineTrigger  string   `json:"newline_trigger"`
 	CardPosition    string   `json:"card_position"`
+	CardDisplayMode string   `json:"card_display_mode"`
 }
 
 var validColorThemes = map[string]bool{
@@ -41,6 +42,7 @@ func defaultSettings() AppSettings {
 		ShowCheckbox:    true,
 		NewLineTrigger:  "shift-enter",
 		CardPosition:    "append",
+		CardDisplayMode: "full",
 	}
 }
 
@@ -119,6 +121,9 @@ func sanitizeSettings(s *AppSettings) {
 	}
 	if s.CardPosition != "prepend" && s.CardPosition != "append" {
 		s.CardPosition = "append"
+	}
+	if s.CardDisplayMode != "full" && s.CardDisplayMode != "hide" && s.CardDisplayMode != "trim" {
+		s.CardDisplayMode = "full"
 	}
 	s.SiteName = strings.TrimSpace(s.SiteName)
 	if s.SiteName == "" {

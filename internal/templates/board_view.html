@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}">
+<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-card-display-mode="{{.Settings.CardDisplayMode}}" data-bs-card-display-mode="{{.BSView.CardDisplayMode}}" data-global-card-display-mode="{{.GlobalSettings.CardDisplayMode}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}">
     <div id="board-content" hx-get="/board/{{.BoardSlug}}/content" hx-trigger="sse:board-update" hx-swap="innerHTML">
     {{template "board-content" .}}
     </div>
@@ -106,6 +106,21 @@
                     </select>
                 </div>
             </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Card body display</div>
+                    <div class="settings-label-hint">How card body content is shown</div>
+                </div>
+                <div class="settings-control board-setting-control">
+                    <select id="bsCardDisplayMode">
+                        <option value="">Use default</option>
+                        <option value="full">Show all</option>
+                        <option value="hide">Hide body</option>
+                        <option value="trim">Trim (3 lines)</option>
+                    </select>
+                    <button class="btn-reset-setting" data-setting="card_display_mode" title="Reset to global default" style="display:none">&#8634;</button>
+                </div>
+            </div>
         </div>
     </div>
     </div>
@@ -193,8 +208,8 @@
                         <div class="card-content">
                             <h4 class="card-title">{{.Title}}</h4>
 
-                            {{if .Body}}
-                            <p class="card-body">{{.Body}}</p>
+                            {{if and .Body (ne $.Settings.CardDisplayMode "hide")}}
+                            <p class="card-body {{if eq $.Settings.CardDisplayMode "trim"}}card-body-trim{{end}}">{{.Body}}</p>
                             {{end}}
 
                             {{if .Tags}}

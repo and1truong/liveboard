@@ -17,20 +17,22 @@ import (
 // ResolvedSettings holds the effective settings for a board view,
 // merging global defaults with per-board overrides.
 type ResolvedSettings struct {
-	ShowCheckbox   bool   `json:"show_checkbox"`
-	NewLineTrigger string `json:"newline_trigger"`
-	CardPosition   string `json:"card_position"`
-	ExpandColumns  bool   `json:"expand_columns"`
-	ViewMode       string `json:"view_mode"`
+	ShowCheckbox    bool   `json:"show_checkbox"`
+	NewLineTrigger  string `json:"newline_trigger"`
+	CardPosition    string `json:"card_position"`
+	ExpandColumns   bool   `json:"expand_columns"`
+	ViewMode        string `json:"view_mode"`
+	CardDisplayMode string `json:"card_display_mode"`
 }
 
 // BoardSettingsView holds pre-formatted per-board override values for the template.
 // Empty string means "not set" (inherit global).
 type BoardSettingsView struct {
-	ShowCheckbox  string `json:"show_checkbox"`
-	CardPosition  string `json:"card_position"`
-	ExpandColumns string `json:"expand_columns"`
-	ViewMode      string `json:"view_mode"`
+	ShowCheckbox    string `json:"show_checkbox"`
+	CardPosition    string `json:"card_position"`
+	ExpandColumns   string `json:"expand_columns"`
+	ViewMode        string `json:"view_mode"`
+	CardDisplayMode string `json:"card_display_mode"`
 }
 
 // BoardViewModel is the state for the board view page.
@@ -69,6 +71,13 @@ func resolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettin
 	if bs.ViewMode != nil {
 		rs.ViewMode = *bs.ViewMode
 	}
+	rs.CardDisplayMode = global.CardDisplayMode
+	if rs.CardDisplayMode == "" {
+		rs.CardDisplayMode = "full"
+	}
+	if bs.CardDisplayMode != nil {
+		rs.CardDisplayMode = *bs.CardDisplayMode
+	}
 	return rs
 }
 
@@ -94,6 +103,9 @@ func toBoardSettingsView(bs models.BoardSettings) BoardSettingsView {
 	}
 	if bs.ViewMode != nil {
 		v.ViewMode = *bs.ViewMode
+	}
+	if bs.CardDisplayMode != nil {
+		v.CardDisplayMode = *bs.CardDisplayMode
 	}
 	return v
 }
@@ -788,6 +800,82 @@ func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
 	h.renderBoardContent(w, model)
 }
 
+// HandleMoveColumn handles POST /board/{slug}/columns/move.
+func (h *Handler) HandleMoveColumn(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colName := r.FormValue("column")
+	afterCol := r.FormValue("after_column")
+
+	if colName == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "Column name is required"
+		h.renderBoardContent(w, model)
+		return
+	}
+
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
+	}
+
+	version := formVersion(r)
+	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Move column %q", colName), version, func(b *models.Board) error {
+		// Align ListCollapse with columns.
+		for len(b.ListCollapse) < len(b.Columns) {
+			b.ListCollapse = append(b.ListCollapse, false)
+		}
+
+		// Build collapse state map.
+		collapseByName := make(map[string]bool, len(b.Columns))
+		for i, col := range b.Columns {
+			collapseByName[col.Name] = b.ListCollapse[i]
+		}
+
+		// Find and remove the column being moved.
+		var movingCol *models.Column
+		var remaining []models.Column
+		for _, col := range b.Columns {
+			if col.Name == colName {
+				c := col
+				movingCol = &c
+			} else {
+				remaining = append(remaining, col)
+			}
+		}
+		if movingCol == nil {
+			return fmt.Errorf("column %q not found", colName)
+		}
+
+		// Rebuild: if afterCol is empty, prepend; otherwise insert after afterCol.
+		var reordered []models.Column
+		if afterCol == "" {
+			reordered = append([]models.Column{*movingCol}, remaining...)
+		} else {
+			for _, col := range remaining {
+				reordered = append(reordered, col)
+				if col.Name == afterCol {
+					reordered = append(reordered, *movingCol)
+				}
+			}
+		}
+
+		b.Columns = reordered
+
+		// Rebuild ListCollapse to match new order.
+		b.ListCollapse = make([]bool, len(b.Columns))
+		for i, col := range b.Columns {
+			b.ListCollapse[i] = collapseByName[col.Name]
+		}
+		return nil
+	})
+	if errors.Is(mutErr, board.ErrVersionConflict) {
+		h.handleConflict(w, slug)
+		return
+	}
+	h.renderBoardContent(w, model)
+}
+
 // HandleUpdateBoardSettings handles POST /board/{slug}/settings.
 func (h *Handler) HandleUpdateBoardSettings(w http.ResponseWriter, r *http.Request) {
 	slug := slugFromRequest(r)
@@ -812,6 +900,9 @@ func (h *Handler) HandleUpdateBoardSettings(w http.ResponseWriter, r *http.Reque
 	}
 	if v := r.FormValue("view_mode"); v == "board" || v == "table" {
 		settings.ViewMode = &v
+	}
+	if v := r.FormValue("card_display_mode"); v == "full" || v == "hide" || v == "trim" {
+		settings.CardDisplayMode = &v
 	}
 
 	version := formVersion(r)

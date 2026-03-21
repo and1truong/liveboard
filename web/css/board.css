@@ -1409,6 +1409,38 @@ select:focus {
     flex-shrink: 0;
 }
 
+/* === COLUMN DRAG === */
+.column[draggable] .column-header {
+    cursor: grab;
+}
+
+.column[draggable]:active .column-header {
+    cursor: grabbing;
+}
+
+.column.column-dragging {
+    opacity: 0.4;
+}
+
+.table-group-cards.column-dragging {
+    opacity: 0.4;
+}
+
+.column-drop-indicator {
+    width: 3px;
+    background: var(--color-accent);
+    border-radius: 2px;
+    pointer-events: none;
+    flex-shrink: 0;
+    align-self: stretch;
+}
+
+.column-drop-indicator-horizontal {
+    width: auto;
+    height: 3px;
+    align-self: auto;
+}
+
 /* === CARDS === */
 .card {
     background: var(--color-surface);
@@ -1529,6 +1561,13 @@ select:focus {
     font-size: var(--font-size-sm);
     line-height: 1.4;
     margin-bottom: 6px;
+}
+
+.card-body-trim {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .card-tags {

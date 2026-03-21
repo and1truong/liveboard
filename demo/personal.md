@@ -1,4 +1,5 @@
 ---
+version: 9
 name: Personal
 description: Life stuff outside the SaaS grind
 icon: "\U0001F680"
@@ -8,7 +9,7 @@ list-collapse:
     - true
 settings:
     expand-columns: false
-    view-mode: table
+    view-mode: board
 ---
 
 ## This Week
@@ -16,12 +17,14 @@ settings:
 - [ ] Renew domain names
   priority: high
   due: 2026-03-22
+  Check htruong.com, liveboard.dev, and sideproject.io. Compare prices on Cloudflare vs Namecheap before renewing. The htruong.com domain expires first so prioritize that one. Also check if any new TLDs are worth grabbing while we're at it.
 
 - [ ] Book coworking day pass for Friday
 
 - [ ] Prep for podcast interview
   tags: marketing
   priority: medium
+  Review the host's previous episodes and prepare talking points about LiveBoard's origin story. Make sure to mention the open-source angle and how we handle real-time collaboration. Also prep a quick demo script in case they want a live walkthrough.
 
 ## Someday
 
