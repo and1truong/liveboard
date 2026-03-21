@@ -1585,6 +1585,20 @@ select:focus {
     overflow: hidden;
 }
 
+/* Rendered markdown content */
+.md-content p { margin: 0 0 0.4em; }
+.md-content p:last-child { margin-bottom: 0; }
+.md-content h1, .md-content h2, .md-content h3 { margin: 0.5em 0 0.25em; font-size: 1em; font-weight: 600; color: var(--color-text-primary); }
+.md-content ul, .md-content ol { margin: 0.25em 0; padding-left: 1.4em; }
+.md-content li { margin-bottom: 0.15em; }
+.md-content code { background: var(--color-bg-secondary, rgba(0,0,0,0.06)); padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.9em; }
+.md-content pre { background: var(--color-bg-secondary, rgba(0,0,0,0.06)); padding: 0.5em 0.75em; border-radius: var(--radius-md); overflow-x: auto; margin: 0.4em 0; }
+.md-content pre code { background: none; padding: 0; }
+.md-content a { color: var(--color-accent); text-decoration: underline; }
+.md-content blockquote { border-left: 3px solid var(--color-border); margin: 0.4em 0; padding-left: 0.75em; color: var(--color-text-secondary); }
+.md-content del { opacity: 0.6; }
+.md-content img { max-width: 100%; border-radius: var(--radius-md); }
+
 .card-tags {
     display: flex;
     flex-wrap: wrap;
@@ -2206,6 +2220,31 @@ select:focus {
     outline: 2px solid var(--color-accent);
     outline-offset: -1px;
     border-color: var(--color-accent);
+}
+
+.card-modal-body-preview {
+    padding: 10px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    line-height: 1.5;
+    min-height: 60px;
+}
+
+.card-modal-preview-toggle {
+    margin-left: auto;
+    background: none;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    padding: 2px 8px;
+    cursor: pointer;
+}
+.card-modal-preview-toggle:hover {
+    background: var(--color-bg-secondary, rgba(0,0,0,0.04));
 }
 
 .card-modal-tags-container {

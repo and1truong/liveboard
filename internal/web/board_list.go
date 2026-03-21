@@ -87,8 +87,7 @@ func (h *Handler) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	boardPath := h.ws.BoardPath(name)
 	h.commitWithHandling(boardPath, fmt.Sprintf("Create board: %s", name))
 
-	model, _ := h.boardListModel()
-	renderPartial(w, h.boardGridTpl, "boards-grid", model)
+	w.Header().Set("HX-Redirect", "/board/"+name)
 }
 
 // HandleDeleteBoard handles POST /boards/{slug}/delete — deletes a board.

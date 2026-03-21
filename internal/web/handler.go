@@ -2,6 +2,7 @@
 package web
 
 import (
+	"bytes"
 	"html/template"
 	"log"
 	"net/http"
@@ -10,6 +11,8 @@ import (
 	gitpkg "github.com/and1truong/liveboard/internal/git"
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 	"github.com/and1truong/liveboard/internal/workspace"
+	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/renderer/html"
 )
 
 // Handler manages web handlers and shared dependencies.
@@ -24,6 +27,27 @@ type Handler struct {
 	boardContentTpl *template.Template // partial: board content only
 }
 
+// mdRenderer is a goldmark instance configured for safe HTML output.
+var mdRenderer = goldmark.New(
+	goldmark.WithRendererOptions(
+		html.WithHardWraps(),
+		html.WithXHTML(),
+	),
+)
+
+// funcMap returns the template function map shared by all templates.
+func funcMap() template.FuncMap {
+	return template.FuncMap{
+		"md": func(s string) template.HTML {
+			var buf bytes.Buffer
+			if err := mdRenderer.Convert([]byte(s), &buf); err != nil {
+				return template.HTML(template.HTMLEscapeString(s))
+			}
+			return template.HTML(buf.String()) //nolint:gosec // goldmark output, raw HTML disabled by default
+		},
+	}
+}
+
 // NewHandler creates a new web Handler.
 func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repository) *Handler {
 	h := &Handler{
@@ -33,12 +57,13 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 		SSE: NewSSEBroker(),
 	}
 
-	h.boardListTpl = template.Must(template.ParseFS(tmplfs.FS, "layout.html", "board_list.html"))
-	h.boardViewTpl = template.Must(template.ParseFS(tmplfs.FS, "layout.html", "board_view.html"))
+	fm := funcMap()
+	h.boardListTpl = template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "board_list.html"))
+	h.boardViewTpl = template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "board_view.html"))
 
 	// Partial templates for HTMX responses
-	h.boardGridTpl = template.Must(template.New("boards-grid").ParseFS(tmplfs.FS, "board_list.html"))
-	h.boardContentTpl = template.Must(template.New("board-content").ParseFS(tmplfs.FS, "board_view.html"))
+	h.boardGridTpl = template.Must(template.New("boards-grid").Funcs(fm).ParseFS(tmplfs.FS, "board_list.html"))
+	h.boardContentTpl = template.Must(template.New("board-content").Funcs(fm).ParseFS(tmplfs.FS, "board_view.html"))
 
 	return h
 }

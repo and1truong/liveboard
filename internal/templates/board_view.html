@@ -220,7 +220,7 @@
                             <h4 class="card-title">{{.Title}}</h4>
 
                             {{if and .Body (ne $.Settings.CardDisplayMode "hide")}}
-                            <p class="card-body {{if eq $.Settings.CardDisplayMode "trim"}}card-body-trim{{end}}">{{.Body}}</p>
+                            <div class="card-body md-content {{if eq $.Settings.CardDisplayMode "trim"}}card-body-trim{{end}}">{{.Body | md}}</div>
                             {{end}}
 
                             {{if .Tags}}

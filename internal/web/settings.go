@@ -89,7 +89,7 @@ type SettingsModel struct {
 
 // SettingsHandler returns an http.Handler for the settings page.
 func (h *Handler) SettingsHandler() http.Handler {
-	tpl := template.Must(template.ParseFS(tmplfs.FS, "layout.html", "settings.html"))
+	tpl := template.Must(template.New("layout.html").Funcs(funcMap()).ParseFS(tmplfs.FS, "layout.html", "settings.html"))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		boards, _ := h.ws.ListBoards()
