@@ -208,6 +208,9 @@ func TestDefaultSettings(t *testing.T) {
 	if s.CardPosition != "append" {
 		t.Errorf("CardPosition = %q", s.CardPosition)
 	}
+	if s.SiteName != "LiveBoard" {
+		t.Errorf("SiteName = %q, want 'LiveBoard'", s.SiteName)
+	}
 }
 
 func TestSettingsAPIHandler(t *testing.T) {
@@ -375,6 +378,110 @@ func TestValidColorThemes(t *testing.T) {
 	}
 }
 
+func TestSanitizeSettingsSiteName(t *testing.T) {
+	// Empty → default
+	s := AppSettings{}
+	sanitizeSettings(&s)
+	if s.SiteName != "LiveBoard" {
+		t.Errorf("empty site_name = %q, want 'LiveBoard'", s.SiteName)
+	}
+
+	// Whitespace-only → default
+	s = AppSettings{SiteName: "   "}
+	sanitizeSettings(&s)
+	if s.SiteName != "LiveBoard" {
+		t.Errorf("whitespace site_name = %q, want 'LiveBoard'", s.SiteName)
+	}
+
+	// Trimmed
+	s = AppSettings{SiteName: "  MyBoard  "}
+	sanitizeSettings(&s)
+	if s.SiteName != "MyBoard" {
+		t.Errorf("trimmed site_name = %q, want 'MyBoard'", s.SiteName)
+	}
+
+	// Truncated to 50 runes
+	long := strings.Repeat("あ", 60)
+	s = AppSettings{SiteName: long}
+	sanitizeSettings(&s)
+	if len([]rune(s.SiteName)) != 50 {
+		t.Errorf("truncated site_name rune len = %d, want 50", len([]rune(s.SiteName)))
+	}
+
+	// Exactly 50 runes — no truncation
+	exact := strings.Repeat("x", 50)
+	s = AppSettings{SiteName: exact}
+	sanitizeSettings(&s)
+	if s.SiteName != exact {
+		t.Errorf("50-char site_name was modified")
+	}
+
+	// Valid name passes through
+	s = AppSettings{SiteName: "Acme Corp"}
+	sanitizeSettings(&s)
+	if s.SiteName != "Acme Corp" {
+		t.Errorf("valid site_name = %q", s.SiteName)
+	}
+}
+
+func TestSettingsAPISiteName(t *testing.T) {
+	h := &Handler{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	handler := h.SettingsAPIHandler()
+
+	// Default GET returns "LiveBoard"
+	req := httptest.NewRequest("GET", "/api/settings", nil)
+	w := httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	var got AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&got); err != nil {
+		t.Fatal(err)
+	}
+	if got.SiteName != "LiveBoard" {
+		t.Errorf("default site_name = %q", got.SiteName)
+	}
+
+	// POST custom site name
+	body := `{"site_name":"My Team","theme":"dark","color_theme":"aqua","column_width":280,"sidebar_position":"left","newline_trigger":"shift-enter","card_position":"append"}`
+	req = httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	var saved AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&saved); err != nil {
+		t.Fatal(err)
+	}
+	if saved.SiteName != "My Team" {
+		t.Errorf("saved site_name = %q, want 'My Team'", saved.SiteName)
+	}
+
+	// Verify persisted
+	req = httptest.NewRequest("GET", "/api/settings", nil)
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	var reloaded AppSettings
+	if err := json.NewDecoder(w.Body).Decode(&reloaded); err != nil {
+		t.Fatal(err)
+	}
+	if reloaded.SiteName != "My Team" {
+		t.Errorf("reloaded site_name = %q", reloaded.SiteName)
+	}
+
+	// POST empty site name → defaults to "LiveBoard"
+	body = `{"site_name":"","theme":"dark","color_theme":"aqua","column_width":280,"sidebar_position":"left","newline_trigger":"shift-enter","card_position":"append"}`
+	req = httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
+	w = httptest.NewRecorder()
+	handler.ServeHTTP(w, req)
+
+	if err := json.NewDecoder(w.Body).Decode(&saved); err != nil {
+		t.Fatal(err)
+	}
+	if saved.SiteName != "LiveBoard" {
+		t.Errorf("empty site_name should default to 'LiveBoard', got %q", saved.SiteName)
+	}
+}
+
 func TestSettingsAPIEmptyColumns(t *testing.T) {
 	h := &Handler{ws: &workspace.Workspace{Dir: t.TempDir()}}
 	handler := h.SettingsAPIHandler()
@@ -423,11 +530,35 @@ func TestBoardListModel(t *testing.T) {
 	if model.Title != "LiveBoard" {
 		t.Errorf("title = %q", model.Title)
 	}
+	if model.SiteName != "LiveBoard" {
+		t.Errorf("site_name = %q, want 'LiveBoard'", model.SiteName)
+	}
 	if len(model.Boards) != 1 {
 		t.Fatalf("boards = %d, want 1", len(model.Boards))
 	}
 	if model.Boards[0].Name != "test-board" {
 		t.Errorf("board name = %q", model.Boards[0].Name)
+	}
+}
+
+func TestBoardListModelCustomSiteName(t *testing.T) {
+	h, _ := setupHandlerWithBoard(t)
+
+	s := h.loadSettings()
+	s.SiteName = "MyKanban"
+	if err := h.saveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+
+	model, err := h.boardListModel()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.Title != "MyKanban" {
+		t.Errorf("title = %q, want 'MyKanban'", model.Title)
+	}
+	if model.SiteName != "MyKanban" {
+		t.Errorf("site_name = %q, want 'MyKanban'", model.SiteName)
 	}
 }
 
@@ -447,6 +578,12 @@ func TestBoardViewModel(t *testing.T) {
 	if model.Title == "" {
 		t.Error("title is empty")
 	}
+	if model.SiteName != "LiveBoard" {
+		t.Errorf("site_name = %q, want 'LiveBoard'", model.SiteName)
+	}
+	if !strings.Contains(model.Title, "LiveBoard") {
+		t.Errorf("title %q should contain 'LiveBoard'", model.Title)
+	}
 
 	// Nonexistent board
 	model, err = h.boardViewModel("nonexistent")
@@ -455,6 +592,27 @@ func TestBoardViewModel(t *testing.T) {
 	}
 	if model.Error == "" {
 		t.Error("expected error for nonexistent board")
+	}
+}
+
+func TestBoardViewModelCustomSiteName(t *testing.T) {
+	h, slug := setupHandlerWithBoard(t)
+
+	s := h.loadSettings()
+	s.SiteName = "TeamBoard"
+	if err := h.saveSettings(s); err != nil {
+		t.Fatal(err)
+	}
+
+	model, err := h.boardViewModel(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if model.SiteName != "TeamBoard" {
+		t.Errorf("site_name = %q, want 'TeamBoard'", model.SiteName)
+	}
+	if !strings.Contains(model.Title, "TeamBoard") {
+		t.Errorf("title %q should contain 'TeamBoard'", model.Title)
 	}
 }
 

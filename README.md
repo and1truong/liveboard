@@ -48,6 +48,18 @@ go run ./cmd/liveboard/... serve --dir ./demo --port 7070
 
 -----
 
+## Configuration
+
+### Environment Variables
+
+| Variable | Default | Description |
+|---|---|---|
+| `NO_CACHE` | _(unset)_ | When set to any non-empty value, disables `Cache-Control` headers on static assets (`/static/*`). Useful during development to avoid stale CSS/JS in the browser. `make dev` sets `NO_CACHE=1` automatically. |
+
+In production (or when running `liveboard serve` directly), static assets are served with `Cache-Control: public, max-age=3600`.
+
+-----
+
 ## Board Format
 
 A board is a single `.md` file. H2 headings are columns, list items are cards.

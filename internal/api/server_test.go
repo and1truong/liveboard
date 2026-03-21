@@ -954,3 +954,42 @@ func TestJSONContentTypeHeader(t *testing.T) {
 	}
 	_ = resp.Body.Close()
 }
+
+func TestStaticCacheHeaders(t *testing.T) {
+	dir := t.TempDir()
+	ws := workspace.Open(dir)
+
+	t.Run("default serves with cache headers", func(t *testing.T) {
+		srv := NewServer(ws, ws.Engine, nil, false)
+		ts := httptest.NewServer(srv.Router())
+		defer ts.Close()
+
+		resp, err := http.Get(ts.URL + "/static/css/board.css")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		got := resp.Header.Get("Cache-Control")
+		if got != "public, max-age=3600" {
+			t.Fatalf("expected 'public, max-age=3600', got %q", got)
+		}
+	})
+
+	t.Run("noCache disables cache headers", func(t *testing.T) {
+		srv := NewServer(ws, ws.Engine, nil, true)
+		ts := httptest.NewServer(srv.Router())
+		defer ts.Close()
+
+		resp, err := http.Get(ts.URL + "/static/css/board.css")
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer resp.Body.Close()
+
+		got := resp.Header.Get("Cache-Control")
+		if got != "no-cache, no-store" {
+			t.Fatalf("expected 'no-cache, no-store', got %q", got)
+		}
+	})
+}
