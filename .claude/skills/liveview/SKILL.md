@@ -246,6 +246,39 @@ input.addEventListener("click", function () { showDropdown(input.value); });
 
 **Why both?** Dropdown item selection typically uses `mousedown` with `preventDefault()` to avoid triggering blur on the input. This means the input never loses focus, so clicking it again won't re-fire `focus`. The `click` listener ensures the dropdown always reopens.
 
+## Event Listener Cleanup After LiveView Re-renders
+
+**Critical:** `live:updated` only fires on elements with `live-hook` attribute, NOT on `document`. Do NOT use `document.addEventListener("live:updated", ...)` — it will never fire. Instead, add init functions to the `attach()` function in `drag.js`, which is called by the MutationObserver after any DOM change.
+
+LiveView re-renders replace DOM elements. Any JS init function that re-runs after DOM changes (via `attach()` or MutationObserver) will **stack duplicate listeners**, causing handlers to fire multiple times and cancel each other out (e.g., open then immediately close a panel).
+
+**Always use `AbortController`** to tear down previous listeners before re-attaching:
+
+```javascript
+function initMyFeature() {
+    var container = document.querySelector(".my-container");
+    if (!container) return;
+
+    // Abort previous listeners
+    if (container._myAbort) container._myAbort.abort();
+    var ac = new AbortController();
+    container._myAbort = ac;
+    var opts = { signal: ac.signal };
+
+    // All listeners use opts — they auto-remove when ac.abort() is called
+    container.querySelector(".btn").addEventListener("click", handler, opts);
+    document.addEventListener("keydown", escHandler, opts);
+}
+
+// Add to attach() — NOT to document.addEventListener("live:updated", ...)
+function attach() {
+    // ... other attach calls ...
+    initMyFeature();
+}
+```
+
+This pattern is required for **every** `initX()` function called from `attach()`. Without it, each DOM mutation adds another copy of every listener.
+
 ## Common Patterns in This Project
 
 - **UI state toggles**: Use model fields like `ShowAddCard string` to control conditional rendering

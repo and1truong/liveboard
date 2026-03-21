@@ -1833,6 +1833,7 @@
     attachCardClick();
     attachColumnMenus();
     attachBoardEdit();
+    initBoardSettingsPanel();
     // Cards: draggable
     document.querySelectorAll(".card[draggable]").forEach(function (card) {
       if (card.dataset.dragWired) return;
@@ -1987,6 +1988,12 @@
     var boardView = document.querySelector(".board-view");
     if (!boardView) return;
 
+    // Abort previous listeners to prevent duplicates after LiveView re-renders
+    if (boardView._settingsAbort) boardView._settingsAbort.abort();
+    var ac = new AbortController();
+    boardView._settingsAbort = ac;
+    var opts = { signal: ac.signal };
+
     var gearBtn = boardView.querySelector(".board-settings-btn");
     var backdrop = boardView.querySelector(".board-settings-backdrop");
     var panel = boardView.querySelector(".board-settings-panel");
@@ -2050,21 +2057,21 @@
     gearBtn.addEventListener("click", function () {
       var isOpen = backdrop.style.display !== "none";
       if (isOpen) closeSettings(); else openSettings();
-    });
+    }, opts);
 
     if (closeBtn) {
-      closeBtn.addEventListener("click", closeSettings);
+      closeBtn.addEventListener("click", closeSettings, opts);
     }
 
     backdrop.addEventListener("click", function (e) {
       if (e.target === backdrop) closeSettings();
-    });
+    }, opts);
 
     document.addEventListener("keydown", function (e) {
       if (e.key === "Escape" && backdrop.style.display !== "none") {
         closeSettings();
       }
-    });
+    }, opts);
 
     // On change: send update
     [bsShowCheckbox, bsCardPosition, bsExpandColumns, bsViewMode].forEach(function (el) {
@@ -2072,7 +2079,7 @@
         el.addEventListener("change", function () {
           updateResetButtons();
           sendBoardSettings();
-        });
+        }, opts);
       }
     });
 
@@ -2084,22 +2091,14 @@
         if (setting === "card_position" && bsCardPosition) bsCardPosition.value = "";
         updateResetButtons();
         sendBoardSettings();
-      });
+      }, opts);
     });
 
     populateFromData();
   }
 
-  // Initialize board settings on load and after LiveView updates
-  function initBoardSettings() {
-    initBoardSettingsPanel();
-  }
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", initBoardSettings);
-  } else {
-    initBoardSettings();
-  }
-  document.addEventListener("live:updated", initBoardSettings);
+  // initBoardSettingsPanel is called from attach(), which runs on load,
+  // live:updated, and MutationObserver — no separate init needed.
 
   // ── New Line Trigger ──────────────────────────────────────────────
   // Adds keydown handling to textareas based on the newline trigger setting.
