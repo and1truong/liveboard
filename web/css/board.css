@@ -489,24 +489,6 @@ html[data-color-theme="macos"][data-theme="dark"] {
     margin-top: 2px;
 }
 
-.settings-control select,
-.settings-control input[type="number"] {
-    padding: 5px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
-    background: var(--color-bg);
-    color: var(--color-text-primary);
-    font-family: var(--font-sans);
-}
-
-.settings-control select:focus,
-.settings-control input[type="number"]:focus {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -1px;
-    border-color: var(--color-accent);
-}
-
 .settings-control input[type="number"] {
     width: 80px;
 }
@@ -541,6 +523,33 @@ body {
     color: var(--color-text-primary);
     line-height: 1.5;
     overflow: hidden;
+}
+
+/* === FORM ELEMENTS BASE === */
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="url"],
+textarea,
+select {
+    padding: 6px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+input[type="email"]:focus,
+input[type="url"]:focus,
+textarea:focus,
+select:focus {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -1px;
+    border-color: var(--color-accent);
 }
 
 /* === APP SHELL === */
@@ -1006,18 +1015,6 @@ body {
 
 .create-board-form input[type="text"] {
     flex: 1;
-    padding: 5px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
-    background: var(--color-bg);
-    color: var(--color-text-primary);
-}
-
-.create-board-form input[type="text"]:focus {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -1px;
-    border-color: var(--color-accent);
 }
 
 /* === BUTTONS === */
@@ -1280,18 +1277,7 @@ body {
 }
 
 .fab-column-form input[type="text"] {
-    padding: 6px 10px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
-    font-size: var(--font-size-sm);
     background: var(--color-surface);
-    color: var(--color-text-primary);
-}
-
-.fab-column-form input[type="text"]:focus {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -1px;
-    border-color: var(--color-accent);
 }
 
 .column.collapsed {
@@ -1606,17 +1592,8 @@ body {
 
 .add-card-form input[type="text"] {
     padding: 10px 12px;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
     font-size: var(--font-size-base);
     background: var(--color-surface);
-    color: var(--color-text-primary);
-}
-
-.add-card-form input[type="text"]:focus {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -1px;
-    border-color: var(--color-accent);
 }
 
 /* === ERROR === */
@@ -2052,17 +2029,7 @@ body {
 
 .memberspicker-input {
     flex: 1;
-    padding: 5px 8px;
-    border: 1px solid var(--color-border);
-    border-radius: 4px;
     font-size: var(--font-size-xs);
-    background: var(--color-bg);
-    color: var(--color-text-primary);
-}
-
-.memberspicker-input:focus {
-    outline: none;
-    border-color: var(--color-accent);
 }
 
 .memberspicker-add-btn {
@@ -2892,4 +2859,79 @@ body {
     background: var(--color-accent);
     border-radius: 1px;
     margin: 0;
+}
+
+/* === CMD+K COMMAND PALETTE === */
+.cmd-palette-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: 20vh;
+}
+.cmd-palette {
+    width: 100%;
+    max-width: 480px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.2);
+    overflow: hidden;
+}
+.cmd-palette-input-wrapper {
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--color-border);
+}
+.cmd-palette-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md, 8px);
+    background: transparent;
+    color: var(--color-text-primary);
+    font-size: 15px;
+    outline: none;
+    box-sizing: border-box;
+}
+.cmd-palette-input::placeholder {
+    color: var(--color-text-tertiary, var(--color-text-secondary));
+}
+.cmd-palette-list {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 8px;
+}
+.cmd-palette-separator {
+    height: 1px;
+    background: var(--color-border);
+    margin: 6px 0;
+}
+.cmd-palette-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 8px);
+    cursor: pointer;
+    color: var(--color-text-primary);
+    font-size: 14px;
+}
+.cmd-palette-item:hover,
+.cmd-palette-item.active {
+    background: var(--color-column-bg);
+}
+.cmd-palette-item-icon {
+    font-size: 18px;
+    width: 26px;
+    text-align: center;
+    flex-shrink: 0;
+}
+.cmd-palette-item-name {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }

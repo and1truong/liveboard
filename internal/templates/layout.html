@@ -201,5 +201,21 @@
             }
         });
     </script>
+
+    <!-- Cmd+K Command Palette -->
+    <div id="cmdPalette" class="cmd-palette-overlay" style="display:none">
+        <div class="cmd-palette">
+            <div class="cmd-palette-input-wrapper">
+                <input type="text" id="cmdPaletteInput" class="cmd-palette-input" placeholder="Switch to…" autocomplete="off" spellcheck="false">
+            </div>
+            <div id="cmdPaletteList" class="cmd-palette-list"></div>
+        </div>
+    </div>
+    <script>
+        window.__cmdPaletteData = {
+            boards: [{{range .Boards}}{name:"{{.Name}}",slug:"{{.Slug}}",icon:"{{.Icon}}"},{{end}}],
+            activeSlug: "{{.BoardSlug}}"
+        };
+    </script>
 </body>
 </html>
