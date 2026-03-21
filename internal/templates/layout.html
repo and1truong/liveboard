@@ -38,7 +38,8 @@
             link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
         });
     </script>
-    <script src="/live.js"></script>
+    <script src="/static/js/htmx.min.js"></script>
+    <script src="/static/js/htmx-sse.js"></script>
     <script src="/static/js/drag.js" defer></script>
 </head>
 <body>
@@ -95,10 +96,6 @@
                         <span class="brand-name">{{.SiteName}}</span>
                     </a>
                     <div class="sidebar-footer-right">
-                        <div class="connection-status">
-                            <span class="live-connected">&#9679;</span>
-                            <span class="live-disconnected">&#9679;</span>
-                        </div>
                         <button class="sidebar-menu-trigger" id="sidebarMenuTrigger" title="Menu">
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 7.5L6 10L9 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4.5L6 2L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
@@ -157,6 +154,10 @@
             var grid = document.createElement('div');
             grid.className = 'emoji-picker-grid';
 
+            // Determine the correct endpoint based on current page
+            var isOnBoard = window.location.pathname.indexOf('/board/') === 0;
+            var iconUrl = isOnBoard ? '/board/' + slug + '/icon' : '/boards/' + slug + '/icon';
+
             // Add clear option
             var clearBtn = document.createElement('button');
             clearBtn.className = 'emoji-picker-item emoji-picker-clear';
@@ -165,7 +166,7 @@
             clearBtn.onclick = function(e) {
                 e.preventDefault();
                 e.stopPropagation();
-                window.Live.send('set-board-icon', {name: slug, icon: ''});
+                htmx.ajax('POST', iconUrl, {values: {name: slug, icon: ''}, target: '#board-content', swap: 'innerHTML'});
                 popup.remove();
             };
             grid.appendChild(clearBtn);
@@ -177,7 +178,7 @@
                 btn.onclick = function(e) {
                     e.preventDefault();
                     e.stopPropagation();
-                    window.Live.send('set-board-icon', {name: slug, icon: emoji});
+                    htmx.ajax('POST', iconUrl, {values: {name: slug, icon: emoji}, target: '#board-content', swap: 'innerHTML'});
                     popup.remove();
                 };
                 grid.appendChild(btn);

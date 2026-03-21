@@ -1,12 +1,10 @@
 package web
 
 import (
-	"context"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
-
-	"github.com/jfyne/live"
 
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -63,66 +61,81 @@ func (h *Handler) boardListModel() (BoardListModel, error) {
 	return BoardListModel{Title: siteName, SiteName: siteName, Boards: toBoardSummaries(boards)}, nil
 }
 
-// mountBoardList initializes the board list model.
-func (h *Handler) mountBoardList(_ context.Context, _ *live.Socket) (interface{}, error) {
-	return h.boardListModel()
+// BoardListPage handles GET / — renders the full board list page.
+func (h *Handler) BoardListPage(w http.ResponseWriter, _ *http.Request) {
+	model, _ := h.boardListModel()
+	renderFullPage(w, h.boardListTpl, model)
 }
 
-// handleParams handles parameter changes (e.g., URL params).
-func (h *Handler) handleParams(_ context.Context, _ *live.Socket, _ live.Params) (interface{}, error) {
-	return h.boardListModel()
-}
-
-// handleCreateBoard creates a new board.
-func (h *Handler) handleCreateBoard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	name, ok := p["name"].(string)
-	if !ok || name == "" {
-		return BoardListModel{Error: "Board name is required"}, nil
+// HandleCreateBoard handles POST /boards/new — creates a board and returns the boards grid partial.
+func (h *Handler) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	if name == "" {
+		model, _ := h.boardListModel()
+		model.Error = "Board name is required"
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
 	}
 
-	_, err := h.ws.CreateBoard(name)
-	if err != nil {
-		return BoardListModel{Error: err.Error()}, nil
+	if _, err := h.ws.CreateBoard(name); err != nil {
+		model, _ := h.boardListModel()
+		model.Error = err.Error()
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
 	}
 
 	boardPath := h.ws.BoardPath(name)
 	h.commitWithHandling(boardPath, fmt.Sprintf("Create board: %s", name))
 
-	return h.boardListModel()
+	model, _ := h.boardListModel()
+	renderPartial(w, h.boardGridTpl, "boards-grid", model)
 }
 
-// handleSetBoardIconList sets the emoji icon for a board (from the board list page).
-func (h *Handler) handleSetBoardIconList(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	slug, ok := slugFromParams(p)
-	if !ok || slug == "" {
-		return BoardListModel{Error: "Board name is required"}, nil
+// HandleDeleteBoard handles POST /boards/{slug}/delete — deletes a board.
+func (h *Handler) HandleDeleteBoard(w http.ResponseWriter, r *http.Request) {
+	name := r.FormValue("name")
+	if name == "" {
+		model, _ := h.boardListModel()
+		model.Error = "Board name is required"
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
 	}
 
-	icon, _ := p["icon"].(string)
-
-	boardPath := h.ws.BoardPath(slug)
-	if err := h.eng.UpdateBoardIcon(boardPath, icon); err != nil {
-		return BoardListModel{Error: err.Error()}, nil
-	}
-	h.commitWithHandling(boardPath, "Set board icon")
-
-	return h.boardListModel()
-}
-
-// handleDeleteBoard deletes a board.
-func (h *Handler) handleDeleteBoard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	name, ok := p["name"].(string)
-	if !ok || name == "" {
-		return BoardListModel{Error: "Board name is required"}, nil
-	}
-
-	err := h.ws.DeleteBoard(name)
-	if err != nil {
-		return BoardListModel{Error: err.Error()}, nil
+	if err := h.ws.DeleteBoard(name); err != nil {
+		model, _ := h.boardListModel()
+		model.Error = err.Error()
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
 	}
 
 	boardPath := h.ws.BoardPath(name)
 	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete board: %s", name))
 
-	return h.boardListModel()
+	model, _ := h.boardListModel()
+	renderPartial(w, h.boardGridTpl, "boards-grid", model)
+}
+
+// HandleSetBoardIconList handles POST /boards/{slug}/icon from the board list page.
+func (h *Handler) HandleSetBoardIconList(w http.ResponseWriter, r *http.Request) {
+	slug := r.FormValue("name")
+	if slug == "" {
+		model, _ := h.boardListModel()
+		model.Error = "Board name is required"
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
+	}
+
+	icon := r.FormValue("icon")
+
+	boardPath := h.ws.BoardPath(slug)
+	if err := h.eng.UpdateBoardIcon(boardPath, icon); err != nil {
+		model, _ := h.boardListModel()
+		model.Error = err.Error()
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
+	}
+	h.commitWithHandling(boardPath, "Set board icon")
+
+	model, _ := h.boardListModel()
+	renderPartial(w, h.boardGridTpl, "boards-grid", model)
 }

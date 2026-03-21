@@ -5,7 +5,6 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
-	"github.com/jfyne/live"
 
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
@@ -16,22 +15,22 @@ import (
 
 // Server is the REST API server for LiveBoard.
 type Server struct {
-	ws          *workspace.Workspace
-	eng         *board.Engine
-	git         *gitpkg.Repository
-	liveHandler *web.Handler
-	router      chi.Router
-	noCache     bool
+	ws         *workspace.Workspace
+	eng        *board.Engine
+	git        *gitpkg.Repository
+	webHandler *web.Handler
+	router     chi.Router
+	noCache    bool
 }
 
 // NewServer creates a Server with all routes registered.
 func NewServer(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repository, noCache bool) *Server {
 	s := &Server{
-		ws:          ws,
-		eng:         eng,
-		git:         git,
-		liveHandler: web.NewHandler(ws, eng, git),
-		noCache:     noCache,
+		ws:         ws,
+		eng:        eng,
+		git:        git,
+		webHandler: web.NewHandler(ws, eng, git),
+		noCache:    noCache,
 	}
 	s.router = s.buildRouter()
 	return s
@@ -63,14 +62,32 @@ func (s *Server) buildRouter() chi.Router {
 		http.StripPrefix("/static/", http.FileServer(http.FS(staticweb.FS))).ServeHTTP(w, req)
 	})
 
-	// LiveView JavaScript (required)
-	r.Handle("/live.js", live.Javascript{})
+	// Web UI routes (HTMX)
+	r.Get("/", s.webHandler.BoardListPage)
+	r.Post("/boards/new", s.webHandler.HandleCreateBoard)
+	r.Post("/boards/{slug}/delete", s.webHandler.HandleDeleteBoard)
+	r.Post("/boards/{slug}/icon", s.webHandler.HandleSetBoardIconList)
 
-	// Web UI routes
-	r.Handle("/", s.liveHandler.BoardListHandler())
-	r.Handle("/board/{name}", s.liveHandler.BoardViewHandler())
-	r.Handle("/settings", s.liveHandler.SettingsHandler())
-	r.Handle("/api/settings", s.liveHandler.SettingsAPIHandler())
+	r.Get("/board/{slug}", s.webHandler.BoardViewPage)
+	r.Get("/board/{slug}/content", s.webHandler.BoardContent)
+	r.Get("/board/{slug}/events", s.webHandler.SSE.ServeHTTP)
+	r.Post("/board/{slug}/cards", s.webHandler.HandleCreateCard)
+	r.Post("/board/{slug}/cards/move", s.webHandler.HandleMoveCard)
+	r.Post("/board/{slug}/cards/reorder", s.webHandler.HandleReorderCard)
+	r.Post("/board/{slug}/cards/delete", s.webHandler.HandleDeleteCard)
+	r.Post("/board/{slug}/cards/complete", s.webHandler.HandleToggleComplete)
+	r.Post("/board/{slug}/cards/edit", s.webHandler.HandleEditCard)
+	r.Post("/board/{slug}/columns", s.webHandler.HandleCreateColumn)
+	r.Post("/board/{slug}/columns/rename", s.webHandler.HandleRenameColumn)
+	r.Post("/board/{slug}/columns/delete", s.webHandler.HandleDeleteColumn)
+	r.Post("/board/{slug}/columns/collapse", s.webHandler.HandleToggleColumnCollapse)
+	r.Post("/board/{slug}/columns/sort", s.webHandler.HandleSortColumn)
+	r.Post("/board/{slug}/meta", s.webHandler.HandleUpdateBoardMeta)
+	r.Post("/board/{slug}/settings", s.webHandler.HandleUpdateBoardSettings)
+	r.Post("/board/{slug}/icon", s.webHandler.HandleSetBoardIcon)
+
+	r.Handle("/settings", s.webHandler.SettingsHandler())
+	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())
 
 	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {

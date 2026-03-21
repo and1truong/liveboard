@@ -1,5 +1,12 @@
 {{define "content"}}
-<div class="board-view" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}">
+<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}">
+    <div id="board-content" hx-get="/board/{{.BoardSlug}}/content" hx-trigger="sse:board-update" hx-swap="innerHTML">
+    {{template "board-content" .}}
+    </div>
+</div>
+{{end}}
+
+{{define "board-content"}}
     {{if .Error}}
     <div class="board-error-banner">{{.Error}}</div>
     {{end}}
@@ -96,16 +103,15 @@
                 {{if ne .Name $column.Name}}
                 <button class="move-trigger"
                     data-target="{{.Name}}"
-                    live-click="move-card"
-                    live-value-col_idx="{{$i}}"
-                    live-value-card_idx="{{$j}}"
-                    live-value-target_column="{{.Name}}"
-                    live-value-name="{{$.BoardSlug}}"></button>
+                    hx-post="/board/{{$.BoardSlug}}/cards/move"
+                    hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}","target_column":"{{.Name}}"}'
+                    hx-target="#board-content"
+                    hx-swap="innerHTML"></button>
                 {{end}}
                 {{end}}
-                <button class="delete-trigger" live-click="delete-card" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}"></button>
+                <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>
                 <div class="table-cell table-cell-list">{{if eq $j 0}}{{$column.Name}}{{end}}</div>
-                <div class="table-cell table-cell-status">{{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}</div>
+                <div class="table-cell table-cell-status">{{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}</div>
                 <div class="table-cell table-cell-card">
                     <div class="table-card-title">
                         <span>{{.Title}}</span>
@@ -123,7 +129,8 @@
             <div class="table-row table-row-add">
                 <div class="table-cell table-cell-list">{{if eq (len $column.Cards) 0}}{{$column.Name}}{{end}}</div>
                 <div class="table-cell table-cell-card add-card-toggle">
-                    <form live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form" style="display:none" onsubmit="var w=this.closest('.add-card-toggle');requestAnimationFrame(function(){w.querySelector('input[name=title]').value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''})">
+                    <form hx-post="/board/{{$.BoardSlug}}/cards" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none" onsubmit="var w=this.closest('.add-card-toggle');requestAnimationFrame(function(){w.querySelector('input[name=title]').value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''})">
+                        <input type="hidden" name="column" value="{{$column.Name}}">
                         <input type="text" name="title" placeholder="Enter a title..." required onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''}">
                     </form>
                     <a href="javascript:void(0)" class="table-add-card-link" onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';this.style.display='none';w.querySelector('input[name=title]').focus()">+ Add new...</a>
@@ -137,7 +144,7 @@
         {{range $i, $column := .Board.Columns}}
         <div class="column {{if $column.Collapsed}}collapsed{{end}}">
             <div class="column-header">
-                <button class="column-collapse-btn" live-click="toggle-column-collapse" live-value-col_index="{{$i}}" live-value-name="{{$.BoardSlug}}" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
+                <button class="column-collapse-btn" hx-post="/board/{{$.BoardSlug}}/columns/collapse" hx-vals='{"col_index":"{{$i}}"}' hx-target="#board-content" hx-swap="innerHTML" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
                 {{if $column.Collapsed}}<span class="column-card-count">{{len $column.Cards}}</span>{{end}}
                 <h3>{{$column.Name}}</h3>
                 <button class="column-menu-btn" data-column-name="{{$column.Name}}" title="Column options">&#8943;</button>
@@ -150,16 +157,15 @@
                     {{if ne .Name $column.Name}}
                     <button class="move-trigger"
                         data-target="{{.Name}}"
-                        live-click="move-card"
-                        live-value-col_idx="{{$i}}"
-                        live-value-card_idx="{{$j}}"
-                        live-value-target_column="{{.Name}}"
-                        live-value-name="{{$.BoardSlug}}"></button>
+                        hx-post="/board/{{$.BoardSlug}}/cards/move"
+                        hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}","target_column":"{{.Name}}"}'
+                        hx-target="#board-content"
+                        hx-swap="innerHTML"></button>
                     {{end}}
                     {{end}}
-                    <button class="delete-trigger" live-click="delete-card" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}"></button>
+                    <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>
                     <div class="card-layout">
-                        {{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" live-click="toggle-complete" live-value-col_idx="{{$i}}" live-value-card_idx="{{$j}}" live-value-name="{{$.BoardSlug}}" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}
+                        {{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}
                         <div class="card-content">
                             <h4 class="card-title">{{.Title}}</h4>
 
@@ -193,7 +199,8 @@
             </div>
 
             <div class="add-card-toggle">
-                <form live-submit="create-card" live-value-column="{{$column.Name}}" live-value-name="{{$.BoardSlug}}" class="add-card-form" style="display:none" onsubmit="var w=this.closest('.add-card-toggle');requestAnimationFrame(function(){w.querySelector('input[name=title]').value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''})">
+                <form hx-post="/board/{{$.BoardSlug}}/cards" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none" onsubmit="var w=this.closest('.add-card-toggle');requestAnimationFrame(function(){w.querySelector('input[name=title]').value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''})">
+                    <input type="hidden" name="column" value="{{$column.Name}}">
                     <input type="text" name="title" placeholder="Enter a title..." required onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''}">
                 </form>
                 <button onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';w.querySelector('.btn-add-card').style.display='none';w.querySelector('input[name=title]').focus()" class="btn-add-card">+ Add Card</button>
@@ -207,12 +214,11 @@
 
     <div class="fab-add-column" onclick="var f=this.querySelector('.fab-column-form'),ic=this.querySelector('.fab-icon'),open=f.style.display==='flex';f.style.display=open?'none':'flex';ic.style.transform=open?'':'rotate(45deg)';if(!open)f.querySelector('input').focus()">
         <span class="fab-icon">+</span>
-        <form live-submit="create-column" live-value-name="{{.BoardSlug}}" class="fab-column-form" style="display:none" onclick="event.stopPropagation()">
+        <form hx-post="/board/{{.BoardSlug}}/columns" hx-target="#board-content" hx-swap="innerHTML" class="fab-column-form" style="display:none" onclick="event.stopPropagation()">
             <input type="text" name="column_name" placeholder="Column name" required
                    onkeydown="if(event.key==='Escape'){this.value='';var p=this.closest('.fab-add-column');p.querySelector('.fab-column-form').style.display='none';p.querySelector('.fab-icon').style.transform=''}">
             <button type="submit" class="btn-small">Add</button>
         </form>
     </div>
     {{end}}
-</div>
 {{end}}

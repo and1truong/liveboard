@@ -1,15 +1,10 @@
-// Package web provides the LiveView web UI for LiveBoard.
+// Package web provides the HTMX-powered web UI for LiveBoard.
 package web
 
 import (
-	"bytes"
-	"context"
 	"html/template"
-	"io"
 	"log"
 	"net/http"
-
-	"github.com/jfyne/live"
 
 	"github.com/and1truong/liveboard/internal/board"
 	gitpkg "github.com/and1truong/liveboard/internal/git"
@@ -17,14 +12,16 @@ import (
 	"github.com/and1truong/liveboard/internal/workspace"
 )
 
-// Handler manages LiveView handlers and shared dependencies.
+// Handler manages web handlers and shared dependencies.
 type Handler struct {
-	ws           *workspace.Workspace
-	eng          *board.Engine
-	git          *gitpkg.Repository
-	pubsub       *live.PubSub
-	boardListTpl *template.Template
-	boardViewTpl *template.Template
+	ws              *workspace.Workspace
+	eng             *board.Engine
+	git             *gitpkg.Repository
+	SSE             *SSEBroker
+	boardListTpl    *template.Template
+	boardViewTpl    *template.Template
+	boardGridTpl    *template.Template // partial: boards grid only
+	boardContentTpl *template.Template // partial: board content only
 }
 
 // NewHandler creates a new web Handler.
@@ -33,84 +30,40 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 		ws:  ws,
 		eng: eng,
 		git: git,
+		SSE: NewSSEBroker(),
 	}
-
-	// Create PubSub for real-time updates
-	ctx := context.Background()
-	h.pubsub = live.NewPubSub(ctx, live.NewLocalTransport())
 
 	h.boardListTpl = template.Must(template.ParseFS(tmplfs.FS, "layout.html", "board_list.html"))
 	h.boardViewTpl = template.Must(template.ParseFS(tmplfs.FS, "layout.html", "board_view.html"))
 
+	// Partial templates for HTMX responses
+	h.boardGridTpl = template.Must(template.New("boards-grid").ParseFS(tmplfs.FS, "board_list.html"))
+	h.boardContentTpl = template.Must(template.New("board-content").ParseFS(tmplfs.FS, "board_view.html"))
+
 	return h
 }
 
-// withAssignsRenderer is like live.WithTemplateRenderer but passes rc.Assigns
-// (the model) directly to the template instead of the full RenderContext.
-// This lets templates access model fields directly (e.g. {{.Title}}, {{.Board}}).
-func withAssignsRenderer(t *template.Template) live.HandlerConfig {
-	return func(h *live.Handler) error {
-		h.RenderHandler = func(_ context.Context, rc *live.RenderContext) (io.Reader, error) {
-			var buf bytes.Buffer
-			if err := t.Execute(&buf, rc.Assigns); err != nil {
-				return nil, err
-			}
-			return &buf, nil
-		}
-		return nil
+// renderFullPage renders a full page (layout + content) to the response writer.
+func renderFullPage(w http.ResponseWriter, tpl *template.Template, model interface{}) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := tpl.Execute(w, model); err != nil {
+		log.Printf("template render error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 	}
 }
 
-// BoardListHandler returns an http.Handler for the board list page.
-func (h *Handler) BoardListHandler() http.Handler {
-	boardListHandler := live.NewHandler(
-		withAssignsRenderer(h.boardListTpl),
-	)
-	boardListHandler.MountHandler = h.mountBoardList
-	boardListHandler.HandleEvent("create-board", h.handleCreateBoard)
-	boardListHandler.HandleEvent("delete-board", h.handleDeleteBoard)
-	boardListHandler.HandleEvent("set-board-icon", h.handleSetBoardIconList)
-	boardListHandler.HandleParams(h.handleParams)
-
-	return live.NewHttpHandler(context.Background(), boardListHandler,
-		live.WithSocketStateStore(live.NewMemorySocketStateStore(context.Background())),
-	)
+// renderPartial renders a named template block to the response writer.
+func renderPartial(w http.ResponseWriter, tpl *template.Template, name string, model interface{}) {
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if err := tpl.ExecuteTemplate(w, name, model); err != nil {
+		log.Printf("partial render error: %v", err)
+		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	}
 }
 
-// BoardViewHandler returns an http.Handler for a single board view.
-func (h *Handler) BoardViewHandler() http.Handler {
-	boardViewHandler := live.NewHandler(
-		withAssignsRenderer(h.boardViewTpl),
-	)
-	boardViewHandler.MountHandler = h.mountBoardView
-	boardViewHandler.HandleEvent("create-card", h.handleCreateCard)
-	boardViewHandler.HandleEvent("move-card", h.handleMoveCard)
-	boardViewHandler.HandleEvent("reorder-card", h.handleReorderCard)
-	boardViewHandler.HandleEvent("delete-card", h.handleDeleteCard)
-	boardViewHandler.HandleEvent("toggle-complete", h.handleToggleComplete)
-	boardViewHandler.HandleEvent("create-column", h.handleCreateColumn)
-	boardViewHandler.HandleEvent("edit-card", h.handleEditCard)
-	boardViewHandler.HandleEvent("rename-column", h.handleRenameColumn)
-	boardViewHandler.HandleEvent("delete-column", h.handleDeleteColumn)
-	boardViewHandler.HandleEvent("update-board-meta", h.handleUpdateBoardMeta)
-	boardViewHandler.HandleEvent("toggle-column-collapse", h.handleToggleColumnCollapse)
-	boardViewHandler.HandleEvent("sort-column", h.handleSortColumn)
-	boardViewHandler.HandleEvent("update-board-settings", h.handleUpdateBoardSettings)
-	boardViewHandler.HandleEvent("set-board-icon", h.handleSetBoardIcon)
-	boardViewHandler.HandleSelf("board_update", h.handleBoardUpdate)
-
-	return live.NewHttpHandler(context.Background(), boardViewHandler,
-		live.WithSocketStateStore(live.NewMemorySocketStateStore(context.Background())),
-	)
-}
-
-// publishBoardEvent broadcasts a board update to all subscribers.
-func (h *Handler) publishBoardEvent(boardName string) {
-	ctx := context.Background()
-	_ = h.pubsub.Publish(ctx, "board_update", live.Event{
-		T:        "board_update",
-		SelfData: boardName,
-	})
+// publishBoardEvent broadcasts a board update via SSE.
+func (h *Handler) publishBoardEvent(slug string) {
+	h.SSE.Publish(slug)
 }
 
 // commitWithHandling performs a git commit and logs any errors.

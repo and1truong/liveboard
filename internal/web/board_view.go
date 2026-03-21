@@ -1,13 +1,12 @@
 package web
 
 import (
-	"context"
 	"fmt"
-	"net/url"
+	"net/http"
 	"strconv"
 	"strings"
 
-	"github.com/jfyne/live"
+	"github.com/go-chi/chi/v5"
 
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -37,7 +36,7 @@ type BoardViewModel struct {
 	SiteName       string            `json:"site_name"`
 	Board          *models.Board     `json:"board"`
 	BoardName      string            `json:"board_name"`
-	BoardSlug      string            `json:"board_slug"` // filename stem for loading
+	BoardSlug      string            `json:"board_slug"`
 	Boards         []BoardSummary    `json:"boards"`
 	Error          string            `json:"error,omitempty"`
 	Settings       ResolvedSettings  `json:"settings"`
@@ -116,86 +115,88 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	}, nil
 }
 
-// mutateBoard runs op, commits with msg, publishes, and returns the view model.
-func (h *Handler) mutateBoard(slug, msg string, op func(string) error) (interface{}, error) {
+// mutateBoard runs op, commits with msg, publishes SSE, and returns the view model.
+func (h *Handler) mutateBoard(slug, msg string, op func(string) error) (BoardViewModel, error) {
 	boardPath := h.ws.BoardPath(slug)
 	if err := op(boardPath); err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
 	}
 	h.commitWithHandling(boardPath, msg)
 	h.publishBoardEvent(slug)
 	return h.boardViewModel(slug)
 }
 
-// mutateBoardRemove runs op, commits a removal, publishes, and returns the view model.
-func (h *Handler) mutateBoardRemove(slug, msg string, op func(string) error) (interface{}, error) {
+// mutateBoardRemove runs op, commits a removal, publishes SSE, and returns the view model.
+func (h *Handler) mutateBoardRemove(slug, msg string, op func(string) error) (BoardViewModel, error) {
 	boardPath := h.ws.BoardPath(slug)
 	if err := op(boardPath); err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
 	}
 	h.commitRemoveWithHandling(boardPath, msg)
 	h.publishBoardEvent(slug)
 	return h.boardViewModel(slug)
 }
 
-// mountBoardView initializes the board view model.
-func (h *Handler) mountBoardView(ctx context.Context, s *live.Socket) (interface{}, error) {
-	var slug string
-
-	// On websocket reconnect, reuse slug from existing assigns
-	if s != nil {
-		if m, ok := s.Assigns().(BoardViewModel); ok && m.BoardSlug != "" {
-			slug = m.BoardSlug
-		}
-	}
-
-	// Initial HTTP mount: extract board slug from URL path
-	if slug == "" {
-		req := live.Request(ctx)
-		if req == nil || req.URL == nil {
-			return BoardViewModel{Error: "Invalid request"}, nil
-		}
-		slug = strings.TrimPrefix(req.URL.Path, "/board/")
-		slug, _ = url.PathUnescape(slug)
-	}
-
-	if slug == "" {
-		return BoardViewModel{Error: "Board name is required"}, nil
-	}
-
-	return h.boardViewModel(slug)
+// slugFromRequest extracts the board slug from chi URL params.
+func slugFromRequest(r *http.Request) string {
+	return chi.URLParam(r, "slug")
 }
 
-// slugFromParams extracts the board slug from event params.
-func slugFromParams(p live.Params) (string, bool) {
-	slug, ok := p["name"].(string)
-	return slug, ok && slug != ""
-}
-
-// intParam extracts an integer parameter from event params.
-func intParam(p live.Params, key string) (int, error) {
-	s, ok := p[key].(string)
-	if !ok || s == "" {
+// formInt extracts an integer form value.
+func formInt(r *http.Request, key string) (int, error) {
+	s := r.FormValue(key)
+	if s == "" {
 		return 0, fmt.Errorf("%s is required", key)
 	}
 	return strconv.Atoi(s)
 }
 
-// handleCreateCard creates a new card in a column.
-func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	column, ok := p["column"].(string)
-	if !ok || column == "" {
-		return BoardViewModel{Error: "Column name is required"}, nil
+// renderBoardContent renders the board-content partial.
+func (h *Handler) renderBoardContent(w http.ResponseWriter, model BoardViewModel) {
+	renderPartial(w, h.boardContentTpl, "board-content", model)
+}
+
+// BoardViewPage handles GET /board/{slug} — renders the full board view page.
+func (h *Handler) BoardViewPage(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	if slug == "" {
+		http.Error(w, "Board name is required", http.StatusBadRequest)
+		return
 	}
 
-	title, ok := p["title"].(string)
-	if !ok || title == "" {
-		return BoardViewModel{Error: "Card title is required"}, nil
+	model, _ := h.boardViewModel(slug)
+	renderFullPage(w, h.boardViewTpl, model)
+}
+
+// BoardContent handles GET /board/{slug}/content — returns the board content partial.
+func (h *Handler) BoardContent(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	if slug == "" {
+		http.Error(w, "Board name is required", http.StatusBadRequest)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	model, _ := h.boardViewModel(slug)
+	h.renderBoardContent(w, model)
+}
+
+// HandleCreateCard handles POST /board/{slug}/cards.
+func (h *Handler) HandleCreateCard(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	column := r.FormValue("column")
+	title := r.FormValue("title")
+
+	if column == "" || title == "" || slug == "" {
+		model, _ := h.boardViewModel(slug)
+		if slug == "" {
+			model.Error = "Board name is required"
+		} else if column == "" {
+			model.Error = "Column name is required"
+		} else {
+			model.Error = "Card title is required"
+		}
+		h.renderBoardContent(w, model)
+		return
 	}
 
 	// Resolve card position setting to determine prepend vs append.
@@ -207,138 +208,189 @@ func (h *Handler) handleCreateCard(_ context.Context, _ *live.Socket, p live.Par
 		prepend = rs.CardPosition == "prepend"
 	}
 
-	return h.mutateBoard(slug, fmt.Sprintf("Add card \"%s\" to %s", title, column), func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, fmt.Sprintf("Add card \"%s\" to %s", title, column), func(boardPath string) error {
 		_, err := h.eng.AddCard(boardPath, column, title, prepend)
 		return err
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleMoveCard moves a card to a different column.
-func (h *Handler) handleMoveCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colIdx, err := intParam(p, "col_idx")
+// HandleMoveCard handles POST /board/{slug}/cards/move.
+func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colIdx, err := formInt(r, "col_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	cardIdx, err := intParam(p, "card_idx")
+	cardIdx, err := formInt(r, "card_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	targetColumn, ok := p["target_column"].(string)
-	if !ok || targetColumn == "" {
-		return BoardViewModel{Error: "Target column is required"}, nil
+	targetColumn := r.FormValue("target_column")
+	if targetColumn == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "Target column is required"
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoard(slug, fmt.Sprintf("Move card to %s", targetColumn), func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, fmt.Sprintf("Move card to %s", targetColumn), func(boardPath string) error {
 		return h.eng.MoveCard(boardPath, colIdx, cardIdx, targetColumn)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleReorderCard moves a card to a specific position within a column.
-func (h *Handler) handleReorderCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colIdx, err := intParam(p, "col_idx")
+// HandleReorderCard handles POST /board/{slug}/cards/reorder.
+func (h *Handler) HandleReorderCard(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colIdx, err := formInt(r, "col_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	cardIdx, err := intParam(p, "card_idx")
+	cardIdx, err := formInt(r, "card_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	column, ok := p["column"].(string)
-	if !ok || column == "" {
-		return BoardViewModel{Error: "Column is required"}, nil
+	column := r.FormValue("column")
+	if column == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "Column is required"
+		h.renderBoardContent(w, model)
+		return
 	}
 
 	beforeIdx := -1
-	if s, okIdx := p["before_idx"].(string); okIdx && s != "" {
+	if s := r.FormValue("before_idx"); s != "" {
 		beforeIdx, _ = strconv.Atoi(s)
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoard(slug, fmt.Sprintf("Reorder card in %s", column), func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, fmt.Sprintf("Reorder card in %s", column), func(boardPath string) error {
 		return h.eng.ReorderCard(boardPath, colIdx, cardIdx, beforeIdx, column)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleDeleteCard deletes a card.
-func (h *Handler) handleDeleteCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colIdx, err := intParam(p, "col_idx")
+// HandleDeleteCard handles POST /board/{slug}/cards/delete.
+func (h *Handler) HandleDeleteCard(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colIdx, err := formInt(r, "col_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	cardIdx, err := intParam(p, "card_idx")
+	cardIdx, err := formInt(r, "card_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoardRemove(slug, "Delete card", func(boardPath string) error {
+	model, _ := h.mutateBoardRemove(slug, "Delete card", func(boardPath string) error {
 		return h.eng.DeleteCard(boardPath, colIdx, cardIdx)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleToggleComplete marks a card as completed.
-func (h *Handler) handleToggleComplete(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colIdx, err := intParam(p, "col_idx")
+// HandleToggleComplete handles POST /board/{slug}/cards/complete.
+func (h *Handler) HandleToggleComplete(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colIdx, err := formInt(r, "col_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	cardIdx, err := intParam(p, "card_idx")
+	cardIdx, err := formInt(r, "card_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoard(slug, "Toggle card complete", func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, "Toggle card complete", func(boardPath string) error {
 		return h.eng.CompleteCard(boardPath, colIdx, cardIdx)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleEditCard updates a card's title, body, and tags.
-func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colIdx, err := intParam(p, "col_idx")
+// HandleEditCard handles POST /board/{slug}/cards/edit.
+func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colIdx, err := formInt(r, "col_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	cardIdx, err := intParam(p, "card_idx")
+	cardIdx, err := formInt(r, "card_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	title, _ := p["title"].(string)
-	body, _ := p["body"].(string)
-	tagsRaw, _ := p["tags"].(string)
-	priority, _ := p["priority"].(string)
-	due, _ := p["due"].(string)
-	assignee, _ := p["assignee"].(string)
+	title := r.FormValue("title")
+	body := r.FormValue("body")
+	tagsRaw := r.FormValue("tags")
+	priority := r.FormValue("priority")
+	due := r.FormValue("due")
+	assignee := r.FormValue("assignee")
 
 	var tags []string
 	for _, t := range strings.Split(tagsRaw, ",") {
@@ -348,7 +400,7 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 		}
 	}
 
-	return h.mutateBoard(slug, "Edit card", func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, "Edit card", func(boardPath string) error {
 		if err := h.eng.EditCard(boardPath, colIdx, cardIdx, title, body, tags, priority, due, assignee); err != nil {
 			return err
 		}
@@ -371,74 +423,101 @@ func (h *Handler) handleEditCard(_ context.Context, _ *live.Socket, p live.Param
 		}
 		return nil
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleCreateColumn creates a new column.
-func (h *Handler) handleCreateColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colName, ok := p["column_name"].(string)
-	if !ok || colName == "" {
-		return BoardViewModel{Error: "Column name is required"}, nil
+// HandleCreateColumn handles POST /board/{slug}/columns.
+func (h *Handler) HandleCreateColumn(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colName := r.FormValue("column_name")
+
+	if colName == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "Column name is required"
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoard(slug, fmt.Sprintf("Add column: %s", colName), func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, fmt.Sprintf("Add column: %s", colName), func(boardPath string) error {
 		return h.eng.AddColumn(boardPath, colName)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleRenameColumn renames a column.
-func (h *Handler) handleRenameColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	oldName, ok := p["old_name"].(string)
-	if !ok || oldName == "" {
-		return BoardViewModel{Error: "Old column name is required"}, nil
+// HandleRenameColumn handles POST /board/{slug}/columns/rename.
+func (h *Handler) HandleRenameColumn(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	oldName := r.FormValue("old_name")
+	newName := r.FormValue("new_name")
+
+	if oldName == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "Old column name is required"
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	newName, ok := p["new_name"].(string)
-	if !ok || newName == "" {
-		return BoardViewModel{Error: "New column name is required"}, nil
+	if newName == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "New column name is required"
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoard(slug, fmt.Sprintf("Rename column %q to %q", oldName, newName), func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, fmt.Sprintf("Rename column %q to %q", oldName, newName), func(boardPath string) error {
 		return h.eng.RenameColumn(boardPath, oldName, newName)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleDeleteColumn deletes a column and all its cards.
-func (h *Handler) handleDeleteColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colName, ok := p["column_name"].(string)
-	if !ok || colName == "" {
-		return BoardViewModel{Error: "Column name is required"}, nil
+// HandleDeleteColumn handles POST /board/{slug}/columns/delete.
+func (h *Handler) HandleDeleteColumn(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colName := r.FormValue("column_name")
+
+	if colName == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "Column name is required"
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoardRemove(slug, fmt.Sprintf("Delete column: %s", colName), func(boardPath string) error {
+	model, _ := h.mutateBoardRemove(slug, fmt.Sprintf("Delete column: %s", colName), func(boardPath string) error {
 		return h.eng.DeleteColumn(boardPath, colName)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleUpdateBoardMeta updates a board's name, description, and tags.
-func (h *Handler) handleUpdateBoardMeta(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+// HandleUpdateBoardMeta handles POST /board/{slug}/meta.
+func (h *Handler) HandleUpdateBoardMeta(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	name, _ := p["board_name"].(string)
-	description, _ := p["description"].(string)
-	tagsRaw, _ := p["tags"].(string)
+	name := r.FormValue("board_name")
+	description := r.FormValue("description")
+	tagsRaw := r.FormValue("tags")
 
 	var tags []string
 	for _, t := range strings.Split(tagsRaw, ",") {
@@ -448,104 +527,111 @@ func (h *Handler) handleUpdateBoardMeta(_ context.Context, _ *live.Socket, p liv
 		}
 	}
 
-	return h.mutateBoard(slug, fmt.Sprintf("Update board meta: %s", name), func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, fmt.Sprintf("Update board meta: %s", name), func(boardPath string) error {
 		return h.eng.UpdateBoardMeta(boardPath, name, description, tags)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleToggleColumnCollapse toggles the collapsed state of a column.
-func (h *Handler) handleToggleColumnCollapse(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+// HandleToggleColumnCollapse handles POST /board/{slug}/columns/collapse.
+func (h *Handler) HandleToggleColumnCollapse(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	colIndex, err := intParam(p, "col_index")
+	colIndex, err := formInt(r, "col_index")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoard(slug, "Toggle column collapse", func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, "Toggle column collapse", func(boardPath string) error {
 		return h.eng.ToggleColumnCollapse(boardPath, colIndex)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleSortColumn sorts cards in a column by a given key.
-func (h *Handler) handleSortColumn(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	colIdx, err := intParam(p, "col_idx")
+// HandleSortColumn handles POST /board/{slug}/columns/sort.
+func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colIdx, err := formInt(r, "col_idx")
 	if err != nil {
-		return BoardViewModel{Error: err.Error()}, nil
+		model, _ := h.boardViewModel(slug)
+		model.Error = err.Error()
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	sortBy, ok := p["sort_by"].(string)
-	if !ok || sortBy == "" {
-		return BoardViewModel{Error: "sort_by is required"}, nil
+	sortBy := r.FormValue("sort_by")
+	if sortBy == "" {
+		model, _ := h.boardViewModel(slug)
+		model.Error = "sort_by is required"
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	return h.mutateBoard(slug, fmt.Sprintf("Sort column by %s", sortBy), func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, fmt.Sprintf("Sort column by %s", sortBy), func(boardPath string) error {
 		return h.eng.SortColumn(boardPath, colIdx, sortBy)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleUpdateBoardSettings updates per-board setting overrides.
-func (h *Handler) handleUpdateBoardSettings(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+// HandleUpdateBoardSettings handles POST /board/{slug}/settings.
+func (h *Handler) HandleUpdateBoardSettings(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
 	var settings models.BoardSettings
 
-	// Each field is optional. Present = override, absent = inherit global.
-	if v, ok := p["show_checkbox"].(string); ok {
+	if v := r.FormValue("show_checkbox"); v != "" {
 		b := v == "true"
 		settings.ShowCheckbox = &b
 	}
-	if v, ok := p["card_position"].(string); ok {
-		if v == "prepend" || v == "append" {
-			settings.CardPosition = &v
-		}
+	if v := r.FormValue("card_position"); v == "prepend" || v == "append" {
+		settings.CardPosition = &v
 	}
-	if v, ok := p["expand_columns"].(string); ok {
+	if v := r.FormValue("expand_columns"); v != "" {
 		b := v == "true"
 		settings.ExpandColumns = &b
 	}
-	if v, ok := p["view_mode"].(string); ok {
-		if v == "board" || v == "table" {
-			settings.ViewMode = &v
-		}
+	if v := r.FormValue("view_mode"); v == "board" || v == "table" {
+		settings.ViewMode = &v
 	}
 
-	return h.mutateBoard(slug, "Update board settings", func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, "Update board settings", func(boardPath string) error {
 		return h.eng.UpdateBoardSettings(boardPath, settings)
 	})
+	h.renderBoardContent(w, model)
 }
 
-// handleSetBoardIcon sets the emoji icon for a board.
-func (h *Handler) handleSetBoardIcon(_ context.Context, _ *live.Socket, p live.Params) (interface{}, error) {
-	slug, ok := slugFromParams(p)
-	if !ok {
-		return BoardViewModel{Error: "Board name is required"}, nil
+// HandleSetBoardIcon handles POST /board/{slug}/icon.
+func (h *Handler) HandleSetBoardIcon(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	if slug == "" {
+		model := BoardViewModel{Error: "Board name is required"}
+		h.renderBoardContent(w, model)
+		return
 	}
 
-	icon, _ := p["icon"].(string)
+	icon := r.FormValue("icon")
 
-	return h.mutateBoard(slug, "Set board icon", func(boardPath string) error {
+	model, _ := h.mutateBoard(slug, "Set board icon", func(boardPath string) error {
 		return h.eng.UpdateBoardIcon(boardPath, icon)
 	})
-}
-
-// handleBoardUpdate handles PubSub messages for real-time updates.
-func (h *Handler) handleBoardUpdate(_ context.Context, _ *live.Socket, msg any) (interface{}, error) {
-	slug, ok := msg.(string)
-	if !ok {
-		return nil, fmt.Errorf("invalid message type")
-	}
-
-	return h.boardViewModel(slug)
+	h.renderBoardContent(w, model)
 }

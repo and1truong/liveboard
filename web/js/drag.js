@@ -1,5 +1,5 @@
 // Drag-and-drop for board cards: between columns and within-column reordering.
-// Works with jfyne/live by clicking hidden trigger buttons wired by live.js.
+// Works with HTMX by using htmx.ajax() calls and hx-* attributed trigger buttons.
 (function () {
   var draggingCard = null; // DOM element being dragged
   var draggingSourceColumn = null;
@@ -310,8 +310,8 @@
     saveBtn.className = "btn-primary btn-small";
     saveBtn.textContent = "Save";
     saveBtn.addEventListener("click", function () {
-      if (window.Live) {
-        window.Live.send("edit-card", {
+      htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/edit', {
+        values: {
           col_idx: colIdx,
           card_idx: cardIdx,
           title: titleInput.value.trim(),
@@ -319,8 +319,10 @@
           tags: qeGetTagsValue(),
           priority: qePriorityValue.current,
           name: slug,
-        });
-      }
+        },
+        target: '#board-content',
+        swap: 'innerHTML'
+      });
       hideQuickEdit();
     });
 
@@ -351,7 +353,7 @@
 
     var isCompleted = card.classList.contains("completed");
 
-    var completeBtn = card.querySelector('[live-click="toggle-complete"]');
+    var completeBtn = card.querySelector('[hx-post$="/cards/complete"]');
     if (completeBtn) {
       ctxMenu.appendChild(makeItem("✓", isCompleted ? "Mark Incomplete" : "Complete", false, function () {
         hideQuickEdit();
@@ -423,7 +425,7 @@
       ctxMenu.appendChild(pgroup);
     }
 
-    var deleteBtn = card.querySelector('[live-click="delete-card"]');
+    var deleteBtn = card.querySelector('[hx-post$="/cards/delete"]');
     if (deleteBtn) {
       var sep2 = document.createElement("div");
       sep2.className = "ctx-separator";
@@ -452,7 +454,7 @@
 
     var isCompleted = card.classList.contains("completed");
 
-    var completeBtn = card.querySelector('[live-click="toggle-complete"]');
+    var completeBtn = card.querySelector('[hx-post$="/cards/complete"]');
     if (completeBtn) {
       ctxMenu.appendChild(makeItem("✓", isCompleted ? "Mark Incomplete" : "Complete", false, function () {
         completeBtn.click();
@@ -479,7 +481,7 @@
       ctxMenu.appendChild(sub);
     }
 
-    var deleteBtn = card.querySelector('[live-click="delete-card"]');
+    var deleteBtn = card.querySelector('[hx-post$="/cards/delete"]');
     if (deleteBtn) {
       var sep2 = document.createElement("div");
       sep2.className = "ctx-separator";
@@ -529,9 +531,11 @@
 
     colCtxMenu.appendChild(makeColItem("🗑", "Delete", true, function () {
       if (window.confirm('Delete column "' + columnName + '" and all its cards?')) {
-        if (window.Live) {
-          window.Live.send("delete-column", { column_name: columnName, name: slug });
-        }
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/delete', {
+          values: { column_name: columnName, name: slug },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
       }
     }));
 
@@ -552,13 +556,13 @@
       var sortSub = document.createElement("div");
       sortSub.className = "ctx-submenu";
       sortSub.appendChild(makeColItem("🔤", "By Name", false, function () {
-        if (window.Live) window.Live.send("sort-column", { col_idx: String(colIdx), sort_by: "name", name: slug });
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "name", name: slug }, target: '#board-content', swap: 'innerHTML' });
       }));
       sortSub.appendChild(makeColItem("⚡", "By Priority", false, function () {
-        if (window.Live) window.Live.send("sort-column", { col_idx: String(colIdx), sort_by: "priority", name: slug });
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "priority", name: slug }, target: '#board-content', swap: 'innerHTML' });
       }));
       sortSub.appendChild(makeColItem("📅", "By Due Date", false, function () {
-        if (window.Live) window.Live.send("sort-column", { col_idx: String(colIdx), sort_by: "due", name: slug });
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/sort', { values: { col_idx: String(colIdx), sort_by: "due", name: slug }, target: '#board-content', swap: 'innerHTML' });
       }));
       colCtxMenu.appendChild(sortSub);
     }
@@ -639,8 +643,8 @@
       saved = true;
       var newName = input.value.trim();
       input.replaceWith(h3);
-      if (save && newName && newName !== currentName && window.Live) {
-        window.Live.send("rename-column", { old_name: currentName, new_name: newName, name: slug });
+      if (save && newName && newName !== currentName) {
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/rename', { values: { old_name: currentName, new_name: newName, name: slug }, target: '#board-content', swap: 'innerHTML' });
       }
     }
 
@@ -951,14 +955,16 @@
     saveBtn.addEventListener("click", function () {
       var newName = nameInput.value.trim();
       if (!newName) return;
-      if (window.Live) {
-        window.Live.send("update-board-meta", {
+      htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/meta', {
+        values: {
           board_name: newName,
           description: descInput.value.trim(),
           tags: getTagsValue(),
           name: slug,
-        });
-      }
+        },
+        target: '#board-content',
+        swap: 'innerHTML'
+      });
       backdrop.remove();
     });
     saveRow.appendChild(saveBtn);
@@ -1621,8 +1627,8 @@
     saveBtn.className = "btn-primary btn-small";
     saveBtn.textContent = "Save";
     saveBtn.addEventListener("click", function () {
-      if (window.Live) {
-        window.Live.send("edit-card", {
+      htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/edit', {
+        values: {
           col_idx: colIdx,
           card_idx: cardIdx,
           title: titleInput.value.trim(),
@@ -1632,8 +1638,10 @@
           due: dueValue.current,
           assignee: assigneeValue.current,
           name: slug,
-        });
-      }
+        },
+        target: '#board-content',
+        swap: 'innerHTML'
+      });
       hideCardModal();
     });
     saveRow.appendChild(saveBtn);
@@ -1651,7 +1659,7 @@
     sidebar.appendChild(actionsLabel);
 
     // Complete/Incomplete
-    var completeBtn = card.querySelector('[live-click="toggle-complete"]');
+    var completeBtn = card.querySelector('[hx-post$="/cards/complete"]');
     if (completeBtn || completed) {
       var toggleBtn = document.createElement("button");
       toggleBtn.className = "card-modal-sidebar-btn";
@@ -1660,11 +1668,11 @@
         : '<span class="card-modal-action-icon">✓</span> Complete';
       toggleBtn.addEventListener("click", function () {
         hideCardModal();
-        var btn = card.querySelector('[live-click="toggle-complete"]');
-        if (btn) btn.click();
-        else if (window.Live) {
-          window.Live.send("toggle-complete", { col_idx: colIdx, card_idx: cardIdx, name: slug });
-        }
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/complete', {
+          values: { col_idx: colIdx, card_idx: cardIdx, name: slug },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
       });
       sidebar.appendChild(toggleBtn);
     }
@@ -1691,7 +1699,7 @@
     }
 
     // Delete
-    var deleteHidden = card.querySelector('[live-click="delete-card"]');
+    var deleteHidden = card.querySelector('[hx-post$="/cards/delete"]');
     if (deleteHidden) {
       var sep = document.createElement("div");
       sep.className = "card-modal-sidebar-sep";
@@ -1949,15 +1957,17 @@
           }
 
           var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
-          if (window.Live) {
-            window.Live.send("reorder-card", {
+          htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/cards/reorder', {
+            values: {
               col_idx: srcColIdx,
               card_idx: srcCardIdx,
               before_idx: beforeIdx,
               column: targetColumn,
               name: slug,
-            });
-          }
+            },
+            target: '#board-content',
+            swap: 'innerHTML'
+          });
         } else {
           // Cross-column move
           clearDropIndicators();
@@ -1975,20 +1985,17 @@
     attach();
   }
 
-  // Re-attach after LiveView re-renders
-  document.addEventListener("live:updated", attach);
-
-  // Fallback: MutationObserver for DOM changes
-  new MutationObserver(function () {
+  // Re-attach after HTMX swaps
+  document.addEventListener("htmx:afterSettle", function () {
     requestAnimationFrame(attach);
-  }).observe(document.body, { childList: true, subtree: true });
+  });
 
   // ── Board Settings Panel ──────────────────────────────────────────
   function initBoardSettingsPanel() {
     var boardView = document.querySelector(".board-view");
     if (!boardView) return;
 
-    // Abort previous listeners to prevent duplicates after LiveView re-renders
+    // Abort previous listeners to prevent duplicates after HTMX re-renders
     if (boardView._settingsAbort) boardView._settingsAbort.abort();
     var ac = new AbortController();
     boardView._settingsAbort = ac;
@@ -2029,7 +2036,6 @@
     }
 
     function sendBoardSettings() {
-      if (!window.Live) return;
       var params = { name: slug };
       if (bsShowCheckbox && bsShowCheckbox.value !== "") {
         params.show_checkbox = bsShowCheckbox.value;
@@ -2043,7 +2049,11 @@
       if (bsViewMode) {
         params.view_mode = bsViewMode.value;
       }
-      window.Live.send("update-board-settings", params);
+      htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/settings', {
+        values: params,
+        target: '#board-content',
+        swap: 'innerHTML'
+      });
     }
 
     function openSettings() {
@@ -2097,8 +2107,8 @@
     populateFromData();
   }
 
-  // initBoardSettingsPanel is called from attach(), which runs on load,
-  // live:updated, and MutationObserver — no separate init needed.
+  // initBoardSettingsPanel is called from attach(), which runs on load
+  // and htmx:afterSettle — no separate init needed.
 
   // ── New Line Trigger ──────────────────────────────────────────────
   // Adds keydown handling to textareas based on the newline trigger setting.

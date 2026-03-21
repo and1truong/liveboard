@@ -10,7 +10,7 @@
         <div class="error">{{.Error}}</div>
         {{end}}
 
-        <form id="createBoardForm" style="display:none" live-submit="create-board" class="create-board-form" onsubmit="var f=this;requestAnimationFrame(function(){f.style.display='none';f.reset()})">
+        <form id="createBoardForm" style="display:none" hx-post="/boards/new" hx-target="#boards-grid" hx-swap="innerHTML" class="create-board-form" onsubmit="var f=this;requestAnimationFrame(function(){f.style.display='none';f.reset()})">
             <input type="text" name="name" placeholder="Board name" required onkeydown="if(event.key==='Escape'){this.value='';this.closest('form').style.display='none'}">
             <button type="submit" class="btn-primary">Create</button>
             <button type="button" onclick="var f=this.closest('form');f.reset();f.style.display='none'" class="btn-secondary">Cancel</button>
@@ -18,6 +18,14 @@
 
         <script>(function(){if(location.hash==='#new-board'){var f=document.getElementById('createBoardForm');f.style.display='';f.querySelector('input[name=name]').focus();history.replaceState(null,'','/');}})()</script>
 
+        <div id="boards-grid">
+        {{template "boards-grid" .}}
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{define "boards-grid"}}
         {{if .Boards}}
         <div class="boards-grid">
             {{range .Boards}}
@@ -29,7 +37,7 @@
                     {{end}}
                     <p class="card-count">{{.CardCount}} cards</p>
                 </a>
-                <button onclick="if(confirm('Delete board &quot;{{.Name}}&quot;? This cannot be undone.')) { window.Live.send('delete-board', {name: '{{.Name}}'}); }" class="btn-delete">Delete</button>
+                <button onclick="if(confirm('Delete board &quot;{{.Name}}&quot;? This cannot be undone.')) { htmx.ajax('POST', '/boards/{{.Slug}}/delete', {values: {name: '{{.Name}}'}, target: '#boards-grid', swap: 'innerHTML'}); }" class="btn-delete">Delete</button>
             </div>
             {{end}}
         </div>
@@ -38,6 +46,4 @@
             <p>No boards yet. Create your first board to get started!</p>
         </div>
         {{end}}
-    </div>
-</div>
 {{end}}
