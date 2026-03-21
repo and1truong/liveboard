@@ -25,10 +25,7 @@ settings:
 - [ ] Rate limiting middleware
   tags: backend, api
   priority: medium
-  Add **token bucket** rate limiter to public API endpoints.
-  - 100 req/min per API key
-  - Return `429 Too Many Requests` with retry header
-  See [design doc](https://example.com) for details.
+  Add token bucket rate limiter to public API endpoints. 100 req/min per API key.
 
 - [ ] Webhook retry with exponential backoff
   tags: backend, webhooks
