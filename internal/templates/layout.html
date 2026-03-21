@@ -47,24 +47,20 @@
     </script>
     <script src="/static/js/htmx.min.js"></script>
     <script src="/static/js/htmx-sse.js"></script>
+    <script src="/static/js/liveboard.alpine-components.js" defer></script>
+    <script src="/static/js/alpine.min.js" defer></script>
     <script src="/static/js/liveboard.core.js" defer></script>
-    <script src="/static/js/liveboard.pickers.js" defer></script>
     <script src="/static/js/liveboard.drop.js" defer></script>
-    <script src="/static/js/liveboard.context-menu.js" defer></script>
-    <script src="/static/js/liveboard.column-menu.js" defer></script>
-    <script src="/static/js/liveboard.card-modal.js" defer></script>
-    <script src="/static/js/liveboard.settings.js" defer></script>
-    <script src="/static/js/liveboard.cmd-palette.js" defer></script>
     <script src="/static/js/liveboard.drag.js" defer></script>
 </head>
 <body>
-    <div class="app-shell">
-        <aside class="app-sidebar" id="appSidebar">
+    <div class="app-shell" x-data="emojiPicker()">
+        <aside class="app-sidebar" id="appSidebar" x-data="{ collapsed: localStorage.getItem('sidebarCollapsed') === 'true' }" x-init="if (collapsed) $el.classList.add('collapsed')" :class="{ collapsed: collapsed }">
             <nav class="sidebar-nav">
                 <div class="sidebar-section-label">Boards</div>
                 {{range .Boards}}
                 <a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}">
-                    <span class="nav-icon emoji-picker-trigger" data-board-slug="{{.Slug}}" onclick="event.preventDefault();event.stopPropagation();openEmojiPicker(this,'{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
+                    <span class="nav-icon emoji-picker-trigger" @click.prevent.stop="show($el, '{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
                     <span class="nav-label">{{.Name}}</span>
                 </a>
                 {{end}}
@@ -73,8 +69,8 @@
                     <span class="nav-label">New Board</span>
                 </a>
             </nav>
-            <div class="sidebar-board-dropdown" id="boardDropdown">
-                <button class="dropdown-trigger" onclick="this.closest('.sidebar-board-dropdown').classList.toggle('open')">
+            <div class="sidebar-board-dropdown" x-data="{ open: false }" :class="{ open: open }" @click.outside="open = false">
+                <button class="dropdown-trigger" @click="open = !open">
                     <span class="dropdown-trigger-label">{{if .BoardSlug}}{{range .Boards}}{{if eq $.BoardSlug .Slug}}{{.Name}}{{end}}{{end}}{{else}}Boards{{end}}</span>
                     <svg class="dropdown-chevron" width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                 </button>
@@ -94,7 +90,7 @@
                 </div>
             </div>
             <div class="sidebar-footer">
-                <div class="sidebar-popup-menu" id="sidebarPopupMenu">
+                <div class="sidebar-popup-menu" x-data="{ open: false }" :class="{ open: open }" @click.outside="open = false" id="sidebarPopupMenu">
                     <a href="/settings" class="sidebar-menu-item{{if eq $.BoardSlug "__settings__"}} active{{end}}">
                         <span class="menu-icon">&#9881;</span>
                         <span class="menu-label">Settings</span>
@@ -111,126 +107,275 @@
                         <span class="brand-name">{{.SiteName}}</span>
                     </a>
                     <div class="sidebar-footer-right">
-                        <button class="sidebar-menu-trigger" id="sidebarMenuTrigger" title="Menu">
+                        <button class="sidebar-menu-trigger" @click="Alpine.$data($el.closest('.sidebar-footer').querySelector('.sidebar-popup-menu')).open = !Alpine.$data($el.closest('.sidebar-footer').querySelector('.sidebar-popup-menu')).open" title="Menu">
                             <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M3 7.5L6 10L9 7.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 4.5L6 2L9 4.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
                         </button>
                     </div>
                 </div>
             </div>
+            <button class="sidebar-toggle" @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed)" title="Toggle sidebar">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink: 0;"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
+            </button>
         </aside>
         <div class="app-workspace">
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" onclick="if(typeof Alpine!=='undefined'){var d=Alpine.$data(document.getElementById('appSidebar'));d.collapsed=!d.collapsed;localStorage.setItem('sidebarCollapsed',d.collapsed)}">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink: 0;"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
             </button>
             <main class="workspace-content">
                 {{template "content" .}}
             </main>
         </div>
-    </div>
-    <script>
-        (function() {
-            var sidebar = document.getElementById('appSidebar');
-            var toggle = document.getElementById('sidebarToggle');
-            if (localStorage.getItem('sidebarCollapsed') === 'true') {
-                sidebar.classList.add('collapsed');
-            }
-            toggle.addEventListener('click', function() {
-                sidebar.classList.toggle('collapsed');
-                localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
-            });
-        })();
-        document.addEventListener('click', function(e) {
-            var dd = document.getElementById('boardDropdown');
-            if (dd && !dd.contains(e.target)) dd.classList.remove('open');
-            var popup = document.getElementById('sidebarPopupMenu');
-            var trigger = document.getElementById('sidebarMenuTrigger');
-            if (popup && trigger && !popup.contains(e.target) && !trigger.contains(e.target)) {
-                popup.classList.remove('open');
-            }
-        });
-        document.getElementById('sidebarMenuTrigger').addEventListener('click', function() {
-            document.getElementById('sidebarPopupMenu').classList.toggle('open');
-        });
 
-        // Emoji picker for board icons
-        var emojiList = ['📋','📌','📝','📊','📈','🎯','🚀','💡','🔥','⭐','❤️','💼','🏠','🎨','🎵','📚','🔧','⚡','🌟','🎮','🧪','📦','🔔','💬','🌈','🍀','🦊','🐱','🐶','🌻','🌙','☀️','🏔️','🌊','🎪','🏆','💎','🔑','🎁','🧩'];
-
-        function openEmojiPicker(trigger, slug) {
-            var existing = document.getElementById('emojiPickerPopup');
-            if (existing) {
-                existing.remove();
-                return;
-            }
-
-            var popup = document.createElement('div');
-            popup.id = 'emojiPickerPopup';
-            popup.className = 'emoji-picker-popup';
-
-            var grid = document.createElement('div');
-            grid.className = 'emoji-picker-grid';
-
-            // Determine the correct endpoint based on current page
-            var isOnBoard = window.location.pathname.indexOf('/board/') === 0;
-            var iconUrl = isOnBoard ? '/board/' + slug + '/icon' : '/boards/' + slug + '/icon';
-
-            // Add clear option
-            var clearBtn = document.createElement('button');
-            clearBtn.className = 'emoji-picker-item emoji-picker-clear';
-            clearBtn.textContent = '✕';
-            clearBtn.title = 'Remove icon';
-            clearBtn.onclick = function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                htmx.ajax('POST', iconUrl, {values: {name: slug, icon: ''}, target: '#board-content', swap: 'innerHTML'});
-                popup.remove();
-            };
-            grid.appendChild(clearBtn);
-
-            emojiList.forEach(function(emoji) {
-                var btn = document.createElement('button');
-                btn.className = 'emoji-picker-item';
-                btn.textContent = emoji;
-                btn.onclick = function(e) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    htmx.ajax('POST', iconUrl, {values: {name: slug, icon: emoji}, target: '#board-content', swap: 'innerHTML'});
-                    popup.remove();
-                };
-                grid.appendChild(btn);
-            });
-
-            popup.appendChild(grid);
-
-            // Position relative to trigger
-            var rect = trigger.getBoundingClientRect();
-            popup.style.top = rect.top + 'px';
-            popup.style.left = (rect.right + 8) + 'px';
-
-            document.body.appendChild(popup);
-        }
-
-        document.addEventListener('click', function(e) {
-            var picker = document.getElementById('emojiPickerPopup');
-            if (picker && !picker.contains(e.target) && !e.target.classList.contains('emoji-picker-trigger')) {
-                picker.remove();
-            }
-        });
-    </script>
-
-    <!-- Cmd+K Command Palette -->
-    <div id="cmdPalette" class="cmd-palette-overlay" style="display:none">
-        <div class="cmd-palette">
-            <div class="cmd-palette-input-wrapper">
-                <input type="text" id="cmdPaletteInput" class="cmd-palette-input" placeholder="Switch to…" autocomplete="off" spellcheck="false">
+        <!-- Emoji Picker Popup -->
+        <div class="emoji-picker-popup" x-show="open" @click.outside="open = false" :style="'top:' + top + 'px;left:' + left + 'px'" x-cloak>
+            <div class="emoji-picker-grid">
+                <button class="emoji-picker-item emoji-picker-clear" title="Remove icon" @click.prevent.stop="clear()">&#10005;</button>
+                <template x-for="emoji in emojis" :key="emoji">
+                    <button class="emoji-picker-item" x-text="emoji" @click.prevent.stop="pick(emoji)"></button>
+                </template>
             </div>
-            <div id="cmdPaletteList" class="cmd-palette-list"></div>
         </div>
     </div>
-    <script>
-        window.__cmdPaletteData = {
-            boards: [{{range .Boards}}{name:"{{.Name}}",slug:"{{.Slug}}",icon:"{{.Icon}}"},{{end}}],
-            activeSlug: "{{.BoardSlug}}"
-        };
-    </script>
+
+    <!-- Cmd+K Command Palette -->
+    <div x-data="cmdPalette([{{range .Boards}}{name:'{{.Name}}',slug:'{{.Slug}}',icon:'{{.Icon}}'},{{end}}], '{{.BoardSlug}}')" @keydown.window="handleKeydown($event)">
+        <div class="cmd-palette-overlay" x-show="open" @click.self="open = false" x-cloak>
+            <div class="cmd-palette">
+                <div class="cmd-palette-input-wrapper">
+                    <input type="text" x-ref="input" x-model="query" @input="onInput()" class="cmd-palette-input" placeholder="Switch to&hellip;" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="cmd-palette-list">
+                    <template x-for="(item, i) in items" :key="item.url || ('sep-' + i)">
+                        <div>
+                            <template x-if="item.separator">
+                                <div class="cmd-palette-separator"></div>
+                            </template>
+                            <template x-if="!item.separator">
+                                <div class="cmd-palette-item" :class="{ active: items.filter(function(it,j){return !it.separator && j < i}).length === activeIdx }" @click="if(item.url) window.location.href = item.url" @mouseenter="activeIdx = items.filter(function(it,j){return !it.separator && j < i}).length">
+                                    <span class="cmd-palette-item-icon" x-text="item.icon"></span>
+                                    <span class="cmd-palette-item-name" x-text="item.name"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card Modal (Alpine) -->
+    <div x-data="cardModal()" @keydown.escape.window="if(open) close()">
+        <div class="card-modal-backdrop" x-show="open" @click.self="close()" x-cloak>
+            <div class="card-modal">
+                <button class="card-modal-close" @click="close()">&times;</button>
+                <div class="card-modal-main">
+                    <span class="card-modal-column-pill" x-text="columnName"></span>
+                    <span x-show="completed" class="status-badge completed" style="margin-left:8px">&#10003; Done</span>
+
+                    <textarea class="card-modal-title" x-model="title" rows="1" @input="autoResize($event)"></textarea>
+
+                    <div class="card-modal-action-bar" style="position:relative">
+                        <button class="card-modal-action-btn"><span class="card-modal-action-icon">&#127991;</span> Labels</button>
+                        <button class="card-modal-action-btn" @click.stop="showDatePicker = !showDatePicker; showMembersPicker = false"><span class="card-modal-action-icon">&#128197;</span> Dates</button>
+                        <button class="card-modal-action-btn"><span class="card-modal-action-icon">&#9745;</span> Checklist</button>
+                        <button class="card-modal-action-btn" @click.stop="showMembersPicker = !showMembersPicker; showDatePicker = false"><span class="card-modal-action-icon">&#128100;</span> Members</button>
+
+                        <!-- Date Picker -->
+                        <div x-show="showDatePicker" @click.outside="showDatePicker = false" x-data="datePicker(due, function(v){ $dispatch('date-selected', {value:v}) })" @date-selected.window="onDateSelect($event.detail.value); showDatePicker = false" class="card-modal-datepicker" @click.stop x-cloak>
+                            <div class="datepicker-header">
+                                <button class="datepicker-nav" @click="prevMonth()">&#8249;</button>
+                                <span class="datepicker-month" x-text="monthLabel"></span>
+                                <button class="datepicker-nav" @click="nextMonth()">&#8250;</button>
+                            </div>
+                            <div class="datepicker-weekdays">
+                                <template x-for="d in weekdays"><span x-text="d"></span></template>
+                            </div>
+                            <div class="datepicker-grid">
+                                <template x-for="(day, i) in days" :key="i">
+                                    <button class="datepicker-day" :class="{ 'datepicker-day--empty': day === null, 'datepicker-day--today': day !== null && dateStr(day) === todayStr, 'datepicker-day--selected': day !== null && dateStr(day) === selected }" x-text="day" @click="if(day !== null) selectDate(day)" :disabled="day === null"></button>
+                                </template>
+                            </div>
+                            <button class="datepicker-remove" @click="removeDate()">Remove date</button>
+                        </div>
+
+                        <!-- Members Picker -->
+                        <div x-show="showMembersPicker" @click.outside="showMembersPicker = false" x-data="membersPicker(assignee, boardMembers, function(v){ $dispatch('member-selected', {value:v}) })" @member-selected.window="onMemberSelect($event.detail.value); showMembersPicker = false" class="card-modal-memberspicker" @click.stop x-cloak>
+                            <div class="memberspicker-title">Assign Member</div>
+                            <div class="memberspicker-input-row">
+                                <input type="text" class="memberspicker-input" placeholder="Add new member..." x-model="newMember" @keydown.enter.prevent="addMember()">
+                                <button class="memberspicker-add-btn" @click="addMember()">+</button>
+                            </div>
+                            <div x-show="members.length > 0" class="memberspicker-list">
+                                <template x-for="member in members" :key="member">
+                                    <button class="memberspicker-item" :class="{ 'memberspicker-item--active': member === current }" @click="selectMember(member)">
+                                        <span class="memberspicker-avatar" x-text="member.charAt(0).toUpperCase()"></span> <span x-text="member"></span>
+                                    </button>
+                                </template>
+                            </div>
+                            <div x-show="members.length === 0" class="memberspicker-empty">No members yet. Add one above.</div>
+                            <button class="memberspicker-clear" @click="clear()">Clear assignee</button>
+                        </div>
+                    </div>
+
+                    <div class="card-modal-section-header"><span class="card-modal-section-icon">&#8801;</span> Description</div>
+                    <textarea class="card-modal-body" placeholder="Add a more detailed description..." x-model="body" rows="4" @input="autoResize($event)"></textarea>
+
+                    <div class="card-modal-section-header"><span class="card-modal-section-icon">&#127991;</span> Tags</div>
+                    <div class="card-modal-tags-container" x-data="tagChips()" data-card-modal-tags @click="$refs.input.focus()">
+                        <template x-for="(tag, idx) in tags" :key="tag">
+                            <span class="card-modal-tag-chip"><span x-text="tag"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
+                        </template>
+                        <input x-ref="input" x-model="tcInput" @input="showDropdown()" @focus="showDropdown()" @blur="hideDropdown()" @keydown="handleKeydown($event)" class="card-modal-tags-input" :placeholder="tags.length ? '' : 'Add tags...'">
+                        <div class="card-modal-tags-dropdown" :class="{ open: tcDropdownOpen && (filtered.length > 0 || tcInput.trim()) }">
+                            <template x-for="(s, i) in filtered" :key="s">
+                                <div class="card-modal-tags-dropdown-item" :class="{ active: i === tcActiveIdx }" @mousedown.prevent="addTag(s); $refs.input.focus()" x-text="s"></div>
+                            </template>
+                            <div x-show="filtered.length === 0 && tcInput.trim()" class="card-modal-tags-dropdown-empty">Press Enter to add "<span x-text="tcInput"></span>"</div>
+                        </div>
+                    </div>
+
+                    <div class="card-modal-save-row">
+                        <button class="btn-primary btn-small" @click="save()">Save</button>
+                    </div>
+                </div>
+
+                <div class="card-modal-sidebar">
+                    <div class="card-modal-sidebar-label">Actions</div>
+                    <button x-show="hasCompleteBtn || completed" class="card-modal-sidebar-btn" @click="toggleComplete()">
+                        <span class="card-modal-action-icon" x-text="completed ? '\u21A9' : '\u2713'"></span> <span x-text="completed ? 'Mark Incomplete' : 'Complete'"></span>
+                    </button>
+
+                    <template x-if="moveTriggers.length > 0">
+                        <div>
+                            <div class="card-modal-sidebar-sublabel">Move to</div>
+                            <template x-for="mt in moveTriggers" :key="mt.name">
+                                <button class="card-modal-sidebar-btn card-modal-sidebar-btn-move" @click="moveTo(mt)">
+                                    <span class="card-modal-action-icon">&rarr;</span> <span x-text="mt.name"></span>
+                                </button>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template x-if="hasDeleteBtn">
+                        <div>
+                            <div class="card-modal-sidebar-sep"></div>
+                            <button class="card-modal-sidebar-btn card-modal-sidebar-btn-danger" @click="deleteCard()">
+                                <span class="card-modal-action-icon">&#128465;</span> Delete
+                            </button>
+                        </div>
+                    </template>
+
+                    <div class="card-modal-sidebar-sep"></div>
+                    <div class="card-modal-sidebar-label">Priority</div>
+                    <div class="card-modal-priority-group" x-data="prioritySelector(priority)" x-effect="$data.value; priority = $data.value">
+                        <template x-for="opt in options" :key="opt.val">
+                            <button class="card-modal-priority-btn" :class="{ 'card-modal-priority-btn--active': opt.val === value, ['card-modal-priority-btn--' + opt.val]: opt.val }" :title="opt.title" x-text="opt.label" @click="select(opt.val)"></button>
+                        </template>
+                    </div>
+
+                    <div class="card-modal-meta-list">
+                        <div class="card-modal-meta-item" :style="{ opacity: assignee ? '1' : '0.5' }">&#128100; <span x-text="assignee || 'No assignee'"></span></div>
+                        <div class="card-modal-meta-item" :style="{ opacity: due ? '1' : '0.5' }">&#128197; <span x-text="due || 'No due date'"></span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Edit + Context Menu (Alpine) -->
+    <div x-data="quickEdit()" @keydown.escape.window="if(open) hide()">
+        <div class="quick-edit-overlay" x-show="open" :style="'left:' + left + 'px;top:' + top + 'px;width:' + width + 'px;min-height:' + minHeight + 'px'" x-cloak>
+            <textarea class="qe-title" x-model="title" rows="2" @keydown="handleTitleKeydown($event)"></textarea>
+            <div class="card-modal-tags-container qe-tags-container" x-data="tagChips()" data-qe-tags @click="$refs.input.focus()">
+                <template x-for="(tag, idx) in tags" :key="tag">
+                    <span class="card-modal-tag-chip"><span x-text="tag"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
+                </template>
+                <input x-ref="input" x-model="tcInput" @input="showDropdown()" @focus="showDropdown()" @blur="hideDropdown()" @keydown="handleKeydown($event)" class="card-modal-tags-input" :placeholder="tags.length ? '' : 'Add tags...'">
+                <div class="card-modal-tags-dropdown" :class="{ open: tcDropdownOpen && (filtered.length > 0 || tcInput.trim()) }">
+                    <template x-for="(s, i) in filtered" :key="s">
+                        <div class="card-modal-tags-dropdown-item" :class="{ active: i === tcActiveIdx }" @mousedown.prevent="addTag(s); $refs.input.focus()" x-text="s"></div>
+                    </template>
+                    <div x-show="filtered.length === 0 && tcInput.trim()" class="card-modal-tags-dropdown-empty">Press Enter to add "<span x-text="tcInput"></span>"</div>
+                </div>
+            </div>
+            <textarea class="qe-body" placeholder="Description (optional)" x-model="body" rows="2" @keydown="handleBodyKeydown($event)"></textarea>
+            <div class="qe-actions">
+                <button class="btn-primary btn-small" @click="save()">Save</button>
+                <button class="btn-small" @click="hide()">Cancel</button>
+            </div>
+        </div>
+
+        <!-- Context menu -->
+        <div class="card-context-menu" :class="{ visible: ctxOpen }" :style="'left:' + ctxLeft + 'px;top:' + ctxTop + 'px'" role="menu" x-show="ctxOpen" @click.outside="if(!open) hide()" x-cloak>
+            <button x-show="ctxHasComplete" class="ctx-item" role="menuitem" @click.stop="ctxComplete()">
+                <span class="ctx-icon">&#10003;</span> <span x-text="ctxCompleted ? 'Mark Incomplete' : 'Complete'"></span>
+            </button>
+            <template x-if="ctxMoveTriggers.length > 0">
+                <div>
+                    <div class="ctx-separator"></div>
+                    <div class="ctx-submenu-label">Move to</div>
+                    <div class="ctx-submenu">
+                        <template x-for="mt in ctxMoveTriggers" :key="mt.name">
+                            <button class="ctx-item" role="menuitem" @click.stop="ctxMoveTo(mt)"><span class="ctx-icon">&rarr;</span> <span x-text="mt.name"></span></button>
+                        </template>
+                    </div>
+                </div>
+            </template>
+            <div class="ctx-separator"></div>
+            <div class="ctx-submenu-label">Priority</div>
+            <div class="card-modal-priority-group ctx-priority-group" x-data="prioritySelector(priority)" x-effect="$data.value; priority = $data.value">
+                <template x-for="opt in options" :key="opt.val">
+                    <button class="card-modal-priority-btn" :class="{ 'card-modal-priority-btn--active': opt.val === value, ['card-modal-priority-btn--' + opt.val]: opt.val }" :title="opt.title" x-text="opt.label" @click="select(opt.val)"></button>
+                </template>
+            </div>
+            <template x-if="ctxHasDelete">
+                <div>
+                    <div class="ctx-separator"></div>
+                    <button class="ctx-item ctx-danger" role="menuitem" @click.stop="ctxDelete()"><span class="ctx-icon">&#128465;</span> <span x-text="ctxDeleteLabel"></span></button>
+                </div>
+            </template>
+        </div>
+    </div>
+
+    <!-- Column Menu (Alpine) -->
+    <div x-data="columnMenu()" @keydown.escape.window="if(open) hide(); if(assistantOpen) closeAssistant()">
+        <div id="alpine-column-menu" class="card-context-menu" :class="{ visible: open }" :style="'left:' + left + 'px;top:' + top + 'px'" role="menu" x-show="open" @click.outside="hide()" x-cloak>
+            <button class="ctx-item" role="menuitem" @click.stop="editColumn()"><span class="ctx-icon">&#9999;&#65039;</span> Edit</button>
+            <button class="ctx-item ctx-danger" role="menuitem" @click.stop="deleteColumn()"><span class="ctx-icon">&#128465;</span> Delete</button>
+            <template x-if="colIdx >= 0">
+                <div>
+                    <div class="ctx-separator"></div>
+                    <div class="ctx-submenu-label">Sort</div>
+                    <div class="ctx-submenu">
+                        <button class="ctx-item" role="menuitem" @click.stop="sortBy('name')"><span class="ctx-icon">&#128292;</span> By Name</button>
+                        <button class="ctx-item" role="menuitem" @click.stop="sortBy('priority')"><span class="ctx-icon">&#9889;</span> By Priority</button>
+                        <button class="ctx-item" role="menuitem" @click.stop="sortBy('due')"><span class="ctx-icon">&#128197;</span> By Due Date</button>
+                    </div>
+                </div>
+            </template>
+            <div class="ctx-separator"></div>
+            <div class="ctx-submenu-label">Assistant</div>
+            <div class="ctx-submenu">
+                <button class="ctx-item" role="menuitem" @click.stop="showAssistant('summary')"><span class="ctx-icon">&#128203;</span> Summary</button>
+                <button class="ctx-item" role="menuitem" @click.stop="showAssistant('custom')"><span class="ctx-icon">&#9881;&#65039;</span> Custom instruction</button>
+            </div>
+        </div>
+
+        <!-- Assistant Modal -->
+        <div class="card-modal-backdrop" x-show="assistantOpen" @click.self="closeAssistant()" x-cloak>
+            <div class="card-modal" style="max-width:480px">
+                <button class="card-modal-close" @click="closeAssistant()">&times;</button>
+                <div class="card-modal-main">
+                    <div class="card-modal-section-header"><span class="card-modal-section-icon">&#9881;&#65039;</span> Assistant &mdash; <span x-text="columnName"></span></div>
+                    <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:8px" x-text="assistantMode === 'summary' ? 'Generate a summary of all cards in this column:' : 'Custom instruction for the assistant:'"></p>
+                    <textarea class="card-modal-body assistant-textarea" :placeholder="assistantMode === 'summary' ? 'E.g. Summarize as a priority list...' : 'E.g. Write a status update based on these cards...'" rows="5" x-model="assistantPrompt"></textarea>
+                    <div class="card-modal-save-row">
+                        <button class="btn-primary btn-small" @click="runAssistant()">Run</button>
+                        <button class="btn-small" style="margin-left:8px" @click="closeAssistant()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

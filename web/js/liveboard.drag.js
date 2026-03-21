@@ -5,25 +5,105 @@
   var draggingSourceColumn = null;
   var draggingColumnEl = null;
 
-  // Global dismiss handler (needs private refs from context-menu and column-menu)
-  document.addEventListener("click", function (e) {
-    if (LB._colCtxMenuVisible && LB._colCtxMenuVisible() && !LB._colCtxMenuContains(e.target)) {
-      LB.hideColumnMenu();
-    }
-    if (LB._hasQeOverlay && LB._hasQeOverlay() && !LB._qeOverlayContains(e.target) && !LB._ctxMenuContains(e.target)) {
-      LB.hideQuickEdit();
-    } else if (!(LB._hasQeOverlay && LB._hasQeOverlay()) && LB._hasCtxMenu && LB._hasCtxMenu() && !LB._ctxMenuContains(e.target)) {
-      LB.hideContextMenu();
-    }
-  });
-
   function attach() {
-    LB.attachCollapsedColumnClick();
-    LB.attachContextMenu();
-    LB.attachCardClick();
-    LB.attachColumnMenus();
-    LB.attachBoardTitleDblClick();
-    LB.initBoardSettingsPanel();
+    // Card click → open Alpine card modal
+    document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
+      if (card.dataset.modalWired) return;
+      card.dataset.modalWired = "1";
+
+      card.addEventListener("mousedown", function () {
+        LB.isDragging = false;
+      });
+
+      card.addEventListener("click", function (e) {
+        if (LB.isDragging) return;
+        if (e.target.closest("button, a, input, textarea, select")) return;
+        // Open Alpine card modal
+        var modalComp = document.querySelector('[x-data^="cardModal"]');
+        if (modalComp && modalComp._x_dataStack) {
+          Alpine.$data(modalComp).show(card);
+        }
+      });
+    });
+
+    // Card right-click → open Alpine quick edit
+    document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
+      if (card.dataset.ctxWired) return;
+      card.dataset.ctxWired = "1";
+      card.addEventListener("contextmenu", function (e) {
+        e.preventDefault();
+        var qeComp = document.querySelector('[x-data^="quickEdit"]');
+        if (qeComp && qeComp._x_dataStack) {
+          Alpine.$data(qeComp).show(card);
+        }
+      });
+    });
+
+    // Column menu buttons → open Alpine column menu
+    document.querySelectorAll(".column-menu-btn").forEach(function (btn) {
+      if (btn.dataset.colMenuWired) return;
+      btn.dataset.colMenuWired = "1";
+      btn.addEventListener("click", function (e) {
+        e.stopPropagation();
+        var menuComp = document.querySelector('[x-data^="columnMenu"]');
+        if (menuComp && menuComp._x_dataStack) {
+          Alpine.$data(menuComp).show(btn);
+        }
+      });
+    });
+
+    // Column header double-click → rename
+    document.querySelectorAll(".column-header h3").forEach(function (h3) {
+      if (h3.dataset.dblWired) return;
+      h3.dataset.dblWired = "1";
+      h3.addEventListener("dblclick", function (e) {
+        e.stopPropagation();
+        var btn = h3.closest(".column-header").querySelector(".column-menu-btn");
+        if (!btn) return;
+        var menuComp = document.querySelector('[x-data^="columnMenu"]');
+        if (menuComp && menuComp._x_dataStack) {
+          var data = Alpine.$data(menuComp);
+          data.columnName = btn.dataset.columnName;
+          data.slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+          data.editColumn();
+        }
+      });
+    });
+
+    // Board title double-click → open settings
+    var titleEl = document.querySelector(".board-title");
+    if (titleEl && !titleEl.dataset.dblWired) {
+      titleEl.dataset.dblWired = "1";
+      titleEl.addEventListener("dblclick", function (e) {
+        e.stopPropagation();
+        var bsComp = document.querySelector('[x-data^="boardSettings"]');
+        if (bsComp && bsComp._x_dataStack) {
+          Alpine.$data(bsComp).toggle();
+        }
+      });
+    }
+
+    // Board settings gear button
+    document.querySelectorAll(".board-settings-btn").forEach(function (btn) {
+      if (btn.dataset.bsWired) return;
+      btn.dataset.bsWired = "1";
+      btn.addEventListener("click", function () {
+        var bsComp = document.querySelector('[x-data^="boardSettings"]');
+        if (bsComp && bsComp._x_dataStack) {
+          Alpine.$data(bsComp).toggle();
+        }
+      });
+    });
+
+    // Collapsed column click → expand
+    document.addEventListener("click", function (e) {
+      var header = e.target.closest(".column-header");
+      if (!header) return;
+      var col = header.closest(".column");
+      if (!col || !col.classList.contains("collapsed")) return;
+      var btn = header.querySelector(".column-collapse-btn");
+      if (btn && e.target !== btn) btn.click();
+    });
 
     // Cards: draggable
     document.querySelectorAll(".card[draggable]").forEach(function (card) {
@@ -59,7 +139,7 @@
       zone.dataset.dropWired = "1";
 
       zone.addEventListener("dragover", function (e) {
-        if (draggingColumnEl) return; // ignore column drags on card zones
+        if (draggingColumnEl) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
         zone.classList.remove("drag-over");
@@ -75,7 +155,7 @@
       });
 
       zone.addEventListener("drop", function (e) {
-        if (draggingColumnEl) return; // ignore column drags on card zones
+        if (draggingColumnEl) return;
         e.preventDefault();
         zone.classList.remove("drag-over");
 
@@ -90,7 +170,6 @@
         var srcColIdx = parts[0];
         var srcCardIdx = parts[1];
 
-        // Find the dragged card element
         var card = document.querySelector('.card[data-col-idx="' + srcColIdx + '"][data-card-idx="' + srcCardIdx + '"]');
         if (!card) {
           LB.clearDropIndicators();
@@ -115,7 +194,6 @@
 
         var beforeIdx = beforeCard ? beforeCard.dataset.cardIdx : "-1";
 
-        // Skip if card didn't actually move (same column, same position)
         if (sourceColumn === targetColumn) {
           var prevSibling = card.previousElementSibling;
           while (prevSibling && !prevSibling.classList.contains("card")) {
@@ -129,7 +207,7 @@
             (beforeCard === null && nextSibling === null) ||
             (beforeCard && nextSibling && beforeCard.dataset.cardIdx === nextSibling.dataset.cardIdx)
           ) {
-            return; // no-op
+            return;
           }
         }
 
@@ -164,7 +242,7 @@
       for (var i = 0; i < columns.length; i++) {
         var rect = columns[i].getBoundingClientRect();
         var mid = isTable ? rect.top + rect.height / 2 : rect.left + rect.width / 2;
-        var pos = isTable ? clientX : clientX; // clientX for board, clientY for table
+        var pos = isTable ? clientX : clientX;
         if (pos < mid) {
           return columns[i];
         }
@@ -179,7 +257,6 @@
       if (beforeCol) {
         container.insertBefore(indicator, beforeCol);
       } else {
-        // Append before add-column element
         var addCol = container.querySelector(".add-column-bar, .table-add-column");
         if (addCol) {
           container.insertBefore(indicator, addCol);
@@ -194,21 +271,16 @@
       if (col.dataset.colDragWired) return;
       col.dataset.colDragWired = "1";
 
-      // Track mousedown origin so dragstart can check if it came from the header.
-      // e.target in dragstart is always the draggable element (.column), not the
-      // element under the cursor, so we can't use it directly.
       col.addEventListener("mousedown", function (e) {
         var header = col.querySelector(".column-header");
         col._dragFromHeader = header && header.contains(e.target);
       });
 
       col.addEventListener("dragstart", function (e) {
-        // Only drag from the column header area
         if (!col._dragFromHeader) {
           e.preventDefault();
           return;
         }
-        // Don't start column drag if a card is being dragged
         if (draggingCard) {
           e.preventDefault();
           return;
@@ -251,7 +323,6 @@
         e.preventDefault();
         var colName = draggingColumnEl.dataset.columnName;
 
-        // Determine after_column from indicator position
         var indicator = container.querySelector(".column-drop-indicator");
         var afterCol = "";
         if (indicator) {
@@ -265,14 +336,13 @@
         }
         clearColumnDropIndicators();
 
-        // Skip if column didn't actually move
         if (afterCol === colName) return;
         var prevSib = draggingColumnEl.previousElementSibling;
         while (prevSib && !prevSib.classList.contains("column")) {
           prevSib = prevSib.previousElementSibling;
         }
-        if (afterCol === "" && !prevSib) return; // already first
-        if (prevSib && prevSib.dataset.columnName === afterCol) return; // same position
+        if (afterCol === "" && !prevSib) return;
+        if (prevSib && prevSib.dataset.columnName === afterCol) return;
 
         var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
         htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/columns/move', {
@@ -319,7 +389,6 @@
         if (!draggingColumnEl) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
-        // Use clientY for table mode (vertical groups)
         var groups = Array.from(container.querySelectorAll(".table-group-cards[data-column]")).filter(
           function (g) { return g !== draggingColumnEl; }
         );
@@ -359,7 +428,6 @@
         }
         clearColumnDropIndicators();
 
-        // Skip no-ops
         if (afterCol === colName) return;
         var prevSib = draggingColumnEl.previousElementSibling;
         while (prevSib && !prevSib.classList.contains("table-group-cards")) {

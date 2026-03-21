@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="settings-view">
+<div class="settings-view" x-data="globalSettings()" x-init="init()">
     <div class="workspace-header">
         <span class="workspace-title">Settings</span>
     </div>
@@ -12,7 +12,7 @@
                     <div class="settings-label-hint">Brand name shown in sidebar and page titles</div>
                 </div>
                 <div class="settings-control">
-                    <input type="text" id="settingSiteName" maxlength="50" placeholder="LiveBoard">
+                    <input type="text" maxlength="50" placeholder="LiveBoard" x-model="siteName">
                 </div>
             </div>
         </div>
@@ -24,7 +24,7 @@
                     <div class="settings-label-hint">Controls light/dark color scheme</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingTheme">
+                    <select x-model="theme">
                         <option value="system">System</option>
                         <option value="light">Light</option>
                         <option value="dark">Dark</option>
@@ -37,7 +37,7 @@
                     <div class="settings-label-hint">Accent color palette</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingColorTheme">
+                    <select x-model="colorTheme">
                         <option value="default">&#9679; Default</option>
                         <option value="github">&#9679; GitHub</option>
                         <option value="gitlab">&#9679; GitLab</option>
@@ -56,7 +56,7 @@
                     <div class="settings-label-hint">Typeface used across the app</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingFontFamily">
+                    <select x-model="fontFamily">
                         <option value="system">System Default</option>
                         <option value="inter">Inter</option>
                         <option value="ibm-plex-sans">IBM Plex Sans</option>
@@ -73,7 +73,7 @@
                     <div class="settings-label-hint">Width of board columns in pixels</div>
                 </div>
                 <div class="settings-control">
-                    <input type="number" id="settingColumnWidth" min="180" max="600" step="10">
+                    <input type="number" min="180" max="600" step="10" x-model="columnWidth">
                 </div>
             </div>
             <div class="settings-field">
@@ -82,7 +82,7 @@
                     <div class="settings-label-hint">Render sidebar on left or right</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingSidebarPosition">
+                    <select x-model="sidebarPosition">
                         <option value="left">Left</option>
                         <option value="right">Right</option>
                     </select>
@@ -97,7 +97,7 @@
                     <div class="settings-label-hint">Show a checkbox on each card (default for all boards)</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingShowCheckbox">
+                    <select x-model="showCheckbox">
                         <option value="true">Yes</option>
                         <option value="false">No</option>
                     </select>
@@ -109,7 +109,7 @@
                     <div class="settings-label-hint">Which key creates a new line; the opposite submits</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingNewLineTrigger">
+                    <select x-model="newLineTrigger">
                         <option value="shift-enter">Shift + Enter</option>
                         <option value="enter">Enter</option>
                     </select>
@@ -121,7 +121,7 @@
                     <div class="settings-label-hint">Where new cards are added in a column (default for all boards)</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingCardPosition">
+                    <select x-model="cardPosition">
                         <option value="append">Bottom (append)</option>
                         <option value="prepend">Top (prepend)</option>
                     </select>
@@ -133,7 +133,7 @@
                     <div class="settings-label-hint">How card body content is shown on boards (default for all boards)</div>
                 </div>
                 <div class="settings-control">
-                    <select id="settingCardDisplayMode">
+                    <select x-model="cardDisplayMode">
                         <option value="full">Show all</option>
                         <option value="hide">Hide body</option>
                         <option value="trim">Trim (3 lines)</option>
@@ -149,192 +149,19 @@
                     <div class="settings-label-hint">Column names for new boards</div>
                 </div>
                 <div class="settings-control" style="width:100%">
-                    <div class="card-modal-tags-container" id="settingDefaultColumnsContainer">
-                        <input type="text" class="card-modal-tags-input" id="settingDefaultColumnsInput" placeholder="Add column...">
+                    <div class="card-modal-tags-container" x-data="columnChips(defaultColumns)" data-settings-cols @click="$refs.input.focus()">
+                        <template x-for="(col, idx) in cols" :key="col + idx">
+                            <span class="card-modal-tag-chip"><span x-text="col"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="removeCol(idx)">&times;</button></span>
+                        </template>
+                        <input type="text" x-ref="input" x-model="input" @keydown="handleKeydown($event)" class="card-modal-tags-input" :placeholder="cols.length ? '' : 'Add column...'">
                     </div>
                 </div>
             </div>
         </div>
         <div class="settings-save-row">
-            <button class="btn-primary" id="settingsSave">Save</button>
-            <span class="settings-saved-msg" id="settingsSavedMsg">Saved.</span>
+            <button class="btn-primary" @click="save()">Save</button>
+            <span class="settings-saved-msg" x-show="savedVisible" x-cloak>Saved.</span>
         </div>
     </div>
 </div>
-<script>
-(function() {
-    var siteNameEl = document.getElementById('settingSiteName');
-    var themeEl = document.getElementById('settingTheme');
-    var colorThemeEl = document.getElementById('settingColorTheme');
-    var fontFamilyEl = document.getElementById('settingFontFamily');
-    var widthEl = document.getElementById('settingColumnWidth');
-    var sidebarPosEl = document.getElementById('settingSidebarPosition');
-    var showCheckboxEl = document.getElementById('settingShowCheckbox');
-    var newLineTriggerEl = document.getElementById('settingNewLineTrigger');
-    var cardPositionEl = document.getElementById('settingCardPosition');
-    var cardDisplayModeEl = document.getElementById('settingCardDisplayMode');
-    var colsContainer = document.getElementById('settingDefaultColumnsContainer');
-    var colsInput = document.getElementById('settingDefaultColumnsInput');
-    var saveBtn = document.getElementById('settingsSave');
-    var savedMsg = document.getElementById('settingsSavedMsg');
-
-    // Chip-based column input
-    var currentCols = [];
-
-    function renderColChips() {
-        Array.from(colsContainer.querySelectorAll('.card-modal-tag-chip')).forEach(function(el) { el.remove(); });
-        currentCols.forEach(function(col, idx) {
-            var chip = document.createElement('span');
-            chip.className = 'card-modal-tag-chip';
-            chip.textContent = col;
-            var removeBtn = document.createElement('button');
-            removeBtn.className = 'card-modal-tag-chip-remove';
-            removeBtn.type = 'button';
-            removeBtn.innerHTML = '&times;';
-            removeBtn.addEventListener('click', function(e) {
-                e.stopPropagation();
-                currentCols.splice(idx, 1);
-                renderColChips();
-                colsInput.placeholder = currentCols.length ? '' : 'Add column...';
-            });
-            chip.appendChild(removeBtn);
-            colsContainer.insertBefore(chip, colsInput);
-        });
-    }
-
-    function addCol(val) {
-        val = val.trim();
-        if (!val) return;
-        currentCols.push(val);
-        renderColChips();
-        colsInput.value = '';
-        colsInput.placeholder = '';
-    }
-
-    colsInput.addEventListener('keydown', function(e) {
-        if (e.key === 'Enter' || e.key === ',') {
-            e.preventDefault();
-            var val = colsInput.value.replace(/,/g, '');
-            addCol(val);
-        } else if (e.key === 'Backspace' && !colsInput.value && currentCols.length) {
-            currentCols.pop();
-            renderColChips();
-            colsInput.placeholder = currentCols.length ? '' : 'Add column...';
-        }
-    });
-
-    colsContainer.addEventListener('click', function() { colsInput.focus(); });
-
-    // Font family mapping
-    var fontMap = {
-        'system': {css: "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif", gf: ''},
-        'inter': {css: "'Inter', sans-serif", gf: 'Inter'},
-        'ibm-plex-sans': {css: "'IBM Plex Sans', sans-serif", gf: 'IBM+Plex+Sans'},
-        'source-sans-3': {css: "'Source Sans 3', sans-serif", gf: 'Source+Sans+3'},
-        'nunito-sans': {css: "'Nunito Sans', sans-serif", gf: 'Nunito+Sans'},
-        'dm-sans': {css: "'DM Sans', sans-serif", gf: 'DM+Sans'},
-        'rubik': {css: "'Rubik', sans-serif", gf: 'Rubik'}
-    };
-
-    function applyFont(key) {
-        var f = fontMap[key] || fontMap['system'];
-        document.documentElement.style.setProperty('--font-sans', f.css);
-        var existing = document.getElementById('lb-google-font');
-        if (existing) existing.remove();
-        if (f.gf) {
-            var link = document.createElement('link');
-            link.id = 'lb-google-font';
-            link.rel = 'stylesheet';
-            link.href = 'https://fonts.googleapis.com/css2?family=' + f.gf + ':wght@400;500;600;700&display=swap';
-            document.head.appendChild(link);
-        }
-    }
-
-    // Style the color theme options with their accent colors
-    var themeColors = {default:'#6366f1',github:'#0969da',gitlab:'#6e49cb',emerald:'#059669',rose:'#e11d48',sunset:'#ea580c',aqua:'#007AFF',graphite:'#8E8E93',macos:'#007AFF'};
-    Array.from(colorThemeEl.options).forEach(function(opt) {
-        opt.style.color = themeColors[opt.value] || '';
-    });
-
-    // Load from server
-    fetch('/api/settings')
-        .then(function(r) { return r.json(); })
-        .then(function(s) {
-            siteNameEl.value = s.site_name || 'LiveBoard';
-            themeEl.value = s.theme || 'system';
-            colorThemeEl.value = s.color_theme || 'default';
-            fontFamilyEl.value = s.font_family || 'system';
-            widthEl.value = s.column_width || 280;
-            sidebarPosEl.value = s.sidebar_position || 'left';
-            showCheckboxEl.value = s.show_checkbox === false ? 'false' : 'true';
-            newLineTriggerEl.value = s.newline_trigger || 'shift-enter';
-            cardPositionEl.value = s.card_position || 'append';
-            cardDisplayModeEl.value = s.card_display_mode || 'full';
-            currentCols = s.default_columns || ['not now', 'maybe?', 'done'];
-            renderColChips();
-            colsInput.placeholder = currentCols.length ? '' : 'Add column...';
-        });
-
-    saveBtn.addEventListener('click', function() {
-        var rawCols = currentCols.length > 0 ? currentCols : ['not now', 'maybe?', 'done'];
-        var payload = {
-            site_name: siteNameEl.value.trim() || 'LiveBoard',
-            theme: themeEl.value,
-            color_theme: colorThemeEl.value,
-            font_family: fontFamilyEl.value,
-            column_width: parseInt(widthEl.value, 10) || 280,
-            sidebar_position: sidebarPosEl.value,
-            show_checkbox: showCheckboxEl.value === 'true',
-            newline_trigger: newLineTriggerEl.value,
-            card_position: cardPositionEl.value,
-            card_display_mode: cardDisplayModeEl.value,
-            default_columns: rawCols
-        };
-
-        fetch('/api/settings', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify(payload)
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(s) {
-            // Write-through to localStorage for instant apply on next page load
-            localStorage.setItem('lb_site_name', s.site_name);
-            localStorage.setItem('lb_theme', s.theme);
-            localStorage.setItem('lb_color_theme', s.color_theme);
-            localStorage.setItem('lb_column_width', String(s.column_width));
-            localStorage.setItem('lb_sidebar_position', s.sidebar_position);
-            localStorage.setItem('lb_font_family', s.font_family);
-            localStorage.setItem('lb_newline_trigger', s.newline_trigger);
-
-            // Apply immediately
-            if (s.theme === 'system') {
-                document.documentElement.removeAttribute('data-theme');
-            } else {
-                document.documentElement.setAttribute('data-theme', s.theme);
-            }
-            if (s.color_theme && s.color_theme !== 'default') {
-                document.documentElement.setAttribute('data-color-theme', s.color_theme);
-            } else {
-                document.documentElement.removeAttribute('data-color-theme');
-            }
-            applyFont(s.font_family || 'system');
-            document.documentElement.style.setProperty('--column-width', s.column_width + 'px');
-            if (s.sidebar_position === 'right') {
-                document.documentElement.setAttribute('data-sidebar-position', 'right');
-            } else {
-                document.documentElement.removeAttribute('data-sidebar-position');
-            }
-
-            // Update brand name in sidebar immediately
-            var brandEl = document.querySelector('.brand-name');
-            if (brandEl) brandEl.textContent = s.site_name;
-            document.title = 'Settings — ' + s.site_name;
-
-            savedMsg.style.display = 'inline';
-            setTimeout(function() { savedMsg.style.display = 'none'; }, 2000);
-        });
-    });
-})();
-</script>
 {{end}}

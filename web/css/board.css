@@ -1,3 +1,6 @@
+/* Alpine.js cloak — hide elements until Alpine initializes */
+[x-cloak] { display: none !important; }
+
 /* === DESIGN TOKENS === */
 :root {
     --color-accent:         #6366f1;
@@ -720,6 +723,10 @@ select:focus {
     color: var(--color-text-primary);
 }
 
+.app-sidebar .sidebar-toggle {
+    display: none;
+}
+
 /* Sidebar on right side */
 [data-sidebar-position="right"] .app-shell {
     flex-direction: row-reverse;
@@ -1090,6 +1097,14 @@ select:focus {
     display: flex;
     flex-direction: column;
     height: 100%;
+    overflow: hidden;
+}
+
+#board-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
 }
 

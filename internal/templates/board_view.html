@@ -30,28 +30,39 @@
         {{end}}
     </div>
 
-    <div class="board-settings-backdrop" style="display:none">
+    <div class="board-settings-backdrop" x-data="boardSettings()" x-show="open" @click.self="close()" style="display:none" x-cloak>
     <div class="board-settings-panel">
         <div class="board-settings-panel-header">
             <span>Board Settings</span>
-            <button class="board-settings-close" title="Close">&times;</button>
+            <button class="board-settings-close" title="Close" @click="close()">&times;</button>
         </div>
         <div class="board-settings-panel-body">
             <div class="settings-field-stacked">
                 <label class="settings-label-stacked" for="bsBoardName">Board name</label>
-                <input type="text" id="bsBoardName" class="settings-input" maxlength="100" />
+                <input type="text" id="bsBoardName" class="settings-input" maxlength="100" x-model="boardName" />
             </div>
             <div class="settings-field-stacked">
                 <label class="settings-label-stacked" for="bsBoardDescription">Description</label>
-                <textarea id="bsBoardDescription" class="settings-input" rows="2" placeholder="Board description (optional)"></textarea>
+                <textarea id="bsBoardDescription" class="settings-input" rows="2" placeholder="Board description (optional)" x-model="boardDescription"></textarea>
             </div>
             <div class="settings-field-stacked">
                 <label class="settings-label-stacked">Tags</label>
-                <div id="bsBoardTagsContainer" class="card-modal-tags-container"></div>
+                <div class="card-modal-tags-container" x-data="tagChips()" data-bs-tags @click="$refs.input.focus()">
+                    <template x-for="(tag, idx) in tags" :key="tag">
+                        <span class="card-modal-tag-chip"><span x-text="tag"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
+                    </template>
+                    <input x-ref="input" x-model="tcInput" @input="showDropdown()" @focus="showDropdown()" @blur="hideDropdown()" @keydown="handleKeydown($event)" class="card-modal-tags-input" :placeholder="tags.length ? '' : 'Add tags...'">
+                    <div class="card-modal-tags-dropdown" :class="{ open: tcDropdownOpen && (filtered.length > 0 || tcInput.trim()) }">
+                        <template x-for="(s, i) in filtered" :key="s">
+                            <div class="card-modal-tags-dropdown-item" :class="{ active: i === tcActiveIdx }" @mousedown.prevent="addTag(s); $refs.input.focus()" x-text="s"></div>
+                        </template>
+                        <div x-show="filtered.length === 0 && tcInput.trim()" class="card-modal-tags-dropdown-empty">Press Enter to add "<span x-text="tcInput"></span>"</div>
+                    </div>
+                </div>
             </div>
             <div class="settings-meta-actions">
-                <button id="bsSaveMeta" class="btn-primary btn-small">Save</button>
-                <span id="bsMetaSavedMsg" class="settings-saved-msg">Saved.</span>
+                <button class="btn-primary btn-small" @click="saveMeta()">Save</button>
+                <span class="settings-saved-msg" x-show="savedVisible" x-cloak>Saved.</span>
             </div>
             <hr style="border:none;border-top:1px solid var(--color-border);margin:12px 0;" />
             <div class="settings-field">
@@ -60,12 +71,12 @@
                     <div class="settings-label-hint">Override global default for this board</div>
                 </div>
                 <div class="settings-control board-setting-control">
-                    <select id="bsShowCheckbox">
+                    <select x-model="showCheckbox" @change="sendSettings()">
                         <option value="">Use default</option>
                         <option value="true">Yes</option>
                         <option value="false">No</option>
                     </select>
-                    <button class="btn-reset-setting" data-setting="show_checkbox" title="Reset to global default" style="display:none">&#8634;</button>
+                    <button class="btn-reset-setting" title="Reset to global default" x-show="showCheckbox !== ''" @click="resetSetting('show_checkbox')" x-cloak>&#8634;</button>
                 </div>
             </div>
             <div class="settings-field">
@@ -74,12 +85,12 @@
                     <div class="settings-label-hint">Override global default for this board</div>
                 </div>
                 <div class="settings-control board-setting-control">
-                    <select id="bsCardPosition">
+                    <select x-model="cardPosition" @change="sendSettings()">
                         <option value="">Use default</option>
                         <option value="append">Bottom (append)</option>
                         <option value="prepend">Top (prepend)</option>
                     </select>
-                    <button class="btn-reset-setting" data-setting="card_position" title="Reset to global default" style="display:none">&#8634;</button>
+                    <button class="btn-reset-setting" title="Reset to global default" x-show="cardPosition !== ''" @click="resetSetting('card_position')" x-cloak>&#8634;</button>
                 </div>
             </div>
             <div class="settings-field">
@@ -88,7 +99,7 @@
                     <div class="settings-label-hint">Columns stretch to fill available space</div>
                 </div>
                 <div class="settings-control board-setting-control">
-                    <select id="bsExpandColumns">
+                    <select x-model="expandColumns" @change="sendSettings()">
                         <option value="false">No</option>
                         <option value="true">Yes</option>
                     </select>
@@ -100,7 +111,7 @@
                     <div class="settings-label-hint">Board (kanban columns) or Table layout</div>
                 </div>
                 <div class="settings-control board-setting-control">
-                    <select id="bsViewMode">
+                    <select x-model="viewMode" @change="sendSettings()">
                         <option value="board">Board</option>
                         <option value="table">Table</option>
                     </select>
@@ -112,13 +123,13 @@
                     <div class="settings-label-hint">How card body content is shown</div>
                 </div>
                 <div class="settings-control board-setting-control">
-                    <select id="bsCardDisplayMode">
+                    <select x-model="cardDisplayMode" @change="sendSettings()">
                         <option value="">Use default</option>
                         <option value="full">Show all</option>
                         <option value="hide">Hide body</option>
                         <option value="trim">Trim (3 lines)</option>
                     </select>
-                    <button class="btn-reset-setting" data-setting="card_display_mode" title="Reset to global default" style="display:none">&#8634;</button>
+                    <button class="btn-reset-setting" title="Reset to global default" x-show="cardDisplayMode !== ''" @click="resetSetting('card_display_mode')" x-cloak>&#8634;</button>
                 </div>
             </div>
         </div>

@@ -1,11 +1,18 @@
 {
   "site_name": "ShipIt",
-  "theme": "dark",
-  "color_theme": "blue",
+  "theme": "light",
+  "color_theme": "default",
+  "font_family": "system",
   "column_width": 512,
   "sidebar_position": "left",
-  "default_columns": ["backlog", "in-progress", "review", "done"],
+  "default_columns": [
+    "backlog",
+    "in-progress",
+    "review",
+    "done"
+  ],
   "show_checkbox": false,
   "newline_trigger": "shift-enter",
-  "card_position": "append"
+  "card_position": "append",
+  "card_display_mode": "full"
 }
