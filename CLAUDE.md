@@ -20,6 +20,40 @@ Markdown-powered Kanban board with real-time collaboration.
 - **Command Palette**: Cmd+K / Ctrl+K — navigates between boards and pages
 - **Parser/Writer**: Roundtrips between markdown text and Go structs (`pkg/models/models.go`)
 
+## Board File Format
+
+```markdown
+---
+version: 1                        # optimistic locking counter
+name: My Board
+description: optional description
+icon: "🚀"                        # emoji
+tags: [product, q1]
+members: [alice, bob]
+list-collapse: [false, false, true]  # per-column collapse state
+settings:                         # per-board setting overrides
+  show-checkbox: true
+  card-display-mode: compact
+  expand-columns: false
+  view-mode: board
+---
+
+## Column Name                    # H2 = column
+
+- [ ] Card title #inline-tag      # unchecked card; #hashtags extracted as tags
+  tags: backend, api              # comma-separated; merged with inline tags
+  assignee: alice
+  priority: high                  # critical | high | medium | low
+  due: 2026-03-25                 # YYYY-MM-DD
+  custom-key: any value           # arbitrary metadata
+  Body text starts here.          # 2-space indented non-metadata lines = body
+  Newlines preserved.
+
+- [x] Completed card              # [x] or [X] = done
+```
+
+**Parsing rules**: metadata lines match `^  (\w+): (.+)$` (exactly 2-space indent). Non-matching indented lines become body. HTML comments are skipped. Inline `#tags` in title are stripped after extraction.
+
 ## Architecture
 
 - `cmd/liveboard/` — CLI entrypoint (cobra)
