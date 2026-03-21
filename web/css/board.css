@@ -2250,7 +2250,7 @@ select:focus {
     background: rgba(0, 0, 0, 0.1);
 }
 
-.card-modal-tags-input {
+input.card-modal-tags-input {
     border: none;
     outline: none;
     background: transparent;
@@ -2262,7 +2262,7 @@ select:focus {
     padding: 2px 4px;
 }
 
-.card-modal-tags-input::placeholder {
+input.card-modal-tags-input::placeholder {
     color: var(--color-text-muted);
 }
 
