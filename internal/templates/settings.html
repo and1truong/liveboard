@@ -5,6 +5,18 @@
     </div>
     <div class="settings-body">
         <div class="settings-section">
+            <div class="settings-section-title">General</div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Site name</div>
+                    <div class="settings-label-hint">Brand name shown in sidebar and page titles</div>
+                </div>
+                <div class="settings-control">
+                    <input type="text" id="settingSiteName" maxlength="50" placeholder="LiveBoard">
+                </div>
+            </div>
+        </div>
+        <div class="settings-section">
             <div class="settings-section-title">Appearance</div>
             <div class="settings-field">
                 <div>
@@ -121,6 +133,7 @@
 </div>
 <script>
 (function() {
+    var siteNameEl = document.getElementById('settingSiteName');
     var themeEl = document.getElementById('settingTheme');
     var colorThemeEl = document.getElementById('settingColorTheme');
     var widthEl = document.getElementById('settingColumnWidth');
@@ -190,6 +203,7 @@
     fetch('/api/settings')
         .then(function(r) { return r.json(); })
         .then(function(s) {
+            siteNameEl.value = s.site_name || 'LiveBoard';
             themeEl.value = s.theme || 'system';
             colorThemeEl.value = s.color_theme || 'default';
             widthEl.value = s.column_width || 280;
@@ -205,6 +219,7 @@
     saveBtn.addEventListener('click', function() {
         var rawCols = currentCols.length > 0 ? currentCols : ['not now', 'maybe?', 'done'];
         var payload = {
+            site_name: siteNameEl.value.trim() || 'LiveBoard',
             theme: themeEl.value,
             color_theme: colorThemeEl.value,
             column_width: parseInt(widthEl.value, 10) || 280,
@@ -223,6 +238,7 @@
         .then(function(r) { return r.json(); })
         .then(function(s) {
             // Write-through to localStorage for instant apply on next page load
+            localStorage.setItem('lb_site_name', s.site_name);
             localStorage.setItem('lb_theme', s.theme);
             localStorage.setItem('lb_color_theme', s.color_theme);
             localStorage.setItem('lb_column_width', String(s.column_width));
@@ -246,6 +262,11 @@
             } else {
                 document.documentElement.removeAttribute('data-sidebar-position');
             }
+
+            // Update brand name in sidebar immediately
+            var brandEl = document.querySelector('.brand-name');
+            if (brandEl) brandEl.textContent = s.site_name;
+            document.title = 'Settings — ' + s.site_name;
 
             savedMsg.style.display = 'inline';
             setTimeout(function() { savedMsg.style.display = 'none'; }, 2000);

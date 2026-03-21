@@ -14,6 +14,7 @@ import (
 // BoardListModel is the state for the board list page.
 type BoardListModel struct {
 	Title     string         `json:"title"`
+	SiteName  string         `json:"site_name"`
 	Boards    []BoardSummary `json:"boards"`
 	BoardSlug string         `json:"board_slug"` // always empty; shared with layout template
 	Error     string         `json:"error,omitempty"`
@@ -58,7 +59,8 @@ func (h *Handler) boardListModel() (BoardListModel, error) {
 	if err != nil {
 		return BoardListModel{Error: err.Error()}, nil
 	}
-	return BoardListModel{Title: "LiveBoard", Boards: toBoardSummaries(boards)}, nil
+	siteName := h.loadSettings().SiteName
+	return BoardListModel{Title: siteName, SiteName: siteName, Boards: toBoardSummaries(boards)}, nil
 }
 
 // mountBoardList initializes the board list model.

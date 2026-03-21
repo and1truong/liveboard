@@ -34,6 +34,7 @@ type BoardSettingsView struct {
 // BoardViewModel is the state for the board view page.
 type BoardViewModel struct {
 	Title          string            `json:"title"`
+	SiteName       string            `json:"site_name"`
 	Board          *models.Board     `json:"board"`
 	BoardName      string            `json:"board_name"`
 	BoardSlug      string            `json:"board_slug"` // filename stem for loading
@@ -103,7 +104,8 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	allBoards, _ := h.ws.ListBoards()
 	global := h.loadSettings()
 	return BoardViewModel{
-		Title:          board.Name + " — LiveBoard",
+		Title:          board.Name + " — " + global.SiteName,
+		SiteName:       global.SiteName,
 		Board:          board,
 		BoardName:      board.Name,
 		BoardSlug:      slug,

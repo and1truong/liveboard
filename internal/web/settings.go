@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 )
 
 // AppSettings holds persisted user preferences.
 type AppSettings struct {
+	SiteName        string   `json:"site_name"`
 	Theme           string   `json:"theme"`
 	ColorTheme      string   `json:"color_theme"`
 	ColumnWidth     int      `json:"column_width"`
@@ -30,6 +32,7 @@ var validColorThemes = map[string]bool{
 
 func defaultSettings() AppSettings {
 	return AppSettings{
+		SiteName:        "LiveBoard",
 		Theme:           "system",
 		ColorTheme:      "aqua",
 		ColumnWidth:     280,
@@ -69,6 +72,7 @@ func (h *Handler) saveSettings(s AppSettings) error {
 // SettingsModel is the template data for the settings page.
 type SettingsModel struct {
 	Title     string
+	SiteName  string
 	Boards    []BoardSummary
 	BoardSlug string
 }
@@ -79,8 +83,10 @@ func (h *Handler) SettingsHandler() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		boards, _ := h.ws.ListBoards()
+		siteName := h.loadSettings().SiteName
 		model := SettingsModel{
-			Title:     "Settings — LiveBoard",
+			Title:     "Settings — " + siteName,
+			SiteName:  siteName,
 			Boards:    toBoardSummaries(boards),
 			BoardSlug: "__settings__",
 		}
@@ -113,6 +119,13 @@ func sanitizeSettings(s *AppSettings) {
 	}
 	if s.CardPosition != "prepend" && s.CardPosition != "append" {
 		s.CardPosition = "append"
+	}
+	s.SiteName = strings.TrimSpace(s.SiteName)
+	if s.SiteName == "" {
+		s.SiteName = "LiveBoard"
+	}
+	if len([]rune(s.SiteName)) > 50 {
+		s.SiteName = string([]rune(s.SiteName)[:50])
 	}
 }
 
