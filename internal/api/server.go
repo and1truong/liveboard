@@ -21,15 +21,17 @@ type Server struct {
 	git         *gitpkg.Repository
 	liveHandler *web.Handler
 	router      chi.Router
+	noCache     bool
 }
 
 // NewServer creates a Server with all routes registered.
-func NewServer(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repository) *Server {
+func NewServer(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repository, noCache bool) *Server {
 	s := &Server{
 		ws:          ws,
 		eng:         eng,
 		git:         git,
 		liveHandler: web.NewHandler(ws, eng, git),
+		noCache:     noCache,
 	}
 	s.router = s.buildRouter()
 	return s
@@ -53,7 +55,11 @@ func (s *Server) buildRouter() chi.Router {
 
 	// Serve static assets
 	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {
-		w.Header().Set("Cache-Control", "public, max-age=3600")
+		if s.noCache {
+			w.Header().Set("Cache-Control", "no-cache, no-store")
+		} else {
+			w.Header().Set("Cache-Control", "public, max-age=3600")
+		}
 		http.StripPrefix("/static/", http.FileServer(http.FS(staticweb.FS))).ServeHTTP(w, req)
 	})
 

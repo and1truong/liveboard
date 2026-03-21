@@ -13,8 +13,8 @@ release-port:
 
 dev: release-port
 	@if command -v air >/dev/null 2>&1; then \
-		air -- serve --dir=demo/ --port $(PORT); \
+		NO_CACHE=1 air -- serve --dir=demo/ --port $(PORT); \
 	else \
 		echo "Tip: install 'air' for live reload: go install github.com/air-verse/air@latest"; \
-		go run ./cmd/liveboard/... serve --dir=demo/ --port $(PORT); \
+		NO_CACHE=1 go run ./cmd/liveboard/... serve --dir=demo/ --port $(PORT); \
 	fi

@@ -16,7 +16,7 @@ func setupTest(t *testing.T) *httptest.Server {
 	t.Helper()
 	dir := t.TempDir()
 	ws := workspace.Open(dir)
-	srv := NewServer(ws, ws.Engine, nil)
+	srv := NewServer(ws, ws.Engine, nil, false)
 	return httptest.NewServer(srv.Router())
 }
 
