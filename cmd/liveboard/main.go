@@ -4,6 +4,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -33,7 +34,7 @@ func main() {
 		Short: "Markdown-native, local-first Kanban system",
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if workDir == "" {
-				workDir, _ = os.Getwd()
+				workDir = defaultWorkDir()
 			}
 			ws = workspace.Open(workDir)
 			eng = board.New()
@@ -401,6 +402,20 @@ func columnDeleteCmd() *cobra.Command {
 			return nil
 		},
 	}
+}
+
+// defaultWorkDir returns the workspace directory, preferring the iCloud
+// liveboard folder if it exists, otherwise falling back to cwd.
+func defaultWorkDir() string {
+	home, err := os.UserHomeDir()
+	if err == nil {
+		icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
+		if info, err := os.Stat(icloud); err == nil && info.IsDir() {
+			return icloud
+		}
+	}
+	dir, _ := os.Getwd()
+	return dir
 }
 
 // --- Helpers ---
