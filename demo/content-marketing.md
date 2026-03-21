@@ -10,6 +10,9 @@ list-collapse:
     - false
     - false
     - true
+settings:
+    expand-columns: false
+    view-mode: table
 ---
 
 ## Ideas
@@ -18,11 +21,11 @@ list-collapse:
   tags: seo, blog
   priority: high
 
-- [ ] Record a Loom demo walkthrough
-  tags: video
-
 - [ ] Cold email template for partnerships
   tags: outreach
+
+- [ ] Record a Loom demo walkthrough
+  tags: video
 
 - [ ] Guest post pitch for Indie Hackers
   tags: blog, outreach

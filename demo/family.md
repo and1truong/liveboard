@@ -6,13 +6,13 @@ tags:
     - family
     - home
 list-collapse:
-    - false
+    - true
     - false
     - false
     - false
 settings:
     expand-columns: false
-    view-mode: table
+    view-mode: board
 ---
 
 ## Urgent

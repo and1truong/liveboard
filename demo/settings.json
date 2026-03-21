@@ -1,6 +1,7 @@
 {
-  "theme": "system",
-  "color_theme": "macos",
+  "site_name": "LiveBoard",
+  "theme": "light",
+  "color_theme": "rose",
   "column_width": 512,
   "sidebar_position": "left",
   "default_columns": [
