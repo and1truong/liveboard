@@ -2680,7 +2680,7 @@ select:focus {
     border-radius: var(--radius-lg);
     box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.12);
     width: 100%;
-    max-width: 480px;
+    max-width: 576px;
     padding: 20px 24px;
     position: relative;
 }
@@ -2710,6 +2710,51 @@ select:focus {
     display: flex;
     flex-direction: column;
     gap: 12px;
+}
+.settings-field-stacked {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+.settings-label-stacked {
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-primary);
+}
+.settings-input {
+    width: 100%;
+    padding: 8px 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    font-size: var(--font-size-sm);
+    font-family: var(--font-sans);
+    background: var(--color-bg);
+    color: var(--color-text-primary);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    box-sizing: border-box;
+}
+.settings-input:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
+}
+.settings-input::placeholder {
+    color: var(--color-text-tertiary);
+}
+textarea.settings-input {
+    resize: vertical;
+    min-height: 60px;
+}
+.settings-meta-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding-top: 4px;
+}
+.settings-saved-msg {
+    display: none;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
 }
 .board-settings-panel-body .settings-field {
     padding: 4px 0;

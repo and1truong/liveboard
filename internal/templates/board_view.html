@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}">
+<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}">
     <div id="board-content" hx-get="/board/{{.BoardSlug}}/content" hx-trigger="sse:board-update" hx-swap="innerHTML">
     {{template "board-content" .}}
     </div>
@@ -15,7 +15,6 @@
     <div class="board-topbar">
         <div class="board-topbar-left">
             <h2 class="board-title" title="Double-click to edit">{{.Board.Name}}</h2>
-            <button class="board-edit-btn" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" title="Edit board name and description">&#9998;</button>
             <button class="board-settings-btn" title="Board settings">&#9881;</button>
             {{if .Board.Tags}}
             <div class="tags">
@@ -37,6 +36,23 @@
             <button class="board-settings-close" title="Close">&times;</button>
         </div>
         <div class="board-settings-panel-body">
+            <div class="settings-field-stacked">
+                <label class="settings-label-stacked" for="bsBoardName">Board name</label>
+                <input type="text" id="bsBoardName" class="settings-input" maxlength="100" />
+            </div>
+            <div class="settings-field-stacked">
+                <label class="settings-label-stacked" for="bsBoardDescription">Description</label>
+                <textarea id="bsBoardDescription" class="settings-input" rows="2" placeholder="Board description (optional)"></textarea>
+            </div>
+            <div class="settings-field-stacked">
+                <label class="settings-label-stacked">Tags</label>
+                <div id="bsBoardTagsContainer" class="card-modal-tags-container"></div>
+            </div>
+            <div class="settings-meta-actions">
+                <button id="bsSaveMeta" class="btn-primary btn-small">Save</button>
+                <span id="bsMetaSavedMsg" class="settings-saved-msg">Saved.</span>
+            </div>
+            <hr style="border:none;border-top:1px solid var(--color-border);margin:12px 0;" />
             <div class="settings-field">
                 <div>
                     <div class="settings-label">Display card checkbox</div>

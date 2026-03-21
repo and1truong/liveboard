@@ -730,277 +730,14 @@
     textarea.focus();
   }
 
-  // === BOARD EDIT MODAL ===
-  function showBoardEditModal(name, description, tags) {
-    var slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
-
-    var backdrop = document.createElement("div");
-    backdrop.className = "card-modal-backdrop";
-    backdrop.addEventListener("click", function (e) {
-      if (e.target === backdrop) backdrop.remove();
-    });
-
-    var modal = document.createElement("div");
-    modal.className = "card-modal";
-    modal.style.maxWidth = "480px";
-
-    var closeBtn = document.createElement("button");
-    closeBtn.className = "card-modal-close";
-    closeBtn.innerHTML = "&times;";
-    closeBtn.addEventListener("click", function () { backdrop.remove(); });
-    modal.appendChild(closeBtn);
-
-    var main = document.createElement("div");
-    main.className = "card-modal-main";
-
-    var hdr = document.createElement("div");
-    hdr.className = "card-modal-section-header";
-    hdr.innerHTML = '<span class="card-modal-section-icon">&#9998;</span> Edit Board';
-    main.appendChild(hdr);
-
-    var nameLabel = document.createElement("label");
-    nameLabel.style.cssText = "display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:12px;margin-bottom:4px;";
-    nameLabel.textContent = "Board name";
-    main.appendChild(nameLabel);
-
-    var nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.className = "card-modal-body";
-    nameInput.value = name;
-    main.appendChild(nameInput);
-
-    var descLabel = document.createElement("label");
-    descLabel.style.cssText = "display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:12px;margin-bottom:4px;";
-    descLabel.textContent = "Description";
-    main.appendChild(descLabel);
-
-    var descInput = document.createElement("textarea");
-    descInput.className = "card-modal-body";
-    descInput.placeholder = "Board description (optional)";
-    descInput.value = description;
-    descInput.rows = 3;
-    main.appendChild(descInput);
-
-    // Tags section
-    var tagsLabel = document.createElement("label");
-    tagsLabel.style.cssText = "display:block;font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:12px;margin-bottom:4px;";
-    tagsLabel.textContent = "Tags";
-    main.appendChild(tagsLabel);
-
-    // Collect all unique tags from card tags + existing board tags for autocomplete
-    var allSuggestions = [];
-    document.querySelectorAll(".card[data-card-tags]").forEach(function (c) {
-      (c.dataset.cardTags || "").split(",").forEach(function (s) {
-        s = s.trim();
-        if (s && allSuggestions.indexOf(s) === -1) allSuggestions.push(s);
-      });
-    });
-    allSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
-
-    // Parse current board tags
-    var currentTags = [];
-    if (tags) {
-      tags.split(",").forEach(function (s) {
-        s = s.trim();
-        if (s && currentTags.indexOf(s) === -1) currentTags.push(s);
-      });
-    }
-    // Ensure current tags also appear in suggestions pool
-    currentTags.forEach(function (t) {
-      if (allSuggestions.indexOf(t) === -1) allSuggestions.push(t);
-    });
-    allSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
-
-    var tagsContainer = document.createElement("div");
-    tagsContainer.className = "card-modal-tags-container";
-
-    var tagsInput = document.createElement("input");
-    tagsInput.className = "card-modal-tags-input";
-    tagsInput.type = "text";
-    tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
-
-    var tagsDropdown = document.createElement("div");
-    tagsDropdown.className = "card-modal-tags-dropdown";
-    var dropdownActiveIdx = -1;
-
-    function getTagsValue() {
-      return currentTags.join(", ");
-    }
-
-    function renderChips() {
-      Array.from(tagsContainer.querySelectorAll(".card-modal-tag-chip")).forEach(function (el) { el.remove(); });
-      currentTags.forEach(function (tag, idx) {
-        var chip = document.createElement("span");
-        chip.className = "card-modal-tag-chip";
-        chip.textContent = tag;
-        var removeBtn = document.createElement("button");
-        removeBtn.className = "card-modal-tag-chip-remove";
-        removeBtn.type = "button";
-        removeBtn.innerHTML = "&times;";
-        removeBtn.addEventListener("click", function (e) {
-          e.stopPropagation();
-          currentTags.splice(idx, 1);
-          renderChips();
-          tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
-        });
-        chip.appendChild(removeBtn);
-        tagsContainer.insertBefore(chip, tagsInput);
-      });
-    }
-
-    function addTag(tag) {
-      tag = tag.trim();
-      if (!tag || currentTags.indexOf(tag) !== -1) return;
-      currentTags.push(tag);
-      renderChips();
-      tagsInput.value = "";
-      tagsInput.placeholder = "";
-      hideDropdown();
-    }
-
-    function showDropdown(filter) {
-      tagsDropdown.innerHTML = "";
-      dropdownActiveIdx = -1;
-      var f = (filter || "").toLowerCase();
-      var suggestions = allSuggestions.filter(function (t) {
-        return currentTags.indexOf(t) === -1 && (!f || t.toLowerCase().indexOf(f) !== -1);
-      });
-      if (suggestions.length === 0) {
-        if (f) {
-          var hint = document.createElement("div");
-          hint.className = "card-modal-tags-dropdown-empty";
-          hint.textContent = 'Press Enter to add "' + filter + '"';
-          tagsDropdown.appendChild(hint);
-        }
-        tagsDropdown.classList.toggle("open", !!f);
-        return;
-      }
-      suggestions.forEach(function (t) {
-        var item = document.createElement("div");
-        item.className = "card-modal-tags-dropdown-item";
-        item.textContent = t;
-        item.addEventListener("mousedown", function (e) {
-          e.preventDefault();
-          addTag(t);
-          tagsInput.focus();
-        });
-        tagsDropdown.appendChild(item);
-      });
-      tagsDropdown.classList.add("open");
-    }
-
-    function hideDropdown() {
-      tagsDropdown.classList.remove("open");
-      dropdownActiveIdx = -1;
-    }
-
-    tagsInput.addEventListener("input", function () {
-      showDropdown(tagsInput.value);
-    });
-
-    tagsInput.addEventListener("focus", function () {
-      showDropdown(tagsInput.value);
-    });
-
-    tagsInput.addEventListener("click", function () {
-      showDropdown(tagsInput.value);
-    });
-
-    tagsInput.addEventListener("blur", function () {
-      setTimeout(hideDropdown, 150);
-    });
-
-    tagsInput.addEventListener("keydown", function (e) {
-      var items = tagsDropdown.querySelectorAll(".card-modal-tags-dropdown-item");
-      if (e.key === "ArrowDown") {
-        e.preventDefault();
-        dropdownActiveIdx = Math.min(dropdownActiveIdx + 1, items.length - 1);
-        items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
-      } else if (e.key === "ArrowUp") {
-        e.preventDefault();
-        dropdownActiveIdx = Math.max(dropdownActiveIdx - 1, 0);
-        items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
-      } else if (e.key === "Enter") {
-        e.preventDefault();
-        if (dropdownActiveIdx >= 0 && items[dropdownActiveIdx]) {
-          addTag(items[dropdownActiveIdx].textContent);
-        } else if (tagsInput.value.trim()) {
-          addTag(tagsInput.value);
-        }
-        tagsInput.focus();
-      } else if (e.key === "Backspace" && !tagsInput.value && currentTags.length) {
-        currentTags.pop();
-        renderChips();
-        tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
-      } else if (e.key === "Escape") {
-        hideDropdown();
-      }
-    });
-
-    tagsContainer.addEventListener("click", function () {
-      tagsInput.focus();
-    });
-
-    tagsContainer.appendChild(tagsInput);
-    tagsContainer.appendChild(tagsDropdown);
-    renderChips();
-    main.appendChild(tagsContainer);
-
-    var saveRow = document.createElement("div");
-    saveRow.className = "card-modal-save-row";
-
-    var saveBtn = document.createElement("button");
-    saveBtn.className = "btn-primary btn-small";
-    saveBtn.textContent = "Save";
-    saveBtn.addEventListener("click", function () {
-      var newName = nameInput.value.trim();
-      if (!newName) return;
-      htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/meta', {
-        values: {
-          board_name: newName,
-          description: descInput.value.trim(),
-          tags: getTagsValue(),
-          name: slug,
-        },
-        target: '#board-content',
-        swap: 'innerHTML'
-      });
-      backdrop.remove();
-    });
-    saveRow.appendChild(saveBtn);
-
-    var cancelBtn = document.createElement("button");
-    cancelBtn.className = "btn-small";
-    cancelBtn.style.marginLeft = "8px";
-    cancelBtn.textContent = "Cancel";
-    cancelBtn.addEventListener("click", function () { backdrop.remove(); });
-    saveRow.appendChild(cancelBtn);
-
-    main.appendChild(saveRow);
-    modal.appendChild(main);
-    backdrop.appendChild(modal);
-    document.body.appendChild(backdrop);
-    nameInput.focus();
-    nameInput.select();
-  }
-
-  function attachBoardEdit() {
-    var btn = document.querySelector(".board-edit-btn");
-    if (btn && !btn.dataset.editWired) {
-      btn.dataset.editWired = "1";
-      btn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        showBoardEditModal(btn.dataset.boardName, btn.dataset.boardDescription || "", btn.dataset.boardTags || "");
-      });
-    }
-
+  function attachBoardTitleDblClick() {
     var titleEl = document.querySelector(".board-title");
     if (titleEl && !titleEl.dataset.dblWired) {
       titleEl.dataset.dblWired = "1";
       titleEl.addEventListener("dblclick", function (e) {
         e.stopPropagation();
-        var b = document.querySelector(".board-edit-btn");
-        showBoardEditModal(b ? b.dataset.boardName : titleEl.textContent.trim(), b ? b.dataset.boardDescription || "" : "", b ? b.dataset.boardTags || "" : "");
+        var gearBtn = document.querySelector(".board-settings-btn");
+        if (gearBtn) gearBtn.click();
       });
     }
   }
@@ -1840,7 +1577,7 @@
     attachContextMenu();
     attachCardClick();
     attachColumnMenus();
-    attachBoardEdit();
+    attachBoardTitleDblClick();
     initBoardSettingsPanel();
     // Cards: draggable
     document.querySelectorAll(".card[draggable]").forEach(function (card) {
@@ -1993,13 +1730,172 @@
     var closeBtn = panel.querySelector(".board-settings-close");
     var slug = boardView.dataset.boardSlug;
 
+    // Meta fields
+    var bsBoardName = document.getElementById("bsBoardName");
+    var bsBoardDescription = document.getElementById("bsBoardDescription");
+    var bsSaveMeta = document.getElementById("bsSaveMeta");
+    var bsMetaSavedMsg = document.getElementById("bsMetaSavedMsg");
+    var bsTagsContainer = document.getElementById("bsBoardTagsContainer");
+
+    // Tags state
+    var currentTags = [];
+    var tagsSavedTimer = null;
+
+    function initTagsUI() {
+      if (!bsTagsContainer) return;
+      bsTagsContainer.innerHTML = "";
+
+      var tagsInput = document.createElement("input");
+      tagsInput.className = "card-modal-tags-input";
+      tagsInput.type = "text";
+      tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+
+      var tagsDropdown = document.createElement("div");
+      tagsDropdown.className = "card-modal-tags-dropdown";
+      var dropdownActiveIdx = -1;
+
+      // Collect suggestions from card tags
+      var allSuggestions = [];
+      document.querySelectorAll(".card[data-card-tags]").forEach(function (c) {
+        (c.dataset.cardTags || "").split(",").forEach(function (s) {
+          s = s.trim();
+          if (s && allSuggestions.indexOf(s) === -1) allSuggestions.push(s);
+        });
+      });
+      currentTags.forEach(function (t) {
+        if (allSuggestions.indexOf(t) === -1) allSuggestions.push(t);
+      });
+      allSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+
+      function renderChips() {
+        Array.from(bsTagsContainer.querySelectorAll(".card-modal-tag-chip")).forEach(function (el) { el.remove(); });
+        currentTags.forEach(function (tag, idx) {
+          var chip = document.createElement("span");
+          chip.className = "card-modal-tag-chip";
+          chip.textContent = tag;
+          var removeBtn = document.createElement("button");
+          removeBtn.className = "card-modal-tag-chip-remove";
+          removeBtn.type = "button";
+          removeBtn.innerHTML = "&times;";
+          removeBtn.addEventListener("click", function (e) {
+            e.stopPropagation();
+            currentTags.splice(idx, 1);
+            renderChips();
+            tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+          });
+          chip.appendChild(removeBtn);
+          bsTagsContainer.insertBefore(chip, tagsInput);
+        });
+      }
+
+      function addTag(tag) {
+        tag = tag.trim();
+        if (!tag || currentTags.indexOf(tag) !== -1) return;
+        currentTags.push(tag);
+        renderChips();
+        tagsInput.value = "";
+        tagsInput.placeholder = "";
+        hideDropdown();
+      }
+
+      function showDropdown(filter) {
+        tagsDropdown.innerHTML = "";
+        dropdownActiveIdx = -1;
+        var f = (filter || "").toLowerCase();
+        var suggestions = allSuggestions.filter(function (t) {
+          return currentTags.indexOf(t) === -1 && (!f || t.toLowerCase().indexOf(f) !== -1);
+        });
+        if (suggestions.length === 0) {
+          if (f) {
+            var hint = document.createElement("div");
+            hint.className = "card-modal-tags-dropdown-empty";
+            hint.textContent = 'Press Enter to add "' + filter + '"';
+            tagsDropdown.appendChild(hint);
+          }
+          tagsDropdown.classList.toggle("open", !!f);
+          return;
+        }
+        suggestions.forEach(function (t) {
+          var item = document.createElement("div");
+          item.className = "card-modal-tags-dropdown-item";
+          item.textContent = t;
+          item.addEventListener("mousedown", function (e) {
+            e.preventDefault();
+            addTag(t);
+            tagsInput.focus();
+          });
+          tagsDropdown.appendChild(item);
+        });
+        tagsDropdown.classList.add("open");
+      }
+
+      function hideDropdown() {
+        tagsDropdown.classList.remove("open");
+        dropdownActiveIdx = -1;
+      }
+
+      tagsInput.addEventListener("input", function () { showDropdown(tagsInput.value); }, opts);
+      tagsInput.addEventListener("focus", function () { showDropdown(tagsInput.value); }, opts);
+      tagsInput.addEventListener("click", function () { showDropdown(tagsInput.value); }, opts);
+      tagsInput.addEventListener("blur", function () { setTimeout(hideDropdown, 150); }, opts);
+
+      tagsInput.addEventListener("keydown", function (e) {
+        var items = tagsDropdown.querySelectorAll(".card-modal-tags-dropdown-item");
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          dropdownActiveIdx = Math.min(dropdownActiveIdx + 1, items.length - 1);
+          items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
+        } else if (e.key === "ArrowUp") {
+          e.preventDefault();
+          dropdownActiveIdx = Math.max(dropdownActiveIdx - 1, 0);
+          items.forEach(function (it, i) { it.classList.toggle("active", i === dropdownActiveIdx); });
+        } else if (e.key === "Enter") {
+          e.preventDefault();
+          if (dropdownActiveIdx >= 0 && items[dropdownActiveIdx]) {
+            addTag(items[dropdownActiveIdx].textContent);
+          } else if (tagsInput.value.trim()) {
+            addTag(tagsInput.value);
+          }
+          tagsInput.focus();
+        } else if (e.key === "Backspace" && !tagsInput.value && currentTags.length) {
+          currentTags.pop();
+          renderChips();
+          tagsInput.placeholder = currentTags.length ? "" : "Add tags...";
+        } else if (e.key === "Escape") {
+          hideDropdown();
+        }
+      }, opts);
+
+      bsTagsContainer.addEventListener("click", function () { tagsInput.focus(); }, opts);
+      bsTagsContainer.appendChild(tagsInput);
+      bsTagsContainer.appendChild(tagsDropdown);
+      renderChips();
+    }
+
+    // Display settings
     var bsShowCheckbox = document.getElementById("bsShowCheckbox");
     var bsCardPosition = document.getElementById("bsCardPosition");
     var bsExpandColumns = document.getElementById("bsExpandColumns");
     var bsViewMode = document.getElementById("bsViewMode");
 
-    // Populate selects from data attributes
+    // Populate all fields from data attributes
     function populateFromData() {
+      // Meta fields
+      if (bsBoardName) bsBoardName.value = boardView.dataset.boardName || "";
+      if (bsBoardDescription) bsBoardDescription.value = boardView.dataset.boardDescription || "";
+
+      // Tags
+      currentTags = [];
+      var tagsRaw = boardView.dataset.boardTags || "";
+      if (tagsRaw) {
+        tagsRaw.split(",").forEach(function (s) {
+          s = s.trim();
+          if (s && currentTags.indexOf(s) === -1) currentTags.push(s);
+        });
+      }
+      initTagsUI();
+
+      // Display settings
       if (bsShowCheckbox) bsShowCheckbox.value = boardView.dataset.bsShowCheckbox || "";
       if (bsCardPosition) bsCardPosition.value = boardView.dataset.bsCardPosition || "";
       if (bsExpandColumns) bsExpandColumns.value = boardView.dataset.bsExpandColumns || "false";
@@ -2007,6 +1903,29 @@
 
       // Show/hide reset buttons
       updateResetButtons();
+    }
+
+    // Save meta handler
+    if (bsSaveMeta) {
+      bsSaveMeta.addEventListener("click", function () {
+        var newName = bsBoardName ? bsBoardName.value.trim() : "";
+        if (!newName) return;
+        htmx.ajax('POST', '/board/' + encodeURIComponent(slug) + '/meta', {
+          values: {
+            board_name: newName,
+            description: bsBoardDescription ? bsBoardDescription.value.trim() : "",
+            tags: currentTags.join(", "),
+            name: slug,
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
+        if (bsMetaSavedMsg) {
+          bsMetaSavedMsg.style.display = "";
+          clearTimeout(tagsSavedTimer);
+          tagsSavedTimer = setTimeout(function () { bsMetaSavedMsg.style.display = "none"; }, 2000);
+        }
+      }, opts);
     }
 
     function updateResetButtons() {
