@@ -19,7 +19,10 @@ func serveCmd() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the REST API and Web UI server",
-		RunE: func(_ *cobra.Command, _ []string) error {
+		RunE: func(c *cobra.Command, _ []string) error {
+			if usingCloud && !c.Flags().Changed("port") {
+				port = 7777
+			}
 			noCache := os.Getenv("NO_CACHE") != ""
 			srv := api.NewServer(ws, ws.Engine, gitRepo, noCache)
 			addr := fmt.Sprintf("%s:%d", host, port)

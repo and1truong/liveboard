@@ -22,10 +22,11 @@ var (
 )
 
 var (
-	workDir string
-	ws      *workspace.Workspace
-	eng     *board.Engine
-	gitRepo *gitpkg.Repository
+	workDir    string
+	usingCloud bool
+	ws         *workspace.Workspace
+	eng        *board.Engine
+	gitRepo    *gitpkg.Repository
 )
 
 func main() {
@@ -411,6 +412,7 @@ func defaultWorkDir() string {
 	if err == nil {
 		icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
 		if info, err := os.Stat(icloud); err == nil && info.IsDir() {
+			usingCloud = true
 			return icloud
 		}
 	}
