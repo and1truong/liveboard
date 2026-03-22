@@ -20,10 +20,11 @@ type LayoutSettings struct {
 	SidebarPosition   string `json:"layout_sidebar_position"`
 	FontFamily        string `json:"layout_font_family"`
 	KeyboardShortcuts bool   `json:"layout_keyboard_shortcuts"`
+	Version           string `json:"layout_version"`
 }
 
-// layoutSettingsFrom extracts layout-relevant fields from AppSettings.
-func layoutSettingsFrom(s AppSettings) LayoutSettings {
+// layoutSettings extracts layout-relevant fields from AppSettings and injects the build version.
+func (h *Handler) layoutSettings(s AppSettings) LayoutSettings {
 	return LayoutSettings{
 		Theme:             s.Theme,
 		ColorTheme:        s.ColorTheme,
@@ -31,6 +32,7 @@ func layoutSettingsFrom(s AppSettings) LayoutSettings {
 		SidebarPosition:   s.SidebarPosition,
 		FontFamily:        s.FontFamily,
 		KeyboardShortcuts: s.KeyboardShortcuts,
+		Version:           h.version,
 	}
 }
 
@@ -124,7 +126,7 @@ func (h *Handler) SettingsHandler() http.Handler {
 		settings := h.loadSettings()
 		summaries := sortBoardsWithPins(toBoardSummaries(boards), settings.PinnedBoards)
 		model := SettingsModel{
-			LayoutSettings: layoutSettingsFrom(settings),
+			LayoutSettings: h.layoutSettings(settings),
 			Title:          "Settings — " + settings.SiteName,
 			SiteName:       settings.SiteName,
 			Boards:         summaries,

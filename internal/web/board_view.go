@@ -123,7 +123,7 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	global := h.loadSettings()
 	summaries := sortBoardsWithPins(toBoardSummaries(allBoards), global.PinnedBoards)
 	return BoardViewModel{
-		LayoutSettings: layoutSettingsFrom(global),
+		LayoutSettings: h.layoutSettings(global),
 		Title:          b.Name + " — " + global.SiteName,
 		SiteName:       global.SiteName,
 		Board:          b,
