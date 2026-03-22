@@ -1,5 +1,5 @@
 ---
-version: 23
+version: 34
 name: OSS Tracker
 description: liveboard/liveboard — open source project board
 icon: "\U0001F4E6"
@@ -13,7 +13,7 @@ list-collapse:
     - true
 settings:
     expand-columns: false
-    view-mode: table
+    view-mode: board
     card-display-mode: trim
 ---
 

@@ -1,5 +1,5 @@
 ---
-version: 5
+version: 13
 name: Product Launch
 description: Shipping v1 of FormBot — AI form builder SaaS
 icon: "\U0001F680"
@@ -12,7 +12,8 @@ list-collapse:
     - false
     - true
 settings:
-    view-mode: table
+    expand-columns: false
+    view-mode: board
 ---
 
 ## Backlog
