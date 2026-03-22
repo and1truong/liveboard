@@ -20,7 +20,12 @@ document.addEventListener('alpine:init', function () {
       pick: function (emoji) {
         var isOnBoard = window.location.pathname.indexOf('/board/') === 0;
         var url = isOnBoard ? '/board/' + this.slug + '/icon' : '/boards/' + this.slug + '/icon';
-        htmx.ajax('POST', url, { values: { name: this.slug, icon: emoji }, target: '#board-content', swap: 'innerHTML' });
+        var slug = this.slug;
+        htmx.ajax('POST', url, { values: { name: slug, icon: emoji }, target: '#board-content', swap: 'innerHTML' }).then(function () {
+          if (isOnBoard) {
+            htmx.ajax('GET', '/api/boards/sidebar?slug=' + encodeURIComponent(slug), { target: '#sidebar-board-list', swap: 'innerHTML' });
+          }
+        });
         this.open = false;
       },
 
