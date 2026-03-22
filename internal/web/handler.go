@@ -8,12 +8,13 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/and1truong/liveboard/internal/board"
-	tmplfs "github.com/and1truong/liveboard/internal/templates"
-	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
+
+	"github.com/and1truong/liveboard/internal/board"
+	tmplfs "github.com/and1truong/liveboard/internal/templates"
+	"github.com/and1truong/liveboard/internal/workspace"
 )
 
 // Handler manages web handlers and shared dependencies.
