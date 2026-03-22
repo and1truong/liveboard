@@ -15,18 +15,19 @@ type BoardSettings struct {
 
 // Board represents a Kanban board backed by a single Markdown file.
 type Board struct {
-	Version      int           `yaml:"version" json:"version"`
-	Name         string        `yaml:"name" json:"name"`
-	Description  string        `yaml:"description,omitempty" json:"description,omitempty"`
-	Icon         string        `yaml:"icon,omitempty" json:"icon,omitempty"`
-	Tags         []string      `yaml:"tags,omitempty" json:"tags,omitempty"`
-	ListCollapse []bool        `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
-	Members      []string      `yaml:"members,omitempty" json:"members,omitempty"`
-	Settings     BoardSettings `yaml:"settings,omitempty" json:"settings,omitempty"`
-	Columns      []Column      `yaml:"-" json:"columns"`
-	FilePath     string        `yaml:"-" json:"file_path"`
-	CreatedAt    time.Time     `yaml:"-" json:"created_at"`
-	UpdatedAt    time.Time     `yaml:"-" json:"updated_at"`
+	Version      int               `yaml:"version" json:"version"`
+	Name         string            `yaml:"name" json:"name"`
+	Description  string            `yaml:"description,omitempty" json:"description,omitempty"`
+	Icon         string            `yaml:"icon,omitempty" json:"icon,omitempty"`
+	Tags         []string          `yaml:"tags,omitempty" json:"tags,omitempty"`
+	TagColors    map[string]string `yaml:"tag-colors,omitempty" json:"tag_colors,omitempty"`
+	ListCollapse []bool            `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
+	Members      []string          `yaml:"members,omitempty" json:"members,omitempty"`
+	Settings     BoardSettings     `yaml:"settings,omitempty" json:"settings,omitempty"`
+	Columns      []Column          `yaml:"-" json:"columns"`
+	FilePath     string            `yaml:"-" json:"file_path"`
+	CreatedAt    time.Time         `yaml:"-" json:"created_at"`
+	UpdatedAt    time.Time         `yaml:"-" json:"updated_at"`
 }
 
 // Column represents a Kanban column (H2 heading in Markdown).

@@ -7,6 +7,8 @@ document.addEventListener('alpine:init', function () {
       boardDescription: '',
       tags: [],
       tagSuggestions: [],
+      tagColors: {},
+      TAG_PALETTE: ['#e05252','#d4722c','#c9a227','#4caf76','#45aab5','#4080c4','#8060c4','#c060a0','#607080','#a07040'],
       showCheckbox: '',
       cardPosition: '',
       expandColumns: 'false',
@@ -37,6 +39,10 @@ document.addEventListener('alpine:init', function () {
           var self = this;
           tagsRaw.split(',').forEach(function (s) { s = s.trim(); if (s && self.tags.indexOf(s) === -1) self.tags.push(s); });
         }
+
+        // Tag colors
+        var tcRaw = bv.dataset.boardTagColors || '{}';
+        try { this.tagColors = JSON.parse(tcRaw) || {}; } catch(e) { this.tagColors = {}; }
 
         // Suggestions from board store + board-level tags
         this.tagSuggestions = Alpine.store('board').tags.slice();
@@ -70,6 +76,10 @@ document.addEventListener('alpine:init', function () {
           bv.dataset.cardDisplayMode = this.cardDisplayMode || bv.dataset.globalCardDisplayMode || 'full';
         }
 
+        // Update the data attribute immediately so applyTagColors can run
+        if (bv) { bv.dataset.boardTagColors = JSON.stringify(this.tagColors); }
+        if (window.LB && window.LB.applyTagColors) { window.LB.applyTagColors(); }
+
         var self = this;
         var version = window.LB.getBoardVersion();
 
@@ -79,6 +89,7 @@ document.addEventListener('alpine:init', function () {
             board_name: this.boardName.trim(),
             description: this.boardDescription.trim(),
             tags: this.tags.join(', '),
+            tag_colors: JSON.stringify(this.tagColors),
             name: this.slug,
             version: version
           },
@@ -108,6 +119,25 @@ document.addEventListener('alpine:init', function () {
           var ddLabel = document.querySelector('.dropdown-trigger-label');
           if (ddLabel && self.boardName.trim()) ddLabel.textContent = self.boardName.trim();
         });
+      },
+
+      getTagPreviewStyle: function (tag) {
+        var bg = this.tagColors[tag];
+        if (!bg) return '';
+        var lum = window.LB && window.LB.colorLuminance ? window.LB.colorLuminance(bg) : 0.5;
+        return 'background:' + bg + ';color:' + (lum > 0.35 ? '#111' : '#fff') + ';border-color:transparent';
+      },
+
+      toggleTagColor: function (tag, color) {
+        if (this.tagColors[tag] === color) {
+          delete this.tagColors[tag];
+        } else {
+          this.tagColors[tag] = color;
+        }
+      },
+
+      clearTagColor: function (tag) {
+        delete this.tagColors[tag];
       },
 
       resetSetting: function (setting) {
