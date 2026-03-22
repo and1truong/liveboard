@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
+  <!-- LiveBoard macOS App Icon — 1024×1024 -->
+  <defs>
+    <!-- Background gradient: deep indigo to purple -->
+    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#4338ca"/>
+      <stop offset="100%" stop-color="#7c3aed"/>
+    </linearGradient>
+
+    <!-- Board surface gradient: subtle white-to-light-gray -->
+    <linearGradient id="boardGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="100%" stop-color="#f1f0fb"/>
+    </linearGradient>
+
+    <!-- Card shadow filter -->
+    <filter id="cardShadow" x="-10%" y="-10%" width="130%" height="140%">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#312e81" flood-opacity="0.18"/>
+    </filter>
+
+    <!-- Board container shadow -->
+    <filter id="boardShadow" x="-5%" y="-5%" width="115%" height="120%">
+      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#1e1b4b" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Live dot glow -->
+    <radialGradient id="liveGlow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#f472b6" stop-opacity="0.9"/>
+      <stop offset="60%" stop-color="#ec4899" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ec4899" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Column header gradients -->
+    <linearGradient id="col1Head" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#818cf8"/>
+      <stop offset="100%" stop-color="#6366f1"/>
+    </linearGradient>
+    <linearGradient id="col2Head" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#a78bfa"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+    <linearGradient id="col3Head" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#c084fc"/>
+      <stop offset="100%" stop-color="#a855f7"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background fill — full bleed square, macOS applies squircle mask -->
+  <rect width="1024" height="1024" rx="228" fill="url(#bgGrad)"/>
+
+  <!-- Subtle inner highlight from top (light source) -->
+  <rect x="2" y="2" width="1020" height="1020" rx="226" fill="none" stroke="white" stroke-opacity="0.12" stroke-width="3"/>
+
+  <!-- Board container with shadow -->
+  <g filter="url(#boardShadow)">
+    <rect x="120" y="160" width="784" height="680" rx="36" fill="url(#boardGrad)"/>
+  </g>
+
+  <!-- Board border (subtle) -->
+  <rect x="120" y="160" width="784" height="680" rx="36" fill="none" stroke="#c7d2fe" stroke-width="2" stroke-opacity="0.5"/>
+
+  <!-- Column dividers -->
+  <line x1="381" y1="210" x2="381" y2="790" stroke="#e0e7ff" stroke-width="2"/>
+  <line x1="643" y1="210" x2="643" y2="790" stroke="#e0e7ff" stroke-width="2"/>
+
+  <!-- ═══ Column 1: To Do ═══ -->
+  <!-- Header bar -->
+  <rect x="156" y="198" width="190" height="10" rx="5" fill="url(#col1Head)"/>
+
+  <!-- Card 1 (tall) -->
+  <g filter="url(#cardShadow)">
+    <rect x="156" y="232" width="190" height="120" rx="14" fill="white"/>
+  </g>
+  <rect x="172" y="252" width="100" height="10" rx="4" fill="#6366f1" opacity="0.7"/>
+  <rect x="172" y="272" width="158" height="8" rx="3" fill="#c7d2fe" opacity="0.6"/>
+  <rect x="172" y="288" width="130" height="8" rx="3" fill="#c7d2fe" opacity="0.4"/>
+  <rect x="172" y="312" width="40" height="16" rx="8" fill="#eef2ff"/>
+  <rect x="220" y="312" width="50" height="16" rx="8" fill="#eef2ff"/>
+
+  <!-- Card 2 (medium) -->
+  <g filter="url(#cardShadow)">
+    <rect x="156" y="372" width="190" height="96" rx="14" fill="white"/>
+  </g>
+  <rect x="172" y="392" width="120" height="10" rx="4" fill="#6366f1" opacity="0.7"/>
+  <rect x="172" y="412" width="158" height="8" rx="3" fill="#c7d2fe" opacity="0.6"/>
+  <rect x="172" y="436" width="36" height="16" rx="8" fill="#fef3c7"/>
+
+  <!-- Card 3 (short) -->
+  <g filter="url(#cardShadow)">
+    <rect x="156" y="488" width="190" height="76" rx="14" fill="white"/>
+  </g>
+  <rect x="172" y="508" width="140" height="10" rx="4" fill="#6366f1" opacity="0.7"/>
+  <rect x="172" y="528" width="158" height="8" rx="3" fill="#c7d2fe" opacity="0.4"/>
+
+  <!-- ═══ Column 2: In Progress ═══ -->
+  <!-- Header bar -->
+  <rect x="417" y="198" width="190" height="10" rx="5" fill="url(#col2Head)"/>
+
+  <!-- Card 1 (tall) -->
+  <g filter="url(#cardShadow)">
+    <rect x="417" y="232" width="190" height="110" rx="14" fill="white"/>
+  </g>
+  <rect x="433" y="252" width="130" height="10" rx="4" fill="#8b5cf6" opacity="0.7"/>
+  <rect x="433" y="272" width="158" height="8" rx="3" fill="#ddd6fe" opacity="0.6"/>
+  <rect x="433" y="288" width="120" height="8" rx="3" fill="#ddd6fe" opacity="0.4"/>
+  <rect x="433" y="306" width="44" height="16" rx="8" fill="#fce7f3"/>
+
+  <!-- Card 2 (medium) -->
+  <g filter="url(#cardShadow)">
+    <rect x="417" y="362" width="190" height="90" rx="14" fill="white"/>
+  </g>
+  <rect x="433" y="382" width="110" height="10" rx="4" fill="#8b5cf6" opacity="0.7"/>
+  <rect x="433" y="402" width="158" height="8" rx="3" fill="#ddd6fe" opacity="0.5"/>
+  <rect x="433" y="418" width="80" height="8" rx="3" fill="#ddd6fe" opacity="0.3"/>
+
+  <!-- ═══ Column 3: Done ═══ -->
+  <!-- Header bar -->
+  <rect x="679" y="198" width="190" height="10" rx="5" fill="url(#col3Head)"/>
+
+  <!-- Card 1 (with checkmark feel — slightly green tinted) -->
+  <g filter="url(#cardShadow)">
+    <rect x="679" y="232" width="190" height="96" rx="14" fill="white"/>
+  </g>
+  <rect x="695" y="252" width="90" height="10" rx="4" fill="#a855f7" opacity="0.6"/>
+  <rect x="695" y="272" width="158" height="8" rx="3" fill="#e9d5ff" opacity="0.5"/>
+  <rect x="695" y="296" width="44" height="16" rx="8" fill="#dcfce7"/>
+
+  <!-- ═══ Live broadcast indicator (top-right) ═══ -->
+  <!-- Outer glow -->
+  <circle cx="840" cy="195" r="50" fill="url(#liveGlow)"/>
+  <!-- Solid dot -->
+  <circle cx="840" cy="195" r="22" fill="#ec4899"/>
+  <!-- Inner highlight -->
+  <circle cx="840" cy="190" r="10" fill="white" opacity="0.35"/>
+  <!-- Core white dot -->
+  <circle cx="840" cy="195" r="7" fill="white" opacity="0.9"/>
+</svg>
