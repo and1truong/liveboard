@@ -1,0 +1,12 @@
+{
+  "site_name": "PromptOps",
+  "theme": "dark",
+  "color_theme": "violet",
+  "column_width": 420,
+  "sidebar_position": "left",
+  "default_columns": ["draft", "testing", "reviewed", "production"],
+  "show_checkbox": true,
+  "newline_trigger": "shift-enter",
+  "card_position": "prepend",
+  "card_display_mode": "full"
+}

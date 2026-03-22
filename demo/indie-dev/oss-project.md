@@ -1,6 +1,7 @@
 ---
+version: 23
 name: OSS Tracker
-description: "liveboard/liveboard — open source project board"
+description: liveboard/liveboard — open source project board
 icon: "\U0001F4E6"
 tags:
     - oss
@@ -12,30 +13,31 @@ list-collapse:
     - true
 settings:
     expand-columns: false
-    view-mode: board
+    view-mode: table
+    card-display-mode: trim
 ---
 
 ## Triage
-
-- [ ] Bug: cards reorder incorrectly when column is collapsed
-  tags: bug, frontend
-  priority: high
-  Reported in #182. Drag-and-drop index calculation is off when the source column is collapsed. Steps to reproduce in the issue.
 
 - [ ] Feature request: export board to JSON
   tags: feature, api
   priority: medium
   Issue #175 — multiple users asking for this. Should be straightforward since we already have the models.
 
-- [ ] Bug: SSE connection drops after 30min idle
-  tags: bug, backend
-  priority: medium
-  Issue #191. Browser closes the EventSource. Need server-side keepalive pings.
-
 - [ ] Feature request: keyboard shortcuts for card actions
   tags: feature, ux
   priority: low
   Issue #168. Vim-style navigation requested. `j`/`k` to move between cards, `e` to edit, `d` to toggle done.
+
+- [ ] Bug: cards reorder incorrectly when column is collapsed
+  tags: bug, frontend
+  priority: high
+  Reported in #182. Drag-and-drop index calculation is off when the source column is collapsed. Steps to reproduce in the issue.
+
+- [ ] Bug: SSE connection drops after 30min idle
+  tags: bug, backend
+  priority: medium
+  Issue #191. Browser closes the EventSource. Need server-side keepalive pings.
 
 ## Accepted
 
@@ -45,16 +47,16 @@ settings:
   priority: medium
   Issue #156. Parser currently strips tables. Need to preserve them in roundtrip.
 
-- [ ] ARM64 Docker image
-  tags: infra, docker
-  priority: high
-  Issue #160. M1/M2 Mac users can't use the published image. Add multi-arch build to CI.
-
 - [ ] Improve error messages for malformed frontmatter
   tags: dx, parser
   assignee: contributor-sam
   priority: low
   Issue #163. Currently panics on invalid YAML. Should return a helpful parse error with line number.
+
+- [ ] ARM64 Docker image
+  tags: infra, docker
+  priority: high
+  Issue #160. M1/M2 Mac users can't use the published image. Add multi-arch build to CI.
 
 ## In Progress
 

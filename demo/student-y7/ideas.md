@@ -1,4 +1,5 @@
 ---
+version: 9
 name: Ideas & Projects
 description: Brain dump for project ideas, creative sparks, and things to explore
 icon: "\U0001F4A1"
@@ -17,11 +18,6 @@ settings:
 
 ## Ideas
 
-- [ ] Science fair project — Does music affect plant growth?
-  tags: science, experiment
-  priority: medium
-  Grow 3 identical plants: one with classical music, one with rock, one in silence. Measure height weekly for 6 weeks. Could use mung beans — they grow fast.
-
 - [ ] Short story — Time-travelling kid in 1800s QLD
   tags: english, creative-writing
   A Year 7 kid accidentally travels back to colonial Queensland. What would they see? Could tie in HASS content about First Nations history and early settlement. Maybe enter it in the school writing competition.
@@ -29,6 +25,11 @@ settings:
 - [ ] YouTube channel about reef conservation
   tags: science, media, environment
   Make short videos explaining threats to the Great Barrier Reef. Could film at the beach and use Canva for graphics. Tie it into the ecosystems unit.
+
+- [ ] Science fair project — Does music affect plant growth?
+  tags: science, experiment
+  priority: medium
+  Grow 3 identical plants: one with classical music, one with rock, one in silence. Measure height weekly for 6 weeks. Could use mung beans — they grow fast.
 
 - [ ] App idea — Homework reminder with countdown timer
   tags: digital-tech, coding

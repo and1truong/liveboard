@@ -4,7 +4,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: build dev demo-indie demo-ops demo-agency demo-sre demo-family release-port
+.PHONY: build dev demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port
 
 build:
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o liveboard ./cmd/liveboard
@@ -34,3 +34,6 @@ demo-sre: dev
 
 demo-family: DEMO=family
 demo-family: dev
+
+demo-prompt-eng: DEMO=prompt-eng
+demo-prompt-eng: dev

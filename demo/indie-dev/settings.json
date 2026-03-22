@@ -11,7 +11,7 @@
     "review",
     "done"
   ],
-  "show_checkbox": false,
+  "show_checkbox": true,
   "newline_trigger": "shift-enter",
   "card_position": "append",
   "card_display_mode": "full"

@@ -1,4 +1,5 @@
 ---
+version: 2
 name: Product Launch
 description: Shipping v1 of FormBot — AI form builder SaaS
 icon: "\U0001F680"
