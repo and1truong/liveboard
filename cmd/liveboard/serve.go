@@ -28,6 +28,7 @@ func serveCmd() *cobra.Command {
 			addr := fmt.Sprintf("%s:%d", host, port)
 			fmt.Printf("LiveBoard Web UI: http://%s:%d\n", host, port)
 			fmt.Printf("REST API: http://%s:%d/boards\n", host, port)
+			fmt.Printf("MCP: http://%s:%d/mcp\n", host, port)
 			return srv.Start(addr)
 		},
 	}

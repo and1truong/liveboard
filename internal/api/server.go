@@ -1,12 +1,15 @@
 package api
 
 import (
+	"context"
+	"net"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/and1truong/liveboard/internal/board"
+	livemcp "github.com/and1truong/liveboard/internal/mcp"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 	staticweb "github.com/and1truong/liveboard/web"
@@ -17,7 +20,9 @@ type Server struct {
 	ws         *workspace.Workspace
 	eng        *board.Engine
 	webHandler *web.Handler
+	mcpServer  *livemcp.MCPServer
 	router     chi.Router
+	httpServer *http.Server
 	noCache    bool
 }
 
@@ -27,6 +32,7 @@ func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache bool, version
 		ws:         ws,
 		eng:        eng,
 		webHandler: web.NewHandler(ws, eng, version),
+		mcpServer:  livemcp.New(ws, eng, version),
 		noCache:    noCache,
 	}
 	s.router = s.buildRouter()
@@ -38,9 +44,29 @@ func (s *Server) Router() http.Handler {
 	return s.router
 }
 
-// Start begins listening on the given address.
+// Start begins listening on the given address (blocking).
 func (s *Server) Start(addr string) error {
 	return http.ListenAndServe(addr, s.router)
+}
+
+// ListenAndServe starts the server in a goroutine and returns the bound address.
+// Use Shutdown to stop the server. Useful when binding to port 0.
+func (s *Server) ListenAndServe(addr string) (net.Addr, error) {
+	ln, err := net.Listen("tcp", addr)
+	if err != nil {
+		return nil, err
+	}
+	s.httpServer = &http.Server{Handler: s.router}
+	go s.httpServer.Serve(ln)
+	return ln.Addr(), nil
+}
+
+// Shutdown gracefully stops the server started via ListenAndServe.
+func (s *Server) Shutdown(ctx context.Context) error {
+	if s.httpServer != nil {
+		return s.httpServer.Shutdown(ctx)
+	}
+	return nil
 }
 
 func (s *Server) buildRouter() chi.Router {
@@ -118,6 +144,9 @@ func (s *Server) buildRouter() chi.Router {
 		r.Post("/complete", s.completeCard)
 		r.Post("/tag", s.tagCard)
 	})
+
+	// MCP server (Streamable HTTP transport)
+	r.Mount("/mcp", s.mcpServer.StreamableHTTPHandler())
 
 	r.Get("/search", s.stubHandler)
 	r.Get("/events", s.stubHandler)

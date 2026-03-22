@@ -4,13 +4,13 @@ package main
 import (
 	"fmt"
 	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/defaults"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -33,7 +33,9 @@ func main() {
 		Short: "Markdown-native, local-first Kanban system",
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if workDir == "" {
-				workDir = defaultWorkDir()
+				var cloud bool
+				workDir, cloud = defaults.WorkDir()
+				usingCloud = cloud
 			}
 			ws = workspace.Open(workDir)
 			eng = board.New()
@@ -48,6 +50,7 @@ func main() {
 	rootCmd.AddCommand(cardCmd())
 	rootCmd.AddCommand(columnCmd())
 	rootCmd.AddCommand(serveCmd())
+	rootCmd.AddCommand(mcpCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)
@@ -383,21 +386,6 @@ func columnDeleteCmd() *cobra.Command {
 			return nil
 		},
 	}
-}
-
-// defaultWorkDir returns the workspace directory, preferring the iCloud
-// liveboard folder if it exists, otherwise falling back to cwd.
-func defaultWorkDir() string {
-	home, err := os.UserHomeDir()
-	if err == nil {
-		icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
-		if info, err := os.Stat(icloud); err == nil && info.IsDir() {
-			usingCloud = true
-			return icloud
-		}
-	}
-	dir, _ := os.Getwd()
-	return dir
 }
 
 // --- Helpers ---
