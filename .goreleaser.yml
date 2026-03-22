@@ -36,6 +36,7 @@ brews:
   - repository:
       owner: and1truong
       name: homebrew-tap
+      token: "{{ .Env.HOMEBREW_TAP_TOKEN }}"
     homepage: "https://github.com/and1truong/liveboard"
     description: "Markdown-powered Kanban board with real-time collaboration"
     license: "MIT"
