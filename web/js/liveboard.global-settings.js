@@ -12,6 +12,7 @@ document.addEventListener('alpine:init', function () {
       newLineTrigger: 'shift-enter',
       cardPosition: 'append',
       cardDisplayMode: 'full',
+      keyboardShortcuts: false,
       defaultColumns: [],
 
       fontMap: {
@@ -39,6 +40,7 @@ document.addEventListener('alpine:init', function () {
             self.newLineTrigger = s.newline_trigger || 'shift-enter';
             self.cardPosition = s.card_position || 'append';
             self.cardDisplayMode = s.card_display_mode || 'full';
+            self.keyboardShortcuts = !!s.keyboard_shortcuts;
             self.defaultColumns = s.default_columns || ['not now', 'maybe?', 'done'];
             // Update child columnChips component after async fetch
             self.$nextTick(function () {
@@ -78,6 +80,7 @@ document.addEventListener('alpine:init', function () {
           newline_trigger: this.newLineTrigger,
           card_position: this.cardPosition,
           card_display_mode: this.cardDisplayMode,
+          keyboard_shortcuts: !!this.keyboardShortcuts,
           default_columns: rawCols
         };
 
@@ -96,6 +99,7 @@ document.addEventListener('alpine:init', function () {
             localStorage.setItem('lb_sidebar_position', s.sidebar_position);
             localStorage.setItem('lb_font_family', s.font_family);
             localStorage.setItem('lb_newline_trigger', s.newline_trigger);
+            localStorage.setItem('lb_keyboard_shortcuts', s.keyboard_shortcuts ? '1' : '0');
 
             if (s.theme === 'system') { document.documentElement.removeAttribute('data-theme'); }
             else { document.documentElement.setAttribute('data-theme', s.theme); }

@@ -13,18 +13,19 @@ import (
 
 // AppSettings holds persisted user preferences.
 type AppSettings struct {
-	SiteName        string   `json:"site_name"`
-	Theme           string   `json:"theme"`
-	ColorTheme      string   `json:"color_theme"`
-	FontFamily      string   `json:"font_family"`
-	ColumnWidth     int      `json:"column_width"`
-	SidebarPosition string   `json:"sidebar_position"`
-	DefaultColumns  []string `json:"default_columns,omitempty"`
-	ShowCheckbox    bool     `json:"show_checkbox"`
-	NewLineTrigger  string   `json:"newline_trigger"`
-	CardPosition    string   `json:"card_position"`
-	CardDisplayMode string   `json:"card_display_mode"`
-	PinnedBoards    []string `json:"pinned_boards,omitempty"`
+	SiteName          string   `json:"site_name"`
+	Theme             string   `json:"theme"`
+	ColorTheme        string   `json:"color_theme"`
+	FontFamily        string   `json:"font_family"`
+	ColumnWidth       int      `json:"column_width"`
+	SidebarPosition   string   `json:"sidebar_position"`
+	DefaultColumns    []string `json:"default_columns,omitempty"`
+	ShowCheckbox      bool     `json:"show_checkbox"`
+	NewLineTrigger    string   `json:"newline_trigger"`
+	CardPosition      string   `json:"card_position"`
+	CardDisplayMode   string   `json:"card_display_mode"`
+	PinnedBoards      []string `json:"pinned_boards,omitempty"`
+	KeyboardShortcuts bool     `json:"keyboard_shortcuts"`
 }
 
 var validColorThemes = map[string]bool{

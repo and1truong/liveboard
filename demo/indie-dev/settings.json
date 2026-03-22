@@ -14,5 +14,6 @@
   "show_checkbox": true,
   "newline_trigger": "shift-enter",
   "card_position": "append",
-  "card_display_mode": "full"
+  "card_display_mode": "full",
+  "keyboard_shortcuts": true
 }
