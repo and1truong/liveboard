@@ -4129,7 +4129,8 @@ mark.cmd-palette-highlight {
 
 /* macOS traffic light inset — only applied in Wails desktop context
    via .desktop-app class injected by the desktop app's domReady handler. */
-.desktop-app .app-sidebar {
+.desktop-app .app-sidebar,
+.desktop-app .app-workspace {
     padding-top: 36px;
 }
 

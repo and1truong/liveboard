@@ -47,7 +47,7 @@ func main() {
 			Assets: placeholder,
 		},
 		Mac: &mac.Options{
-			TitleBar: mac.TitleBarHiddenInset(),
+			TitleBar: mac.TitleBarDefault(),
 			About: &mac.AboutInfo{
 				Title:   "LiveBoard",
 				Message: "Markdown-powered Kanban board\nVersion " + version,
