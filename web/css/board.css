@@ -921,6 +921,37 @@ select:focus {
     padding: 10px 16px 4px;
 }
 
+/* Pin button in sidebar */
+.sidebar-pin-btn {
+    opacity: 0;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    color: var(--color-text-muted);
+    transition: opacity 0.15s, color 0.15s;
+    flex-shrink: 0;
+    margin-left: auto;
+    line-height: 1;
+}
+.sidebar-nav-item:hover .sidebar-pin-btn,
+.sidebar-pin-btn.pinned {
+    opacity: 1;
+}
+.sidebar-pin-btn.pinned {
+    color: var(--color-accent);
+}
+.sidebar-pin-btn:hover {
+    color: var(--color-accent);
+}
+
+/* Separator between pinned and unpinned boards */
+.sidebar-nav-item.pinned + .sidebar-nav-item:not(.pinned) {
+    border-top: 1px solid var(--color-border);
+    margin-top: 2px;
+    padding-top: 9px;
+}
+
 .sidebar-new-board {
     color: var(--color-text-muted);
     margin-top: 4px;
@@ -1124,22 +1155,30 @@ select:focus {
 
 .boards-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-    gap: 1rem;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 1.125rem;
+}
+
+/* --- Board card entrance animation --- */
+@keyframes boardCardIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .board-card {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
-    padding: 1.25rem;
+    padding: 1.125rem 1.25rem;
     box-shadow: var(--shadow-card);
-    transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
     position: relative;
+    animation: boardCardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
 }
 
 .board-card:hover {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
     box-shadow: var(--shadow-raised);
     border-color: var(--color-accent);
 }
@@ -1147,57 +1186,183 @@ select:focus {
 .board-link {
     text-decoration: none;
     color: inherit;
-    display: block;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
-.board-link h3 {
+/* --- Card header: icon + title + pin --- */
+.board-card-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.board-card-icon {
+    font-size: 1.35rem;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 28px;
+    text-align: center;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.board-card-header h3 {
     color: var(--color-text-primary);
     font-size: var(--font-size-base);
     font-weight: 600;
-    margin-bottom: 4px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    flex: 1;
+    min-width: 0;
 }
 
-.board-link .description {
+.board-card-pin {
+    font-size: 0.85rem;
+    flex-shrink: 0;
+    opacity: 0.6;
+}
+
+/* --- Description --- */
+.board-card-desc {
     color: var(--color-text-secondary);
     font-size: var(--font-size-sm);
-    margin-bottom: 10px;
-    line-height: 1.4;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
-.board-link .card-count {
-    color: var(--color-accent);
-    font-size: var(--font-size-sm);
-    font-weight: 500;
+/* --- Progress bar --- */
+.board-card-progress {
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
+.board-card-progress-bar {
+    flex: 1;
+    height: 4px;
+    background: var(--color-column-bg);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+.board-card-progress-fill {
+    height: 100%;
+    background: var(--color-accent);
+    border-radius: 2px;
+    transition: width 0.4s ease;
+    min-width: 0;
+}
+
+.board-card-progress-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+
+.board-card-progress-label--empty {
+    font-style: italic;
+}
+
+/* --- Footer: tags + timestamp --- */
+.board-card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    min-height: 20px;
+}
+
+.board-card-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+}
+
+.board-card-tags .tag {
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.board-card-time {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+/* --- Delete button (repositioned) --- */
 .btn-delete {
     position: absolute;
-    top: 1rem;
-    right: 1rem;
-    background: var(--color-danger);
-    color: #fff;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    background: transparent;
+    color: var(--color-text-muted);
     border: none;
     border-radius: var(--radius-sm);
-    padding: 3px 8px;
-    font-size: var(--font-size-xs);
+    padding: 2px 6px;
+    font-size: var(--font-size-sm);
     cursor: pointer;
     opacity: 0;
-    transition: opacity 0.15s, background 0.15s;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+    line-height: 1;
 }
 
 .board-card:hover .btn-delete {
-    opacity: 1;
+    opacity: 0.6;
 }
 
 .btn-delete:hover {
-    background: var(--color-danger-hover);
+    opacity: 1 !important;
+    color: var(--color-danger);
+    background: var(--color-danger-bg);
 }
 
+/* --- Empty state (home) --- */
 .empty-state {
     text-align: center;
     padding: 3rem;
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
+}
+
+.empty-state-home {
+    text-align: center;
+    padding: 4rem 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    animation: boardCardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.empty-state-icon {
+    color: var(--color-text-muted);
+    opacity: 0.5;
+    margin-bottom: 0.5rem;
+}
+
+.empty-state-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.empty-state-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
 }
 
 .create-board-form {
@@ -1680,6 +1845,7 @@ select:focus {
     box-shadow: var(--shadow-card);
     transition: box-shadow 0.15s, border-color 0.15s, opacity 0.2s;
     position: relative;
+    overflow: hidden;
 }
 
 .card[draggable] {
@@ -1720,6 +1886,8 @@ select:focus {
     color: var(--color-text-primary);
     line-height: 1.4;
     margin-bottom: 4px;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .card.completed .card-title {
@@ -1791,6 +1959,8 @@ select:focus {
     font-size: var(--font-size-sm);
     line-height: 1.4;
     margin-bottom: 6px;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .card-body-trim {
@@ -1809,7 +1979,7 @@ select:focus {
 .md-content code { background: var(--color-bg-secondary, rgba(0,0,0,0.06)); padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.9em; }
 .md-content pre { background: var(--color-bg-secondary, rgba(0,0,0,0.06)); padding: 0.5em 0.75em; border-radius: var(--radius-md); overflow-x: auto; margin: 0.4em 0; }
 .md-content pre code { background: none; padding: 0; }
-.md-content a { color: var(--color-accent); text-decoration: underline; }
+.md-content a { color: var(--color-accent); text-decoration: underline; overflow-wrap: break-word; word-break: break-word; }
 .md-content blockquote { border-left: 3px solid var(--color-border); margin: 0.4em 0; padding-left: 0.75em; color: var(--color-text-secondary); }
 .md-content del { opacity: 0.6; }
 .md-content img { max-width: 100%; border-radius: var(--radius-md); }
@@ -2056,67 +2226,85 @@ select:focus {
     position: fixed;
     inset: 0;
     z-index: 1100;
-    background: rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
     display: flex;
     align-items: flex-start;
     justify-content: center;
     padding: 48px 16px;
     overflow-y: auto;
+    animation: cardModalBackdropIn 0.2s ease-out both;
+}
+
+@keyframes cardModalBackdropIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+}
+
+@keyframes cardModalSlideIn {
+    from { opacity: 0; transform: translateY(12px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
 .card-modal {
     background: var(--color-surface);
-    border-radius: var(--radius-lg);
-    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.12);
+    border-radius: 12px;
+    box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.25),
+        0 8px 24px rgba(0, 0, 0, 0.12),
+        0 0 0 1px rgba(0, 0, 0, 0.06);
     width: 100%;
     max-width: 768px;
     display: flex;
     position: relative;
     min-height: 320px;
+    animation: cardModalSlideIn 0.25s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 .card-modal-close {
     position: absolute;
-    top: 8px;
-    right: 8px;
+    top: 10px;
+    right: 10px;
     z-index: 1;
     background: none;
     border: none;
-    font-size: 1.5rem;
+    font-size: 1.25rem;
     line-height: 1;
-    width: 32px;
-    height: 32px;
-    border-radius: var(--radius-sm);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
     cursor: pointer;
     color: var(--color-text-muted);
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.12s, color 0.12s;
+    transition: all 0.15s ease;
 }
 
 .card-modal-close:hover {
-    background: var(--color-column-bg);
-    color: var(--color-text-primary);
+    background: var(--color-danger-bg);
+    color: var(--color-danger);
+    transform: scale(1.1);
 }
 
 .card-modal-main {
     flex: 1;
-    padding: 24px 24px 20px;
+    padding: 28px 28px 24px;
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
     min-width: 0;
 }
 
 .card-modal-column-pill {
     display: inline-block;
-    background: var(--color-column-bg);
-    color: var(--color-text-secondary);
+    background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+    color: var(--color-accent);
     font-size: var(--font-size-xs);
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 0.05em;
+    letter-spacing: 0.06em;
     padding: 3px 10px;
     border-radius: 10px;
     align-self: flex-start;
@@ -2124,17 +2312,20 @@ select:focus {
 
 .card-modal-title {
     width: 100%;
-    padding: 4px 0;
+    padding: 6px 0;
     border: none;
     border-bottom: 2px solid transparent;
-    font-size: 1.25rem;
+    font-size: 1.35rem;
     font-weight: 700;
     font-family: var(--font-sans);
     background: transparent;
     color: var(--color-text-primary);
     resize: none;
-    line-height: 1.3;
+    line-height: 1.35;
     overflow: hidden;
+    letter-spacing: -0.01em;
+    transition: border-color 0.15s ease;
+    min-height: 1.8em;
 }
 
 .card-modal-title:focus {
@@ -2142,35 +2333,44 @@ select:focus {
     border-bottom-color: var(--color-accent);
 }
 
+.card-modal-title::placeholder {
+    color: var(--color-text-muted);
+}
+
 .card-modal-action-bar {
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--color-border);
 }
 
 .card-modal-action-btn {
     display: inline-flex;
     align-items: center;
     gap: 6px;
-    padding: 6px 12px;
+    padding: 7px 14px;
     background: var(--color-column-bg);
-    border: none;
-    border-radius: var(--radius-sm);
+    border: 1px solid transparent;
+    border-radius: 8px;
     font-size: var(--font-size-sm);
     font-weight: 500;
     color: var(--color-text-secondary);
     cursor: pointer;
-    transition: background 0.12s, color 0.12s;
+    transition: all 0.15s ease;
     font-family: var(--font-sans);
 }
 
 .card-modal-action-btn:hover {
-    background: var(--color-border);
+    background: var(--color-surface);
+    border-color: var(--color-border);
     color: var(--color-text-primary);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 .card-modal-action-icon {
     font-size: 0.85rem;
+    opacity: 0.8;
 }
 
 /* Date Picker */
@@ -2405,46 +2605,49 @@ select:focus {
     display: flex;
     align-items: center;
     gap: 8px;
-    font-size: var(--font-size-base);
-    font-weight: 600;
-    color: var(--color-text-primary);
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
 }
 
 .card-modal-section-icon {
-    font-size: 1rem;
-    width: 20px;
+    font-size: 0.9rem;
+    width: 18px;
     text-align: center;
-    opacity: 0.6;
+    opacity: 0.5;
 }
 
 .card-modal-body {
     width: 100%;
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    border-radius: 8px;
     font-size: var(--font-size-sm);
     font-family: var(--font-sans);
     background: var(--color-bg);
     color: var(--color-text-primary);
     resize: vertical;
-    line-height: 1.5;
-    min-height: 80px;
+    line-height: 1.6;
+    min-height: 100px;
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 .card-modal-body:focus {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -1px;
+    outline: none;
     border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
 }
 
 .card-modal-body-preview {
-    padding: 10px 12px;
+    padding: 12px 14px;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-md);
+    border-radius: 8px;
     font-size: var(--font-size-sm);
     background: var(--color-bg);
     color: var(--color-text-primary);
-    line-height: 1.5;
+    line-height: 1.6;
     min-height: 60px;
 }
 
@@ -2452,14 +2655,17 @@ select:focus {
     margin-left: auto;
     background: none;
     border: 1px solid var(--color-border);
-    border-radius: var(--radius-sm);
+    border-radius: 12px;
     color: var(--color-text-secondary);
     font-size: var(--font-size-xs);
-    padding: 2px 8px;
+    padding: 2px 10px;
     cursor: pointer;
+    transition: all 0.12s ease;
 }
 .card-modal-preview-toggle:hover {
-    background: var(--color-bg-secondary, rgba(0,0,0,0.04));
+    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    border-color: var(--color-accent);
+    color: var(--color-accent);
 }
 
 .card-modal-tags-container {
@@ -2489,12 +2695,17 @@ select:focus {
     gap: 4px;
     background: var(--color-accent-muted);
     color: var(--color-accent-text);
-    padding: 2px 8px;
-    border-radius: 10px;
+    padding: 3px 10px;
+    border-radius: 12px;
     font-size: var(--font-size-xs);
     font-weight: 500;
     white-space: nowrap;
     line-height: 1.4;
+    transition: transform 0.1s ease;
+}
+
+.card-modal-tag-chip:hover {
+    transform: scale(1.05);
 }
 
 .card-modal-tag-chip-remove {
@@ -2578,18 +2789,21 @@ input.card-modal-tags-input::placeholder {
 .card-modal-save-row {
     display: flex;
     gap: 8px;
-    padding-top: 4px;
+    padding-top: 8px;
+    border-top: 1px solid var(--color-border);
 }
 
 /* Modal sidebar */
 .card-modal-sidebar {
     width: 200px;
     flex-shrink: 0;
-    padding: 24px 16px 20px;
+    padding: 28px 16px 24px;
     border-left: 1px solid var(--color-border);
+    background: color-mix(in srgb, var(--color-bg) 50%, var(--color-surface));
     display: flex;
     flex-direction: column;
     gap: 4px;
+    border-radius: 0 12px 12px 0;
 }
 
 .card-modal-sidebar-label {
@@ -2613,107 +2827,126 @@ input.card-modal-tags-input::placeholder {
     align-items: center;
     gap: 8px;
     width: 100%;
-    padding: 7px 10px;
-    background: var(--color-column-bg);
-    border: none;
-    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 8px;
     text-align: left;
     font-size: var(--font-size-sm);
     font-weight: 500;
     color: var(--color-text-primary);
     cursor: pointer;
-    transition: background 0.1s, color 0.1s;
+    transition: all 0.12s ease;
     font-family: var(--font-sans);
 }
 
 .card-modal-sidebar-btn:hover {
-    background: var(--color-border);
+    background: var(--color-column-bg);
+    border-color: var(--color-border-dashed);
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
 }
 
 .card-modal-sidebar-btn-move {
-    padding-left: 18px;
+    padding-left: 16px;
     font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
+    border-style: dashed;
+    background: transparent;
 }
 
 .card-modal-sidebar-btn-danger {
     color: var(--color-danger);
+    border-color: var(--color-danger-bg);
+    background: transparent;
 }
 
 .card-modal-sidebar-btn-danger:hover {
     background: var(--color-danger-bg);
+    border-color: var(--color-danger);
 }
 
 .card-modal-sidebar-sep {
     height: 1px;
     background: var(--color-border);
-    margin: 6px 0;
+    margin: 8px 0;
 }
 
 .card-modal-meta-list {
-    margin-top: 8px;
+    margin-top: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
 .card-modal-meta-item {
-    font-size: var(--font-size-sm);
+    font-size: var(--font-size-xs);
     color: var(--color-text-secondary);
-    padding: 4px 0;
+    padding: 6px 8px;
+    background: var(--color-surface);
+    border-radius: 6px;
+    border: 1px solid var(--color-border);
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .card-modal-priority-group {
     display: flex;
-    gap: 0;
-    border-radius: var(--radius-sm);
-    overflow: hidden;
-    border: 1px solid var(--color-border);
+    gap: 4px;
+    border-radius: 8px;
+    overflow: visible;
 }
 
 .card-modal-priority-btn {
     flex: 1;
     padding: 6px 0;
-    border: none;
-    background: var(--color-column-bg);
+    border: 1px solid var(--color-border);
+    background: var(--color-surface);
     color: var(--color-text-secondary);
     font-size: var(--font-size-xs);
     font-weight: 600;
     font-family: var(--font-sans);
     cursor: pointer;
-    transition: background 0.1s, color 0.1s;
-    border-right: 1px solid var(--color-border);
-}
-
-.card-modal-priority-btn:last-child {
-    border-right: none;
+    transition: all 0.12s ease;
+    border-radius: 6px;
 }
 
 .card-modal-priority-btn:hover {
-    background: var(--color-border);
+    background: var(--color-column-bg);
     color: var(--color-text-primary);
+    transform: translateY(-1px);
 }
 
 .card-modal-priority-btn--active {
     background: var(--color-text-muted);
     color: var(--color-surface);
+    border-color: transparent;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
 }
 
 .card-modal-priority-btn--low.card-modal-priority-btn--active {
     background: #3b82f6;
     color: #fff;
+    border-color: transparent;
 }
 
 .card-modal-priority-btn--medium.card-modal-priority-btn--active {
     background: #f59e0b;
     color: #fff;
+    border-color: transparent;
 }
 
 .card-modal-priority-btn--high.card-modal-priority-btn--active {
     background: #ef4444;
     color: #fff;
+    border-color: transparent;
 }
 
 .card-modal-priority-btn--critical.card-modal-priority-btn--active {
     background: #dc2626;
     color: #fff;
+    border-color: transparent;
 }
 
 /* === BOARD DROPDOWN (mobile only) === */
@@ -2913,14 +3146,33 @@ input.card-modal-tags-input::placeholder {
         box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
     }
 
+    .card-modal-backdrop {
+        padding: 0;
+        align-items: stretch;
+    }
+
     .card-modal {
         flex-direction: column;
+        max-width: 100%;
+        border-radius: 0;
+        min-height: 100vh;
+        animation: cardModalSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+    }
+
+    @keyframes cardModalSlideUp {
+        from { opacity: 0; transform: translateY(100%); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-modal-main {
+        padding: 20px 16px 16px;
     }
 
     .card-modal-sidebar {
         width: 100%;
         border-left: none;
         border-top: 1px solid var(--color-border);
+        border-radius: 0;
         flex-direction: row;
         flex-wrap: wrap;
         gap: 6px;
@@ -2939,6 +3191,11 @@ input.card-modal-tags-input::placeholder {
     .card-modal-meta-list {
         width: 100%;
         margin-top: 0;
+        flex-direction: row;
+    }
+
+    .card-modal-meta-item {
+        flex: 1;
     }
 
     .card-modal-sidebar-sep {
@@ -2951,6 +3208,7 @@ input.card-modal-tags-input::placeholder {
 
     .boards-grid {
         grid-template-columns: 1fr;
+        gap: 0.75rem;
     }
 }
 

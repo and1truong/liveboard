@@ -30,6 +30,8 @@ type BoardSummary struct {
 	Tags        []string  `json:"tags,omitempty"`
 	Pinned      bool      `json:"pinned"`
 	CardCount   int       `json:"card_count"`
+	DoneCount   int       `json:"done_count"`
+	ColumnCount int       `json:"column_count"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	CreatedAgo  string    `json:"created_ago"`
@@ -80,8 +82,14 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 	summaries := make([]BoardSummary, len(boards))
 	for i, b := range boards {
 		cardCount := 0
+		doneCount := 0
 		for _, col := range b.Columns {
 			cardCount += len(col.Cards)
+			for _, c := range col.Cards {
+				if c.Completed {
+					doneCount++
+				}
+			}
 		}
 		summaries[i] = BoardSummary{
 			Name:        b.Name,
@@ -90,6 +98,8 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 			Icon:        b.Icon,
 			Tags:        b.Tags,
 			CardCount:   cardCount,
+			DoneCount:   doneCount,
+			ColumnCount: len(b.Columns),
 			CreatedAt:   b.CreatedAt,
 			UpdatedAt:   b.UpdatedAt,
 			CreatedAgo:  relativeTime(b.CreatedAt),

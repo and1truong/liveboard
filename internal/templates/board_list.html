@@ -35,22 +35,60 @@
 {{define "boards-grid"}}
         {{if .Boards}}
         <div class="boards-grid">
-            {{range .Boards}}
-            <div class="board-card">
-                <a href="/board/{{.Slug}}" class="board-link">
-                    <h3>{{.Name}}</h3>
-                    {{if .Description}}
-                    <p class="description">{{.Description}}</p>
+            {{range $i, $b := .Boards}}
+            <div class="board-card" style="--i: {{$i}}">
+                <a href="/board/{{$b.Slug}}" class="board-link">
+                    <div class="board-card-header">
+                        <span class="board-card-icon">{{if $b.Icon}}{{$b.Icon}}{{else}}&#9783;{{end}}</span>
+                        <h3>{{$b.Name}}</h3>
+                        {{if $b.Pinned}}<span class="board-card-pin" title="Pinned">&#128204;</span>{{end}}
+                    </div>
+                    {{if $b.Description}}
+                    <p class="board-card-desc">{{$b.Description}}</p>
                     {{end}}
-                    <p class="card-count">{{.CardCount}} cards</p>
+                    {{if $b.CardCount}}
+                    <div class="board-card-progress">
+                        <div class="board-card-progress-bar">
+                            <div class="board-card-progress-fill" style="width: {{if $b.CardCount}}calc({{$b.DoneCount}} / {{$b.CardCount}} * 100%){{else}}0%{{end}}"></div>
+                        </div>
+                        <span class="board-card-progress-label">{{$b.DoneCount}}/{{$b.CardCount}} done</span>
+                    </div>
+                    {{else}}
+                    <div class="board-card-progress">
+                        <span class="board-card-progress-label board-card-progress-label--empty">No cards yet</span>
+                    </div>
+                    {{end}}
+                    <div class="board-card-footer">
+                        <div class="board-card-tags">
+                            {{range $b.Tags}}
+                            <span class="tag">{{.}}</span>
+                            {{end}}
+                        </div>
+                        {{if $b.UpdatedAgo}}
+                        <span class="board-card-time" title="{{$b.UpdatedFull}}">{{$b.UpdatedAgo}}</span>
+                        {{end}}
+                    </div>
                 </a>
-                <button onclick="if(confirm('Delete board &quot;{{.Name}}&quot;? This cannot be undone.')) { htmx.ajax('POST', '/boards/{{.Slug}}/delete', {values: {name: '{{.Name}}'}, target: '#boards-grid', swap: 'innerHTML'}); }" class="btn-delete">Delete</button>
+                <button onclick="if(confirm('Delete board &quot;{{$b.Name}}&quot;? This cannot be undone.')) { htmx.ajax('POST', '/boards/{{$b.Slug}}/delete', {values: {name: '{{$b.Name}}'}, target: '#boards-grid', swap: 'innerHTML'}); }" class="btn-delete" title="Delete board">&#x2715;</button>
             </div>
             {{end}}
         </div>
         {{else}}
-        <div class="empty-state">
-            <p>No boards yet. Create your first board to get started!</p>
+        <div class="empty-state-home">
+            <svg class="empty-state-icon" width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <rect x="6" y="12" width="68" height="56" rx="8" stroke="currentColor" stroke-width="2" opacity="0.3"/>
+                <line x1="30" y1="20" x2="30" y2="60" stroke="currentColor" stroke-width="1" opacity="0.15"/>
+                <line x1="52" y1="20" x2="52" y2="60" stroke="currentColor" stroke-width="1" opacity="0.15"/>
+                <rect x="11" y="22" width="14" height="6" rx="2" fill="currentColor" opacity="0.25"/>
+                <rect x="11" y="32" width="14" height="6" rx="2" fill="currentColor" opacity="0.15"/>
+                <rect x="11" y="42" width="14" height="6" rx="2" fill="currentColor" opacity="0.1"/>
+                <rect x="34" y="22" width="14" height="6" rx="2" fill="currentColor" opacity="0.35"/>
+                <rect x="34" y="32" width="14" height="6" rx="2" fill="currentColor" opacity="0.2"/>
+                <rect x="56" y="22" width="14" height="6" rx="2" fill="currentColor" opacity="0.45"/>
+            </svg>
+            <p class="empty-state-title">No boards yet</p>
+            <p class="empty-state-subtitle">Create your first board to start organizing</p>
+            <button onclick="var f=document.getElementById('createBoardForm');f.style.display='';f.querySelector('input[name=name]').focus()" class="btn-primary">+ Create Board</button>
         </div>
         {{end}}
 {{end}}
