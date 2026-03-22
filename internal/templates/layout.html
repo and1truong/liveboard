@@ -259,7 +259,7 @@
                         <span class="card-modal-section-icon">&#8801;</span> Description
                         <button class="card-modal-preview-toggle" type="button" @click="showBodyPreview = !showBodyPreview" x-text="showBodyPreview ? 'Edit' : 'Preview'" x-show="body.trim()"></button>
                     </div>
-                    <textarea class="card-modal-body" placeholder="Add a more detailed description..." x-model="body" rows="4" @input="autoResize($event)" x-show="!showBodyPreview"></textarea>
+                    <textarea class="card-modal-body" placeholder="Add a more detailed description..." x-model="body" rows="4" @input="autoResize($event)" @mouseup="captureResize($event)" x-show="!showBodyPreview"></textarea>
                     <div class="card-modal-body-preview md-content" x-show="showBodyPreview" x-html="renderMarkdown(body)"></div>
 
                     <div class="card-modal-section-header"><span class="card-modal-section-icon">&#127991;</span> Tags</div>

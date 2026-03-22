@@ -103,8 +103,14 @@ document.addEventListener('alpine:init', function () {
       },
 
       autoResize: function (e) {
-        e.target.style.height = 'auto';
-        e.target.style.height = e.target.scrollHeight + 'px';
+        var el = e.target;
+        var minH = parseInt(el.style.minHeight) || 0;
+        el.style.height = 'auto';
+        el.style.height = Math.max(el.scrollHeight, minH) + 'px';
+      },
+
+      captureResize: function (e) {
+        e.target.style.minHeight = e.target.offsetHeight + 'px';
       },
 
       renderMarkdown: function (text) {
