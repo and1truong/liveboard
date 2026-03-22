@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{.Title}}</title>
     <link rel="icon" type="image/svg+xml" href="/static/img/liveboard-icon.svg">
-    <link rel="stylesheet" href="/static/css/board.css">
+    <link rel="stylesheet" href="/static/css/board.css?v={{.Version}}">
     <script>
         (function() {
             var el = document.documentElement;
@@ -46,26 +46,26 @@
             link.href = 'data:image/svg+xml,' + encodeURIComponent(svg);
         });
     </script>
-    <script src="/static/js/htmx.min.js"></script>
-    <script src="/static/js/htmx-sse.js"></script>
-    <script src="/static/js/liveboard.store.js" defer></script>
-    <script src="/static/js/liveboard.tag-chips.js" defer></script>
-    <script src="/static/js/liveboard.column-chips.js" defer></script>
-    <script src="/static/js/liveboard.cmd-palette.js" defer></script>
-    <script src="/static/js/liveboard.priority-selector.js" defer></script>
-    <script src="/static/js/liveboard.date-picker.js" defer></script>
-    <script src="/static/js/liveboard.members-picker.js" defer></script>
-    <script src="/static/js/liveboard.card-modal.js" defer></script>
-    <script src="/static/js/liveboard.quick-edit.js" defer></script>
-    <script src="/static/js/liveboard.column-menu.js" defer></script>
-    <script src="/static/js/liveboard.board-settings.js" defer></script>
-    <script src="/static/js/liveboard.emoji-picker.js" defer></script>
-    <script src="/static/js/liveboard.global-settings.js" defer></script>
-    <script src="/static/js/alpine.min.js" defer></script>
-    <script src="/static/js/liveboard.core.js" defer></script>
-    <script src="/static/js/liveboard.drop.js" defer></script>
-    <script src="/static/js/liveboard.drag.js" defer></script>
-    <script src="/static/js/liveboard.keyboard.js" defer></script>
+    <script src="/static/js/htmx.min.js?v={{.Version}}"></script>
+    <script src="/static/js/htmx-sse.js?v={{.Version}}"></script>
+    <script src="/static/js/liveboard.store.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.tag-chips.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.column-chips.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.cmd-palette.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.priority-selector.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.date-picker.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.members-picker.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.card-modal.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.quick-edit.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.column-menu.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.board-settings.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.emoji-picker.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.global-settings.js?v={{.Version}}" defer></script>
+    <script src="/static/js/alpine.min.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.core.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.drop.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.drag.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.keyboard.js?v={{.Version}}" defer></script>
 </head>
 <body>
     <div class="app-shell" x-data="emojiPicker()">
