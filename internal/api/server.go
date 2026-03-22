@@ -7,7 +7,6 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/and1truong/liveboard/internal/board"
-	gitpkg "github.com/and1truong/liveboard/internal/git"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 	staticweb "github.com/and1truong/liveboard/web"
@@ -17,19 +16,17 @@ import (
 type Server struct {
 	ws         *workspace.Workspace
 	eng        *board.Engine
-	git        *gitpkg.Repository
 	webHandler *web.Handler
 	router     chi.Router
 	noCache    bool
 }
 
 // NewServer creates a Server with all routes registered.
-func NewServer(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repository, noCache bool) *Server {
+func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache bool, version string) *Server {
 	s := &Server{
 		ws:         ws,
 		eng:        eng,
-		git:        git,
-		webHandler: web.NewHandler(ws, eng, git),
+		webHandler: web.NewHandler(ws, eng, version),
 		noCache:    noCache,
 	}
 	s.router = s.buildRouter()
@@ -87,6 +84,8 @@ func (s *Server) buildRouter() chi.Router {
 	r.Post("/board/{slug}/settings", s.webHandler.HandleUpdateBoardSettings)
 	r.Post("/board/{slug}/icon", s.webHandler.HandleSetBoardIcon)
 
+	r.Post("/api/boards/pin", s.webHandler.HandleTogglePin)
+
 	r.Handle("/settings", s.webHandler.SettingsHandler())
 	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())
 
@@ -135,16 +134,4 @@ func jsonContentType(next http.Handler) http.Handler {
 
 func (s *Server) stubHandler(w http.ResponseWriter, _ *http.Request) {
 	respondError(w, http.StatusNotImplemented, "not yet implemented")
-}
-
-func (s *Server) gitCommit(relPath, message string) {
-	if s.git != nil {
-		_ = s.git.Commit(relPath, message)
-	}
-}
-
-func (s *Server) gitCommitRemove(relPath, message string) {
-	if s.git != nil {
-		_ = s.git.CommitRemove(relPath, message)
-	}
 }

@@ -31,7 +31,6 @@ func setupCLI(t *testing.T) string {
 	dir := t.TempDir()
 	ws = workspace.Open(dir)
 	eng = board.New()
-	gitRepo = nil // disable git for CLI tests
 	return dir
 }
 

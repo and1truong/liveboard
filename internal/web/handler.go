@@ -8,7 +8,6 @@ import (
 	"net/http"
 
 	"github.com/and1truong/liveboard/internal/board"
-	gitpkg "github.com/and1truong/liveboard/internal/git"
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/yuin/goldmark"
@@ -17,14 +16,15 @@ import (
 
 // Handler manages web handlers and shared dependencies.
 type Handler struct {
-	ws              *workspace.Workspace
-	eng             *board.Engine
-	git             *gitpkg.Repository
-	SSE             *SSEBroker
-	boardListTpl    *template.Template
-	boardViewTpl    *template.Template
-	boardGridTpl    *template.Template // partial: boards grid only
-	boardContentTpl *template.Template // partial: board content only
+	ws               *workspace.Workspace
+	eng              *board.Engine
+	version          string
+	SSE              *SSEBroker
+	boardListTpl     *template.Template
+	boardViewTpl     *template.Template
+	boardGridTpl     *template.Template // partial: boards grid only
+	boardContentTpl  *template.Template // partial: board content only
+	sidebarBoardsTpl *template.Template // partial: sidebar board list
 }
 
 // mdRenderer is a goldmark instance configured for safe HTML output.
@@ -49,12 +49,12 @@ func funcMap() template.FuncMap {
 }
 
 // NewHandler creates a new web Handler.
-func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Repository) *Handler {
+func NewHandler(ws *workspace.Workspace, eng *board.Engine, version string) *Handler {
 	h := &Handler{
-		ws:  ws,
-		eng: eng,
-		git: git,
-		SSE: NewSSEBroker(),
+		ws:      ws,
+		eng:     eng,
+		version: version,
+		SSE:     NewSSEBroker(),
 	}
 
 	fm := funcMap()
@@ -64,6 +64,7 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, git *gitpkg.Reposito
 	// Partial templates for HTMX responses
 	h.boardGridTpl = template.Must(template.New("boards-grid").Funcs(fm).ParseFS(tmplfs.FS, "board_list.html"))
 	h.boardContentTpl = template.Must(template.New("board-content").Funcs(fm).ParseFS(tmplfs.FS, "board_view.html"))
+	h.sidebarBoardsTpl = template.Must(template.New("sidebar-boards").Funcs(fm).ParseFS(tmplfs.FS, "layout.html"))
 
 	return h
 }
@@ -89,24 +90,4 @@ func renderPartial(w http.ResponseWriter, tpl *template.Template, name string, m
 // publishBoardEvent broadcasts a board update via SSE.
 func (h *Handler) publishBoardEvent(slug string) {
 	h.SSE.Publish(slug)
-}
-
-// commitWithHandling performs a git commit and logs any errors.
-func (h *Handler) commitWithHandling(boardPath, msg string) {
-	if h.git == nil {
-		return
-	}
-	if err := h.git.Commit(boardPath, msg); err != nil {
-		log.Printf("git commit failed for %s: %v", boardPath, err)
-	}
-}
-
-// commitRemoveWithHandling performs a git commit for removal and logs any errors.
-func (h *Handler) commitRemoveWithHandling(boardPath, msg string) {
-	if h.git == nil {
-		return
-	}
-	if err := h.git.CommitRemove(boardPath, msg); err != nil {
-		log.Printf("git commit remove failed for %s: %v", boardPath, err)
-	}
 }

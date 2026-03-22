@@ -619,7 +619,7 @@ func TestBoardViewModelCustomSiteName(t *testing.T) {
 func TestMutateBoardError(t *testing.T) {
 	h, slug := setupHandlerWithBoard(t)
 
-	model, err := h.mutateBoard(slug, "test", -1, func(_ *models.Board) error {
+	model, err := h.mutateBoard(slug, -1, func(_ *models.Board) error {
 		return os.ErrNotExist
 	})
 	if err != nil {
@@ -673,7 +673,7 @@ func TestMutateBoardVersionConflictReturnsError(t *testing.T) {
 	h, slug := setupHandlerWithBoard(t)
 
 	// First mutation at version 0 — succeeds.
-	_, err := h.mutateBoard(slug, "test", 0, func(b *models.Board) error {
+	_, err := h.mutateBoard(slug, 0, func(b *models.Board) error {
 		b.Name = "V1"
 		return nil
 	})
@@ -682,7 +682,7 @@ func TestMutateBoardVersionConflictReturnsError(t *testing.T) {
 	}
 
 	// Second mutation with stale version 0 — should return ErrVersionConflict.
-	_, err = h.mutateBoard(slug, "test", 0, func(b *models.Board) error {
+	_, err = h.mutateBoard(slug, 0, func(b *models.Board) error {
 		b.Name = "Should Fail"
 		return nil
 	})
@@ -695,7 +695,7 @@ func TestMutateBoardNoVersionSkipsCheck(t *testing.T) {
 	h, slug := setupHandlerWithBoard(t)
 
 	// Mutate without version (-1) — should always succeed.
-	_, err := h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+	_, err := h.mutateBoard(slug, -1, func(b *models.Board) error {
 		b.Name = "No Version"
 		return nil
 	})
@@ -704,7 +704,7 @@ func TestMutateBoardNoVersionSkipsCheck(t *testing.T) {
 	}
 
 	// Again with -1 — should still succeed even though version changed.
-	_, err = h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+	_, err = h.mutateBoard(slug, -1, func(b *models.Board) error {
 		b.Name = "Still No Version"
 		return nil
 	})
@@ -725,7 +725,7 @@ func TestBoardViewModelIncludesVersion(t *testing.T) {
 	}
 
 	// Mutate to increment version.
-	_, _ = h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+	_, _ = h.mutateBoard(slug, -1, func(b *models.Board) error {
 		b.Name = "V1"
 		return nil
 	})
@@ -743,7 +743,7 @@ func TestMutateBoardRemoveVersionConflict(t *testing.T) {
 	h, slug := setupHandlerWithBoard(t)
 
 	// Advance version.
-	_, _ = h.mutateBoard(slug, "test", -1, func(b *models.Board) error {
+	_, _ = h.mutateBoard(slug, -1, func(b *models.Board) error {
 		b.Name = "V1"
 		return nil
 	})
@@ -755,16 +755,6 @@ func TestMutateBoardRemoveVersionConflict(t *testing.T) {
 	if err != board.ErrVersionConflict {
 		t.Fatalf("expected ErrVersionConflict, got %v", err)
 	}
-}
-
-func TestCommitWithHandlingNilGit(_ *testing.T) {
-	h := &Handler{git: nil}
-	h.commitWithHandling("/path", "msg")
-}
-
-func TestCommitRemoveWithHandlingNilGit(_ *testing.T) {
-	h := &Handler{git: nil}
-	h.commitRemoveWithHandling("/path", "msg")
 }
 
 func TestToBoardSettingsViewExpandColumnsTrue(t *testing.T) {
@@ -782,7 +772,7 @@ func TestNewHandler(t *testing.T) {
 	ws := workspace.Open(dir)
 	eng := board.New()
 
-	h := NewHandler(ws, eng, nil)
+	h := NewHandler(ws, eng, "test")
 	if h == nil {
 		t.Fatal("handler is nil")
 	}

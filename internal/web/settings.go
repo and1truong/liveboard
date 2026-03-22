@@ -24,6 +24,7 @@ type AppSettings struct {
 	NewLineTrigger  string   `json:"newline_trigger"`
 	CardPosition    string   `json:"card_position"`
 	CardDisplayMode string   `json:"card_display_mode"`
+	PinnedBoards    []string `json:"pinned_boards,omitempty"`
 }
 
 var validColorThemes = map[string]bool{
@@ -84,7 +85,9 @@ type SettingsModel struct {
 	Title     string
 	SiteName  string
 	Boards    []BoardSummary
+	AllTags   []string
 	BoardSlug string
+	Version   string
 }
 
 // SettingsHandler returns an http.Handler for the settings page.
@@ -93,12 +96,15 @@ func (h *Handler) SettingsHandler() http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		boards, _ := h.ws.ListBoards()
-		siteName := h.loadSettings().SiteName
+		settings := h.loadSettings()
+		summaries := sortBoardsWithPins(toBoardSummaries(boards), settings.PinnedBoards)
 		model := SettingsModel{
-			Title:     "Settings — " + siteName,
-			SiteName:  siteName,
-			Boards:    toBoardSummaries(boards),
+			Title:     "Settings — " + settings.SiteName,
+			SiteName:  settings.SiteName,
+			Boards:    summaries,
+			AllTags:   collectAllTags(summaries),
 			BoardSlug: "__settings__",
+			Version:   h.version,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tpl.Execute(w, model); err != nil {
