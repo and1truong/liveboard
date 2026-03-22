@@ -20,9 +20,17 @@ func WorkDir() (string, bool) {
 	return dir, false
 }
 
-// DesktopWorkDir is like WorkDir but falls back to ~/LiveBoard instead of cwd,
-// which is appropriate when launched from Finder where cwd is "/".
+// DesktopWorkDir is like WorkDir but checks saved desktop config first,
+// then falls back to ~/LiveBoard instead of cwd when launched from Finder.
 func DesktopWorkDir() (string, bool) {
+	// Check saved last workspace first
+	cfg := LoadDesktopConfig()
+	if cfg.LastWorkspace != "" {
+		if info, err := os.Stat(cfg.LastWorkspace); err == nil && info.IsDir() {
+			return cfg.LastWorkspace, false
+		}
+	}
+
 	dir, cloud := WorkDir()
 	if cloud {
 		return dir, true

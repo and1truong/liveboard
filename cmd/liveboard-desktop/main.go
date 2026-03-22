@@ -4,12 +4,9 @@ import (
 	"embed"
 
 	"github.com/wailsapp/wails/v2"
-	"github.com/wailsapp/wails/v2/pkg/menu"
-	"github.com/wailsapp/wails/v2/pkg/menu/keys"
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
-	"github.com/wailsapp/wails/v2/pkg/runtime"
 )
 
 var (
@@ -23,26 +20,13 @@ var placeholder embed.FS
 func main() {
 	app := NewApp(version)
 
-	appMenu := menu.NewMenu()
-
-	// App menu (macOS standard)
-	appSubmenu := appMenu.AddSubmenu("LiveBoard")
-	appSubmenu.AddText("Settings...", keys.CmdOrCtrl(","), func(_ *menu.CallbackData) {
-		runtime.WindowExecJS(app.ctx, `window.location.href = "/settings"`)
-	})
-	appSubmenu.AddSeparator()
-	appSubmenu.Append(menu.AppMenu())
-
-	// Edit menu (enables Cmd+C, Cmd+V, etc in webview)
-	appMenu.Append(menu.EditMenu())
-
 	if err := wails.Run(&options.App{
 		Title:     "LiveBoard",
 		Width:     1280,
 		Height:    860,
 		MinWidth:  800,
 		MinHeight: 600,
-		Menu:      appMenu,
+		Menu:      app.buildMenu(),
 		AssetServer: &assetserver.Options{
 			Assets: placeholder,
 		},
