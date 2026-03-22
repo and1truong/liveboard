@@ -1752,6 +1752,7 @@ select:focus {
     background: var(--color-border);
     border-radius: 999px;
     padding: 1px 6px;
+    order: -1;
 }
 
 .cards {
@@ -1842,7 +1843,7 @@ select:focus {
     background: var(--color-surface);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-md);
-    padding: 10px 12px;
+    padding: 7px 10px;
     box-shadow: var(--shadow-card);
     transition: box-shadow 0.15s, border-color 0.15s, opacity 0.2s;
     position: relative;
@@ -1873,7 +1874,7 @@ select:focus {
 .card-layout {
     display: flex;
     align-items: flex-start;
-    gap: 8px;
+    gap: 6px;
 }
 
 .card-content {
@@ -1886,9 +1887,13 @@ select:focus {
     font-weight: 600;
     color: var(--color-text-primary);
     line-height: 1.4;
-    margin-bottom: 4px;
+    margin-bottom: 2px;
     overflow-wrap: break-word;
     word-break: break-word;
+}
+
+.card-title:last-child {
+    margin-bottom: 0;
 }
 
 .card.completed .card-title {
@@ -1897,14 +1902,14 @@ select:focus {
 
 .card-checkbox {
     flex-shrink: 0;
-    width: 16px;
-    height: 16px;
-    border: 2px solid var(--color-border);
+    width: 15px;
+    height: 15px;
+    border: 1.5px solid var(--color-border);
     border-radius: 3px;
     background: transparent;
     cursor: pointer;
     padding: 0;
-    margin-top: 3px;
+    margin-top: 2px;
     appearance: none;
     display: flex;
     align-items: center;
@@ -1924,10 +1929,10 @@ select:focus {
 .card-checkbox.checked::after {
     content: '';
     display: block;
-    width: 9px;
-    height: 5px;
-    border-left: 2px solid #fff;
-    border-bottom: 2px solid #fff;
+    width: 8px;
+    height: 4px;
+    border-left: 1.5px solid #fff;
+    border-bottom: 1.5px solid #fff;
     transform: rotate(-45deg) translateY(-1px);
 }
 
@@ -1989,7 +1994,7 @@ select:focus {
     display: flex;
     flex-wrap: wrap;
     gap: 3px;
-    margin-bottom: 5px;
+    margin-bottom: 3px;
 }
 
 .card-meta-row {
