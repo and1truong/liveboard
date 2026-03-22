@@ -82,14 +82,18 @@ document.addEventListener('alpine:init', function () {
         this.showBodyPreview = false;
         this.open = true;
 
-        var modalSelf = this;
         this.$nextTick(function () {
-          var ta = document.querySelector('.card-modal-title');
-          if (ta) {
-            ta.style.height = 'auto';
-            ta.style.height = ta.scrollHeight + 'px';
-            ta.focus();
-          }
+          // Use rAF to ensure Safari has completed layout before measuring
+          requestAnimationFrame(function () {
+            var ta = document.querySelector('.card-modal-title');
+            if (ta) {
+              ta.style.height = 'auto';
+              if (ta.scrollHeight > 0) {
+                ta.style.height = ta.scrollHeight + 'px';
+              }
+              ta.focus();
+            }
+          });
         });
       },
 

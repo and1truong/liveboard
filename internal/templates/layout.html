@@ -76,22 +76,9 @@
                     {{end}}
                 </div>
                 {{end}}
-                {{range .Boards}}
-                <a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}" title="{{.CreatedFull}}&#10;{{.UpdatedFull}}" data-board-tags="{{range $i, $t := .Tags}}{{if $i}},{{end}}{{$t}}{{end}}" x-show="!activeTag || ($el.dataset.boardTags && $el.dataset.boardTags.split(',').includes(activeTag))">
-                    <span class="nav-icon emoji-picker-trigger" @click.prevent.stop="show($el, '{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
-                    <span class="nav-label-group">
-                        <span class="nav-label">{{.Name}}</span>
-                        <span class="nav-meta">{{.UpdatedAgo}}</span>
-                        {{if .Tags}}
-                        <span class="nav-tags">
-                            {{range .Tags}}
-                            <span class="nav-tag">{{.}}</span>
-                            {{end}}
-                        </span>
-                        {{end}}
-                    </span>
-                </a>
-                {{end}}
+                <div id="sidebar-board-list">
+                {{template "sidebar-boards" .}}
+                </div>
                 <a href="/#new-board" class="sidebar-nav-item sidebar-new-board">
                     <span class="nav-icon">+</span>
                     <span class="nav-label">New Board</span>
@@ -411,3 +398,25 @@
     </div>
 </body>
 </html>
+
+{{define "sidebar-boards"}}
+{{range .Boards}}
+<a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}{{if .Pinned}} pinned{{end}}" title="{{.CreatedFull}}&#10;{{.UpdatedFull}}" data-board-tags="{{range $i, $t := .Tags}}{{if $i}},{{end}}{{$t}}{{end}}" x-show="!activeTag || ($el.dataset.boardTags && $el.dataset.boardTags.split(',').includes(activeTag))">
+    <span class="nav-icon emoji-picker-trigger" @click.prevent.stop="show($el, '{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
+    <span class="nav-label-group">
+        <span class="nav-label">{{.Name}}</span>
+        <span class="nav-meta">{{.UpdatedAgo}}</span>
+        {{if .Tags}}
+        <span class="nav-tags">
+            {{range .Tags}}
+            <span class="nav-tag">{{.}}</span>
+            {{end}}
+        </span>
+        {{end}}
+    </span>
+    <button class="sidebar-pin-btn{{if .Pinned}} pinned{{end}}" onclick="event.preventDefault();event.stopPropagation();htmx.ajax('POST','/api/boards/pin',{values:{slug:'{{.Slug}}'},target:'#sidebar-board-list',swap:'innerHTML'})" title="{{if .Pinned}}Unpin{{else}}Pin to top{{end}}">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>
+    </button>
+</a>
+{{end}}
+{{end}}

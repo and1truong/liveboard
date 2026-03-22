@@ -143,9 +143,9 @@
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
         // Cancel any pending dragleave cleanup — we're still over the zone
-        if (zone._dragLeaveRAF) {
-          cancelAnimationFrame(zone._dragLeaveRAF);
-          zone._dragLeaveRAF = null;
+        if (zone._dragLeaveTimer) {
+          clearTimeout(zone._dragLeaveTimer);
+          zone._dragLeaveTimer = null;
         }
         zone.classList.remove("drag-over");
         var beforeCard = LB.getInsertionTarget(zone, e.clientY, draggingCard);
@@ -154,12 +154,13 @@
 
       zone.addEventListener("dragleave", function (e) {
         if (!zone.contains(e.relatedTarget)) {
-          // Defer cleanup to next frame so a rapid dragover (from DOM shifts
-          // caused by indicator insertion) can cancel the stale leave.
-          zone._dragLeaveRAF = requestAnimationFrame(function () {
+          // Defer cleanup so a rapid dragover (from DOM shifts caused by
+          // indicator insertion) can cancel the stale leave. Use 100ms to
+          // outlast the browser's ~50ms dragover throttle interval.
+          zone._dragLeaveTimer = setTimeout(function () {
             zone.classList.remove("drag-over");
             LB.clearDropIndicators();
-          });
+          }, 100);
         }
       });
 
