@@ -16,6 +16,15 @@
                     <input type="text" maxlength="50" placeholder="LiveBoard" x-model="siteName" @input.debounce.500ms="save()">
                 </div>
             </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Version</div>
+                    <div class="settings-label-hint">Currently running release</div>
+                </div>
+                <div class="settings-control">
+                    <span class="settings-version-value">{{.Version}}</span>
+                </div>
+            </div>
         </div>
 
         <div class="settings-category-label">Appearance</div>
@@ -178,6 +187,18 @@
                     </div>
                 </div>
             </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Keyboard shortcuts</div>
+                    <div class="settings-label-hint">Vim-style navigation (j/k/h/l) and actions. Press <kbd>?</kbd> on a board to see all shortcuts</div>
+                </div>
+                <div class="settings-control">
+                    <label class="settings-toggle">
+                        <input type="checkbox" x-model="keyboardShortcuts" @change="save()">
+                        <span class="settings-toggle-track"></span>
+                    </label>
+                </div>
+            </div>
         </div>
 
         <div class="settings-category-label">New Board Defaults</div>
@@ -198,18 +219,6 @@
             </div>
         </div>
 
-        <div class="settings-category-label">About</div>
-        <div class="settings-section">
-            <div class="settings-field">
-                <div>
-                    <div class="settings-label">Version</div>
-                    <div class="settings-label-hint">Currently running release</div>
-                </div>
-                <div class="settings-control">
-                    <span class="settings-version-value">{{.Version}}</span>
-                </div>
-            </div>
-        </div>
 
     </div>
 </div>
