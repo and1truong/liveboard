@@ -38,10 +38,10 @@ document.addEventListener('alpine:init', function () {
         this._cardEl = card;
 
         // Collect tags
+        var self = this;
         var rawTags = card.dataset.cardTags || '';
         this.tags = [];
         if (rawTags) {
-          var self = this;
           rawTags.split(',').forEach(function (s) {
             s = s.trim();
             if (s && self.tags.indexOf(s) === -1) self.tags.push(s);
