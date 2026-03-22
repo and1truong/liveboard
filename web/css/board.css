@@ -1,3 +1,6 @@
+/* Reveal page only after CSS loads — prevents theme FOUC on slow networks */
+html { opacity: 1; }
+
 /* Alpine.js cloak — hide elements until Alpine initializes */
 [x-cloak] { display: none !important; }
 
