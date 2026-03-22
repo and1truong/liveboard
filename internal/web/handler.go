@@ -6,11 +6,13 @@ import (
 	"html/template"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/and1truong/liveboard/internal/board"
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/yuin/goldmark"
+	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
 )
 
@@ -29,6 +31,7 @@ type Handler struct {
 
 // mdRenderer is a goldmark instance configured for safe HTML output.
 var mdRenderer = goldmark.New(
+	goldmark.WithExtensions(extension.Linkify),
 	goldmark.WithRendererOptions(
 		html.WithHardWraps(),
 		html.WithXHTML(),
@@ -43,7 +46,8 @@ func funcMap() template.FuncMap {
 			if err := mdRenderer.Convert([]byte(s), &buf); err != nil {
 				return template.HTML(template.HTMLEscapeString(s))
 			}
-			return template.HTML(buf.String()) //nolint:gosec // goldmark output, raw HTML disabled by default
+			out := strings.ReplaceAll(buf.String(), "<a href=", `<a target="_blank" rel="noopener" href=`)
+			return template.HTML(out) //nolint:gosec // goldmark output, raw HTML disabled by default
 		},
 	}
 }
