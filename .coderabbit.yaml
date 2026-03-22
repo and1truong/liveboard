@@ -1,0 +1,115 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+
+language: en-US
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  poem: false
+  collapse_walkthrough: false
+  assess_linked_issues: true
+  related_issues: true
+  related_prs: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_instructions:
+    - path: "cmd/**/*.go"
+      instructions: |
+        CLI entrypoint using cobra. Review for clean separation between CLI
+        flag parsing and business logic — no business logic should live here.
+        Check for proper error handling and exit codes.
+
+    - path: "internal/api/**/*.go"
+      instructions: |
+        HTTP API layer using chi/v5 router with SSE for real-time updates.
+        Focus on: middleware ordering, SSE connection lifecycle management
+        (connect/disconnect/cleanup), no direct file I/O (delegate to board
+        package), proper context propagation, and thread safety around shared
+        state like the SSE broker.
+
+    - path: "internal/board/**/*.go"
+      instructions: |
+        CRUD engine with mutex-per-board and optimistic locking via version
+        counter. Review for: correct per-board mutex usage (not a global lock),
+        version checked before writes and incremented on save, no HTTP layer
+        references, proper error wrapping, and file path sanitization to
+        prevent directory traversal.
+
+    - path: "internal/parser/**/*.go"
+      instructions: |
+        Markdown + YAML frontmatter parser. Critical invariant: roundtrip
+        fidelity — parse then write must preserve original content. Review for
+        edge cases: empty columns, cards without metadata, inline #tags, HTML
+        comments. Metadata lines match ^  (\w+): (.+)$ (exactly 2-space indent).
+        No silent data loss on malformed input.
+
+    - path: "internal/writer/**/*.go"
+      instructions: |
+        Struct-to-markdown serializer. Must maintain roundtrip fidelity with
+        the parser — write(parse(text)) should equal text. Review for correct
+        YAML frontmatter marshaling, proper markdown formatting (H2 columns,
+        list item cards, 2-space indent metadata), checkbox state preservation,
+        and no trailing whitespace or extra blank lines.
+
+    - path: "internal/web/**/*.go"
+      instructions: |
+        HTMX handlers rendering HTML fragments and full pages via Go templates.
+        Review for: correct HTMX response headers (HX-Trigger, HX-Redirect,
+        HX-Reswap), template data completeness, SSE event naming consistency,
+        settings hierarchy (per-board overrides merge with global defaults),
+        and no raw HTML construction — use templates for all markup.
+
+    - path: "internal/templates/**/*.html"
+      instructions: |
+        Go HTML templates with HTMX and Alpine.js attributes. Review for:
+        correct Go template syntax, proper HTMX attributes (hx-get, hx-post,
+        hx-swap, hx-target, hx-trigger), clean Alpine.js integration, semantic
+        HTML with ARIA attributes, and XSS prevention — all user content must
+        be escaped.
+
+    - path: "internal/workspace/**/*.go"
+      instructions: |
+        Directory scanning and board file listing. Review for: only .md files
+        in board listings, correct platform-specific file timestamp handling,
+        filepath.Join usage (not string concatenation), no unintended recursive
+        traversal, and graceful handling of permission errors.
+
+    - path: "pkg/models/**/*.go"
+      instructions: |
+        Shared domain model structs used across all packages. Review for:
+        struct tag consistency (yaml/json), pointer types for optional fields,
+        no business logic (pure data containers). Changes here affect parser,
+        writer, board, web, and API packages — flag breaking changes.
+
+    - path: "web/js/**/*.js"
+      instructions: |
+        Client-side vanilla JavaScript for drag-and-drop, command palette, and
+        UI interactions. Review for: HTMX integration (use htmx.ajax() or hx-*
+        attributes), Alpine.js store consistency, proper drag-and-drop cleanup,
+        no framework dependencies beyond HTMX and Alpine.js, and keyboard
+        shortcut conflicts (Cmd+K for command palette).
+
+    - path: "**/*_test.go"
+      instructions: |
+        Go tests. Review for: table-driven tests where applicable, descriptive
+        test names (TestParseCard_WithInlineTags), test independence (no shared
+        state pollution), roundtrip tests for parser/writer changes, and proper
+        use of t.Helper() in test utilities.
+
+chat:
+  auto_reply: true
+  instructions: |
+    You are reviewing a Go-based Kanban board that uses markdown files as its
+    storage layer (no database). Key architectural principles:
+    1. Storage is markdown files with YAML frontmatter — never suggest a database
+    2. Real-time updates use SSE (Server-Sent Events) — not WebSockets
+    3. Frontend uses HTMX for server-driven UI and Alpine.js for client reactivity
+    4. Parser and writer must maintain roundtrip fidelity (parse then write = original)
+    5. Concurrency: mutex-per-board with optimistic locking (version field)
+    6. Settings: two-tier hierarchy — global (settings.json) with per-board overrides
+
+    Prioritize: data integrity, security (path traversal, XSS), architectural
+    boundary enforcement, and Go idioms.
