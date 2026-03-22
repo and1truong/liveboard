@@ -1,0 +1,11 @@
+{
+  "site_name": "StudyBoard",
+  "theme": "light",
+  "color_theme": "blue",
+  "column_width": 512,
+  "sidebar_position": "left",
+  "default_columns": ["to-do", "in-progress", "done"],
+  "show_checkbox": true,
+  "newline_trigger": "shift-enter",
+  "card_position": "append"
+}
