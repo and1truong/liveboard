@@ -1,5 +1,5 @@
 ---
-version: 23
+version: 24
 name: Sprint 14
 description: Two-week sprint — ship billing and onboarding
 icon: "\U0001F3AF"
@@ -16,8 +16,7 @@ list-collapse:
     - false
     - false
 settings:
-    expand-columns: true
-    view-mode: board
+    view-mode: table
 ---
 
 ## Backlog
