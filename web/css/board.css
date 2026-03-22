@@ -2316,6 +2316,7 @@ select:focus {
     padding: 6px 0;
     border: none;
     border-bottom: 2px solid transparent;
+    border-radius: 0;
     font-size: 1.35rem;
     font-weight: 700;
     font-family: var(--font-sans);
@@ -2854,6 +2855,7 @@ input.card-modal-tags-input::placeholder {
     color: var(--color-text-secondary);
     border-style: dashed;
     background: transparent;
+    margin-bottom: 6px;
 }
 
 .card-modal-sidebar-btn-danger {
