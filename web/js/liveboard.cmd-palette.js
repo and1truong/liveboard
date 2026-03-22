@@ -6,38 +6,92 @@ document.addEventListener('alpine:init', function () {
       query: '',
       activeIdx: 0,
 
+      escapeHtml: function (str) {
+        var d = document.createElement('div');
+        d.appendChild(document.createTextNode(str));
+        return d.innerHTML;
+      },
+
+      fuzzyMatch: function (query, text) {
+        var qi = 0, indices = [];
+        var qLower = query.toLowerCase(), tLower = text.toLowerCase();
+        for (var ti = 0; ti < tLower.length && qi < qLower.length; ti++) {
+          if (tLower[ti] === qLower[qi]) {
+            indices.push(ti);
+            qi++;
+          }
+        }
+        return qi === qLower.length ? indices : null;
+      },
+
+      highlightName: function (name, indices) {
+        if (!indices || !indices.length) return this.escapeHtml(name);
+        var set = {};
+        indices.forEach(function (i) { set[i] = true; });
+        var out = '';
+        for (var i = 0; i < name.length; i++) {
+          var ch = this.escapeHtml(name[i]);
+          out += set[i] ? '<mark class="cmd-palette-highlight">' + ch + '</mark>' : ch;
+        }
+        return out;
+      },
+
       get items() {
         var self = this;
         var path = window.location.pathname;
-        var items = [];
+        var boardItems = [];
+        var navItems = [];
+        var counter = 0;
 
         boards.forEach(function (b) {
           var url = '/board/' + b.slug;
           if (b.slug === activeSlug && path === url) return;
-          items.push({ icon: b.icon || '\u2630', name: b.name, url: url });
+          var item = { icon: b.icon || '\u2630', name: b.name, url: url, category: 'Boards', matchIndices: null, _idx: counter++ };
+          boardItems.push(item);
         });
 
-        var hasFixed = false;
         if (path !== '/') {
-          if (!hasFixed) { items.push({ separator: true }); hasFixed = true; }
-          items.push({ icon: '\uD83C\uDFE0', name: 'All Boards', url: '/' });
+          navItems.push({ icon: '\uD83C\uDFE0', name: 'All Boards', url: '/', category: 'Navigation', matchIndices: null, _idx: counter++ });
         }
         if (path !== '/settings') {
-          if (!hasFixed) { items.push({ separator: true }); hasFixed = true; }
-          items.push({ icon: '\u2699\uFE0F', name: 'Settings', url: '/settings' });
+          navItems.push({ icon: '\u2699\uFE0F', name: 'Settings', url: '/settings', category: 'Navigation', matchIndices: null, _idx: counter++ });
         }
 
+        var all = boardItems.concat(navItems);
+
         if (self.query) {
-          var q = self.query.toLowerCase();
-          items = items.filter(function (it) {
-            return !it.separator && it.name.toLowerCase().indexOf(q) !== -1;
+          var q = self.query;
+          var filtered = [];
+          var reIdx = 0;
+          all.forEach(function (it) {
+            var indices = self.fuzzyMatch(q, it.name);
+            if (indices) {
+              it.matchIndices = indices;
+              it._idx = reIdx++;
+              filtered.push(it);
+            }
           });
+          return filtered;
         }
-        return items;
+        return all;
+      },
+
+      get groupedItems() {
+        var items = this.items;
+        var groups = [];
+        var boardGroup = { label: 'Boards', items: [] };
+        var navGroup = { label: 'Navigation', items: [] };
+        items.forEach(function (it) {
+          if (it.category === 'Navigation') navGroup.items.push(it);
+          else boardGroup.items.push(it);
+        });
+        if (boardGroup.items.length) groups.push(boardGroup);
+        if (navGroup.items.length) groups.push(navGroup);
+        return groups;
       },
 
       get selectableItems() {
-        return this.items.filter(function (it) { return !it.separator; });
+        return this.items;
       },
 
       toggle: function () {
@@ -47,8 +101,10 @@ document.addEventListener('alpine:init', function () {
         if (this.open) {
           var self = this;
           this.$nextTick(function () {
-            var inp = self.$refs.input;
-            if (inp) inp.focus();
+            requestAnimationFrame(function () {
+              var inp = self.$refs.input;
+              if (inp) inp.focus();
+            });
           });
         }
       },
@@ -70,7 +126,7 @@ document.addEventListener('alpine:init', function () {
           e.preventDefault();
           if (count > 0) this.activeIdx = (this.activeIdx + 1) % count;
           this.$nextTick(function () {
-            var el = document.querySelector('.cmd-palette-item.active');
+            var el = document.querySelector('[data-cmd-active="true"]');
             if (el) el.scrollIntoView({ block: 'nearest' });
           });
           return;
@@ -79,7 +135,7 @@ document.addEventListener('alpine:init', function () {
           e.preventDefault();
           if (count > 0) this.activeIdx = (this.activeIdx - 1 + count) % count;
           this.$nextTick(function () {
-            var el = document.querySelector('.cmd-palette-item.active');
+            var el = document.querySelector('[data-cmd-active="true"]');
             if (el) el.scrollIntoView({ block: 'nearest' });
           });
           return;
