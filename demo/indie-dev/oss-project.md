@@ -1,11 +1,26 @@
 ---
-version: 34
+version: 44
 name: OSS Tracker
 description: liveboard/liveboard — open source project board
 icon: "\U0001F4E6"
 tags:
     - oss
     - github
+tag-colors:
+    api: '#4080c4'
+    auth: '#e05252'
+    backend: '#607080'
+    bug: '#e05252'
+    bugfix: '#e05252'
+    docker: '#4080c4'
+    dx: '#a07040'
+    feature: '#4caf76'
+    frontend: '#8060c4'
+    github: '#4080c4'
+    infra: '#607080'
+    oss: '#e05252'
+    parser: '#607080'
+    ux: '#45aab5'
 list-collapse:
     - false
     - false
