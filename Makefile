@@ -4,10 +4,19 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: build dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port
+.PHONY: build build-desktop bundle-desktop dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port
 
 build:
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o liveboard ./cmd/liveboard
+
+build-desktop:
+	CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -tags production -ldflags '$(LDFLAGS)' -o LiveBoard.app/Contents/MacOS/liveboard-desktop ./cmd/liveboard-desktop
+
+bundle-desktop: build-desktop
+	@mkdir -p LiveBoard.app/Contents/Resources
+	@cp cmd/liveboard-desktop/Info.plist LiveBoard.app/Contents/
+	@cp cmd/liveboard-desktop/icon.icns LiveBoard.app/Contents/Resources/
+	@echo "Built LiveBoard.app"
 
 release-port:
 	-lsof -ti :$(PORT) | xargs kill -9 2>/dev/null

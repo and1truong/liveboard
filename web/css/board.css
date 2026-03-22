@@ -4098,3 +4098,45 @@ mark.cmd-palette-highlight {
 .keyboard-help-section:first-child {
     padding-top: 4px;
 }
+
+/* === DESKTOP APP (Wails webview) === */
+/* -webkit-app-region is only effective in native webview contexts;
+   browsers ignore it, so these rules are safe to include globally. */
+
+.app-sidebar {
+    -webkit-app-region: drag;
+}
+
+.app-sidebar a,
+.app-sidebar button,
+.app-sidebar input,
+.app-sidebar .sidebar-nav,
+.app-sidebar .sidebar-footer,
+.app-sidebar .sidebar-board-dropdown {
+    -webkit-app-region: no-drag;
+}
+
+.workspace-header {
+    -webkit-app-region: drag;
+}
+
+.workspace-header a,
+.workspace-header button,
+.workspace-header input,
+.workspace-header .workspace-tags {
+    -webkit-app-region: no-drag;
+}
+
+/* macOS traffic light inset — only applied in Wails desktop context
+   via .desktop-app class injected by the desktop app's domReady handler. */
+.desktop-app .app-sidebar {
+    padding-top: 36px;
+}
+
+.desktop-app .app-sidebar .sidebar-toggle {
+    top: 36px;
+}
+
+.desktop-app .app-workspace > .sidebar-toggle {
+    top: 36px;
+}
