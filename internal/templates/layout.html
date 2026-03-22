@@ -67,14 +67,28 @@
 <body>
     <div class="app-shell" x-data="emojiPicker()">
         <aside class="app-sidebar" id="appSidebar" x-data="{ collapsed: localStorage.getItem('sidebarCollapsed') === 'true' }" x-init="if (collapsed) $el.classList.add('collapsed')" :class="{ collapsed: collapsed }">
-            <nav class="sidebar-nav">
+            <nav class="sidebar-nav" x-data="{ activeTag: null }">
                 <div class="sidebar-section-label">Boards</div>
+                {{if .AllTags}}
+                <div class="sidebar-tag-filter">
+                    {{range .AllTags}}
+                    <button class="sidebar-tag-btn" :class="{ active: activeTag === '{{.}}' }" @click="activeTag = activeTag === '{{.}}' ? null : '{{.}}'">{{.}}</button>
+                    {{end}}
+                </div>
+                {{end}}
                 {{range .Boards}}
-                <a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}" title="{{.CreatedFull}}&#10;{{.UpdatedFull}}">
+                <a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}" title="{{.CreatedFull}}&#10;{{.UpdatedFull}}" data-board-tags="{{range $i, $t := .Tags}}{{if $i}},{{end}}{{$t}}{{end}}" x-show="!activeTag || ($el.dataset.boardTags && $el.dataset.boardTags.split(',').includes(activeTag))">
                     <span class="nav-icon emoji-picker-trigger" @click.prevent.stop="show($el, '{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
                     <span class="nav-label-group">
                         <span class="nav-label">{{.Name}}</span>
                         <span class="nav-meta">{{.UpdatedAgo}}</span>
+                        {{if .Tags}}
+                        <span class="nav-tags">
+                            {{range .Tags}}
+                            <span class="nav-tag">{{.}}</span>
+                            {{end}}
+                        </span>
+                        {{end}}
                     </span>
                 </a>
                 {{end}}

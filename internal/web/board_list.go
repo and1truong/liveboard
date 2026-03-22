@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -15,6 +16,7 @@ type BoardListModel struct {
 	Title     string         `json:"title"`
 	SiteName  string         `json:"site_name"`
 	Boards    []BoardSummary `json:"boards"`
+	AllTags   []string       `json:"all_tags,omitempty"`
 	BoardSlug string         `json:"board_slug"` // always empty; shared with layout template
 	Error     string         `json:"error,omitempty"`
 }
@@ -25,6 +27,7 @@ type BoardSummary struct {
 	Slug        string    `json:"slug"` // filename stem, used for URLs
 	Description string    `json:"description,omitempty"`
 	Icon        string    `json:"icon,omitempty"`
+	Tags        []string  `json:"tags,omitempty"`
 	CardCount   int       `json:"card_count"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -84,6 +87,7 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 			Slug:        boardSlug(b),
 			Description: b.Description,
 			Icon:        b.Icon,
+			Tags:        b.Tags,
 			CardCount:   cardCount,
 			CreatedAt:   b.CreatedAt,
 			UpdatedAt:   b.UpdatedAt,
@@ -96,6 +100,22 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 	return summaries
 }
 
+// collectAllTags returns sorted unique tags across all board summaries.
+func collectAllTags(boards []BoardSummary) []string {
+	seen := make(map[string]struct{})
+	for _, b := range boards {
+		for _, t := range b.Tags {
+			seen[t] = struct{}{}
+		}
+	}
+	tags := make([]string, 0, len(seen))
+	for t := range seen {
+		tags = append(tags, t)
+	}
+	sort.Strings(tags)
+	return tags
+}
+
 // boardListModel loads the board list and returns a populated BoardListModel.
 func (h *Handler) boardListModel() (BoardListModel, error) {
 	boards, err := h.ws.ListBoards()
@@ -103,7 +123,8 @@ func (h *Handler) boardListModel() (BoardListModel, error) {
 		return BoardListModel{Error: err.Error()}, nil
 	}
 	siteName := h.loadSettings().SiteName
-	return BoardListModel{Title: siteName, SiteName: siteName, Boards: toBoardSummaries(boards)}, nil
+	summaries := toBoardSummaries(boards)
+	return BoardListModel{Title: siteName, SiteName: siteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
 }
 
 // BoardListPage handles GET / — renders the full board list page.

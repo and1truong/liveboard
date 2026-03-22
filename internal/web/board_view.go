@@ -43,6 +43,7 @@ type BoardViewModel struct {
 	BoardName      string            `json:"board_name"`
 	BoardSlug      string            `json:"board_slug"`
 	Boards         []BoardSummary    `json:"boards"`
+	AllTags        []string          `json:"all_tags,omitempty"`
 	Error          string            `json:"error,omitempty"`
 	Version        int               `json:"version"`
 	Settings       ResolvedSettings  `json:"settings"`
@@ -118,13 +119,15 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	}
 	allBoards, _ := h.ws.ListBoards()
 	global := h.loadSettings()
+	summaries := toBoardSummaries(allBoards)
 	return BoardViewModel{
 		Title:          b.Name + " — " + global.SiteName,
 		SiteName:       global.SiteName,
 		Board:          b,
 		BoardName:      b.Name,
 		BoardSlug:      slug,
-		Boards:         toBoardSummaries(allBoards),
+		Boards:         summaries,
+		AllTags:        collectAllTags(summaries),
 		Version:        b.Version,
 		Settings:       resolveSettings(global, b.Settings),
 		BSView:         toBoardSettingsView(b.Settings),

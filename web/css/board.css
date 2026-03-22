@@ -925,6 +925,56 @@ select:focus {
     color: var(--color-accent);
 }
 
+/* Sidebar tag filter */
+.sidebar-tag-filter {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px 16px 8px;
+}
+
+.sidebar-tag-btn {
+    background: var(--color-column-bg);
+    color: var(--color-text-secondary);
+    border: 1px solid var(--color-border);
+    padding: 1px 8px;
+    border-radius: 10px;
+    font-size: 10px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+    line-height: 1.5;
+}
+
+.sidebar-tag-btn:hover {
+    background: var(--color-accent-muted);
+    color: var(--color-accent-text);
+    border-color: var(--color-accent-muted);
+}
+
+.sidebar-tag-btn.active {
+    background: var(--color-accent);
+    color: #fff;
+    border-color: var(--color-accent);
+}
+
+/* Sidebar board tag chips */
+.nav-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    margin-top: 2px;
+}
+
+.nav-tag {
+    background: var(--color-column-bg);
+    color: var(--color-text-muted);
+    padding: 0 5px;
+    border-radius: 6px;
+    font-size: 9px;
+    font-weight: 500;
+    line-height: 1.6;
+}
 
 .nav-icon {
     font-size: 0.85rem;
