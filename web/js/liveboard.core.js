@@ -4,6 +4,7 @@ window.LB = window.LB || {};
 (function () {
   var LB = window.LB;
   var _conflictRetrying = false;
+  var _savedScrollLeft = 0;
 
   LB.isDragging = false;
 
@@ -17,6 +18,12 @@ window.LB = window.LB || {};
     var el = doc.getElementById("board-version");
     return el ? el.value || el.getAttribute("value") : null;
   }
+
+  // Save horizontal scroll position before HTMX replaces board content.
+  document.body.addEventListener("htmx:beforeRequest", function () {
+    var c = document.querySelector(".columns-container");
+    if (c) _savedScrollLeft = c.scrollLeft;
+  });
 
   // Auto-inject version into all HTMX form submissions (hx-post, hx-vals).
   document.body.addEventListener("htmx:configRequest", function (e) {
@@ -75,6 +82,9 @@ window.LB = window.LB || {};
     if (versionEl && boardView) {
       boardView.dataset.boardVersion = versionEl.value;
     }
+    // Restore horizontal scroll position after board content is replaced.
+    var cols = document.querySelector(".columns-container");
+    if (cols && _savedScrollLeft) cols.scrollLeft = _savedScrollLeft;
     // Refresh board store with fresh DOM data
     if (typeof Alpine !== 'undefined' && Alpine.store('board')) {
       Alpine.store('board').refresh();
