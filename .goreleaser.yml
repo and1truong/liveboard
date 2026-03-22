@@ -32,6 +32,14 @@ archives:
 checksum:
   name_template: "checksums.txt"
 
+brews:
+  - repository:
+      owner: and1truong
+      name: homebrew-tap
+    homepage: "https://github.com/and1truong/liveboard"
+    description: "Markdown-powered Kanban board with real-time collaboration"
+    license: "MIT"
+
 changelog:
   sort: asc
   filters:
