@@ -11,7 +11,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/and1truong/liveboard/internal/board"
-	gitpkg "github.com/and1truong/liveboard/internal/git"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -26,7 +25,6 @@ var (
 	usingCloud bool
 	ws         *workspace.Workspace
 	eng        *board.Engine
-	gitRepo    *gitpkg.Repository
 )
 
 func main() {
@@ -39,13 +37,6 @@ func main() {
 			}
 			ws = workspace.Open(workDir)
 			eng = board.New()
-
-			var err error
-			gitRepo, err = gitpkg.Open(workDir, true)
-			if err != nil {
-				// Non-fatal: git features just won't work.
-				gitRepo = nil
-			}
 			return nil
 		},
 	}
@@ -117,7 +108,6 @@ func boardCreateCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Created board %q with columns: %s\n", name, columnNames(b))
-			gitCommit(name+".md", fmt.Sprintf("board: create %q", name))
 			return nil
 		},
 	}
@@ -130,12 +120,10 @@ func boardDeleteCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 			name := args[0]
-			relPath := name + ".md"
 			if err := ws.DeleteBoard(name); err != nil {
 				return err
 			}
 			fmt.Printf("Deleted board %q\n", name)
-			gitCommitRemove(relPath, fmt.Sprintf("board: delete %q", name))
 			return nil
 		},
 	}
@@ -176,7 +164,6 @@ func cardAddCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Added card %q → %s\n", card.Title, column)
-			gitCommit(boardName+".md", fmt.Sprintf("card: add %q → %s", title, column))
 			return nil
 		},
 	}
@@ -205,7 +192,6 @@ func cardMoveCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Moved card → %s\n", targetCol)
-			gitCommit(boardName+".md", fmt.Sprintf("card: move → %s", targetCol))
 			return nil
 		},
 	}
@@ -231,7 +217,6 @@ func cardCompleteCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Toggled card completion\n")
-			gitCommit(boardName+".md", "card: toggle complete")
 			return nil
 		},
 	}
@@ -258,7 +243,6 @@ func cardTagCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Tagged card with: %s\n", strings.Join(tags, ", "))
-			gitCommit(boardName+".md", fmt.Sprintf("card: tag [%s]", strings.Join(tags, ", ")))
 			return nil
 		},
 	}
@@ -328,7 +312,6 @@ func cardDeleteCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Deleted card\n")
-			gitCommit(boardName+".md", "card: delete")
 			return nil
 		},
 	}
@@ -359,7 +342,6 @@ func columnAddCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Added column %q to %s\n", colName, boardName)
-			gitCommit(boardName+".md", fmt.Sprintf("column: add %q to %s", colName, boardName))
 			return nil
 		},
 	}
@@ -378,7 +360,6 @@ func columnMoveCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Moved column %q after %q in %s\n", colName, after, boardName)
-			gitCommit(boardName+".md", fmt.Sprintf("column: move %q after %q in %s", colName, after, boardName))
 			return nil
 		},
 	}
@@ -399,7 +380,6 @@ func columnDeleteCmd() *cobra.Command {
 				return err
 			}
 			fmt.Printf("Deleted column %q from %s\n", colName, boardName)
-			gitCommit(boardName+".md", fmt.Sprintf("column: delete %q from %s", colName, boardName))
 			return nil
 		},
 	}
@@ -421,18 +401,6 @@ func defaultWorkDir() string {
 }
 
 // --- Helpers ---
-
-func gitCommit(relPath, message string) {
-	if gitRepo != nil {
-		_ = gitRepo.Commit(relPath, message)
-	}
-}
-
-func gitCommitRemove(relPath, message string) {
-	if gitRepo != nil {
-		_ = gitRepo.CommitRemove(relPath, message)
-	}
-}
 
 func columnNames(b *models.Board) string {
 	var names []string

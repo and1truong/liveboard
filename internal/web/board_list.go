@@ -28,6 +28,7 @@ type BoardSummary struct {
 	Description string    `json:"description,omitempty"`
 	Icon        string    `json:"icon,omitempty"`
 	Tags        []string  `json:"tags,omitempty"`
+	Pinned      bool      `json:"pinned"`
 	CardCount   int       `json:"card_count"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
@@ -116,15 +117,40 @@ func collectAllTags(boards []BoardSummary) []string {
 	return tags
 }
 
+// sortBoardsWithPins marks pinned boards and sorts them first (in pin order),
+// then unpinned boards alphabetically by name.
+func sortBoardsWithPins(boards []BoardSummary, pinned []string) []BoardSummary {
+	pinIndex := make(map[string]int, len(pinned))
+	for i, slug := range pinned {
+		pinIndex[slug] = i
+	}
+	for i := range boards {
+		_, boards[i].Pinned = pinIndex[boards[i].Slug]
+	}
+	sort.SliceStable(boards, func(i, j int) bool {
+		pi, iPinned := pinIndex[boards[i].Slug]
+		pj, jPinned := pinIndex[boards[j].Slug]
+		if iPinned && jPinned {
+			return pi < pj
+		}
+		if iPinned != jPinned {
+			return iPinned
+		}
+		return strings.ToLower(boards[i].Name) < strings.ToLower(boards[j].Name)
+	})
+	return boards
+}
+
 // boardListModel loads the board list and returns a populated BoardListModel.
 func (h *Handler) boardListModel() (BoardListModel, error) {
 	boards, err := h.ws.ListBoards()
 	if err != nil {
 		return BoardListModel{Error: err.Error()}, nil
 	}
-	siteName := h.loadSettings().SiteName
+	settings := h.loadSettings()
 	summaries := toBoardSummaries(boards)
-	return BoardListModel{Title: siteName, SiteName: siteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
+	summaries = sortBoardsWithPins(summaries, settings.PinnedBoards)
+	return BoardListModel{Title: settings.SiteName, SiteName: settings.SiteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
 }
 
 // BoardListPage handles GET / — renders the full board list page.
@@ -150,9 +176,6 @@ func (h *Handler) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := h.ws.BoardPath(name)
-	h.commitWithHandling(boardPath, fmt.Sprintf("Create board: %s", name))
-
 	w.Header().Set("HX-Redirect", "/board/"+name)
 }
 
@@ -172,9 +195,6 @@ func (h *Handler) HandleDeleteBoard(w http.ResponseWriter, r *http.Request) {
 		renderPartial(w, h.boardGridTpl, "boards-grid", model)
 		return
 	}
-
-	boardPath := h.ws.BoardPath(name)
-	h.commitRemoveWithHandling(boardPath, fmt.Sprintf("Delete board: %s", name))
 
 	model, _ := h.boardListModel()
 	renderPartial(w, h.boardGridTpl, "boards-grid", model)
@@ -199,8 +219,44 @@ func (h *Handler) HandleSetBoardIconList(w http.ResponseWriter, r *http.Request)
 		renderPartial(w, h.boardGridTpl, "boards-grid", model)
 		return
 	}
-	h.commitWithHandling(boardPath, "Set board icon")
-
 	model, _ := h.boardListModel()
 	renderPartial(w, h.boardGridTpl, "boards-grid", model)
+}
+
+// HandleTogglePin handles POST /api/boards/pin — toggles a board's pinned state.
+func (h *Handler) HandleTogglePin(w http.ResponseWriter, r *http.Request) {
+	slug := r.FormValue("slug")
+	if slug == "" {
+		http.Error(w, "slug is required", http.StatusBadRequest)
+		return
+	}
+
+	s := h.loadSettings()
+	found := false
+	for i, p := range s.PinnedBoards {
+		if p == slug {
+			s.PinnedBoards = append(s.PinnedBoards[:i], s.PinnedBoards[i+1:]...)
+			found = true
+			break
+		}
+	}
+	if !found {
+		s.PinnedBoards = append(s.PinnedBoards, slug)
+	}
+	if err := h.saveSettings(s); err != nil {
+		http.Error(w, "save failed", http.StatusInternalServerError)
+		return
+	}
+
+	model, _ := h.boardListModel()
+	renderPartial(w, h.sidebarBoardsTpl, "sidebar-boards", model)
+}
+
+// HandleSidebarBoards handles GET /api/boards/sidebar — returns the sidebar board list partial.
+func (h *Handler) HandleSidebarBoards(w http.ResponseWriter, r *http.Request) {
+	model, _ := h.boardListModel()
+	if slug := r.URL.Query().Get("slug"); slug != "" {
+		model.BoardSlug = slug
+	}
+	renderPartial(w, h.sidebarBoardsTpl, "sidebar-boards", model)
 }

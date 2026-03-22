@@ -2,9 +2,7 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
-	"path/filepath"
 )
 
 func (s *Server) listBoards(w http.ResponseWriter, _ *http.Request) {
@@ -40,7 +38,6 @@ func (s *Server) createBoard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(board.FilePath), fmt.Sprintf("board: create %s", body.Name))
 	respondCreated(w, board)
 }
 
@@ -56,13 +53,11 @@ func (s *Server) getBoard(w http.ResponseWriter, r *http.Request) {
 
 func (s *Server) deleteBoard(w http.ResponseWriter, r *http.Request) {
 	name := pathParam(r, "board")
-	relPath := filepath.Base(s.ws.BoardPath(name))
 
 	if err := s.ws.DeleteBoard(name); err != nil {
 		handleError(w, err)
 		return
 	}
 
-	s.gitCommitRemove(relPath, fmt.Sprintf("board: delete %s", name))
 	respondNoContent(w)
 }

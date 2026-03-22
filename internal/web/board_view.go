@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -115,11 +116,11 @@ func toBoardSettingsView(bs models.BoardSettings) BoardSettingsView {
 func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	b, err := h.ws.LoadBoard(slug)
 	if err != nil {
-		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
+		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, err
 	}
 	allBoards, _ := h.ws.ListBoards()
 	global := h.loadSettings()
-	summaries := toBoardSummaries(allBoards)
+	summaries := sortBoardsWithPins(toBoardSummaries(allBoards), global.PinnedBoards)
 	return BoardViewModel{
 		Title:          b.Name + " — " + global.SiteName,
 		SiteName:       global.SiteName,
@@ -135,9 +136,9 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	}, nil
 }
 
-// mutateBoard runs a versioned mutation via eng.MutateBoard, commits, publishes SSE,
+// mutateBoard runs a versioned mutation via eng.MutateBoard, publishes SSE,
 // and returns the refreshed view model. Returns ErrVersionConflict on stale version.
-func (h *Handler) mutateBoard(slug, msg string, clientVersion int, op func(*models.Board) error) (BoardViewModel, error) {
+func (h *Handler) mutateBoard(slug string, clientVersion int, op func(*models.Board) error) (BoardViewModel, error) {
 	boardPath := h.ws.BoardPath(slug)
 	if err := h.eng.MutateBoard(boardPath, clientVersion, op); err != nil {
 		if errors.Is(err, board.ErrVersionConflict) {
@@ -145,21 +146,6 @@ func (h *Handler) mutateBoard(slug, msg string, clientVersion int, op func(*mode
 		}
 		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
 	}
-	h.commitWithHandling(boardPath, msg)
-	h.publishBoardEvent(slug)
-	return h.boardViewModel(slug)
-}
-
-// mutateBoardRemove is like mutateBoard but uses commitRemoveWithHandling.
-func (h *Handler) mutateBoardRemove(slug, msg string, clientVersion int, op func(*models.Board) error) (BoardViewModel, error) {
-	boardPath := h.ws.BoardPath(slug)
-	if err := h.eng.MutateBoard(boardPath, clientVersion, op); err != nil {
-		if errors.Is(err, board.ErrVersionConflict) {
-			return BoardViewModel{}, board.ErrVersionConflict
-		}
-		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, nil
-	}
-	h.commitRemoveWithHandling(boardPath, msg)
 	h.publishBoardEvent(slug)
 	return h.boardViewModel(slug)
 }
@@ -211,7 +197,11 @@ func (h *Handler) BoardViewPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	model, _ := h.boardViewModel(slug)
+	model, err := h.boardViewModel(slug)
+	if err != nil {
+		http.Redirect(w, r, "/?error="+url.QueryEscape(fmt.Sprintf("Board '%s' not found", slug)), http.StatusSeeOther)
+		return
+	}
 	renderFullPage(w, h.boardViewTpl, model)
 }
 
@@ -223,7 +213,12 @@ func (h *Handler) BoardContent(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	model, _ := h.boardViewModel(slug)
+	model, err := h.boardViewModel(slug)
+	if err != nil {
+		w.Header().Set("HX-Redirect", "/?error="+url.QueryEscape(fmt.Sprintf("Board '%s' not found", slug)))
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
 	h.renderBoardContent(w, model)
 }
 
@@ -256,7 +251,7 @@ func (h *Handler) HandleCreateCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, err := h.mutateBoard(slug, fmt.Sprintf("Add card \"%s\" to %s", title, column), version, func(b *models.Board) error {
+	model, err := h.mutateBoard(slug, version, func(b *models.Board) error {
 		card := models.Card{Title: title}
 		for i := range b.Columns {
 			if b.Columns[i].Name == column {
@@ -311,7 +306,7 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Move card to %s", targetColumn), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if err := validateIndices(b, colIdx, cardIdx); err != nil {
 			return err
 		}
@@ -371,7 +366,7 @@ func (h *Handler) HandleReorderCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Reorder card in %s", column), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if err := validateIndices(b, colIdx, cardIdx); err != nil {
 			return err
 		}
@@ -431,7 +426,7 @@ func (h *Handler) HandleDeleteCard(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoardRemove(slug, "Delete card", version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if err := validateIndices(b, colIdx, cardIdx); err != nil {
 			return err
 		}
@@ -471,7 +466,7 @@ func (h *Handler) HandleToggleComplete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, "Toggle card complete", version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if err := validateIndices(b, colIdx, cardIdx); err != nil {
 			return err
 		}
@@ -540,7 +535,7 @@ func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
 	assignee := r.FormValue("assignee")
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, "Edit card", version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if err := validateIndices(b, colIdx, cardIdx); err != nil {
 			return err
 		}
@@ -584,7 +579,7 @@ func (h *Handler) HandleCreateColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Add column: %s", colName), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		b.Columns = append(b.Columns, models.Column{Name: colName})
 		return nil
 	})
@@ -622,7 +617,7 @@ func (h *Handler) HandleRenameColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Rename column %q to %q", oldName, newName), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		for i := range b.Columns {
 			if b.Columns[i].Name == oldName {
 				b.Columns[i].Name = newName
@@ -657,7 +652,7 @@ func (h *Handler) HandleDeleteColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoardRemove(slug, fmt.Sprintf("Delete column: %s", colName), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		var cols []models.Column
 		found := false
 		for j, col := range b.Columns {
@@ -705,7 +700,7 @@ func (h *Handler) HandleUpdateBoardMeta(w http.ResponseWriter, r *http.Request) 
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Update board meta: %s", name), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if name != "" {
 			b.Name = name
 		}
@@ -738,7 +733,7 @@ func (h *Handler) HandleToggleColumnCollapse(w http.ResponseWriter, r *http.Requ
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, "Toggle column collapse", version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if colIndex < 0 || colIndex >= len(b.Columns) {
 			return fmt.Errorf("column index %d out of range", colIndex)
 		}
@@ -781,7 +776,7 @@ func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Sort column by %s", sortBy), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		if colIdx < 0 || colIdx >= len(b.Columns) {
 			return fmt.Errorf("column index %d out of range", colIdx)
 		}
@@ -878,7 +873,7 @@ func (h *Handler) HandleMoveColumn(w http.ResponseWriter, r *http.Request) {
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, fmt.Sprintf("Move column %q", colName), version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		return reorderColumns(b, colName, afterCol)
 	})
 	if errors.Is(mutErr, board.ErrVersionConflict) {
@@ -918,7 +913,7 @@ func (h *Handler) HandleUpdateBoardSettings(w http.ResponseWriter, r *http.Reque
 	}
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, "Update board settings", version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		b.Settings = settings
 		return nil
 	})
@@ -941,7 +936,7 @@ func (h *Handler) HandleSetBoardIcon(w http.ResponseWriter, r *http.Request) {
 	icon := r.FormValue("icon")
 
 	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, "Set board icon", version, func(b *models.Board) error {
+	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		b.Icon = icon
 		return nil
 	})

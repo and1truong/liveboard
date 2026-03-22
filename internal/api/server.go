@@ -85,6 +85,7 @@ func (s *Server) buildRouter() chi.Router {
 	r.Post("/board/{slug}/icon", s.webHandler.HandleSetBoardIcon)
 
 	r.Post("/api/boards/pin", s.webHandler.HandleTogglePin)
+	r.Get("/api/boards/sidebar", s.webHandler.HandleSidebarBoards)
 
 	r.Handle("/settings", s.webHandler.SettingsHandler())
 	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())

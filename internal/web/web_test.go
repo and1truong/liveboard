@@ -587,11 +587,11 @@ func TestBoardViewModel(t *testing.T) {
 
 	// Nonexistent board
 	model, err = h.boardViewModel("nonexistent")
-	if err != nil {
-		t.Fatal(err)
+	if err == nil {
+		t.Fatal("expected error for nonexistent board")
 	}
 	if model.Error == "" {
-		t.Error("expected error for nonexistent board")
+		t.Error("expected error message in model for nonexistent board")
 	}
 }
 
@@ -633,7 +633,7 @@ func TestMutateBoardError(t *testing.T) {
 func TestMutateBoardRemoveError(t *testing.T) {
 	h, slug := setupHandlerWithBoard(t)
 
-	model, err := h.mutateBoardRemove(slug, "test", -1, func(_ *models.Board) error {
+	model, err := h.mutateBoard(slug, -1, func(_ *models.Board) error {
 		return os.ErrNotExist
 	})
 	if err != nil {
@@ -749,7 +749,7 @@ func TestMutateBoardRemoveVersionConflict(t *testing.T) {
 	})
 
 	// Remove with stale version — should conflict.
-	_, err := h.mutateBoardRemove(slug, "test", 0, func(_ *models.Board) error {
+	_, err := h.mutateBoard(slug, 0, func(_ *models.Board) error {
 		return nil
 	})
 	if err != board.ErrVersionConflict {

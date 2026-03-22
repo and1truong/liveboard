@@ -3,7 +3,6 @@ package api
 import (
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strconv"
 )
 
@@ -29,7 +28,6 @@ func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: add %q to %s/%s", body.Title, boardName, colName))
 	respondCreated(w, card)
 }
 
@@ -87,7 +85,6 @@ func (s *Server) deleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: delete col=%d card=%d", colIdx, cardIdx))
 	respondNoContent(w)
 }
 
@@ -117,7 +114,6 @@ func (s *Server) moveCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: move → %s", body.Column))
 	respondNoContent(w)
 }
 
@@ -135,7 +131,6 @@ func (s *Server) completeCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: toggle complete col=%d card=%d", colIdx, cardIdx))
 	respondNoContent(w)
 }
 
@@ -165,7 +160,6 @@ func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("card: tag col=%d card=%d", colIdx, cardIdx))
 	respondNoContent(w)
 }
 

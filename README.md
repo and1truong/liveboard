@@ -8,20 +8,19 @@
 </p>
 
 <p align="center">
-  <a href="#quickstart">Quickstart</a> · <a href="#board-format">Board Format</a> · <a href="#web-ui">Web UI</a> · <a href="#cli">CLI</a> · <a href="#rest-api">REST API</a> · <a href="#git-integration">Git</a>
+  <a href="#quickstart">Quickstart</a> · <a href="#board-format">Board Format</a> · <a href="#web-ui">Web UI</a> · <a href="#cli">CLI</a> · <a href="#rest-api">REST API</a>
 </p>
 
 -----
 
 ## Why LiveBoard?
 
-No database. No proprietary format. No sync server. Just Markdown files, a Git repo, and a real-time web UI.
+No database. No proprietary format. No sync server. Just Markdown files and a real-time web UI.
 
 | | LiveBoard | Obsidian Kanban | Trello | Linear |
 |---|:---:|:---:|:---:|:---:|
 | Plain Markdown files | **Yes** | Yes | — | — |
 | Local-first | **Yes** | Yes | — | — |
-| Auto git commits | **Yes** | — | — | — |
 | REST API | **Yes** | — | Yes | Yes |
 | CLI | **Yes** | — | — | Partial |
 | Real-time Web UI | **Yes** | — | Yes | Yes |
@@ -169,20 +168,6 @@ POST   /boards/{slug}/cards/{index}/complete  Toggle completion
 
 -----
 
-## Git Integration
-
-Every write operation auto-commits the changed Markdown file with a structured message:
-
-```
-card: add "Implement OAuth login" → Backlog
-card: move "billing integration" Backlog → In Progress
-card: complete "Create landing page"
-column: add "Review" to product-roadmap
-board: create infra
-```
-
------
-
 ## Architecture
 
 ```
@@ -198,8 +183,8 @@ board: create infra
       ┌──────────────┼──────────────┐
       │              │              │
 ┌─────▼──────┐ ┌─────▼──────┐ ┌────▼────────┐
-│   Board    │ │   Parser   │ │    Git      │
-│   Engine   │ │   Writer   │ │   Layer     │
+│   Board    │ │   Parser   │ │  Workspace  │
+│   Engine   │ │   Writer   │ │   Scanner   │
 └─────┬──────┘ └─────┬──────┘ └────┬────────┘
       │              │             │
       └──────────────┼─────────────┘
@@ -222,7 +207,6 @@ liveboard/
 ├── internal/
 │   ├── api/              REST handlers (chi router)
 │   ├── board/            Board engine, CRUD operations
-│   ├── git/              go-git auto-commit integration
 │   ├── parser/           Markdown → Board model
 │   ├── writer/           Board model → Markdown
 │   ├── web/              HTMX handlers + SSE broker
@@ -247,7 +231,6 @@ liveboard/
 | HTTP router | [chi/v5](https://github.com/go-chi/chi) |
 | Real-time UI | [HTMX](https://htmx.org/) + Server-Sent Events |
 | CLI | [cobra](https://github.com/spf13/cobra) |
-| Git | [go-git/v5](https://github.com/go-git/go-git) |
 | Config | [yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) |
 | Frontend | Vanilla JS + [Alpine.js](https://alpinejs.dev/) |
 
@@ -259,7 +242,6 @@ liveboard/
 - [x] Board engine (card/column CRUD)
 - [x] REST API
 - [x] CLI
-- [x] Git auto-commit
 - [x] Web UI with drag-and-drop
 - [x] Theming (dark/light + color themes)
 - [ ] Full-text search ([bleve](https://github.com/blevesearch/bleve))

@@ -7,7 +7,6 @@ Markdown-powered Kanban board with real-time collaboration.
 - **Backend**: Go 1.24, chi/v5 router, cobra CLI
 - **Frontend**: HTMX + SSE (real-time), Alpine.js (client reactivity), vanilla JS (drag-and-drop, command palette)
 - **Storage**: Markdown files with YAML frontmatter — no database
-- **Git**: Auto-commits every mutation
 - **Dev**: `make dev` (air live reload), port 7070
 
 ## Domain Concepts
@@ -63,7 +62,6 @@ settings:                         # per-board setting overrides
 - `internal/parser/` — markdown + YAML frontmatter parsing
 - `internal/writer/` — struct-to-markdown serialization
 - `internal/workspace/` — directory scanning, board listing
-- `internal/git/` — auto-commit on mutations
 - `internal/templates/` — Go HTML templates
 - `web/` — static assets (JS, CSS)
 - `pkg/models/` — shared data structs

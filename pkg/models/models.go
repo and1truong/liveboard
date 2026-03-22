@@ -52,7 +52,6 @@ type Card struct {
 type Config struct {
 	LLM       LLMConfig       `yaml:"llm,omitempty"`
 	Workspace WorkspaceConfig `yaml:"workspace,omitempty"`
-	Git       GitConfig       `yaml:"git,omitempty"`
 	Board     BoardConfig     `yaml:"board,omitempty"`
 }
 
@@ -65,12 +64,6 @@ type LLMConfig struct {
 // WorkspaceConfig holds workspace-level settings.
 type WorkspaceConfig struct {
 	Default string `yaml:"default,omitempty"`
-}
-
-// GitConfig holds git auto-commit settings.
-type GitConfig struct {
-	AutoCommit   bool   `yaml:"auto_commit"`
-	CommitFormat string `yaml:"commit_format,omitempty"`
 }
 
 // BoardConfig holds board-level defaults.

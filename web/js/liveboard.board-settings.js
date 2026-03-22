@@ -99,6 +99,16 @@ document.addEventListener('alpine:init', function () {
             target: '#board-content',
             swap: 'innerHTML'
           });
+
+          // Refresh sidebar navigation to reflect name/tag changes
+          htmx.ajax('GET', '/api/boards/sidebar?slug=' + encodeURIComponent(self.slug), {
+            target: '#sidebar-board-list',
+            swap: 'innerHTML'
+          });
+
+          // Update mobile dropdown label
+          var ddLabel = document.querySelector('.dropdown-trigger-label');
+          if (ddLabel && self.boardName.trim()) ddLabel.textContent = self.boardName.trim();
         });
       },
 

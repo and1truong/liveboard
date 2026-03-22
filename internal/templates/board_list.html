@@ -10,6 +10,13 @@
         <div class="error">{{.Error}}</div>
         {{end}}
 
+        <div x-data="{ msg: new URLSearchParams(location.search).get('error') || '' }" x-init="if(msg){ var u=new URL(location); u.searchParams.delete('error'); history.replaceState(null,'',u.pathname+u.search); var d=$data; setTimeout(function(){ d.msg='' }, 5000) }">
+            <div class="flash-toast" x-show="msg" x-cloak>
+                <span x-text="msg"></span>
+                <button class="flash-toast-close" @click="msg=''">&times;</button>
+            </div>
+        </div>
+
         <form id="createBoardForm" style="display:none" hx-post="/boards/new" hx-target="#boards-grid" hx-swap="innerHTML" class="create-board-form" onsubmit="var f=this;requestAnimationFrame(function(){f.style.display='none';f.reset()})">
             <input type="text" name="name" placeholder="Board name" required onkeydown="if(event.key==='Escape'){this.value='';this.closest('form').style.display='none'}">
             <button type="submit" class="btn-primary">Create</button>

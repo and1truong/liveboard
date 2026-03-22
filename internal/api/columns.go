@@ -1,9 +1,7 @@
 package api
 
 import (
-	"fmt"
 	"net/http"
-	"path/filepath"
 )
 
 func (s *Server) addColumn(w http.ResponseWriter, r *http.Request) {
@@ -26,7 +24,6 @@ func (s *Server) addColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("column: add %q to %s", body.Name, boardName))
 	respondCreated(w, struct {
 		Name string `json:"name"`
 	}{Name: body.Name})
@@ -42,7 +39,6 @@ func (s *Server) deleteColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("column: delete %q from %s", colName, boardName))
 	respondNoContent(w)
 }
 
@@ -67,6 +63,5 @@ func (s *Server) moveColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.gitCommit(filepath.Base(boardPath), fmt.Sprintf("column: move %q after %q in %s", colName, body.After, boardName))
 	respondNoContent(w)
 }
