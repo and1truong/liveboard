@@ -6,6 +6,22 @@ icon: "\U0001F3AF"
 tags:
     - sprint
     - engineering
+tag-colors:
+    api: '#4080c4'
+    auth: '#e05252'
+    backend: '#607080'
+    billing: '#4caf76'
+    devops: '#d4722c'
+    docs: '#a07040'
+    frontend: '#8060c4'
+    onboarding: '#4caf76'
+    parser: '#607080'
+    performance: '#d4722c'
+    security: '#e05252'
+    testing: '#c9a227'
+    ui: '#45aab5'
+    ux: '#45aab5'
+    webhooks: '#4080c4'
 members:
     - Maya
     - htruong

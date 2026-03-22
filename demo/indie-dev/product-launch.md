@@ -6,6 +6,19 @@ icon: "\U0001F680"
 tags:
     - product
     - launch
+tag-colors:
+    auth: '#e05252'
+    backend: '#607080'
+    billing: '#4caf76'
+    content: '#c060a0'
+    devops: '#d4722c'
+    docs: '#a07040'
+    email: '#c060a0'
+    infra: '#607080'
+    marketing: '#c060a0'
+    seo: '#c060a0'
+    ui: '#45aab5'
+    ux: '#45aab5'
 list-collapse:
     - false
     - false
