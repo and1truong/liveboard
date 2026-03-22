@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-card-display-mode="{{.Settings.CardDisplayMode}}" data-bs-card-display-mode="{{.BSView.CardDisplayMode}}" data-global-card-display-mode="{{.GlobalSettings.CardDisplayMode}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}">
+<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-card-display-mode="{{.Settings.CardDisplayMode}}" data-bs-card-display-mode="{{.BSView.CardDisplayMode}}" data-global-card-display-mode="{{.GlobalSettings.CardDisplayMode}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" data-board-tag-colors="{{.TagColorsJSON}}">
     <div id="board-content" hx-get="/board/{{.BoardSlug}}/content" hx-trigger="sse:board-update" hx-swap="innerHTML">
     {{template "board-content" .}}
     </div>
@@ -20,7 +20,7 @@
             {{if .Board.Tags}}
             <div class="tags">
                 {{range .Board.Tags}}
-                <span class="tag">{{.}}</span>
+                <span class="tag" data-tag="{{.}}">{{.}}</span>
                 {{end}}
             </div>
             {{end}}
@@ -60,6 +60,30 @@
                             </template>
                             <div x-show="filtered.length === 0 && tcInput.trim()" class="card-modal-tags-dropdown-empty">Press Enter to add "<span x-text="tcInput"></span>"</div>
                         </div>
+                    </div>
+                </div>
+                <div class="settings-field-stacked" x-show="tagSuggestions.length > 0">
+                    <label class="settings-label-stacked">Tag colors</label>
+                    <div class="tag-color-picker">
+                        <template x-for="tag in tagSuggestions" :key="tag">
+                            <div class="tag-color-row">
+                                <span class="tag-color-label" :style="getTagPreviewStyle(tag)" x-text="tag"></span>
+                                <div class="tag-color-swatches">
+                                    <template x-for="swatch in TAG_PALETTE" :key="swatch">
+                                        <button type="button" class="color-swatch"
+                                            :class="{ active: tagColors[tag] === swatch }"
+                                            :style="'background:' + swatch"
+                                            @click="toggleTagColor(tag, swatch)"
+                                            :title="swatch">
+                                        </button>
+                                    </template>
+                                    <button type="button" class="color-swatch-clear"
+                                        x-show="!!tagColors[tag]"
+                                        @click="clearTagColor(tag)"
+                                        title="Remove color">&#10005;</button>
+                                </div>
+                            </div>
+                        </template>
                     </div>
                 </div>
             </div>
@@ -211,7 +235,7 @@
                 <div class="table-cell table-cell-assignee">{{if .Assignee}}{{.Assignee}}{{end}}</div>
                 <div class="table-cell table-cell-priority">{{if .Priority}}<span class="priority-indicator priority-{{.Priority}}">{{.Priority}}</span>{{end}}</div>
                 <div class="table-cell table-cell-due">{{if .Due}}{{.Due}}{{end}}</div>
-                <div class="table-cell table-cell-tags">{{range .Tags}}<span class="tag">{{.}}</span>{{end}}</div>
+                <div class="table-cell table-cell-tags">{{range .Tags}}<span class="tag" data-tag="{{.}}">{{.}}</span>{{end}}</div>
             </div>
             {{end}}
             <div class="table-row table-row-add">
@@ -272,7 +296,7 @@
                             {{if .Tags}}
                             <div class="card-tags">
                                 {{range .Tags}}
-                                <span class="tag">{{.}}</span>
+                                <span class="tag" data-tag="{{.}}">{{.}}</span>
                                 {{end}}
                             </div>
                             {{end}}

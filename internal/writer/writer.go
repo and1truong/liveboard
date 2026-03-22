@@ -21,6 +21,7 @@ func Render(board *models.Board) (string, error) {
 		Description  string               `yaml:"description,omitempty"`
 		Icon         string               `yaml:"icon,omitempty"`
 		Tags         []string             `yaml:"tags,omitempty"`
+		TagColors    map[string]string    `yaml:"tag-colors,omitempty"`
 		Members      []string             `yaml:"members,omitempty"`
 		ListCollapse []bool               `yaml:"list-collapse,omitempty"`
 		Settings     models.BoardSettings `yaml:"settings,omitempty"`
@@ -30,6 +31,7 @@ func Render(board *models.Board) (string, error) {
 		Description:  board.Description,
 		Icon:         board.Icon,
 		Tags:         board.Tags,
+		TagColors:    board.TagColors,
 		Members:      board.Members,
 		ListCollapse: board.ListCollapse,
 		Settings:     board.Settings,

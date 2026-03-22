@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -46,6 +47,7 @@ type BoardViewModel struct {
 	BoardSlug      string            `json:"board_slug"`
 	Boards         []BoardSummary    `json:"boards"`
 	AllTags        []string          `json:"all_tags,omitempty"`
+	TagColorsJSON  string            `json:"tag_colors_json,omitempty"`
 	Error          string            `json:"error,omitempty"`
 	Version        int               `json:"version"`
 	Settings       ResolvedSettings  `json:"settings"`
@@ -122,6 +124,11 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	allBoards, _ := h.ws.ListBoards()
 	global := h.loadSettings()
 	summaries := sortBoardsWithPins(toBoardSummaries(allBoards), global.PinnedBoards)
+	tcMap := b.TagColors
+	if tcMap == nil {
+		tcMap = map[string]string{}
+	}
+	tcJSON, _ := json.Marshal(tcMap)
 	return BoardViewModel{
 		LayoutSettings: h.layoutSettings(global),
 		Title:          b.Name + " — " + global.SiteName,
@@ -131,6 +138,7 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 		BoardSlug:      slug,
 		Boards:         summaries,
 		AllTags:        collectAllTags(summaries),
+		TagColorsJSON:  string(tcJSON),
 		Version:        b.Version,
 		Settings:       resolveSettings(global, b.Settings),
 		BSView:         toBoardSettingsView(b.Settings),
@@ -692,6 +700,7 @@ func (h *Handler) HandleUpdateBoardMeta(w http.ResponseWriter, r *http.Request) 
 	name := r.FormValue("board_name")
 	description := r.FormValue("description")
 	tagsRaw := r.FormValue("tags")
+	tagColorsRaw := r.FormValue("tag_colors")
 
 	var tags []string
 	for _, t := range strings.Split(tagsRaw, ",") {
@@ -708,6 +717,16 @@ func (h *Handler) HandleUpdateBoardMeta(w http.ResponseWriter, r *http.Request) 
 		}
 		b.Description = description
 		b.Tags = tags
+		if tagColorsRaw != "" {
+			var tagColors map[string]string
+			if err := json.Unmarshal([]byte(tagColorsRaw), &tagColors); err == nil {
+				if len(tagColors) == 0 {
+					b.TagColors = nil
+				} else {
+					b.TagColors = tagColors
+				}
+			}
+		}
 		return nil
 	})
 	if errors.Is(mutErr, board.ErrVersionConflict) {
