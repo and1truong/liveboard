@@ -6,7 +6,7 @@ tmp_dir = "tmp"
   bin = "./tmp/main"
   args_bin = ["serve"]
   include_ext = ["go", "html", "css", "js"]
-  exclude_dir = ["tmp", "vendor"]
+  exclude_dir = ["tmp", "vendor", "demo"]
   delay = 500
 
 [log]
