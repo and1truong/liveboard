@@ -183,10 +183,35 @@
     });
     var panel = document.createElement('div');
     panel.className = 'keyboard-help-panel';
+
+    // accent bar (matches cmd palette)
+    var accent = document.createElement('div');
+    accent.className = 'keyboard-help-accent-bar';
+    panel.appendChild(accent);
+
+    // title bar with icon and kbd badge
     var title = document.createElement('div');
     title.className = 'keyboard-help-title';
-    title.textContent = 'Keyboard Shortcuts';
+    var icon = document.createElement('svg');
+    icon.className = 'keyboard-help-title-icon';
+    icon.setAttribute('viewBox', '0 0 24 24');
+    icon.setAttribute('fill', 'none');
+    icon.setAttribute('stroke', 'currentColor');
+    icon.setAttribute('stroke-width', '2');
+    icon.setAttribute('stroke-linecap', 'round');
+    icon.setAttribute('stroke-linejoin', 'round');
+    icon.innerHTML = '<rect x="2" y="4" width="20" height="16" rx="2"/><path d="M6 8h.01M10 8h.01M14 8h.01M18 8h.01M6 12h.01M10 12h.01M14 12h.01M18 12h.01M8 16h8"/>';
+    title.appendChild(icon);
+    var titleText = document.createElement('span');
+    titleText.className = 'keyboard-help-title-text';
+    titleText.textContent = 'Keyboard Shortcuts';
+    title.appendChild(titleText);
+    var kbd = document.createElement('span');
+    kbd.className = 'keyboard-help-title-kbd';
+    kbd.textContent = '?';
+    title.appendChild(kbd);
     panel.appendChild(title);
+
     var grid = document.createElement('div');
     grid.className = 'keyboard-help-grid';
     shortcuts.forEach(function (s) {
@@ -196,9 +221,19 @@
         section.textContent = s[0];
         grid.appendChild(section);
       } else {
+        var row = document.createElement('div');
+        row.className = 'keyboard-help-row';
         var key = document.createElement('span');
         key.className = 'keyboard-help-key';
-        key.textContent = s[0];
+        // wrap each key combo in <kbd> tags
+        var parts = s[0].split(' / ');
+        parts.forEach(function (p, i) {
+          if (i > 0) key.appendChild(document.createTextNode('  '));
+          var k = document.createElement('kbd');
+          k.textContent = p.trim();
+          key.appendChild(k);
+        });
+        row.appendChild(key);
         grid.appendChild(key);
         var desc = document.createElement('span');
         desc.className = 'keyboard-help-desc';
@@ -215,11 +250,19 @@
   function showHelp() {
     var el = createHelpOverlay();
     if (!el.parentNode) document.body.appendChild(el);
+    // trigger reflow then add visible class for animation
+    void el.offsetHeight;
+    el.classList.add('is-visible');
   }
 
   function closeHelp() {
     if (helpOverlay && helpOverlay.parentNode) {
-      helpOverlay.parentNode.removeChild(helpOverlay);
+      helpOverlay.classList.remove('is-visible');
+      setTimeout(function () {
+        if (helpOverlay && helpOverlay.parentNode) {
+          helpOverlay.parentNode.removeChild(helpOverlay);
+        }
+      }, 200);
     }
   }
 
