@@ -501,6 +501,12 @@ html[data-color-theme="macos"][data-theme="dark"] {
     flex-shrink: 0;
 }
 
+.settings-control-full {
+    flex-shrink: 1;
+    width: 100%;
+    min-width: 0;
+}
+
 /* --- Toggle Switch --- */
 .settings-toggle {
     position: relative;

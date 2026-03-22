@@ -187,7 +187,7 @@
                     <div class="settings-label">Default columns</div>
                     <div class="settings-label-hint">Column names for new boards</div>
                 </div>
-                <div class="settings-control" style="width:100%" @cols-changed="save()">
+                <div class="settings-control settings-control-full" @cols-changed="save()">
                     <div class="card-modal-tags-container" x-data="columnChips(defaultColumns)" data-settings-cols @click="$refs.input.focus()">
                         <template x-for="(col, idx) in cols" :key="col + idx">
                             <span class="card-modal-tag-chip"><span x-text="col"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="removeCol(idx)">&times;</button></span>
