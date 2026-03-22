@@ -13,6 +13,7 @@ import (
 
 // BoardListModel is the state for the board list page.
 type BoardListModel struct {
+	LayoutSettings
 	Title     string         `json:"title"`
 	SiteName  string         `json:"site_name"`
 	Boards    []BoardSummary `json:"boards"`
@@ -160,7 +161,7 @@ func (h *Handler) boardListModel() (BoardListModel, error) {
 	settings := h.loadSettings()
 	summaries := toBoardSummaries(boards)
 	summaries = sortBoardsWithPins(summaries, settings.PinnedBoards)
-	return BoardListModel{Title: settings.SiteName, SiteName: settings.SiteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
+	return BoardListModel{LayoutSettings: layoutSettingsFrom(settings), Title: settings.SiteName, SiteName: settings.SiteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
 }
 
 // BoardListPage handles GET / — renders the full board list page.

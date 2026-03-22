@@ -11,7 +11,7 @@
   // ── Helpers ──
 
   function isEnabled() {
-    return localStorage.getItem('lb_keyboard_shortcuts') === '1';
+    return document.documentElement.getAttribute('data-settings-keyboard-shortcuts') === '1';
   }
 
   function isOnBoard() {

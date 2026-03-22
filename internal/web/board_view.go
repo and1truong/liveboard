@@ -38,6 +38,7 @@ type BoardSettingsView struct {
 
 // BoardViewModel is the state for the board view page.
 type BoardViewModel struct {
+	LayoutSettings
 	Title          string            `json:"title"`
 	SiteName       string            `json:"site_name"`
 	Board          *models.Board     `json:"board"`
@@ -122,6 +123,7 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	global := h.loadSettings()
 	summaries := sortBoardsWithPins(toBoardSummaries(allBoards), global.PinnedBoards)
 	return BoardViewModel{
+		LayoutSettings: layoutSettingsFrom(global),
 		Title:          b.Name + " — " + global.SiteName,
 		SiteName:       global.SiteName,
 		Board:          b,

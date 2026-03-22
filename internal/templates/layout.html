@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-settings-theme="{{.Theme}}" data-settings-color-theme="{{.ColorTheme}}" data-settings-column-width="{{.ColumnWidth}}" data-settings-sidebar-position="{{.SidebarPosition}}" data-settings-font-family="{{.FontFamily}}" data-settings-keyboard-shortcuts="{{if .KeyboardShortcuts}}1{{else}}0{{end}}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,19 +8,20 @@
     <link rel="stylesheet" href="/static/css/board.css">
     <script>
         (function() {
-            var t = localStorage.getItem('lb_theme');
-            if (t && t !== 'system') document.documentElement.setAttribute('data-theme', t);
-            var ct = localStorage.getItem('lb_color_theme');
-            if (ct && ct !== 'default') document.documentElement.setAttribute('data-color-theme', ct);
-            var w = localStorage.getItem('lb_column_width');
-            if (w) document.documentElement.style.setProperty('--column-width', w + 'px');
-            var sp = localStorage.getItem('lb_sidebar_position');
-            if (sp === 'right') document.documentElement.setAttribute('data-sidebar-position', 'right');
-            var ff = localStorage.getItem('lb_font_family');
+            var el = document.documentElement;
+            var t = el.getAttribute('data-settings-theme');
+            if (t && t !== 'system') el.setAttribute('data-theme', t);
+            var ct = el.getAttribute('data-settings-color-theme');
+            if (ct && ct !== 'default') el.setAttribute('data-color-theme', ct);
+            var w = el.getAttribute('data-settings-column-width');
+            if (w) el.style.setProperty('--column-width', w + 'px');
+            var sp = el.getAttribute('data-settings-sidebar-position');
+            if (sp === 'right') el.setAttribute('data-sidebar-position', 'right');
+            var ff = el.getAttribute('data-settings-font-family');
             if (ff && ff !== 'system') {
                 var fm = {'inter':"'Inter',sans-serif",'ibm-plex-sans':"'IBM Plex Sans',sans-serif",'source-sans-3':"'Source Sans 3',sans-serif",'nunito-sans':"'Nunito Sans',sans-serif",'dm-sans':"'DM Sans',sans-serif",'rubik':"'Rubik',sans-serif"};
                 var gf = {'inter':'Inter','ibm-plex-sans':'IBM+Plex+Sans','source-sans-3':'Source+Sans+3','nunito-sans':'Nunito+Sans','dm-sans':'DM+Sans','rubik':'Rubik'};
-                if (fm[ff]) document.documentElement.style.setProperty('--font-sans', fm[ff]);
+                if (fm[ff]) el.style.setProperty('--font-sans', fm[ff]);
                 if (gf[ff]) { var l=document.createElement('link');l.rel='stylesheet';l.id='lb-google-font';l.href='https://fonts.googleapis.com/css2?family='+gf[ff]+':wght@400;500;600;700&display=swap';document.head.appendChild(l); }
             }
         })();
@@ -47,6 +48,7 @@
     </script>
     <script src="/static/js/htmx.min.js"></script>
     <script src="/static/js/htmx-sse.js"></script>
+    <script src="/static/js/liveboard.store.js" defer></script>
     <script src="/static/js/liveboard.tag-chips.js" defer></script>
     <script src="/static/js/liveboard.column-chips.js" defer></script>
     <script src="/static/js/liveboard.cmd-palette.js" defer></script>
@@ -67,13 +69,13 @@
 </head>
 <body>
     <div class="app-shell" x-data="emojiPicker()">
-        <aside class="app-sidebar" id="appSidebar" x-data="{ collapsed: localStorage.getItem('sidebarCollapsed') === 'true' }" x-init="if (collapsed) $el.classList.add('collapsed')" :class="{ collapsed: collapsed }">
-            <nav class="sidebar-nav" x-data="{ activeTag: null }">
+        <aside class="app-sidebar" id="appSidebar" x-data :class="{ collapsed: $store.ui.sidebarCollapsed }">
+            <nav class="sidebar-nav">
                 <div class="sidebar-section-label">Boards</div>
                 {{if .AllTags}}
                 <div class="sidebar-tag-filter">
                     {{range .AllTags}}
-                    <button class="sidebar-tag-btn" :class="{ active: activeTag === '{{.}}' }" @click="activeTag = activeTag === '{{.}}' ? null : '{{.}}'">{{.}}</button>
+                    <button class="sidebar-tag-btn" :class="{ active: $store.ui.activeTag === '{{.}}' }" @click="$store.ui.activeTag = $store.ui.activeTag === '{{.}}' ? null : '{{.}}'">{{.}}</button>
                     {{end}}
                 </div>
                 {{end}}
@@ -129,12 +131,12 @@
                     </div>
                 </div>
             </div>
-            <button class="sidebar-toggle" @click="collapsed = !collapsed; localStorage.setItem('sidebarCollapsed', collapsed)" title="Toggle sidebar">
+            <button class="sidebar-toggle" @click="$store.ui.toggleSidebar()" title="Toggle sidebar">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink: 0;"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
             </button>
         </aside>
         <div class="app-workspace">
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" onclick="if(typeof Alpine!=='undefined'){var d=Alpine.$data(document.getElementById('appSidebar'));d.collapsed=!d.collapsed;localStorage.setItem('sidebarCollapsed',d.collapsed)}">
+            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" onclick="if(typeof Alpine!=='undefined'){Alpine.store('ui').toggleSidebar()}">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink: 0;"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
             </button>
             <main class="workspace-content">
@@ -424,7 +426,7 @@
 
 {{define "sidebar-boards"}}
 {{range .Boards}}
-<a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}{{if .Pinned}} pinned{{end}}" title="{{.CreatedFull}}&#10;{{.UpdatedFull}}" data-board-tags="{{range $i, $t := .Tags}}{{if $i}},{{end}}{{$t}}{{end}}" x-show="!activeTag || ($el.dataset.boardTags && $el.dataset.boardTags.split(',').includes(activeTag))">
+<a href="/board/{{.Slug}}" class="sidebar-nav-item{{if eq $.BoardSlug .Slug}} active{{end}}{{if .Pinned}} pinned{{end}}" title="{{.CreatedFull}}&#10;{{.UpdatedFull}}" data-board-tags="{{range $i, $t := .Tags}}{{if $i}},{{end}}{{$t}}{{end}}" x-show="!$store.ui.activeTag || ($el.dataset.boardTags && $el.dataset.boardTags.split(',').includes($store.ui.activeTag))">
     <span class="nav-icon emoji-picker-trigger" @click.prevent.stop="show($el, '{{.Slug}}')">{{if .Icon}}{{.Icon}}{{else}}&#9783;{{end}}</span>
     <span class="nav-label-group">
         <span class="nav-label">{{.Name}}</span>

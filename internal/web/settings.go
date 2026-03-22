@@ -11,6 +11,29 @@ import (
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 )
 
+// LayoutSettings holds visual settings rendered into layout.html for FOUC prevention.
+// Embedded in all page models so the layout template can access them uniformly.
+type LayoutSettings struct {
+	Theme             string `json:"layout_theme"`
+	ColorTheme        string `json:"layout_color_theme"`
+	ColumnWidth       int    `json:"layout_column_width"`
+	SidebarPosition   string `json:"layout_sidebar_position"`
+	FontFamily        string `json:"layout_font_family"`
+	KeyboardShortcuts bool   `json:"layout_keyboard_shortcuts"`
+}
+
+// layoutSettingsFrom extracts layout-relevant fields from AppSettings.
+func layoutSettingsFrom(s AppSettings) LayoutSettings {
+	return LayoutSettings{
+		Theme:             s.Theme,
+		ColorTheme:        s.ColorTheme,
+		ColumnWidth:       s.ColumnWidth,
+		SidebarPosition:   s.SidebarPosition,
+		FontFamily:        s.FontFamily,
+		KeyboardShortcuts: s.KeyboardShortcuts,
+	}
+}
+
 // AppSettings holds persisted user preferences.
 type AppSettings struct {
 	SiteName          string   `json:"site_name"`
@@ -83,6 +106,7 @@ func (h *Handler) saveSettings(s AppSettings) error {
 
 // SettingsModel is the template data for the settings page.
 type SettingsModel struct {
+	LayoutSettings
 	Title     string
 	SiteName  string
 	Boards    []BoardSummary
@@ -100,12 +124,13 @@ func (h *Handler) SettingsHandler() http.Handler {
 		settings := h.loadSettings()
 		summaries := sortBoardsWithPins(toBoardSummaries(boards), settings.PinnedBoards)
 		model := SettingsModel{
-			Title:     "Settings — " + settings.SiteName,
-			SiteName:  settings.SiteName,
-			Boards:    summaries,
-			AllTags:   collectAllTags(summaries),
-			BoardSlug: "__settings__",
-			Version:   h.version,
+			LayoutSettings: layoutSettingsFrom(settings),
+			Title:          "Settings — " + settings.SiteName,
+			SiteName:       settings.SiteName,
+			Boards:         summaries,
+			AllTags:        collectAllTags(summaries),
+			BoardSlug:      "__settings__",
+			Version:        h.version,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tpl.Execute(w, model); err != nil {

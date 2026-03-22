@@ -92,23 +92,25 @@ document.addEventListener('alpine:init', function () {
         })
           .then(function (r) { return r.json(); })
           .then(function (s) {
-            localStorage.setItem('lb_site_name', s.site_name);
-            localStorage.setItem('lb_theme', s.theme);
-            localStorage.setItem('lb_color_theme', s.color_theme);
-            localStorage.setItem('lb_column_width', String(s.column_width));
-            localStorage.setItem('lb_sidebar_position', s.sidebar_position);
-            localStorage.setItem('lb_font_family', s.font_family);
-            localStorage.setItem('lb_newline_trigger', s.newline_trigger);
-            localStorage.setItem('lb_keyboard_shortcuts', s.keyboard_shortcuts ? '1' : '0');
+            var el = document.documentElement;
 
-            if (s.theme === 'system') { document.documentElement.removeAttribute('data-theme'); }
-            else { document.documentElement.setAttribute('data-theme', s.theme); }
-            if (s.color_theme && s.color_theme !== 'default') { document.documentElement.setAttribute('data-color-theme', s.color_theme); }
-            else { document.documentElement.removeAttribute('data-color-theme'); }
+            // Update server-rendered data attributes so they stay current
+            el.setAttribute('data-settings-theme', s.theme);
+            el.setAttribute('data-settings-color-theme', s.color_theme);
+            el.setAttribute('data-settings-column-width', String(s.column_width));
+            el.setAttribute('data-settings-sidebar-position', s.sidebar_position);
+            el.setAttribute('data-settings-font-family', s.font_family);
+            el.setAttribute('data-settings-keyboard-shortcuts', s.keyboard_shortcuts ? '1' : '0');
+
+            // Apply visual changes immediately
+            if (s.theme === 'system') { el.removeAttribute('data-theme'); }
+            else { el.setAttribute('data-theme', s.theme); }
+            if (s.color_theme && s.color_theme !== 'default') { el.setAttribute('data-color-theme', s.color_theme); }
+            else { el.removeAttribute('data-color-theme'); }
             self.applyFont(s.font_family || 'system');
-            document.documentElement.style.setProperty('--column-width', s.column_width + 'px');
-            if (s.sidebar_position === 'right') { document.documentElement.setAttribute('data-sidebar-position', 'right'); }
-            else { document.documentElement.removeAttribute('data-sidebar-position'); }
+            el.style.setProperty('--column-width', s.column_width + 'px');
+            if (s.sidebar_position === 'right') { el.setAttribute('data-sidebar-position', 'right'); }
+            else { el.removeAttribute('data-sidebar-position'); }
 
             var brandEl = document.querySelector('.brand-name');
             if (brandEl) brandEl.textContent = s.site_name;
