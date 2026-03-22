@@ -2117,7 +2117,7 @@ select:focus {
     font-family: var(--font-sans);
     background: var(--color-bg);
     color: var(--color-text-secondary);
-    resize: none;
+    resize: vertical;
     line-height: 1.4;
 }
 
