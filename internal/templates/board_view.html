@@ -176,8 +176,21 @@
 
     {{if eq .Settings.ViewMode "table"}}
     <div class="table-container">
+        <div class="table-header">
+            <div class="table-header-cell table-header-status"></div>
+            <div class="table-header-cell">Title</div>
+            <div class="table-header-cell">Assignee</div>
+            <div class="table-header-cell">Priority</div>
+            <div class="table-header-cell">Due</div>
+            <div class="table-header-cell">Tags</div>
+        </div>
         {{range $i, $column := .Board.Columns}}
         <div class="table-group-cards" draggable="true" data-column="{{$column.Name}}">
+            <div class="table-group-header" onclick="if(event.target.closest('button'))return;var g=this.closest('.table-group-cards');g.classList.toggle('collapsed');this.querySelector('.group-collapse-icon').textContent=g.classList.contains('collapsed')?'\u25B6':'\u25BC'">
+                <span class="group-collapse-icon">&#9660;</span>
+                <span class="group-name">{{$column.Name}}</span>
+                <span class="group-count">{{len $column.Cards}}</span>
+            </div>
             {{range $j, $card := .Cards}}
             <div class="table-row card {{if .Completed}}completed{{end}}" draggable="true" data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
                 {{range $.Board.Columns}}
@@ -191,24 +204,18 @@
                 {{end}}
                 {{end}}
                 <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>
-                <div class="table-cell table-cell-list">{{if eq $j 0}}{{$column.Name}}{{end}}</div>
                 <div class="table-cell table-cell-status">{{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}</div>
                 <div class="table-cell table-cell-card">
-                    <div class="table-card-title">
-                        <span>{{.Title}}</span>
-                    </div>
-                    {{if or .Assignee .Due .Priority}}
-                    <div class="table-card-meta">
-                        {{if .Assignee}}<span class="card-meta">&#128100; {{.Assignee}}</span>{{end}}
-                        {{if .Due}}<span class="card-meta">&#128197; {{.Due}}</span>{{end}}
-                        {{if .Priority}}<span class="card-meta">&#9889; {{.Priority}}</span>{{end}}
-                    </div>
-                    {{end}}
+                    <div class="table-card-title"><span>{{.Title}}</span></div>
                 </div>
+                <div class="table-cell table-cell-assignee">{{if .Assignee}}{{.Assignee}}{{end}}</div>
+                <div class="table-cell table-cell-priority">{{if .Priority}}<span class="priority-indicator priority-{{.Priority}}">{{.Priority}}</span>{{end}}</div>
+                <div class="table-cell table-cell-due">{{if .Due}}{{.Due}}{{end}}</div>
+                <div class="table-cell table-cell-tags">{{range .Tags}}<span class="tag">{{.}}</span>{{end}}</div>
             </div>
             {{end}}
             <div class="table-row table-row-add">
-                <div class="table-cell table-cell-list">{{if eq (len $column.Cards) 0}}{{$column.Name}}{{end}}</div>
+                <div class="table-cell table-cell-status"></div>
                 <div class="table-cell table-cell-card add-card-toggle">
                     <form hx-post="/board/{{$.BoardSlug}}/cards" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none" onsubmit="var w=this.closest('.add-card-toggle');requestAnimationFrame(function(){w.querySelector('input[name=title]').value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''})">
                         <input type="hidden" name="column" value="{{$column.Name}}">
