@@ -4,12 +4,13 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port
+.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop
 
 build:
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o liveboard ./cmd/liveboard
 
 build-desktop:
+	@rm -f LiveBoard.app/Contents/MacOS/liveboard-desktop
 	CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -tags production -ldflags '$(LDFLAGS)' -o LiveBoard.app/Contents/MacOS/liveboard-desktop ./cmd/liveboard-desktop
 
 generate-icon:
@@ -33,6 +34,31 @@ bundle-desktop: build-desktop
 	@cp cmd/liveboard-desktop/Info.plist LiveBoard.app/Contents/
 	@cp cmd/liveboard-desktop/icon.icns LiveBoard.app/Contents/Resources/
 	@echo "Built LiveBoard.app"
+
+build-desktop-universal:
+	@mkdir -p dist
+	CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
+		GOARCH=arm64 go build -tags production -ldflags '$(LDFLAGS)' -o dist/liveboard-desktop-arm64 ./cmd/liveboard-desktop
+	CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
+		GOARCH=amd64 go build -tags production -ldflags '$(LDFLAGS)' -o dist/liveboard-desktop-amd64 ./cmd/liveboard-desktop
+	lipo -create -output dist/liveboard-desktop dist/liveboard-desktop-arm64 dist/liveboard-desktop-amd64
+	@rm -f dist/liveboard-desktop-arm64 dist/liveboard-desktop-amd64
+	@echo "Built universal binary: dist/liveboard-desktop"
+
+bundle-desktop-release: build-desktop-universal
+	@mkdir -p LiveBoard.app/Contents/MacOS LiveBoard.app/Contents/Resources
+	@cp dist/liveboard-desktop LiveBoard.app/Contents/MacOS/liveboard-desktop
+	@cp cmd/liveboard-desktop/Info.plist LiveBoard.app/Contents/
+	@plutil -replace CFBundleVersion -string "$(VERSION)" LiveBoard.app/Contents/Info.plist
+	@plutil -replace CFBundleShortVersionString -string "$(VERSION)" LiveBoard.app/Contents/Info.plist
+	@cp cmd/liveboard-desktop/icon.icns LiveBoard.app/Contents/Resources/
+	@ditto -c -k --keepParent LiveBoard.app "LiveBoard-$(VERSION)-macos-universal.zip"
+	@echo "Built LiveBoard-$(VERSION)-macos-universal.zip"
+
+release-desktop: bundle-desktop-release
+	@TAG=$$(git describe --tags --abbrev=0); \
+	gh release upload "$$TAG" "LiveBoard-$(VERSION)-macos-universal.zip" --clobber
+	bash scripts/update-desktop-cask.sh "$(VERSION)"
 
 release-port:
 	-lsof -ti :$(PORT) | xargs kill -9 2>/dev/null

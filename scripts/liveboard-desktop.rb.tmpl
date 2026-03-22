@@ -1,0 +1,17 @@
+cask "liveboard-desktop" do
+  version "VERSION"
+  sha256 "SHA256"
+
+  url "https://github.com/and1truong/liveboard/releases/download/v#{version}/LiveBoard-#{version}-macos-universal.zip"
+  name "LiveBoard"
+  desc "Markdown-powered Kanban board — desktop app"
+  homepage "https://github.com/and1truong/liveboard"
+
+  app "LiveBoard.app"
+
+  caveats <<~EOS
+    LiveBoard.app is not signed or notarized.
+    On first launch: System Settings > Privacy & Security > Open Anyway
+    Or run: xattr -dr com.apple.quarantine /Applications/LiveBoard.app
+  EOS
+end

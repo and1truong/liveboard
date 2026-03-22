@@ -1,138 +1,128 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <!-- LiveBoard macOS App Icon — 1024×1024 -->
+  <!-- Full-bleed square canvas; macOS applies squircle mask -->
+  <!-- ~12% padding for mask safety -->
+
   <defs>
-    <!-- Background gradient: deep indigo to purple -->
-    <linearGradient id="bgGrad" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0%" stop-color="#4338ca"/>
-      <stop offset="100%" stop-color="#7c3aed"/>
+    <!-- Background gradient: Google blue tones, top-center light source -->
+    <linearGradient id="bgGrad" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#5B9BF7"/>
+      <stop offset="100%" stop-color="#3367D6"/>
     </linearGradient>
 
-    <!-- Board surface gradient: subtle white-to-light-gray -->
+    <!-- Board surface: warm white with subtle depth -->
     <linearGradient id="boardGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%" stop-color="#ffffff"/>
-      <stop offset="100%" stop-color="#f1f0fb"/>
+      <stop offset="0%" stop-color="#FFFFFF"/>
+      <stop offset="100%" stop-color="#F1F3F4"/>
     </linearGradient>
 
-    <!-- Card shadow filter -->
+    <!-- Board shadow: top-center light -->
+    <filter id="boardShadow" x="-8%" y="-5%" width="116%" height="125%">
+      <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#1A3A6E" flood-opacity="0.35"/>
+    </filter>
+
+    <!-- Card shadow: subtle lift -->
     <filter id="cardShadow" x="-10%" y="-10%" width="130%" height="140%">
-      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#312e81" flood-opacity="0.18"/>
+      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1A3A6E" flood-opacity="0.15"/>
     </filter>
-
-    <!-- Board container shadow -->
-    <filter id="boardShadow" x="-5%" y="-5%" width="115%" height="120%">
-      <feDropShadow dx="0" dy="8" stdDeviation="16" flood-color="#1e1b4b" flood-opacity="0.35"/>
-    </filter>
-
-    <!-- Live dot glow -->
-    <radialGradient id="liveGlow" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0%" stop-color="#f472b6" stop-opacity="0.9"/>
-      <stop offset="60%" stop-color="#ec4899" stop-opacity="0.4"/>
-      <stop offset="100%" stop-color="#ec4899" stop-opacity="0"/>
-    </radialGradient>
-
-    <!-- Column header gradients -->
-    <linearGradient id="col1Head" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#818cf8"/>
-      <stop offset="100%" stop-color="#6366f1"/>
-    </linearGradient>
-    <linearGradient id="col2Head" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#a78bfa"/>
-      <stop offset="100%" stop-color="#8b5cf6"/>
-    </linearGradient>
-    <linearGradient id="col3Head" x1="0" y1="0" x2="1" y2="0">
-      <stop offset="0%" stop-color="#c084fc"/>
-      <stop offset="100%" stop-color="#a855f7"/>
-    </linearGradient>
   </defs>
 
-  <!-- Background fill — full bleed square, macOS applies squircle mask -->
-  <rect width="1024" height="1024" rx="228" fill="url(#bgGrad)"/>
+  <!-- ── Background ── -->
+  <rect width="1024" height="1024" fill="url(#bgGrad)"/>
 
-  <!-- Subtle inner highlight from top (light source) -->
-  <rect x="2" y="2" width="1020" height="1020" rx="226" fill="none" stroke="white" stroke-opacity="0.12" stroke-width="3"/>
+  <!-- Inner highlight (top-center light source) -->
+  <rect x="2" y="2" width="1020" height="1020" rx="2" fill="none" stroke="white" stroke-opacity="0.15" stroke-width="3"/>
 
-  <!-- Board container with shadow -->
+  <!-- ── Board container ── -->
   <g filter="url(#boardShadow)">
-    <rect x="120" y="160" width="784" height="680" rx="36" fill="url(#boardGrad)"/>
+    <rect x="130" y="170" width="764" height="690" rx="40" fill="url(#boardGrad)"/>
   </g>
-
-  <!-- Board border (subtle) -->
-  <rect x="120" y="160" width="784" height="680" rx="36" fill="none" stroke="#c7d2fe" stroke-width="2" stroke-opacity="0.5"/>
+  <rect x="130" y="170" width="764" height="690" rx="40" fill="none" stroke="#DADCE0" stroke-width="2" stroke-opacity="0.6"/>
 
   <!-- Column dividers -->
-  <line x1="381" y1="210" x2="381" y2="790" stroke="#e0e7ff" stroke-width="2"/>
-  <line x1="643" y1="210" x2="643" y2="790" stroke="#e0e7ff" stroke-width="2"/>
+  <line x1="385" y1="230" x2="385" y2="810" stroke="#E8EAED" stroke-width="2"/>
+  <line x1="639" y1="230" x2="639" y2="810" stroke="#E8EAED" stroke-width="2"/>
 
-  <!-- ═══ Column 1: To Do ═══ -->
-  <!-- Header bar -->
-  <rect x="156" y="198" width="190" height="10" rx="5" fill="url(#col1Head)"/>
+  <!-- ══ Column 1 — Blue (#4285F4) ══ -->
+  <!-- Header -->
+  <rect x="166" y="208" width="184" height="10" rx="5" fill="#4285F4"/>
 
   <!-- Card 1 (tall) -->
   <g filter="url(#cardShadow)">
-    <rect x="156" y="232" width="190" height="120" rx="14" fill="white"/>
+    <rect x="166" y="240" width="184" height="124" rx="14" fill="white"/>
   </g>
-  <rect x="172" y="252" width="100" height="10" rx="4" fill="#6366f1" opacity="0.7"/>
-  <rect x="172" y="272" width="158" height="8" rx="3" fill="#c7d2fe" opacity="0.6"/>
-  <rect x="172" y="288" width="130" height="8" rx="3" fill="#c7d2fe" opacity="0.4"/>
-  <rect x="172" y="312" width="40" height="16" rx="8" fill="#eef2ff"/>
-  <rect x="220" y="312" width="50" height="16" rx="8" fill="#eef2ff"/>
+  <rect x="182" y="260" width="100" height="11" rx="4" fill="#4285F4" opacity="0.75"/>
+  <rect x="182" y="280" width="152" height="8" rx="3" fill="#4285F4" opacity="0.18"/>
+  <rect x="182" y="296" width="120" height="8" rx="3" fill="#4285F4" opacity="0.12"/>
+  <rect x="182" y="322" width="42" height="18" rx="9" fill="#E8F0FE"/>
+  <rect x="230" y="322" width="52" height="18" rx="9" fill="#E8F0FE"/>
 
   <!-- Card 2 (medium) -->
   <g filter="url(#cardShadow)">
-    <rect x="156" y="372" width="190" height="96" rx="14" fill="white"/>
+    <rect x="166" y="384" width="184" height="100" rx="14" fill="white"/>
   </g>
-  <rect x="172" y="392" width="120" height="10" rx="4" fill="#6366f1" opacity="0.7"/>
-  <rect x="172" y="412" width="158" height="8" rx="3" fill="#c7d2fe" opacity="0.6"/>
-  <rect x="172" y="436" width="36" height="16" rx="8" fill="#fef3c7"/>
+  <rect x="182" y="404" width="120" height="11" rx="4" fill="#4285F4" opacity="0.75"/>
+  <rect x="182" y="424" width="152" height="8" rx="3" fill="#4285F4" opacity="0.18"/>
+  <rect x="182" y="448" width="38" height="18" rx="9" fill="#FBBC05" opacity="0.25"/>
 
   <!-- Card 3 (short) -->
   <g filter="url(#cardShadow)">
-    <rect x="156" y="488" width="190" height="76" rx="14" fill="white"/>
+    <rect x="166" y="504" width="184" height="78" rx="14" fill="white"/>
   </g>
-  <rect x="172" y="508" width="140" height="10" rx="4" fill="#6366f1" opacity="0.7"/>
-  <rect x="172" y="528" width="158" height="8" rx="3" fill="#c7d2fe" opacity="0.4"/>
+  <rect x="182" y="524" width="140" height="11" rx="4" fill="#4285F4" opacity="0.75"/>
+  <rect x="182" y="544" width="152" height="8" rx="3" fill="#4285F4" opacity="0.12"/>
 
-  <!-- ═══ Column 2: In Progress ═══ -->
-  <!-- Header bar -->
-  <rect x="417" y="198" width="190" height="10" rx="5" fill="url(#col2Head)"/>
+  <!-- ══ Column 2 — Red (#EA4335) ══ -->
+  <!-- Header -->
+  <rect x="420" y="208" width="184" height="10" rx="5" fill="#EA4335"/>
 
-  <!-- Card 1 (tall) -->
+  <!-- Card 1 -->
   <g filter="url(#cardShadow)">
-    <rect x="417" y="232" width="190" height="110" rx="14" fill="white"/>
+    <rect x="420" y="240" width="184" height="114" rx="14" fill="white"/>
   </g>
-  <rect x="433" y="252" width="130" height="10" rx="4" fill="#8b5cf6" opacity="0.7"/>
-  <rect x="433" y="272" width="158" height="8" rx="3" fill="#ddd6fe" opacity="0.6"/>
-  <rect x="433" y="288" width="120" height="8" rx="3" fill="#ddd6fe" opacity="0.4"/>
-  <rect x="433" y="306" width="44" height="16" rx="8" fill="#fce7f3"/>
+  <rect x="436" y="260" width="130" height="11" rx="4" fill="#EA4335" opacity="0.75"/>
+  <rect x="436" y="280" width="152" height="8" rx="3" fill="#EA4335" opacity="0.18"/>
+  <rect x="436" y="296" width="110" height="8" rx="3" fill="#EA4335" opacity="0.12"/>
+  <rect x="436" y="316" width="46" height="18" rx="9" fill="#FCE8E6"/>
 
-  <!-- Card 2 (medium) -->
+  <!-- Card 2 -->
   <g filter="url(#cardShadow)">
-    <rect x="417" y="362" width="190" height="90" rx="14" fill="white"/>
+    <rect x="420" y="374" width="184" height="90" rx="14" fill="white"/>
   </g>
-  <rect x="433" y="382" width="110" height="10" rx="4" fill="#8b5cf6" opacity="0.7"/>
-  <rect x="433" y="402" width="158" height="8" rx="3" fill="#ddd6fe" opacity="0.5"/>
-  <rect x="433" y="418" width="80" height="8" rx="3" fill="#ddd6fe" opacity="0.3"/>
+  <rect x="436" y="394" width="110" height="11" rx="4" fill="#EA4335" opacity="0.75"/>
+  <rect x="436" y="414" width="152" height="8" rx="3" fill="#EA4335" opacity="0.15"/>
+  <rect x="436" y="430" width="80" height="8" rx="3" fill="#EA4335" opacity="0.10"/>
 
-  <!-- ═══ Column 3: Done ═══ -->
-  <!-- Header bar -->
-  <rect x="679" y="198" width="190" height="10" rx="5" fill="url(#col3Head)"/>
+  <!-- ══ Column 3 — Green (#34A853) ══ -->
+  <!-- Header -->
+  <rect x="674" y="208" width="184" height="10" rx="5" fill="#34A853"/>
 
-  <!-- Card 1 (with checkmark feel — slightly green tinted) -->
+  <!-- Card 1 -->
   <g filter="url(#cardShadow)">
-    <rect x="679" y="232" width="190" height="96" rx="14" fill="white"/>
+    <rect x="674" y="240" width="184" height="100" rx="14" fill="white"/>
   </g>
-  <rect x="695" y="252" width="90" height="10" rx="4" fill="#a855f7" opacity="0.6"/>
-  <rect x="695" y="272" width="158" height="8" rx="3" fill="#e9d5ff" opacity="0.5"/>
-  <rect x="695" y="296" width="44" height="16" rx="8" fill="#dcfce7"/>
+  <rect x="690" y="260" width="90" height="11" rx="4" fill="#34A853" opacity="0.70"/>
+  <rect x="690" y="280" width="152" height="8" rx="3" fill="#34A853" opacity="0.18"/>
+  <rect x="690" y="304" width="46" height="18" rx="9" fill="#E6F4EA"/>
 
-  <!-- ═══ Live broadcast indicator (top-right) ═══ -->
-  <!-- Outer glow -->
-  <circle cx="840" cy="195" r="50" fill="url(#liveGlow)"/>
-  <!-- Solid dot -->
-  <circle cx="840" cy="195" r="22" fill="#ec4899"/>
-  <!-- Inner highlight -->
-  <circle cx="840" cy="190" r="10" fill="white" opacity="0.35"/>
-  <!-- Core white dot -->
-  <circle cx="840" cy="195" r="7" fill="white" opacity="0.9"/>
+  <!-- Card 2 -->
+  <g filter="url(#cardShadow)">
+    <rect x="674" y="360" width="184" height="78" rx="14" fill="white"/>
+  </g>
+  <rect x="690" y="380" width="110" height="11" rx="4" fill="#34A853" opacity="0.70"/>
+  <rect x="690" y="400" width="140" height="8" rx="3" fill="#34A853" opacity="0.15"/>
+
+  <!-- Card 3 -->
+  <g filter="url(#cardShadow)">
+    <rect x="674" y="458" width="184" height="90" rx="14" fill="white"/>
+  </g>
+  <rect x="690" y="478" width="130" height="11" rx="4" fill="#34A853" opacity="0.70"/>
+  <rect x="690" y="498" width="152" height="8" rx="3" fill="#34A853" opacity="0.15"/>
+  <rect x="690" y="514" width="60" height="8" rx="3" fill="#34A853" opacity="0.10"/>
+
+  <!-- ── Live indicator dot (top-right, yellow accent) ── -->
+  <circle cx="830" cy="205" r="24" fill="#FBBC05"/>
+  <circle cx="830" cy="200" r="10" fill="white" opacity="0.35"/>
+  <circle cx="830" cy="205" r="8" fill="white" opacity="0.85"/>
 </svg>
