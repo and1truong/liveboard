@@ -112,6 +112,7 @@
 
       card.addEventListener("dragstart", function (e) {
         LB.isDragging = true;
+        if (typeof Alpine !== 'undefined') Alpine.store('ui').isDragging = true;
         draggingCard = card;
         var zone = card.closest(".cards[data-column], .table-group-cards[data-column]");
         draggingSourceColumn = zone ? zone.dataset.column : null;
@@ -123,6 +124,7 @@
 
       card.addEventListener("dragend", function () {
         LB.isDragging = false;
+        if (typeof Alpine !== 'undefined') Alpine.store('ui').isDragging = false;
         card.classList.remove("dragging");
         LB.clearDropIndicators();
         document.querySelectorAll(".cards.drag-over, .table-group-cards.drag-over").forEach(function (el) {

@@ -67,13 +67,17 @@ window.LB = window.LB || {};
     });
   });
 
-  // After any swap, sync the board version from the hidden input.
+  // After any swap, sync the board version from the hidden input and refresh store.
   document.body.addEventListener("htmx:afterSwap", function (e) {
     _conflictRetrying = false;
     var versionEl = document.getElementById("board-version");
     var boardView = document.querySelector(".board-view");
     if (versionEl && boardView) {
       boardView.dataset.boardVersion = versionEl.value;
+    }
+    // Refresh board store with fresh DOM data
+    if (typeof Alpine !== 'undefined' && Alpine.store('board')) {
+      Alpine.store('board').refresh();
     }
   });
 

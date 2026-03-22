@@ -35,7 +35,7 @@ document.addEventListener('alpine:init', function () {
         var cardCell = card.querySelector('.table-cell-card');
         if (cardCell) posRect = cardCell.getBoundingClientRect();
 
-        this.slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ''));
+        this.slug = Alpine.store('board').slug || decodeURIComponent(window.location.pathname.replace(/^\/board\//, ''));
         this.colIdx = card.dataset.colIdx;
         this.cardIdx = card.dataset.cardIdx;
         this.title = card.dataset.cardTitle || '';
@@ -50,18 +50,14 @@ document.addEventListener('alpine:init', function () {
           var self = this;
           rawTags.split(',').forEach(function (s) { s = s.trim(); if (s && self.tags.indexOf(s) === -1) self.tags.push(s); });
         }
-        this.tagSuggestions = [];
-        var self = this;
-        document.querySelectorAll('.card[data-card-tags]').forEach(function (c) {
-          (c.dataset.cardTags || '').split(',').forEach(function (s) { s = s.trim(); if (s && self.tagSuggestions.indexOf(s) === -1) self.tagSuggestions.push(s); });
-        });
-        this.tagSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
+        this.tagSuggestions = Alpine.store('board').tags.slice();
 
         // Position
         this.left = posRect.left;
         this.top = cardRect.top;
         this.width = posRect.width;
         this.minHeight = cardRect.height;
+        Alpine.store('ui').openModal('quickEdit');
         this.open = true;
 
         // Context menu
@@ -95,6 +91,7 @@ document.addEventListener('alpine:init', function () {
         this.open = false;
         this.ctxOpen = false;
         this._cardEl = null;
+        Alpine.store('ui').closeModal('quickEdit');
       },
 
       save: function () {

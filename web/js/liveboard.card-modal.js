@@ -25,7 +25,7 @@ document.addEventListener('alpine:init', function () {
       _cardEl: null,
 
       show: function (card) {
-        this.slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ''));
+        this.slug = Alpine.store('board').slug || decodeURIComponent(window.location.pathname.replace(/^\/board\//, ''));
         this.colIdx = card.dataset.colIdx;
         this.cardIdx = card.dataset.cardIdx;
         this.title = card.dataset.cardTitle || '';
@@ -48,25 +48,9 @@ document.addEventListener('alpine:init', function () {
           });
         }
 
-        // Collect all board tags
-        this.tagSuggestions = [];
-        var self = this;
-        document.querySelectorAll('.card[data-card-tags]').forEach(function (c) {
-          (c.dataset.cardTags || '').split(',').forEach(function (s) {
-            s = s.trim();
-            if (s && self.tagSuggestions.indexOf(s) === -1) self.tagSuggestions.push(s);
-          });
-        });
-        this.tagSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
-
-        // Board members
-        var boardView = document.querySelector('.board-view');
-        var membersRaw = boardView ? (boardView.dataset.boardMembers || '') : '';
-        this.boardMembers = membersRaw ? membersRaw.split(',').map(function (s) { return s.trim(); }).filter(Boolean) : [];
-        document.querySelectorAll('[data-card-assignee]').forEach(function (c) {
-          var a = c.dataset.cardAssignee;
-          if (a && self.boardMembers.indexOf(a) === -1) self.boardMembers.push(a);
-        });
+        // Tags and members from board store
+        this.tagSuggestions = Alpine.store('board').tags.slice();
+        this.boardMembers = Alpine.store('board').members.slice();
 
         // Move triggers
         this.moveTriggers = [];
@@ -80,6 +64,7 @@ document.addEventListener('alpine:init', function () {
         this.showDatePicker = false;
         this.showMembersPicker = false;
         this.showBodyPreview = false;
+        Alpine.store('ui').openModal('cardModal');
         this.open = true;
 
         this.$nextTick(function () {
@@ -100,6 +85,7 @@ document.addEventListener('alpine:init', function () {
       close: function () {
         this.open = false;
         this._cardEl = null;
+        Alpine.store('ui').closeModal('cardModal');
       },
 
       autoResize: function (e) {

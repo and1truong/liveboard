@@ -33,6 +33,7 @@ document.addEventListener('alpine:init', function () {
         this.left = rect.left;
         this.top = rect.bottom + 4;
 
+        Alpine.store('ui').openModal('columnMenu');
         this.open = true;
 
         // Adjust after render
@@ -49,6 +50,7 @@ document.addEventListener('alpine:init', function () {
       hide: function () {
         this.open = false;
         this._btn = null;
+        Alpine.store('ui').closeModal('columnMenu');
       },
 
       editColumn: function () {

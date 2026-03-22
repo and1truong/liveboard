@@ -15,12 +15,13 @@ document.addEventListener('alpine:init', function () {
       slug: '',
 
       toggle: function () {
-        if (this.open) { this.open = false; return; }
+        if (this.open) { this.open = false; Alpine.store('ui').closeModal('boardSettings'); return; }
         this.populate();
+        Alpine.store('ui').openModal('boardSettings');
         this.open = true;
       },
 
-      close: function () { this.open = false; },
+      close: function () { this.open = false; Alpine.store('ui').closeModal('boardSettings'); },
 
       populate: function () {
         var bv = document.querySelector('.board-view');
@@ -37,12 +38,9 @@ document.addEventListener('alpine:init', function () {
           tagsRaw.split(',').forEach(function (s) { s = s.trim(); if (s && self.tags.indexOf(s) === -1) self.tags.push(s); });
         }
 
-        // Suggestions from card tags
-        this.tagSuggestions = [];
+        // Suggestions from board store + board-level tags
+        this.tagSuggestions = Alpine.store('board').tags.slice();
         var self = this;
-        document.querySelectorAll('.card[data-card-tags]').forEach(function (c) {
-          (c.dataset.cardTags || '').split(',').forEach(function (s) { s = s.trim(); if (s && self.tagSuggestions.indexOf(s) === -1) self.tagSuggestions.push(s); });
-        });
         this.tags.forEach(function (t) { if (self.tagSuggestions.indexOf(t) === -1) self.tagSuggestions.push(t); });
         this.tagSuggestions.sort(function (a, b) { return a.toLowerCase().localeCompare(b.toLowerCase()); });
 
