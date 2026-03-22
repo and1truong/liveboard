@@ -96,6 +96,8 @@ document.addEventListener('alpine:init', function () {
 
       toggle: function () {
         this.open = !this.open;
+        if (this.open) { Alpine.store('ui').openModal('cmdPalette'); }
+        else { Alpine.store('ui').closeModal('cmdPalette'); }
         this.query = '';
         this.activeIdx = 0;
         if (this.open) {
@@ -119,25 +121,40 @@ document.addEventListener('alpine:init', function () {
         if (e.key === 'Escape') {
           e.preventDefault();
           this.open = false;
+          Alpine.store('ui').closeModal('cmdPalette');
           return;
         }
         var count = this.selectableItems.length;
         if (e.key === 'ArrowDown') {
           e.preventDefault();
-          if (count > 0) this.activeIdx = (this.activeIdx + 1) % count;
-          this.$nextTick(function () {
-            var el = document.querySelector('[data-cmd-active="true"]');
-            if (el) el.scrollIntoView({ block: 'nearest' });
-          });
+          if (count > 0) {
+            var wrapped = this.activeIdx === count - 1;
+            this.activeIdx = (this.activeIdx + 1) % count;
+            this.$nextTick(function () {
+              if (wrapped) {
+                var list = document.querySelector('.cmd-palette-list');
+                if (list) list.scrollTop = 0;
+              }
+              var el = document.querySelector('[data-cmd-active="true"]');
+              if (el) el.scrollIntoView({ block: 'nearest' });
+            });
+          }
           return;
         }
         if (e.key === 'ArrowUp') {
           e.preventDefault();
-          if (count > 0) this.activeIdx = (this.activeIdx - 1 + count) % count;
-          this.$nextTick(function () {
-            var el = document.querySelector('[data-cmd-active="true"]');
-            if (el) el.scrollIntoView({ block: 'nearest' });
-          });
+          if (count > 0) {
+            var wrapped = this.activeIdx === 0;
+            this.activeIdx = (this.activeIdx - 1 + count) % count;
+            this.$nextTick(function () {
+              if (wrapped) {
+                var list = document.querySelector('.cmd-palette-list');
+                if (list) list.scrollTop = list.scrollHeight;
+              }
+              var el = document.querySelector('[data-cmd-active="true"]');
+              if (el) el.scrollIntoView({ block: 'nearest' });
+            });
+          }
           return;
         }
         if (e.key === 'Enter') {
