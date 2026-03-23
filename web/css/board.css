@@ -1602,11 +1602,12 @@ select:focus {
 
 /* === Sidebar: Add Column Bar === */
 .add-column-bar {
+    margin-left: auto;
     flex-shrink: 0;
     width: 40px;
     min-height: 120px;
     align-self: stretch;
-    background: var(--color-surface);
+    background: var(--color-column-bg);
     border: 1px solid var(--color-border);
     border-radius: var(--radius-lg);
     cursor: pointer;
@@ -1618,7 +1619,7 @@ select:focus {
 }
 
 .add-column-bar:hover {
-    background: var(--color-border);
+    background: var(--color-surface);
 }
 
 .add-column-bar.expanded {
