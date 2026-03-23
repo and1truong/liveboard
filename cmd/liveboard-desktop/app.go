@@ -141,8 +141,34 @@ func (a *App) domReady(ctx context.Context) {
 		runtime.WindowExecJS(ctx, fmt.Sprintf(`window.location.href = "%s"`, a.url))
 		return
 	}
-	// After navigating to the server, mark as desktop for CSS adjustments.
-	runtime.WindowExecJS(ctx, `document.documentElement.classList.add("desktop-app")`)
+	// After navigating to the server, mark as desktop for CSS adjustments
+	// and inject window drag handler (Wails runtime JS isn't present on external URLs).
+	runtime.WindowExecJS(ctx, `
+		document.documentElement.classList.add("desktop-app");
+		(function() {
+			var prop = "--wails-draggable";
+			var val = "drag";
+			var invoke = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.external
+				? function(m) { window.webkit.messageHandlers.external.postMessage(m); }
+				: (window.WailsInvoke || function(){});
+			var shouldDrag = false;
+			window.addEventListener("mousedown", function(e) {
+				var v = window.getComputedStyle(e.target).getPropertyValue(prop);
+				if (v && v.trim() === val && e.buttons === 1 && e.detail === 1) {
+					if (e.offsetX > e.target.clientWidth || e.offsetY > e.target.clientHeight) return;
+					shouldDrag = true;
+				} else {
+					shouldDrag = false;
+				}
+			});
+			window.addEventListener("mousemove", function(e) {
+				if (shouldDrag) {
+					shouldDrag = false;
+					if (e.buttons > 0) invoke("drag");
+				}
+			});
+		})();
+	`)
 }
 
 func (a *App) shutdown(_ context.Context) {

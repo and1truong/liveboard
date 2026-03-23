@@ -4103,11 +4103,12 @@ mark.cmd-palette-highlight {
 }
 
 /* === DESKTOP APP (Wails webview) === */
-/* -webkit-app-region is only effective in native webview contexts;
-   browsers ignore it, so these rules are safe to include globally. */
+/* Wails uses --wails-draggable CSS property (not -webkit-app-region)
+   to detect draggable regions. Safe to include globally since browsers
+   ignore unknown custom properties for drag behavior. */
 
 .app-sidebar {
-    -webkit-app-region: drag;
+    --wails-draggable: drag;
 }
 
 .app-sidebar a,
@@ -4116,17 +4117,58 @@ mark.cmd-palette-highlight {
 .app-sidebar .sidebar-nav,
 .app-sidebar .sidebar-footer,
 .app-sidebar .sidebar-board-dropdown {
-    -webkit-app-region: no-drag;
+    --wails-draggable: none;
 }
 
 .workspace-header {
-    -webkit-app-region: drag;
+    --wails-draggable: drag;
 }
 
 .workspace-header a,
 .workspace-header button,
 .workspace-header input,
 .workspace-header .workspace-tags {
-    -webkit-app-region: no-drag;
+    --wails-draggable: none;
+}
+
+.board-topbar {
+    --wails-draggable: drag;
+}
+
+.board-topbar a,
+.board-topbar button,
+.board-topbar input,
+.board-topbar .board-tags {
+    --wails-draggable: none;
+}
+
+/* Hidden titlebar (TitleBarHiddenInset) — traffic light clearance */
+.desktop-app .app-sidebar {
+    padding-top: 38px;
+}
+
+.desktop-app .app-sidebar.collapsed + .app-main .workspace-header,
+.desktop-app .app-sidebar.collapsed + .app-main .board-topbar {
+    padding-top: 38px;
+    height: calc(var(--topbar-height) + 38px);
+}
+
+.desktop-app .app-sidebar.collapsed + .app-main .sidebar-toggle {
+    top: 38px;
+}
+
+/* Sidebar on right — traffic lights overlap the main content instead */
+.desktop-app[data-sidebar-position="right"] .app-sidebar {
+    padding-top: 0;
+}
+
+.desktop-app[data-sidebar-position="right"] .workspace-header,
+.desktop-app[data-sidebar-position="right"] .board-topbar {
+    padding-top: 38px;
+    height: calc(var(--topbar-height) + 38px);
+}
+
+.desktop-app[data-sidebar-position="right"] .sidebar-toggle {
+    top: 38px;
 }
 
