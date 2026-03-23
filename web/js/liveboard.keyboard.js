@@ -273,6 +273,13 @@
   // ── Keydown handler ──
 
   function handleKeydown(e) {
+    // Cmd/Ctrl+Shift+L → toggle theme (always active, any page)
+    if ((e.metaKey || e.ctrlKey) && e.shiftKey && e.key === 'L') {
+      e.preventDefault();
+      toggleTheme();
+      return;
+    }
+
     if (!isEnabled()) return;
     if (!isOnBoard()) return;
 
