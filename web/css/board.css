@@ -31,7 +31,7 @@ html { opacity: 1; }
     --color-danger-bg:      #fee2e2;
     --color-danger-text:    #7f1d1d;
 
-    --sidebar-width:        200px;
+    --sidebar-width:        287.5px;
     --topbar-height:        48px;
     --column-width:         280px;
 
@@ -694,6 +694,7 @@ select:focus {
 
 .app-sidebar {
     width: var(--sidebar-width);
+    min-width: 287.5px;
     flex-shrink: 0;
     background: var(--color-surface);
     border-right: 1px solid var(--color-border);
@@ -706,6 +707,7 @@ select:focus {
 
 .app-sidebar.collapsed {
     width: 0;
+    min-width: 0;
     border-right: none;
 }
 
