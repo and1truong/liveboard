@@ -137,14 +137,21 @@
   function toggleTheme() {
     var html = document.documentElement;
     var current = html.getAttribute('data-theme');
-    var next;
-    if (current === 'dark') {
-      next = 'light';
-    } else {
-      next = 'dark';
-    }
+    var next = (current === 'dark') ? 'light' : 'dark';
     html.setAttribute('data-theme', next);
-    localStorage.setItem('lb_theme', next);
+    html.setAttribute('data-settings-theme', next);
+
+    // Persist to server so it survives page reload
+    fetch('/api/settings')
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        s.theme = next;
+        return fetch('/api/settings', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(s)
+        });
+      });
   }
 
   function openCmdPalette() {
