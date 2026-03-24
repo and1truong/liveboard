@@ -65,3 +65,7 @@ settings:                         # per-board setting overrides
 - `internal/templates/` — Go HTML templates
 - `web/` — static assets (JS, CSS)
 - `pkg/models/` — shared data structs
+
+## On commit
+
+`make lint` to check & fix for lint errors
