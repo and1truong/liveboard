@@ -47,6 +47,20 @@ func (b *SSEBroker) Unsubscribe(slug string, ch chan string) {
 	}
 }
 
+// Shutdown closes all subscriber channels so SSE handlers exit promptly.
+// Must be called before http.Server.Shutdown to unblock long-lived connections.
+func (b *SSEBroker) Shutdown() {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+
+	for slug, subs := range b.clients {
+		for ch := range subs {
+			close(ch)
+		}
+		delete(b.clients, slug)
+	}
+}
+
 // Publish sends a notification to all subscribers of a board slug.
 func (b *SSEBroker) Publish(slug string) {
 	b.mu.RLock()
@@ -93,7 +107,11 @@ func (b *SSEBroker) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			return
-		case <-ch:
+		case _, ok := <-ch:
+			if !ok {
+				// Channel closed by Shutdown — exit cleanly.
+				return
+			}
 			_, _ = fmt.Fprintf(w, "event: board-update\ndata: refresh\n\n")
 			flusher.Flush()
 		}

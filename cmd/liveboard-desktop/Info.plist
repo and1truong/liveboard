@@ -18,6 +18,10 @@
 	<string>APPL</string>
 	<key>CFBundleIconFile</key>
 	<string>icon</string>
+	<key>LSMinimumSystemVersion</key>
+	<string>10.15</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSSupportsAutomaticGraphicsSwitching</key>

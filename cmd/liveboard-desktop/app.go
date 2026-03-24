@@ -35,16 +35,37 @@ func (a *App) startup(ctx context.Context) {
 	a.ctx = ctx
 
 	dir, _ := defaults.DesktopWorkDir()
+	if dir == "" {
+		_, _ = runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "No Workspace Found",
+			Message: "Could not determine a workspace directory. Please select one.",
+		})
+		a.openWorkspaceDialog(nil)
+		if a.srv == nil {
+			runtime.Quit(a.ctx)
+		}
+		return
+	}
 
 	// Record initial workspace in recent list
 	cfg := defaults.LoadDesktopConfig()
 	cfg.AddRecent(dir)
-	cfg.Save()
+	if err := cfg.Save(); err != nil {
+		log.Printf("failed to save desktop config: %v", err)
+	}
 
-	a.startServer(dir)
+	if err := a.startServer(dir); err != nil {
+		_, _ = runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			Type:    runtime.ErrorDialog,
+			Title:   "Server Error",
+			Message: fmt.Sprintf("Failed to start server: %v", err),
+		})
+		runtime.Quit(a.ctx)
+	}
 }
 
-func (a *App) startServer(dir string) {
+func (a *App) startServer(dir string) error {
 	ws := workspace.Open(dir)
 	eng := board.New()
 
@@ -52,35 +73,48 @@ func (a *App) startServer(dir string) {
 
 	addr, err := a.srv.ListenAndServe("127.0.0.1:0")
 	if err != nil {
-		log.Fatalf("failed to start server: %v", err)
+		return fmt.Errorf("listen on 127.0.0.1:0: %w", err)
 	}
 	a.url = fmt.Sprintf("http://%s", addr.String())
 	log.Printf("LiveBoard server listening on %s (workspace: %s)", a.url, dir)
+	return nil
 }
 
 func (a *App) switchWorkspace(dir string) {
-	// Shutdown current server
-	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	if err := a.srv.Shutdown(shutCtx); err != nil {
-		log.Printf("server shutdown error: %v", err)
-	}
+	// Run shutdown + restart off the main thread to avoid blocking the UI.
+	go func() {
+		// Shutdown current server
+		shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+		if err := a.srv.Shutdown(shutCtx); err != nil {
+			log.Printf("server shutdown error: %v", err)
+		}
 
-	// Start new server with the selected workspace
-	a.startServer(dir)
+		// Start new server with the selected workspace
+		if err := a.startServer(dir); err != nil {
+			runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+				Type:    runtime.ErrorDialog,
+				Title:   "Server Error",
+				Message: fmt.Sprintf("Failed to switch workspace: %v", err),
+			})
+			return
+		}
 
-	// Persist to config
-	cfg := defaults.LoadDesktopConfig()
-	cfg.AddRecent(dir)
-	cfg.Save()
+		// Persist to config
+		cfg := defaults.LoadDesktopConfig()
+		cfg.AddRecent(dir)
+		if err := cfg.Save(); err != nil {
+			log.Printf("failed to save desktop config: %v", err)
+		}
 
-	// Navigate webview to new server
-	runtime.WindowExecJS(a.ctx, fmt.Sprintf(`window.location.href = "%s"`, a.url))
+		// Navigate webview to new server
+		runtime.WindowExecJS(a.ctx, fmt.Sprintf(`window.location.href = "%s"`, a.url))
 
-	// Rebuild menu to update recent workspaces list
-	appMenu := a.buildMenu()
-	runtime.MenuSetApplicationMenu(a.ctx, appMenu)
-	runtime.MenuUpdateApplicationMenu(a.ctx)
+		// Rebuild menu to update recent workspaces list
+		appMenu := a.buildMenu()
+		runtime.MenuSetApplicationMenu(a.ctx, appMenu)
+		runtime.MenuUpdateApplicationMenu(a.ctx)
+	}()
 }
 
 func (a *App) openWorkspaceDialog(_ *menu.CallbackData) {
@@ -108,8 +142,12 @@ func (a *App) buildMenu() *menu.Menu {
 	fileSubmenu := appMenu.AddSubmenu("File")
 	fileSubmenu.AddText("Open Workspace...", keys.CmdOrCtrl("o"), a.openWorkspaceDialog)
 
-	// Recent Workspaces submenu
+	// Recent Workspaces submenu (clean stale entries first)
 	cfg := defaults.LoadDesktopConfig()
+	cfg.CleanStale()
+	if err := cfg.Save(); err != nil {
+		log.Printf("failed to save desktop config: %v", err)
+	}
 	if len(cfg.RecentWorkspaces) > 0 {
 		recentSubmenu := fileSubmenu.AddSubmenu("Recent Workspaces")
 		for _, dir := range cfg.RecentWorkspaces {
@@ -166,6 +204,9 @@ func (a *App) domReady(ctx context.Context) {
 					shouldDrag = false;
 					if (e.buttons > 0) invoke("drag");
 				}
+			});
+			window.addEventListener("mouseup", function() {
+				shouldDrag = false;
 			});
 		})();
 	`)

@@ -72,3 +72,20 @@ func (c *DesktopConfig) AddRecent(dir string) {
 	}
 	c.RecentWorkspaces = filtered
 }
+
+// CleanStale removes entries from RecentWorkspaces where the directory
+// no longer exists on disk.
+func (c *DesktopConfig) CleanStale() {
+	filtered := make([]string, 0, len(c.RecentWorkspaces))
+	for _, d := range c.RecentWorkspaces {
+		if info, err := os.Stat(d); err == nil && info.IsDir() {
+			filtered = append(filtered, d)
+		}
+	}
+	c.RecentWorkspaces = filtered
+	if c.LastWorkspace != "" {
+		if info, err := os.Stat(c.LastWorkspace); err != nil || !info.IsDir() {
+			c.LastWorkspace = ""
+		}
+	}
+}

@@ -62,7 +62,10 @@ func (s *Server) ListenAndServe(addr string) (net.Addr, error) {
 }
 
 // Shutdown gracefully stops the server started via ListenAndServe.
+// It first closes all SSE connections so long-lived streams don't block the
+// HTTP server's graceful drain.
 func (s *Server) Shutdown(ctx context.Context) error {
+	s.webHandler.SSE.Shutdown()
 	if s.httpServer != nil {
 		return s.httpServer.Shutdown(ctx)
 	}
