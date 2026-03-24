@@ -9,10 +9,7 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
 )
 
-var (
-	version = "dev"
-	commit  = "none"
-)
+var version = "dev"
 
 //go:embed all:placeholder
 var placeholder embed.FS

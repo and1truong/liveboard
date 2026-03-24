@@ -1,3 +1,4 @@
+// LiveBoard desktop application using Wails.
 package main
 
 import (
@@ -92,7 +93,7 @@ func (a *App) switchWorkspace(dir string) {
 
 		// Start new server with the selected workspace
 		if err := a.startServer(dir); err != nil {
-			runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
+			_, _ = runtime.MessageDialog(a.ctx, runtime.MessageDialogOptions{
 				Type:    runtime.ErrorDialog,
 				Title:   "Server Error",
 				Message: fmt.Sprintf("Failed to switch workspace: %v", err),

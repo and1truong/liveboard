@@ -35,7 +35,7 @@ type sortColumnInput struct {
 	SortBy      string `json:"sort_by" jsonschema:"sort key: name or priority or due"`
 }
 
-func (m *MCPServer) registerColumnTools() {
+func (m *Server) registerColumnTools() {
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "add_column",
 		Description: "Add a new column to a board",

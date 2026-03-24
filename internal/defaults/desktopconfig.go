@@ -1,3 +1,4 @@
+// Package defaults provides default configuration values and paths.
 package defaults
 
 import (

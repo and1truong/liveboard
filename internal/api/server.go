@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"log"
 	"net"
 	"net/http"
 
@@ -20,7 +21,7 @@ type Server struct {
 	ws         *workspace.Workspace
 	eng        *board.Engine
 	webHandler *web.Handler
-	mcpServer  *livemcp.MCPServer
+	mcpServer  *livemcp.Server
 	router     chi.Router
 	httpServer *http.Server
 	noCache    bool
@@ -52,12 +53,17 @@ func (s *Server) Start(addr string) error {
 // ListenAndServe starts the server in a goroutine and returns the bound address.
 // Use Shutdown to stop the server. Useful when binding to port 0.
 func (s *Server) ListenAndServe(addr string) (net.Addr, error) {
-	ln, err := net.Listen("tcp", addr)
+	var lc net.ListenConfig
+	ln, err := lc.Listen(context.Background(), "tcp", addr)
 	if err != nil {
 		return nil, err
 	}
 	s.httpServer = &http.Server{Handler: s.router}
-	go s.httpServer.Serve(ln)
+	go func() {
+		if err := s.httpServer.Serve(ln); err != nil && err != http.ErrServerClosed {
+			log.Printf("http server error: %v", err)
+		}
+	}()
 	return ln.Addr(), nil
 }
 

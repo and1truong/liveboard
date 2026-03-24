@@ -1,3 +1,4 @@
+// Package mcp provides a Model Context Protocol server for LiveBoard.
 package mcp
 
 import (

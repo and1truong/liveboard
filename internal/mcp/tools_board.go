@@ -59,7 +59,12 @@ type indexedCard struct {
 	Body      string   `json:"body,omitempty"`
 }
 
-func (m *MCPServer) registerBoardTools() {
+func (m *Server) registerBoardTools() {
+	m.registerBoardReadTools()
+	m.registerBoardWriteTools()
+}
+
+func (m *Server) registerBoardReadTools() {
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "list_boards",
 		Description: "List all boards in the workspace with summary info",
@@ -123,7 +128,9 @@ func (m *MCPServer) registerBoardTools() {
 		}
 		return jsonResult(ib)
 	})
+}
 
+func (m *Server) registerBoardWriteTools() {
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "create_board",
 		Description: "Create a new board in the workspace",

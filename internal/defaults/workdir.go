@@ -40,7 +40,9 @@ func DesktopWorkDir() (string, bool) {
 		home, err := os.UserHomeDir()
 		if err == nil {
 			fallback := filepath.Join(home, "LiveBoard")
-			os.MkdirAll(fallback, 0o755)
+			if err := os.MkdirAll(fallback, 0o755); err != nil {
+				return "", false
+			}
 			return fallback, false
 		}
 	}

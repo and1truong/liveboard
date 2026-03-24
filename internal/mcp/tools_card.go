@@ -51,7 +51,7 @@ type deleteCardInput struct {
 	CardIndex   int    `json:"card_index" jsonschema:"0-based card index within column"`
 }
 
-func (m *MCPServer) registerCardTools() {
+func (m *Server) registerCardTools() {
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "add_card",
 		Description: "Add a new card to a column on a board",

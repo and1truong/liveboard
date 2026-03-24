@@ -15,7 +15,7 @@ func mcpCmd() *cobra.Command {
 		Short: "Start MCP server over stdio (for Claude Code / AI assistant integration)",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			srv := livemcp.New(ws, eng, version)
-			return srv.Server().Run(context.Background(), &mcpsdk.StdioTransport{})
+			return srv.MCP().Run(context.Background(), &mcpsdk.StdioTransport{})
 		},
 	}
 }
