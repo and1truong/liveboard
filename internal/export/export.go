@@ -94,7 +94,7 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 	}
 
 	// Build summaries
-	var summaries []boardSummary
+	summaries := make([]boardSummary, 0, len(boards))
 	for _, b := range boards {
 		slug := strings.TrimSuffix(filepath.Base(b.FilePath), ".md")
 		cards, done := 0, 0
