@@ -126,6 +126,17 @@ document.addEventListener('alpine:init', function () {
         }).join('\n');
       },
 
+      handleTitleKeydown: function (e) {
+        var trigger = window.__lbNewLineTrigger ? window.__lbNewLineTrigger() : 'shift-enter';
+        if (trigger === 'shift-enter') {
+          if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); this.save(); }
+        } else {
+          if (e.key === 'Enter' && e.shiftKey) { e.preventDefault(); this.save(); }
+        }
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) { e.preventDefault(); this.save(); return; }
+        if (e.key === 'Escape') this.close();
+      },
+
       save: function () {
         htmx.ajax('POST', '/board/' + encodeURIComponent(this.slug) + '/cards/edit', {
           values: {

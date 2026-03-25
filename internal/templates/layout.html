@@ -214,7 +214,7 @@
                     <span class="card-modal-column-pill" x-text="columnName"></span>
                     <span x-show="completed" class="status-badge completed" style="margin-left:8px">&#10003; Done</span>
 
-                    <textarea class="card-modal-title" x-model="title" rows="1" @input="autoResize($event)"></textarea>
+                    <textarea class="card-modal-title" x-model="title" rows="1" @input="autoResize($event)" @keydown="handleTitleKeydown($event)"></textarea>
 
                     <div class="card-modal-action-bar" style="position:relative">
                         <button class="card-modal-action-btn"><span class="card-modal-action-icon">&#127991;</span> Labels</button>
