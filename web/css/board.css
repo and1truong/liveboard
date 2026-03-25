@@ -4256,6 +4256,7 @@ mark.cmd-palette-highlight {
 
 .calendar-day {
     min-height: 100px;
+    min-width: 0;
     border-right: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
     padding: 4px;
