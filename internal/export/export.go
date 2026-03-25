@@ -62,38 +62,7 @@ type boardModel struct {
 // renderFile is a callback that receives a filename and rendered content.
 type renderFile func(name string, data []byte) error
 
-// render builds all HTML pages and calls emit for each one.
-func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
-	if opts.SiteName == "" {
-		opts.SiteName = "LiveBoard"
-	}
-
-	boards, err := ws.ListBoards()
-	if err != nil {
-		return fmt.Errorf("listing boards: %w", err)
-	}
-
-	fm := template.FuncMap{
-		"md": func(s string) template.HTML {
-			var buf bytes.Buffer
-			if err := mdRenderer.Convert([]byte(s), &buf); err != nil {
-				return template.HTML(template.HTMLEscapeString(s))
-			}
-			return template.HTML(buf.String()) //nolint:gosec
-		},
-	}
-
-	exportTemplates := []string{"export_styles.html"}
-	indexTpl, err := template.New("export_index.html").Funcs(fm).ParseFS(tmplfs.FS, append(exportTemplates, "export_index.html")...)
-	if err != nil {
-		return fmt.Errorf("parsing index template: %w", err)
-	}
-	boardTpl, err := template.New("export_board.html").Funcs(fm).ParseFS(tmplfs.FS, append(exportTemplates, "export_board.html")...)
-	if err != nil {
-		return fmt.Errorf("parsing board template: %w", err)
-	}
-
-	// Build summaries
+func buildSummaries(boards []models.Board) []boardSummary {
 	summaries := make([]boardSummary, 0, len(boards))
 	for _, b := range boards {
 		slug := strings.TrimSuffix(filepath.Base(b.FilePath), ".md")
@@ -117,6 +86,41 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 			ColumnCount: len(b.Columns),
 		})
 	}
+	return summaries
+}
+
+// render builds all HTML pages and calls emit for each one.
+func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
+	if opts.SiteName == "" {
+		opts.SiteName = "LiveBoard"
+	}
+
+	boards, err := ws.ListBoards()
+	if err != nil {
+		return fmt.Errorf("listing boards: %w", err)
+	}
+
+	fm := template.FuncMap{
+		"md": func(s string) template.HTML {
+			var buf bytes.Buffer
+			if mdErr := mdRenderer.Convert([]byte(s), &buf); mdErr != nil {
+				return template.HTML(template.HTMLEscapeString(s))
+			}
+			return template.HTML(buf.String()) //nolint:gosec
+		},
+	}
+
+	exportTemplates := []string{"export_styles.html"}
+	indexTpl, err := template.New("export_index.html").Funcs(fm).ParseFS(tmplfs.FS, append(exportTemplates, "export_index.html")...)
+	if err != nil {
+		return fmt.Errorf("parsing index template: %w", err)
+	}
+	boardTpl, err := template.New("export_board.html").Funcs(fm).ParseFS(tmplfs.FS, append(exportTemplates, "export_board.html")...)
+	if err != nil {
+		return fmt.Errorf("parsing board template: %w", err)
+	}
+
+	summaries := buildSummaries(boards)
 
 	// Resolve theme value for templates: "system" means no data-theme attribute
 	themeAttr := opts.Theme

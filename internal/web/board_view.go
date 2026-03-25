@@ -50,19 +50,19 @@ type CardWithPosition struct {
 // BoardViewModel is the state for the board view page.
 type BoardViewModel struct {
 	LayoutSettings
-	Title          string            `json:"title"`
-	SiteName       string            `json:"site_name"`
-	Board          *models.Board     `json:"board"`
-	BoardName      string            `json:"board_name"`
-	BoardSlug      string            `json:"board_slug"`
-	Boards         []BoardSummary    `json:"boards"`
-	AllTags        []string          `json:"all_tags,omitempty"`
-	TagColorsJSON  string            `json:"tag_colors_json,omitempty"`
-	Error          string            `json:"error,omitempty"`
-	Version        int               `json:"version"`
-	Settings       ResolvedSettings  `json:"settings"`
-	BSView         BoardSettingsView `json:"bs_view"`
-	GlobalSettings AppSettings       `json:"global_settings"`
+	Title          string             `json:"title"`
+	SiteName       string             `json:"site_name"`
+	Board          *models.Board      `json:"board"`
+	BoardName      string             `json:"board_name"`
+	BoardSlug      string             `json:"board_slug"`
+	Boards         []BoardSummary     `json:"boards"`
+	AllTags        []string           `json:"all_tags,omitempty"`
+	TagColorsJSON  string             `json:"tag_colors_json,omitempty"`
+	Error          string             `json:"error,omitempty"`
+	Version        int                `json:"version"`
+	Settings       ResolvedSettings   `json:"settings"`
+	BSView         BoardSettingsView  `json:"bs_view"`
+	GlobalSettings AppSettings        `json:"global_settings"`
 	AllCards       []CardWithPosition `json:"all_cards,omitempty"`
 }
 

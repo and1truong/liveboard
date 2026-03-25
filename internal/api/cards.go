@@ -111,8 +111,8 @@ func (s *Server) moveCard(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Column string `json:"column"`
 	}
-	if err := decodeJSON(r, &body); err != nil {
-		respondError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+	if decErr := decodeJSON(r, &body); decErr != nil {
+		respondError(w, http.StatusBadRequest, "invalid JSON: "+decErr.Error())
 		return
 	}
 	if body.Column == "" {
@@ -125,8 +125,8 @@ func (s *Server) moveCard(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := s.ws.Engine.MoveCard(boardPath, colIdx, cardIdx, body.Column); err != nil {
-		handleError(w, err)
+	if moveErr := s.ws.Engine.MoveCard(boardPath, colIdx, cardIdx, body.Column); moveErr != nil {
+		handleError(w, moveErr)
 		return
 	}
 
@@ -165,8 +165,8 @@ func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
 	var body struct {
 		Tags []string `json:"tags"`
 	}
-	if err := decodeJSON(r, &body); err != nil {
-		respondError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
+	if decErr := decodeJSON(r, &body); decErr != nil {
+		respondError(w, http.StatusBadRequest, "invalid JSON: "+decErr.Error())
 		return
 	}
 	if len(body.Tags) == 0 {

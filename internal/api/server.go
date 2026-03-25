@@ -24,8 +24,8 @@ type Server struct {
 	mcpServer  *livemcp.Server
 	router     chi.Router
 	httpServer *http.Server
-	noCache  bool
-	readOnly bool
+	noCache    bool
+	readOnly   bool
 }
 
 // NewServer creates a Server with all routes registered.
@@ -139,6 +139,12 @@ func (s *Server) buildRouter() chi.Router {
 	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())
 	r.Get("/api/export", s.webHandler.ExportHandler().ServeHTTP)
 
+	s.mountAPIRoutes(r)
+
+	return r
+}
+
+func (s *Server) mountAPIRoutes(r chi.Router) {
 	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {
 		r.Use(jsonContentType)
@@ -174,8 +180,6 @@ func (s *Server) buildRouter() chi.Router {
 	r.Get("/search", s.stubHandler)
 	r.Get("/events", s.stubHandler)
 	r.Get("/events/ws", s.stubHandler)
-
-	return r
 }
 
 func jsonContentType(next http.Handler) http.Handler {

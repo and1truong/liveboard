@@ -61,7 +61,7 @@ func NewHandler(ws *workspace.Workspace, eng *board.Engine, version string, read
 		eng:      eng,
 		version:  version,
 		ReadOnly: readOnly,
-		SSE:     NewSSEBroker(),
+		SSE:      NewSSEBroker(),
 	}
 
 	fm := funcMap()

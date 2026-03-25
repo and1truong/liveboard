@@ -8,7 +8,7 @@ import (
 
 // ExportHandler returns an HTTP handler that exports the workspace as a ZIP of static HTML files.
 func (h *Handler) ExportHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		settings := h.loadSettings()
 		opts := export.Options{
 			Theme:      settings.Theme,

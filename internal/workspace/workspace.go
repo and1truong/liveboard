@@ -109,7 +109,7 @@ func (w *Workspace) CreateBoard(name string) (*models.Board, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, err := os.Stat(path); err == nil {
+	if _, statErr := os.Stat(path); statErr == nil {
 		return nil, fmt.Errorf("board %q already exists", name)
 	}
 
