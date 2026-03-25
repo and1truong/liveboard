@@ -51,7 +51,12 @@ type deleteCardInput struct {
 	CardIndex   int    `json:"card_index" jsonschema:"0-based card index within column"`
 }
 
-func (m *Server) registerCardTools() { //nolint:gocognit // sequential tool registrations
+func (m *Server) registerCardTools() {
+	m.registerCardCRUDTools()
+	m.registerCardActionTools()
+}
+
+func (m *Server) registerCardCRUDTools() {
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "add_card",
 		Description: "Add a new card to a column on a board",
@@ -105,6 +110,23 @@ func (m *Server) registerCardTools() { //nolint:gocognit // sequential tool regi
 	})
 
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
+		Name:        "delete_card",
+		Description: "Delete a card from a board (irreversible)",
+		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(true)},
+	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args deleteCardInput) (*mcpsdk.CallToolResult, any, error) {
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
+		if err := m.eng.DeleteCard(path, args.ColumnIndex, args.CardIndex); err != nil {
+			return errResult(err)
+		}
+		return textResult("Card deleted")
+	})
+}
+
+func (m *Server) registerCardActionTools() {
+	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "move_card",
 		Description: "Move a card to a different column",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
@@ -132,20 +154,5 @@ func (m *Server) registerCardTools() { //nolint:gocognit // sequential tool regi
 			return errResult(err)
 		}
 		return textResult("Card completion toggled")
-	})
-
-	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
-		Name:        "delete_card",
-		Description: "Delete a card from a board (irreversible)",
-		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(true)},
-	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args deleteCardInput) (*mcpsdk.CallToolResult, any, error) {
-		path, err := m.ws.BoardPath(args.Board)
-		if err != nil {
-			return errResult(err)
-		}
-		if err := m.eng.DeleteCard(path, args.ColumnIndex, args.CardIndex); err != nil {
-			return errResult(err)
-		}
-		return textResult("Card deleted")
 	})
 }
