@@ -69,7 +69,7 @@
     <script src="/static/js/liveboard.drag.js?v={{.Version}}" defer></script>
     <script src="/static/js/liveboard.keyboard.js?v={{.Version}}" defer></script>
 </head>
-<body>
+<body hx-boost="true">
     <div class="app-shell" x-data="emojiPicker()">
         <aside class="app-sidebar" id="appSidebar" x-data :class="{ collapsed: $store.ui.sidebarCollapsed }">
             <nav class="sidebar-nav">
