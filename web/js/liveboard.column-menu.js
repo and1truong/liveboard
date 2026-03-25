@@ -111,6 +111,12 @@ document.addEventListener('alpine:init', function () {
         });
       },
 
+      focusColumn: function () {
+        var name = this.columnName;
+        this.hide();
+        Alpine.store('ui').focusedColumn = name;
+      },
+
       showAssistant: function (mode) {
         this.hide();
         this.assistantMode = mode;
