@@ -4269,7 +4269,7 @@ mark.cmd-palette-highlight {
 }
 
 .calendar-day.today {
-    background: rgba(99, 102, 241, 0.06);
+    background: transparent;
 }
 
 .calendar-day.other-month {
@@ -4284,16 +4284,17 @@ mark.cmd-palette-highlight {
 }
 
 .calendar-day-number.today {
-    background: var(--color-accent);
+    background: #e05252;
     color: #fff;
     border-radius: 50%;
-    min-width: 24px;
-    min-height: 24px;
-    padding: 2px;
+    width: 26px;
+    height: 26px;
+    padding: 0;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: 0.8rem;
+    font-weight: 600;
     line-height: 1;
 }
 

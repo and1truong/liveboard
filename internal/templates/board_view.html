@@ -380,7 +380,8 @@
                             @dragleave="$el.classList.remove('drag-over')"
                             @drop="handleDrop($event, day.dateStr); $el.classList.remove('drag-over')"
                             @click="selectDay(day.dateStr)">
-                            <span class="calendar-day-number" :class="{ 'today': day.isToday }" x-text="day.date + ' ' + day.monthLabel"></span>
+                            <span class="calendar-day-number" :class="{ 'today': day.isToday }" x-text="day.date"></span>
+                            <span class="calendar-month-label" x-text="day.monthLabel"></span>
                             <div class="calendar-day-cards">
                                 <template x-for="card in cardsForDate(day.dateStr)" :key="card.colIdx + '-' + card.cardIdx">
                                     <div class="calendar-card-chip card" :class="{ completed: card.completed }"
