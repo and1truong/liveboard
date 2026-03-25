@@ -11,31 +11,31 @@
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         :root {
-            --bg: #0a0a10;
-            --bg-elevated: #12121c;
-            --bg-card: #161622;
-            --bg-card-hover: #1c1c2e;
-            --accent: #818cf8;
-            --accent-bright: #a5b4fc;
+            --bg: #f8f9fc;
+            --bg-elevated: #ffffff;
+            --bg-card: #ffffff;
+            --bg-card-hover: #f0f1f5;
+            --accent: #4f46e5;
+            --accent-bright: #4338ca;
             --accent-dim: #6366f1;
-            --accent-muted: rgba(99,102,241,0.12);
-            --accent-border: rgba(99,102,241,0.25);
-            --blue: #4285F4;
-            --red: #EA4335;
-            --green: #34A853;
-            --amber: #F9AB00;
-            --text: #e0e2ef;
-            --text-muted: #8688a3;
-            --text-dim: #50526e;
-            --border: #1e1e30;
-            --heading: #f0f0f8;
-            --logo-live: #E8EAED;
-            --logo-board: #8AB4F8;
-            --grain-opacity: 0.03;
-            --glow-1: rgba(99,102,241,0.06);
-            --glow-2: rgba(66,133,244,0.04);
-            --card-bg-alpha: rgba(255,255,255,0.03);
-            --screenshot-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 24px 80px rgba(0,0,0,0.25);
+            --accent-muted: rgba(99,102,241,0.08);
+            --accent-border: rgba(99,102,241,0.2);
+            --blue: #2563eb;
+            --red: #dc2626;
+            --green: #16a34a;
+            --amber: #d97706;
+            --text: #334155;
+            --text-muted: #64748b;
+            --text-dim: #94a3b8;
+            --border: #e2e8f0;
+            --heading: #0f172a;
+            --logo-live: #1e293b;
+            --logo-board: #4f46e5;
+            --grain-opacity: 0.015;
+            --glow-1: rgba(99,102,241,0.05);
+            --glow-2: rgba(66,133,244,0.03);
+            --card-bg-alpha: rgba(0,0,0,0.02);
+            --screenshot-shadow: 0 4px 24px rgba(0,0,0,0.08), 0 24px 80px rgba(0,0,0,0.06);
             --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
             --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
         }
@@ -230,7 +230,7 @@
             align-items: center;
             gap: 8px;
             padding: 14px 18px;
-            background: rgba(255,255,255,0.02);
+            background: rgba(0,0,0,0.02);
             border-bottom: 1px solid var(--border);
         }
         .screenshot-chrome .dots { display: flex; gap: 7px }
@@ -241,7 +241,7 @@
         .screenshot-chrome .url-bar {
             flex: 1;
             margin: 0 60px 0 12px;
-            background: rgba(255,255,255,0.04);
+            background: rgba(0,0,0,0.04);
             border-radius: 6px;
             padding: 6px 14px;
             font-family: var(--font-mono);
@@ -338,9 +338,9 @@
             color: var(--accent);
             font-family: var(--font-mono);
         }
-        .point-icon.blue { background: rgba(66,133,244,0.1); border-color: rgba(66,133,244,0.2); color: #8AB4F8 }
-        .point-icon.red { background: rgba(234,67,53,0.1); border-color: rgba(234,67,53,0.2); color: #F28B82 }
-        .point-icon.green { background: rgba(52,168,83,0.1); border-color: rgba(52,168,83,0.2); color: #81C995 }
+        .point-icon.blue { background: rgba(37,99,235,0.08); border-color: rgba(37,99,235,0.15); color: #2563eb }
+        .point-icon.red { background: rgba(220,38,38,0.08); border-color: rgba(220,38,38,0.15); color: #dc2626 }
+        .point-icon.green { background: rgba(22,163,74,0.08); border-color: rgba(22,163,74,0.15); color: #16a34a }
         .point h3 {
             font-size: 17px;
             font-weight: 600;
@@ -437,9 +437,9 @@
             margin-top: 6px;
             margin-right: 3px;
         }
-        .tag-red { background: rgba(234,67,53,0.12); color: #F28B82 }
-        .tag-amber { background: rgba(249,171,0,0.12); color: #FDD663 }
-        .tag-blue { background: rgba(66,133,244,0.12); color: #8AB4F8 }
+        .tag-red { background: rgba(220,38,38,0.08); color: #dc2626 }
+        .tag-amber { background: rgba(217,119,6,0.08); color: #d97706 }
+        .tag-blue { background: rgba(37,99,235,0.08); color: #2563eb }
         .kanban-card .meta {
             font-family: var(--font-mono);
             font-size: 10px;
