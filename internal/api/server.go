@@ -24,17 +24,19 @@ type Server struct {
 	mcpServer  *livemcp.Server
 	router     chi.Router
 	httpServer *http.Server
-	noCache    bool
+	noCache  bool
+	readOnly bool
 }
 
 // NewServer creates a Server with all routes registered.
-func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache bool, version string) *Server {
+func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly bool, version string) *Server {
 	s := &Server{
 		ws:         ws,
 		eng:        eng,
-		webHandler: web.NewHandler(ws, eng, version),
+		webHandler: web.NewHandler(ws, eng, version, readOnly),
 		mcpServer:  livemcp.New(ws, eng, version),
 		noCache:    noCache,
+		readOnly:   readOnly,
 	}
 	s.router = s.buildRouter()
 	return s
@@ -83,6 +85,18 @@ func (s *Server) buildRouter() chi.Router {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	if s.readOnly {
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if req.Method != http.MethodGet && req.Method != http.MethodHead && req.Method != http.MethodOptions {
+					http.Error(w, "read-only mode", http.StatusMethodNotAllowed)
+					return
+				}
+				next.ServeHTTP(w, req)
+			})
+		})
+	}
 
 	// Serve static assets
 	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {

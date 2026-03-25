@@ -5,6 +5,8 @@
   var draggingSourceColumn = null;
   var draggingColumnEl = null;
 
+  var isReadOnly = document.documentElement.hasAttribute('data-readonly');
+
   function attach() {
     // Card click → open Alpine card modal
     document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
@@ -26,6 +28,7 @@
       });
     });
 
+    if (!isReadOnly) {
     // Card right-click → open Alpine quick edit
     document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
       if (card.dataset.ctxWired) return;
@@ -94,6 +97,7 @@
         }
       });
     });
+    } // end !isReadOnly
 
     // Collapsed column click → expand
     document.addEventListener("click", function (e) {

@@ -22,6 +22,7 @@ type Handler struct {
 	ws               *workspace.Workspace
 	eng              *board.Engine
 	version          string
+	ReadOnly         bool
 	SSE              *SSEBroker
 	boardListTpl     *template.Template
 	boardViewTpl     *template.Template
@@ -54,11 +55,12 @@ func funcMap() template.FuncMap {
 }
 
 // NewHandler creates a new web Handler.
-func NewHandler(ws *workspace.Workspace, eng *board.Engine, version string) *Handler {
+func NewHandler(ws *workspace.Workspace, eng *board.Engine, version string, readOnly bool) *Handler {
 	h := &Handler{
-		ws:      ws,
-		eng:     eng,
-		version: version,
+		ws:       ws,
+		eng:      eng,
+		version:  version,
+		ReadOnly: readOnly,
 		SSE:     NewSSEBroker(),
 	}
 

@@ -12,8 +12,9 @@ import (
 
 func serveCmd() *cobra.Command {
 	var (
-		host string
-		port int
+		host     string
+		port     int
+		readOnly bool
 	)
 
 	cmd := &cobra.Command{
@@ -24,7 +25,7 @@ func serveCmd() *cobra.Command {
 				port = 7777
 			}
 			noCache := os.Getenv("NO_CACHE") != ""
-			srv := api.NewServer(ws, ws.Engine, noCache, version)
+			srv := api.NewServer(ws, ws.Engine, noCache, readOnly, version)
 			addr := fmt.Sprintf("%s:%d", host, port)
 			fmt.Printf("LiveBoard Web UI: http://%s:%d\n", host, port)
 			fmt.Printf("REST API: http://%s:%d/boards\n", host, port)
@@ -47,5 +48,6 @@ func serveCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&host, "host", defaultHost, "server host")
 	cmd.Flags().IntVarP(&port, "port", "p", defaultPort, "server port")
+	cmd.Flags().BoolVar(&readOnly, "readonly", false, "start in read-only mode (no writes allowed)")
 	return cmd
 }
