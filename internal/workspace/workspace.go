@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -63,13 +64,19 @@ func (w *Workspace) ListBoards() ([]models.Board, error) {
 
 // LoadBoard loads a board by name.
 func (w *Workspace) LoadBoard(name string) (*models.Board, error) {
-	path := w.BoardPath(name)
+	path, err := w.BoardPath(name)
+	if err != nil {
+		return nil, err
+	}
 	return w.Engine.LoadBoard(path) //nolint:nilaway
 }
 
 // CreateBoard creates a new board with default columns.
 func (w *Workspace) CreateBoard(name string) (*models.Board, error) {
-	path := w.BoardPath(name)
+	path, err := w.BoardPath(name)
+	if err != nil {
+		return nil, err
+	}
 	if _, err := os.Stat(path); err == nil {
 		return nil, fmt.Errorf("board %q already exists", name)
 	}
@@ -96,16 +103,47 @@ func (w *Workspace) CreateBoard(name string) (*models.Board, error) {
 
 // DeleteBoard removes a board file.
 func (w *Workspace) DeleteBoard(name string) error {
-	path := w.BoardPath(name)
+	path, err := w.BoardPath(name)
+	if err != nil {
+		return err
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		return fmt.Errorf("board %q not found", name)
 	}
 	return os.Remove(path)
 }
 
+// validBoardName allows alphanumeric, unicode letters, spaces, dashes, underscores, periods.
+var validBoardName = regexp.MustCompile(`^[\p{L}\p{N} ._-]+$`)
+
+// ErrInvalidBoardName is returned when a board name contains unsafe characters.
+var ErrInvalidBoardName = fmt.Errorf("invalid board name")
+
+// ValidateBoardName checks that a board name is safe for use as a filename.
+func ValidateBoardName(name string) error {
+	if name == "" {
+		return fmt.Errorf("%w: empty name", ErrInvalidBoardName)
+	}
+	if !validBoardName.MatchString(name) {
+		return fmt.Errorf("%w: contains unsafe characters", ErrInvalidBoardName)
+	}
+	if !filepath.IsLocal(name + ".md") {
+		return fmt.Errorf("%w: path traversal", ErrInvalidBoardName)
+	}
+	return nil
+}
+
 // BoardPath returns the file path for a board name.
-func (w *Workspace) BoardPath(name string) string {
-	return filepath.Join(w.Dir, name+".md")
+func (w *Workspace) BoardPath(name string) (string, error) {
+	if err := ValidateBoardName(name); err != nil {
+		return "", err
+	}
+	p := filepath.Join(w.Dir, name+".md")
+	// Belt-and-suspenders: ensure resolved path is inside workspace.
+	if rel, err := filepath.Rel(w.Dir, p); err != nil || strings.HasPrefix(rel, "..") {
+		return "", fmt.Errorf("%w: path escapes workspace", ErrInvalidBoardName)
+	}
+	return p, nil
 }
 
 func (w *Workspace) getDefaultColumns() []string {

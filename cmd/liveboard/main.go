@@ -156,7 +156,10 @@ func cardAddCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, title := args[0], args[1]
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 
 			if column == "" {
 				column = "Backlog"
@@ -190,7 +193,10 @@ func cardMoveCmd() *cobra.Command {
 				return fmt.Errorf("invalid card_idx: %w", err)
 			}
 			targetCol := args[3]
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			if err := eng.MoveCard(path, colIdx, cardIdx, targetCol); err != nil {
 				return err
 			}
@@ -215,7 +221,10 @@ func cardCompleteCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("invalid card_idx: %w", err)
 			}
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			if err := eng.CompleteCard(path, colIdx, cardIdx); err != nil {
 				return err
 			}
@@ -241,7 +250,10 @@ func cardTagCmd() *cobra.Command {
 				return fmt.Errorf("invalid card_idx: %w", err)
 			}
 			tags := args[3:]
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			if err := eng.TagCard(path, colIdx, cardIdx, tags); err != nil {
 				return err
 			}
@@ -266,7 +278,10 @@ func cardShowCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("invalid card_idx: %w", err)
 			}
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			card, colName, err := eng.ShowCard(path, colIdx, cardIdx)
 			if err != nil {
 				return err
@@ -310,7 +325,10 @@ func cardDeleteCmd() *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("invalid card_idx: %w", err)
 			}
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			if err := eng.DeleteCard(path, colIdx, cardIdx); err != nil {
 				return err
 			}
@@ -340,7 +358,10 @@ func columnAddCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, colName := args[0], args[1]
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			if err := eng.AddColumn(path, colName); err != nil {
 				return err
 			}
@@ -358,7 +379,10 @@ func columnMoveCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, colName := args[0], args[1]
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			if err := eng.MoveColumn(path, colName, after); err != nil {
 				return err
 			}
@@ -378,7 +402,10 @@ func columnDeleteCmd() *cobra.Command {
 		Args:  cobra.ExactArgs(2),
 		RunE: func(_ *cobra.Command, args []string) error {
 			boardName, colName := args[0], args[1]
-			path := ws.BoardPath(boardName)
+			path, err := ws.BoardPath(boardName)
+			if err != nil {
+				return err
+			}
 			if err := eng.DeleteColumn(path, colName); err != nil {
 				return err
 			}

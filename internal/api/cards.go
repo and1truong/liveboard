@@ -21,7 +21,11 @@ func (s *Server) addCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	card, err := s.ws.Engine.AddCard(boardPath, colName, body.Title, false)
 	if err != nil {
 		handleError(w, err)
@@ -51,7 +55,11 @@ func (s *Server) getCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	card, colName, err := s.ws.Engine.ShowCard(boardPath, colIdx, cardIdx)
 	if err != nil {
 		handleError(w, err)
@@ -79,7 +87,11 @@ func (s *Server) deleteCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err := s.ws.Engine.DeleteCard(boardPath, colIdx, cardIdx); err != nil {
 		handleError(w, err)
 		return
@@ -108,7 +120,11 @@ func (s *Server) moveCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err := s.ws.Engine.MoveCard(boardPath, colIdx, cardIdx, body.Column); err != nil {
 		handleError(w, err)
 		return
@@ -125,7 +141,11 @@ func (s *Server) completeCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err := s.ws.Engine.CompleteCard(boardPath, colIdx, cardIdx); err != nil {
 		handleError(w, err)
 		return
@@ -154,7 +174,11 @@ func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err := s.ws.Engine.TagCard(boardPath, colIdx, cardIdx, body.Tags); err != nil {
 		handleError(w, err)
 		return

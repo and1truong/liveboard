@@ -223,7 +223,13 @@ func (h *Handler) HandleSetBoardIconList(w http.ResponseWriter, r *http.Request)
 
 	icon := r.FormValue("icon")
 
-	boardPath := h.ws.BoardPath(slug)
+	boardPath, err := h.ws.BoardPath(slug)
+	if err != nil {
+		model, _ := h.boardListModel()
+		model.Error = err.Error()
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
+	}
 	if err := h.eng.UpdateBoardIcon(boardPath, icon); err != nil {
 		model, _ := h.boardListModel()
 		model.Error = err.Error()

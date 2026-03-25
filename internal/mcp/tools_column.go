@@ -41,7 +41,10 @@ func (m *Server) registerColumnTools() {
 		Description: "Add a new column to a board",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args addColumnInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		if err := m.eng.AddColumn(path, args.Name); err != nil {
 			return errResult(err)
 		}
@@ -53,7 +56,10 @@ func (m *Server) registerColumnTools() {
 		Description: "Delete a column and all its cards from a board (irreversible)",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(true)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args deleteColumnInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		if err := m.eng.DeleteColumn(path, args.Name); err != nil {
 			return errResult(err)
 		}
@@ -65,7 +71,10 @@ func (m *Server) registerColumnTools() {
 		Description: "Rename a column on a board",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args renameColumnInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		if err := m.eng.RenameColumn(path, args.OldName, args.NewName); err != nil {
 			return errResult(err)
 		}
@@ -77,7 +86,10 @@ func (m *Server) registerColumnTools() {
 		Description: "Move a column to a new position on a board",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args moveColumnInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		if err := m.eng.MoveColumn(path, args.Name, args.After); err != nil {
 			return errResult(err)
 		}
@@ -89,7 +101,10 @@ func (m *Server) registerColumnTools() {
 		Description: "Sort cards within a column by name, priority, or due date",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args sortColumnInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		if err := m.eng.SortColumn(path, args.ColumnIndex, args.SortBy); err != nil {
 			return errResult(err)
 		}
