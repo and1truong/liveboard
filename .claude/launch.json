@@ -14,6 +14,13 @@
       "runtimeArgs": ["dev", "DEMO=student-y7"],
       "port": 7070,
       "autoPort": true
+    },
+    {
+      "name": "dev-tutorial",
+      "runtimeExecutable": "make",
+      "runtimeArgs": ["dev", "DEMO=tutorial"],
+      "port": 7070,
+      "autoPort": true
     }
   ]
 }
