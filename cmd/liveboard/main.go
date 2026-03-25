@@ -51,6 +51,7 @@ func main() {
 	rootCmd.AddCommand(columnCmd())
 	rootCmd.AddCommand(serveCmd())
 	rootCmd.AddCommand(mcpCmd())
+	rootCmd.AddCommand(exportCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

@@ -137,6 +137,7 @@ func (s *Server) buildRouter() chi.Router {
 
 	r.Handle("/settings", s.webHandler.SettingsHandler())
 	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())
+	r.Get("/api/export", s.webHandler.ExportHandler().ServeHTTP)
 
 	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {

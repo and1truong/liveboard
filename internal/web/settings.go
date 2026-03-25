@@ -89,15 +89,20 @@ func (h *Handler) settingsPath() string {
 	return filepath.Join(h.ws.Dir, "settings.json")
 }
 
-// loadSettings reads settings.json, returning defaults if missing.
-func (h *Handler) loadSettings() AppSettings {
+// LoadSettingsFromDir reads settings.json from dir, returning defaults if missing.
+func LoadSettingsFromDir(dir string) AppSettings {
 	s := defaultSettings()
-	data, err := os.ReadFile(h.settingsPath())
+	data, err := os.ReadFile(filepath.Join(dir, "settings.json"))
 	if err != nil {
 		return s
 	}
 	_ = json.Unmarshal(data, &s)
 	return s
+}
+
+// loadSettings reads settings.json, returning defaults if missing.
+func (h *Handler) loadSettings() AppSettings {
+	return LoadSettingsFromDir(h.ws.Dir)
 }
 
 // saveSettings writes settings.json.
