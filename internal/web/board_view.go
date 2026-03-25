@@ -142,9 +142,9 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	if err != nil {
 		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, err
 	}
-	allBoards, _ := h.ws.ListBoards()
+	allInfos, _ := h.ws.ListBoardSummaries()
 	global := h.loadSettings()
-	summaries := sortBoardsWithPins(toBoardSummaries(allBoards), global.PinnedBoards)
+	summaries := sortBoardsWithPins(toBoardSummariesFast(allInfos), global.PinnedBoards)
 	tcMap := b.TagColors
 	if tcMap == nil {
 		tcMap = map[string]string{}

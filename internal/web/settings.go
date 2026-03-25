@@ -125,9 +125,9 @@ func (h *Handler) SettingsHandler() http.Handler {
 	tpl := template.Must(template.New("layout.html").Funcs(funcMap()).ParseFS(tmplfs.FS, "layout.html", "settings.html"))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		boards, _ := h.ws.ListBoards()
+		infos, _ := h.ws.ListBoardSummaries()
 		settings := h.loadSettings()
-		summaries := sortBoardsWithPins(toBoardSummaries(boards), settings.PinnedBoards)
+		summaries := sortBoardsWithPins(toBoardSummariesFast(infos), settings.PinnedBoards)
 		model := SettingsModel{
 			LayoutSettings: h.layoutSettings(settings),
 			Title:          "Settings — " + settings.SiteName,

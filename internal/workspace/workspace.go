@@ -12,6 +12,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/parser"
 	"github.com/and1truong/liveboard/internal/writer"
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -60,6 +61,37 @@ func (w *Workspace) ListBoards() ([]models.Board, error) {
 		boards = append(boards, *b)
 	}
 	return boards, nil
+}
+
+// ListBoardSummaries returns lightweight summaries without full card parsing.
+func (w *Workspace) ListBoardSummaries() ([]parser.BoardSummaryInfo, error) {
+	entries, err := os.ReadDir(w.Dir)
+	if err != nil {
+		return nil, fmt.Errorf("read workspace: %w", err)
+	}
+
+	var summaries []parser.BoardSummaryInfo
+	for _, entry := range entries {
+		if entry.IsDir() || !strings.HasSuffix(entry.Name(), ".md") || entry.Name() == "README.md" {
+			continue
+		}
+		path := filepath.Join(w.Dir, entry.Name())
+		data, err := os.ReadFile(path)
+		if err != nil {
+			continue
+		}
+		info, err := parser.ParseSummary(string(data))
+		if err != nil {
+			continue
+		}
+		info.Board.FilePath = path
+		if fi, err := entry.Info(); err == nil {
+			info.Board.UpdatedAt = fi.ModTime()
+			info.Board.CreatedAt = fileBirthTime(fi)
+		}
+		summaries = append(summaries, *info)
+	}
+	return summaries, nil
 }
 
 // LoadBoard loads a board by name.
