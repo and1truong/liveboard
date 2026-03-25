@@ -27,6 +27,9 @@ document.addEventListener('alpine:init', function () {
       ctxHasDelete: false,
       ctxDeleteArmed: false,
       ctxDeleteLabel: 'Delete',
+      qeDeleting: false,
+      qeDeleteArmed: false,
+      qeDeleteLabel: 'Delete',
 
       show: function (card) {
         this.hide();
@@ -66,6 +69,9 @@ document.addEventListener('alpine:init', function () {
         this.ctxHasDelete = !!card.querySelector('[hx-post$="/cards/delete"]');
         this.ctxDeleteArmed = false;
         this.ctxDeleteLabel = 'Delete';
+        this.qeDeleting = false;
+        this.qeDeleteArmed = false;
+        this.qeDeleteLabel = 'Delete';
         this.ctxMoveTriggers = [];
         Array.from(card.querySelectorAll('.move-trigger[data-target]')).forEach(function (t) {
           self.ctxMoveTriggers.push({ name: t.dataset.target, el: t });
@@ -138,6 +144,23 @@ document.addEventListener('alpine:init', function () {
       ctxMoveTo: function (trigger) {
         this.hide();
         trigger.el.click();
+      },
+
+      qeDelete: function () {
+        if (!this.qeDeleteArmed) {
+          this.qeDeleting = true;
+          this.qeDeleteLabel = 'Delete';
+          var self = this;
+          setTimeout(function () {
+            self.qeDeleteArmed = true;
+            self.qeDeleteLabel = 'Confirm';
+          }, 1000);
+          return;
+        }
+        if (!this._cardEl) return;
+        var btn = this._cardEl.querySelector('[hx-post$="/cards/delete"]');
+        this.hide();
+        if (btn) btn.click();
       },
 
       ctxDelete: function () {

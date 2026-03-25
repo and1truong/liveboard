@@ -346,8 +346,11 @@
             </div>
             <textarea class="qe-body" placeholder="Description (optional)" x-model="body" rows="2" @keydown="handleBodyKeydown($event)"></textarea>
             <div class="qe-actions">
-                <button class="btn-primary btn-small" @click="save()">Save</button>
-                <button class="btn-small" @click="hide()">Cancel</button>
+                <button class="btn-small qe-delete-btn" x-show="ctxHasDelete" :disabled="qeDeleting && !qeDeleteArmed" @click="qeDelete()"><span x-text="qeDeleteLabel">Delete</span></button>
+                <div class="qe-actions-right">
+                    <button class="btn-primary btn-small" @click="save()">Save</button>
+                    <button class="btn-small" @click="hide()">Cancel</button>
+                </div>
             </div>
         </div>
 
