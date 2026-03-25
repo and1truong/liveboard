@@ -22,9 +22,8 @@ func Render(board *models.Board) (string, error) {
 		Icon         string               `yaml:"icon,omitempty"`
 		Tags         []string             `yaml:"tags,omitempty"`
 		TagColors    map[string]string    `yaml:"tag-colors,omitempty"`
-		Members      []string             `yaml:"members,omitempty"`
-		ListCollapse []bool               `yaml:"list-collapse,omitempty"`
-		Settings     models.BoardSettings `yaml:"settings,omitempty"`
+		Members  []string             `yaml:"members,omitempty"`
+		Settings models.BoardSettings `yaml:"settings,omitempty"`
 	}{
 		Version:      board.Version,
 		Name:         board.Name,
@@ -33,8 +32,7 @@ func Render(board *models.Board) (string, error) {
 		Tags:         board.Tags,
 		TagColors:    board.TagColors,
 		Members:      board.Members,
-		ListCollapse: board.ListCollapse,
-		Settings:     board.Settings,
+		Settings: board.Settings,
 	}
 	fmBytes, err := yaml.Marshal(fm)
 	if err != nil {

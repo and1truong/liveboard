@@ -223,26 +223,6 @@ func TestParseCardBodySingleLine(t *testing.T) {
 	}
 }
 
-func TestParseListCollapse(t *testing.T) {
-	md := "---\nname: Board\nlist-collapse: [true, false, true]\n---\n\n## Col A\n\n## Col B\n\n## Col C\n"
-	board, err := Parse(md)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(board.Columns) != 3 {
-		t.Fatalf("columns = %d", len(board.Columns))
-	}
-	if !board.Columns[0].Collapsed {
-		t.Error("Col A should be collapsed")
-	}
-	if board.Columns[1].Collapsed {
-		t.Error("Col B should not be collapsed")
-	}
-	if !board.Columns[2].Collapsed {
-		t.Error("Col C should be collapsed")
-	}
-}
-
 func TestParseCardBodyWithMetadata(t *testing.T) {
 	// Body lines should be distinguished from metadata lines
 	md := "## Todo\n\n- [ ] Task\n  priority: high\n  Some body text here.\n  More body text.\n"

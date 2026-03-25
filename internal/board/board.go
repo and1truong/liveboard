@@ -286,13 +286,9 @@ func (e *Engine) DeleteColumn(boardPath, colName string) error {
 	}
 	found := false
 	var cols []models.Column
-	for i, col := range board.Columns {
+	for _, col := range board.Columns {
 		if col.Name == colName {
 			found = true
-			// Remove corresponding collapse state if present.
-			if i < len(board.ListCollapse) {
-				board.ListCollapse = append(board.ListCollapse[:i], board.ListCollapse[i+1:]...)
-			}
 			continue
 		}
 		cols = append(cols, col)
@@ -335,17 +331,6 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 		return err
 	}
 
-	// Ensure ListCollapse is aligned with columns.
-	for len(board.ListCollapse) < len(board.Columns) {
-		board.ListCollapse = append(board.ListCollapse, false)
-	}
-
-	// Build index map for collapse state.
-	collapseByName := make(map[string]bool, len(board.Columns))
-	for i, col := range board.Columns {
-		collapseByName[col.Name] = board.ListCollapse[i]
-	}
-
 	// Find and remove the target column.
 	var movingCol *models.Column
 	var remaining []models.Column
@@ -375,33 +360,6 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 	}
 
 	board.Columns = reordered
-
-	// Rebuild ListCollapse to match new column order.
-	board.ListCollapse = make([]bool, len(board.Columns))
-	for i, col := range board.Columns {
-		board.ListCollapse[i] = collapseByName[col.Name]
-	}
-	return renderAndWrite(board, boardPath)
-}
-
-// ToggleColumnCollapse toggles the collapsed state of a column by index.
-func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-
-	if colIndex < 0 || colIndex >= len(board.Columns) {
-		return fmt.Errorf("column index %d out of range", colIndex)
-	}
-
-	// Grow ListCollapse to match number of columns if needed.
-	for len(board.ListCollapse) < len(board.Columns) {
-		board.ListCollapse = append(board.ListCollapse, false)
-	}
-
-	board.ListCollapse[colIndex] = !board.ListCollapse[colIndex]
-
 	return renderAndWrite(board, boardPath)
 }
 

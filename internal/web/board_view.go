@@ -694,12 +694,9 @@ func (h *Handler) HandleDeleteColumn(w http.ResponseWriter, r *http.Request) {
 	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		var cols []models.Column
 		found := false
-		for j, col := range b.Columns {
+		for _, col := range b.Columns {
 			if col.Name == colName {
 				found = true
-				if j < len(b.ListCollapse) {
-					b.ListCollapse = append(b.ListCollapse[:j], b.ListCollapse[j+1:]...)
-				}
 				continue
 			}
 			cols = append(cols, col)
@@ -765,41 +762,6 @@ func (h *Handler) HandleUpdateBoardMeta(w http.ResponseWriter, r *http.Request) 
 	h.renderBoardContent(w, model)
 }
 
-// HandleToggleColumnCollapse handles POST /board/{slug}/columns/collapse.
-func (h *Handler) HandleToggleColumnCollapse(w http.ResponseWriter, r *http.Request) {
-	slug := slugFromRequest(r)
-	if slug == "" {
-		model := BoardViewModel{Error: "Board name is required"}
-		h.renderBoardContent(w, model)
-		return
-	}
-
-	colIndex, err := formInt(r, "col_index")
-	if err != nil {
-		model, _ := h.boardViewModel(slug)
-		model.Error = err.Error()
-		h.renderBoardContent(w, model)
-		return
-	}
-
-	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
-		if colIndex < 0 || colIndex >= len(b.Columns) {
-			return fmt.Errorf("column index %d out of range", colIndex)
-		}
-		for len(b.ListCollapse) < len(b.Columns) {
-			b.ListCollapse = append(b.ListCollapse, false)
-		}
-		b.ListCollapse[colIndex] = !b.ListCollapse[colIndex]
-		return nil
-	})
-	if errors.Is(mutErr, board.ErrVersionConflict) {
-		h.handleConflict(w, slug)
-		return
-	}
-	h.renderBoardContent(w, model)
-}
-
 // HandleSortColumn handles POST /board/{slug}/columns/sort.
 func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
 	slug := slugFromRequest(r)
@@ -851,20 +813,8 @@ func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
 	h.renderBoardContent(w, model)
 }
 
-// reorderColumns moves colName after afterCol (or to front if afterCol is empty)
-// and rebuilds ListCollapse to match the new order.
+// reorderColumns moves colName after afterCol (or to front if afterCol is empty).
 func reorderColumns(b *models.Board, colName, afterCol string) error {
-	// Align ListCollapse with columns.
-	for len(b.ListCollapse) < len(b.Columns) {
-		b.ListCollapse = append(b.ListCollapse, false)
-	}
-
-	// Build collapse state map.
-	collapseByName := make(map[string]bool, len(b.Columns))
-	for i, col := range b.Columns {
-		collapseByName[col.Name] = b.ListCollapse[i]
-	}
-
 	// Find and remove the column being moved.
 	var movingCol *models.Column
 	var remaining []models.Column
@@ -894,12 +844,6 @@ func reorderColumns(b *models.Board, colName, afterCol string) error {
 	}
 
 	b.Columns = reordered
-
-	// Rebuild ListCollapse to match new order.
-	b.ListCollapse = make([]bool, len(b.Columns))
-	for i, col := range b.Columns {
-		b.ListCollapse[i] = collapseByName[col.Name]
-	}
 	return nil
 }
 

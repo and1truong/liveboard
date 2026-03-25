@@ -22,7 +22,6 @@ type Board struct {
 	Icon         string            `yaml:"icon,omitempty" json:"icon,omitempty"`
 	Tags         []string          `yaml:"tags,omitempty" json:"tags,omitempty"`
 	TagColors    map[string]string `yaml:"tag-colors,omitempty" json:"tag_colors,omitempty"`
-	ListCollapse []bool            `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
 	Members      []string          `yaml:"members,omitempty" json:"members,omitempty"`
 	Settings     BoardSettings     `yaml:"settings,omitempty" json:"settings,omitempty"`
 	Columns      []Column          `yaml:"-" json:"columns"`
@@ -33,9 +32,8 @@ type Board struct {
 
 // Column represents a Kanban column (H2 heading in Markdown).
 type Column struct {
-	Name      string `json:"name"`
-	Collapsed bool   `json:"collapsed"`
-	Cards     []Card `json:"cards"`
+	Name  string `json:"name"`
+	Cards []Card `json:"cards"`
 }
 
 // Card represents a task item (list item in Markdown).

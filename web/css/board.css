@@ -1656,35 +1656,6 @@ select:focus {
     width: 100%;
 }
 
-.column.collapsed {
-    min-width: 44px;
-    width: 44px;
-    cursor: default;
-    align-self: stretch;
-    min-height: 120px;
-}
-
-.column.collapsed .column-header {
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    margin-bottom: 0;
-    padding: 4px 0;
-    gap: 2px;
-    height: 100%;
-}
-
-.column.collapsed h3 {
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
-    white-space: nowrap;
-    overflow: hidden;
-    flex-shrink: 1;
-    max-height: 240px;
-    text-align: right;
-    padding-bottom: 12px;
-}
 
 .column-drag-handle {
     flex-shrink: 0;
@@ -1706,43 +1677,6 @@ select:focus {
     cursor: grabbing;
 }
 
-.column.collapsed .column-drag-handle {
-    display: none;
-}
-
-.column-collapse-btn {
-    background: none;
-    border: none;
-    cursor: pointer;
-    color: var(--color-text-muted);
-    padding: 2px 4px;
-    border-radius: var(--radius-sm);
-    font-size: 0.65rem;
-    line-height: 1;
-    flex-shrink: 0;
-    opacity: 1;
-    transition: background 0.12s, color 0.12s;
-}
-
-.column-collapse-btn:hover {
-    background: var(--color-border);
-    color: var(--color-text-primary);
-    opacity: 1;
-}
-
-.column.collapsed .column-collapse-btn {
-    opacity: 0;
-    order: 10;
-    margin-top: auto;
-}
-
-.column.collapsed:hover .column-collapse-btn {
-    opacity: 1;
-}
-
-.column.collapsed .column-menu-btn {
-    display: none;
-}
 
 .column-card-count {
     font-size: var(--font-size-sm);
@@ -1750,15 +1684,6 @@ select:focus {
     color: var(--color-text-muted);
     flex-shrink: 0;
     line-height: 1.5;
-}
-
-.column.collapsed .column-card-count {
-    font-weight: 700;
-    color: var(--color-text-primary);
-    background: var(--color-border);
-    border-radius: 999px;
-    padding: 1px 6px;
-    order: -1;
 }
 
 .cards {
@@ -2221,8 +2146,30 @@ select:focus {
 
 .qe-actions {
     display: flex;
+    align-items: center;
     gap: 4px;
     margin-top: 2px;
+}
+
+.qe-actions-right {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.qe-delete-btn {
+    color: var(--color-danger);
+    border-color: var(--color-danger);
+    transition: opacity 0.2s;
+}
+
+.qe-delete-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.qe-delete-btn:not(:disabled):hover {
+    background: var(--color-danger-bg);
 }
 
 /* === CARD CONTEXT MENU === */
@@ -3520,27 +3467,11 @@ textarea.settings-input {
     background: var(--color-accent-muted, rgba(88, 166, 255, 0.08));
     border-radius: var(--radius-md);
 }
-.table-group-cards.collapsed .table-row.card,
-.table-group-cards.collapsed .table-row-add {
-    display: none;
-}
 .table-group-header {
     display: flex;
     align-items: center;
     gap: 8px;
     padding: 8px 12px 4px;
-    cursor: pointer;
-    user-select: none;
-}
-.table-group-header .group-collapse-icon {
-    font-size: 9px;
-    color: var(--color-text-muted);
-    width: 14px;
-    text-align: center;
-    transition: color 0.12s;
-}
-.table-group-header:hover .group-collapse-icon {
-    color: var(--color-text-secondary);
 }
 .table-group-header .group-name {
     font-size: var(--font-size-sm);
@@ -4242,6 +4173,12 @@ mark.cmd-palette-highlight {
     min-width: 0;
     width: auto;
 }
+.focus-mode .cards.focus-grid > .drop-indicator {
+    width: 3px;
+    height: auto;
+    align-self: stretch;
+    min-height: 60px;
+}
 .focus-mode .add-card-toggle {
     max-width: 280px;
 }
@@ -4350,11 +4287,20 @@ mark.cmd-palette-highlight {
     background: var(--color-accent);
     color: #fff;
     border-radius: 50%;
-    width: 22px;
-    height: 22px;
-    display: flex;
+    min-width: 24px;
+    min-height: 24px;
+    padding: 2px;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
+    font-size: 0.75rem;
+    line-height: 1;
+}
+
+.calendar-month-label {
+    font-size: 0.75rem;
+    color: var(--color-text-secondary);
+    margin-left: 4px;
 }
 
 .calendar-day-cards {

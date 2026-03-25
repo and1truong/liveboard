@@ -232,8 +232,7 @@
         </div>
         {{range $i, $column := .Board.Columns}}
         <div class="table-group-cards" {{if not $.ReadOnly}}draggable="true"{{end}} data-column="{{$column.Name}}">
-            <div class="table-group-header" onclick="if(event.target.closest('button'))return;var g=this.closest('.table-group-cards');g.classList.toggle('collapsed');this.querySelector('.group-collapse-icon').textContent=g.classList.contains('collapsed')?'\u25B6':'\u25BC'">
-                <span class="group-collapse-icon">&#9660;</span>
+            <div class="table-group-header">
                 <span class="group-name">{{$column.Name}}</span>
                 <span class="group-count">{{len $column.Cards}}</span>
             </div>
@@ -474,15 +473,13 @@
             <button class="focus-exit-btn" @click="$store.ui.focusedColumn = ''">Exit Focus <span class="focus-exit-key">Esc</span></button>
         </div>
         {{range $i, $column := .Board.Columns}}
-        <div class="column {{if $column.Collapsed}}collapsed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-column-name="{{$column.Name}}" x-show="!$store.ui.focusedColumn || $store.ui.focusedColumn === '{{$column.Name}}'" x-cloak>
+        <div class="column" {{if not $.ReadOnly}}draggable="true"{{end}} data-column-name="{{$column.Name}}" x-show="!$store.ui.focusedColumn || $store.ui.focusedColumn === '{{$column.Name}}'" x-cloak>
             <div class="column-header">
                 {{if not $.ReadOnly}}<span class="column-drag-handle">&#10303;</span>{{end}}
-                <button class="column-collapse-btn" hx-post="/board/{{$.BoardSlug}}/columns/collapse" hx-vals='{"col_index":"{{$i}}"}' hx-target="#board-content" hx-swap="innerHTML" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
                 <h3>{{$column.Name}}</h3>
                 <span class="column-card-count">{{len $column.Cards}}</span>
                 {{if not $.ReadOnly}}<button class="column-menu-btn" data-column-name="{{$column.Name}}" title="Column options">&#8943;</button>{{end}}
             </div>
-            {{if not $column.Collapsed}}
             <div class="cards" data-column="{{$column.Name}}" :class="{ 'focus-grid': $store.ui.focusedColumn }">
                 {{range $j, $card := .Cards}}
                 <div class="card {{if .Completed}}completed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
@@ -538,7 +535,6 @@
                 </form>
                 <button onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';w.querySelector('.btn-add-card').style.display='none';w.querySelector('input[name=title]').focus()" class="btn-add-card">+Add a card</button>
             </div>{{end}}
-            {{end}}
         </div>
         {{end}}
 
