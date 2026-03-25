@@ -144,7 +144,7 @@
           zone._dragLeaveTimer = null;
         }
         zone.classList.remove("drag-over");
-        var beforeCard = LB.getInsertionTarget(zone, e.clientY, draggingCard);
+        var beforeCard = LB.getInsertionTarget(zone, e.clientY, draggingCard, e.clientX);
         LB.showDropIndicator(zone, beforeCard);
       });
 
