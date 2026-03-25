@@ -100,7 +100,7 @@
     } // end !isReadOnly
 
     // Cards: draggable
-    document.querySelectorAll(".card[draggable]").forEach(function (card) {
+    document.querySelectorAll(".card[draggable]:not(.calendar-card-chip)").forEach(function (card) {
       if (card.dataset.dragWired) return;
       card.dataset.dragWired = "1";
 
