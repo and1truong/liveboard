@@ -21,6 +21,7 @@ type LayoutSettings struct {
 	FontFamily        string `json:"layout_font_family"`
 	KeyboardShortcuts bool   `json:"layout_keyboard_shortcuts"`
 	Version           string `json:"layout_version"`
+	ReadOnly          bool   `json:"layout_read_only"`
 }
 
 // layoutSettings extracts layout-relevant fields from AppSettings and injects the build version.
@@ -33,6 +34,7 @@ func (h *Handler) layoutSettings(s AppSettings) LayoutSettings {
 		FontFamily:        s.FontFamily,
 		KeyboardShortcuts: s.KeyboardShortcuts,
 		Version:           h.version,
+		ReadOnly:          h.ReadOnly,
 	}
 }
 
@@ -51,6 +53,7 @@ type AppSettings struct {
 	CardDisplayMode   string   `json:"card_display_mode"`
 	PinnedBoards      []string `json:"pinned_boards,omitempty"`
 	KeyboardShortcuts bool     `json:"keyboard_shortcuts"`
+	WeekStart         string   `json:"week_start,omitempty"`
 }
 
 var validColorThemes = map[string]bool{

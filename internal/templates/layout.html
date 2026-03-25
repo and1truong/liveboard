@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en" data-settings-theme="{{.Theme}}" data-settings-color-theme="{{.ColorTheme}}" data-settings-column-width="{{.ColumnWidth}}" data-settings-sidebar-position="{{.SidebarPosition}}" data-settings-font-family="{{.FontFamily}}" data-settings-keyboard-shortcuts="{{if .KeyboardShortcuts}}1{{else}}0{{end}}">
+<html lang="en" data-settings-theme="{{.Theme}}" data-settings-color-theme="{{.ColorTheme}}" data-settings-column-width="{{.ColumnWidth}}" data-settings-sidebar-position="{{.SidebarPosition}}" data-settings-font-family="{{.FontFamily}}" data-settings-keyboard-shortcuts="{{if .KeyboardShortcuts}}1{{else}}0{{end}}" {{if .ReadOnly}}data-readonly="1"{{end}}>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -60,6 +60,7 @@
     <script src="/static/js/liveboard.quick-edit.js?v={{.Version}}" defer></script>
     <script src="/static/js/liveboard.column-menu.js?v={{.Version}}" defer></script>
     <script src="/static/js/liveboard.board-settings.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.calendar.js?v={{.Version}}" defer></script>
     <script src="/static/js/liveboard.emoji-picker.js?v={{.Version}}" defer></script>
     <script src="/static/js/liveboard.global-settings.js?v={{.Version}}" defer></script>
     <script src="/static/js/alpine.min.js?v={{.Version}}" defer></script>
@@ -383,8 +384,9 @@
     </div>
 
     <!-- Column Menu (Alpine) -->
-    <div x-data="columnMenu()" @keydown.escape.window="if(open) hide(); if(assistantOpen) closeAssistant()">
+    <div x-data="columnMenu()" @keydown.escape.window="if(open) hide(); if(assistantOpen) closeAssistant(); if($store.ui.focusedColumn) $store.ui.focusedColumn = ''">
         <div id="alpine-column-menu" class="card-context-menu" :class="{ visible: open }" :style="'left:' + left + 'px;top:' + top + 'px'" role="menu" x-show="open" @click.outside="hide()" x-cloak>
+            <button class="ctx-item" role="menuitem" @click.stop="focusColumn()"><span class="ctx-icon">&#9906;</span> Focus</button>
             <button class="ctx-item" role="menuitem" @click.stop="editColumn()"><span class="ctx-icon">&#9999;&#65039;</span> Edit</button>
             <button class="ctx-item ctx-danger" role="menuitem" @click.stop="deleteColumn()"><span class="ctx-icon">&#128465;</span> Delete</button>
             <template x-if="colIdx >= 0">

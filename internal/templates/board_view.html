@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-card-display-mode="{{.Settings.CardDisplayMode}}" data-bs-card-display-mode="{{.BSView.CardDisplayMode}}" data-global-card-display-mode="{{.GlobalSettings.CardDisplayMode}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" data-board-tag-colors="{{.TagColorsJSON}}">
+<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-card-display-mode="{{.Settings.CardDisplayMode}}" data-bs-card-display-mode="{{.BSView.CardDisplayMode}}" data-global-card-display-mode="{{.GlobalSettings.CardDisplayMode}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" data-board-tag-colors="{{.TagColorsJSON}}" data-week-start="{{.Settings.WeekStart}}" data-bs-week-start="{{.BSView.WeekStart}}">
     <div id="board-content" hx-get="/board/{{.BoardSlug}}/content" hx-trigger="sse:board-update" hx-swap="innerHTML">
     {{template "board-content" .}}
     </div>
@@ -16,7 +16,7 @@
     <div class="board-topbar">
         <div class="board-topbar-left">
             <h2 class="board-title" title="Double-click to edit">{{.Board.Name}}</h2>
-            <button class="board-settings-btn" title="Board settings">&#9881;</button>
+            {{if not .ReadOnly}}<button class="board-settings-btn" title="Board settings">&#9881;</button>{{end}}
             {{if .Board.Tags}}
             <div class="tags">
                 {{range .Board.Tags}}
@@ -30,7 +30,7 @@
         {{end}}
     </div>
 
-    <div class="board-settings-backdrop" x-data="boardSettings()" x-show="open" @click.self="close()" style="display:none" x-cloak>
+    {{if not .ReadOnly}}<div class="board-settings-backdrop" x-data="boardSettings()" x-show="open" @click.self="close()" style="display:none" x-cloak>
     <div class="board-settings-panel">
         <div class="board-settings-panel-header">
             <span>Board Settings</span>
@@ -104,6 +104,28 @@
                             <label :class="{ active: viewMode === 'table' }">
                                 <input type="radio" name="bs-viewMode" value="table" x-model="viewMode">
                                 <span>Table</span>
+                            </label>
+                            <label :class="{ active: viewMode === 'calendar' }">
+                                <input type="radio" name="bs-viewMode" value="calendar" x-model="viewMode">
+                                <span>Calendar</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-field" x-show="viewMode === 'calendar'" x-cloak>
+                    <div>
+                        <div class="settings-label">Week starts on</div>
+                        <div class="settings-label-hint">First day of the week</div>
+                    </div>
+                    <div class="settings-control">
+                        <div class="settings-segmented">
+                            <label :class="{ active: weekStart === 'sunday' }">
+                                <input type="radio" name="bs-weekStart" value="sunday" x-model="weekStart">
+                                <span>Sunday</span>
+                            </label>
+                            <label :class="{ active: weekStart === 'monday' }">
+                                <input type="radio" name="bs-weekStart" value="monday" x-model="weekStart">
+                                <span>Monday</span>
                             </label>
                         </div>
                     </div>
@@ -196,7 +218,7 @@
             </div>
         </div>
     </div>
-    </div>
+    </div>{{end}}
 
     {{if eq .Settings.ViewMode "table"}}
     <div class="table-container">
@@ -209,15 +231,15 @@
             <div class="table-header-cell">Tags</div>
         </div>
         {{range $i, $column := .Board.Columns}}
-        <div class="table-group-cards" draggable="true" data-column="{{$column.Name}}">
+        <div class="table-group-cards" {{if not $.ReadOnly}}draggable="true"{{end}} data-column="{{$column.Name}}">
             <div class="table-group-header" onclick="if(event.target.closest('button'))return;var g=this.closest('.table-group-cards');g.classList.toggle('collapsed');this.querySelector('.group-collapse-icon').textContent=g.classList.contains('collapsed')?'\u25B6':'\u25BC'">
                 <span class="group-collapse-icon">&#9660;</span>
                 <span class="group-name">{{$column.Name}}</span>
                 <span class="group-count">{{len $column.Cards}}</span>
             </div>
             {{range $j, $card := .Cards}}
-            <div class="table-row card {{if .Completed}}completed{{end}}" draggable="true" data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
-                {{range $.Board.Columns}}
+            <div class="table-row card {{if .Completed}}completed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
+                {{if not $.ReadOnly}}{{range $.Board.Columns}}
                 {{if ne .Name $column.Name}}
                 <button class="move-trigger"
                     data-target="{{.Name}}"
@@ -227,8 +249,8 @@
                     hx-swap="innerHTML"></button>
                 {{end}}
                 {{end}}
-                <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>
-                <div class="table-cell table-cell-status">{{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}</div>
+                <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>{{end}}
+                <div class="table-cell table-cell-status">{{if and $.Settings.ShowCheckbox (not $.ReadOnly)}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else if not $.ReadOnly}}<span class="card-drag-handle">::</span>{{end}}</div>
                 <div class="table-cell table-cell-card">
                     <div class="table-card-title"><span>{{.Title}}</span></div>
                 </div>
@@ -238,7 +260,7 @@
                 <div class="table-cell table-cell-tags">{{range .Tags}}<span class="tag" data-tag="{{.}}">{{.}}</span>{{end}}</div>
             </div>
             {{end}}
-            <div class="table-row table-row-add">
+            {{if not $.ReadOnly}}<div class="table-row table-row-add">
                 <div class="table-cell table-cell-status"></div>
                 <div class="table-cell table-cell-card add-card-toggle">
                     <form hx-post="/board/{{$.BoardSlug}}/cards" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none" onsubmit="var w=this.closest('.add-card-toggle');requestAnimationFrame(function(){w.querySelector('input[name=title]').value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''})">
@@ -247,33 +269,224 @@
                     </form>
                     <a href="javascript:void(0)" class="table-add-card-link" onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';this.style.display='none';w.querySelector('input[name=title]').focus()">+ Add new...</a>
                 </div>
-            </div>
+            </div>{{end}}
         </div>
         {{end}}
-        <div class="table-add-column add-card-toggle" style="margin-top: 8px">
+        {{if not .ReadOnly}}<div class="table-add-column add-card-toggle" style="margin-top: 8px">
             <form hx-post="/board/{{.BoardSlug}}/columns" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none">
                 <input type="text" name="column_name" placeholder="List name" required
                        onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''}">
             </form>
             <a href="javascript:void(0)" class="table-add-card-link" onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';this.style.display='none';w.querySelector('input[name=column_name]').focus()">+ Add list</a>
+        </div>{{end}}
+    </div>
+    {{else if eq .Settings.ViewMode "calendar"}}
+    {{/* Hidden card data for Alpine calendar component */}}
+    <div class="calendar-card-data-container" style="display:none">
+        {{range .AllCards}}
+        <div class="calendar-card-data"
+            data-col-idx="{{.ColIdx}}"
+            data-card-idx="{{.CardIdx}}"
+            data-card-title="{{.Title}}"
+            data-card-body="{{.Body}}"
+            data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}"
+            data-card-assignee="{{.Assignee}}"
+            data-card-priority="{{.Priority}}"
+            data-card-due="{{.Due}}"
+            data-card-completed="{{.Completed}}"
+            data-card-column="{{.ColumnName}}"></div>
+        {{end}}
+    </div>
+    <div class="calendar-container" x-data="calendarView()" x-init="initCards()">
+        <div class="calendar-toolbar">
+            <div class="calendar-nav">
+                <button @click="prev()" title="Previous">&larr;</button>
+                <span class="calendar-nav-title" x-text="title"></span>
+                <button @click="next()" title="Next">&rarr;</button>
+                <button @click="goToday()">Today</button>
+            </div>
+            <div class="calendar-sub-view settings-segmented">
+                <label :class="{ active: subView === 'month' }">
+                    <input type="radio" name="cal-sub-view" value="month" x-model="subView">
+                    <span>Month</span>
+                </label>
+                <label :class="{ active: subView === 'week' }">
+                    <input type="radio" name="cal-sub-view" value="week" x-model="subView">
+                    <span>Week</span>
+                </label>
+                <label :class="{ active: subView === 'day' }">
+                    <input type="radio" name="cal-sub-view" value="day" x-model="subView">
+                    <span>Day</span>
+                </label>
+            </div>
+        </div>
+
+        {{/* Month View */}}
+        <template x-if="subView === 'month'">
+            <div>
+                <div class="calendar-weekday-header">
+                    <template x-for="wd in weekdayLabels" :key="wd">
+                        <div x-text="wd"></div>
+                    </template>
+                </div>
+                <div class="calendar-grid month-grid">
+                    <template x-for="(day, idx) in monthDays" :key="idx">
+                        <div class="calendar-day"
+                            :class="{ 'today': day.isToday, 'other-month': day.isOtherMonth }"
+                            @dragover.prevent="$el.classList.add('drag-over')"
+                            @dragleave="$el.classList.remove('drag-over')"
+                            @drop="handleDrop($event, day.dateStr); $el.classList.remove('drag-over')"
+                            @click="if(day.date) selectDay(day.dateStr)">
+                            <span class="calendar-day-number" :class="{ 'today': day.isToday }" x-text="day.date"></span>
+                            <div class="calendar-day-cards">
+                                <template x-for="card in cardsForDate(day.dateStr)" :key="card.colIdx + '-' + card.cardIdx">
+                                    <div class="calendar-card-chip card" :class="{ completed: card.completed }"
+                                        draggable="true"
+                                        @dragstart="handleDragStart($event, card)"
+                                        @click.stop="openCardModal(card)"
+                                        :data-col-idx="card.colIdx" :data-card-idx="card.cardIdx"
+                                        :data-card-title="card.title" :data-card-body="card.body"
+                                        :data-card-tags="card.tags" :data-card-assignee="card.assignee"
+                                        :data-card-priority="card.priority" :data-card-due="card.due"
+                                        :data-card-completed="card.completed" :data-card-column="card.columnName">
+                                        <template x-if="card.priority">
+                                            <span class="priority-dot" :class="'priority-' + card.priority"></span>
+                                        </template>
+                                        <span class="chip-title" x-text="card.title"></span>
+                                        <template x-if="card.assignee">
+                                            <span class="chip-assignee" x-text="card.assignee"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        {{/* Week View */}}
+        <template x-if="subView === 'week'">
+            <div>
+                <div class="calendar-weekday-header">
+                    <template x-for="wd in weekdayLabels" :key="wd">
+                        <div x-text="wd"></div>
+                    </template>
+                </div>
+                <div class="calendar-grid week-grid">
+                    <template x-for="(day, idx) in weekDays" :key="idx">
+                        <div class="calendar-day"
+                            :class="{ 'today': day.isToday }"
+                            @dragover.prevent="$el.classList.add('drag-over')"
+                            @dragleave="$el.classList.remove('drag-over')"
+                            @drop="handleDrop($event, day.dateStr); $el.classList.remove('drag-over')"
+                            @click="selectDay(day.dateStr)">
+                            <span class="calendar-day-number" :class="{ 'today': day.isToday }" x-text="day.date + ' ' + day.monthLabel"></span>
+                            <div class="calendar-day-cards">
+                                <template x-for="card in cardsForDate(day.dateStr)" :key="card.colIdx + '-' + card.cardIdx">
+                                    <div class="calendar-card-chip card" :class="{ completed: card.completed }"
+                                        draggable="true"
+                                        @dragstart="handleDragStart($event, card)"
+                                        @click.stop="openCardModal(card)"
+                                        :data-col-idx="card.colIdx" :data-card-idx="card.cardIdx"
+                                        :data-card-title="card.title" :data-card-body="card.body"
+                                        :data-card-tags="card.tags" :data-card-assignee="card.assignee"
+                                        :data-card-priority="card.priority" :data-card-due="card.due"
+                                        :data-card-completed="card.completed" :data-card-column="card.columnName">
+                                        <template x-if="card.priority">
+                                            <span class="priority-dot" :class="'priority-' + card.priority"></span>
+                                        </template>
+                                        <span class="chip-title" x-text="card.title"></span>
+                                        <template x-if="card.assignee">
+                                            <span class="chip-assignee" x-text="card.assignee"></span>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </template>
+
+        {{/* Day View */}}
+        <template x-if="subView === 'day'">
+            <div class="calendar-day-view">
+                <template x-for="card in cardsForDate(dayDate.dateStr)" :key="card.colIdx + '-' + card.cardIdx">
+                    <div class="calendar-day-card card" :class="{ completed: card.completed }"
+                        @click="openCardModal(card)"
+                        :data-col-idx="card.colIdx" :data-card-idx="card.cardIdx"
+                        :data-card-title="card.title" :data-card-body="card.body"
+                        :data-card-tags="card.tags" :data-card-assignee="card.assignee"
+                        :data-card-priority="card.priority" :data-card-due="card.due"
+                        :data-card-completed="card.completed" :data-card-column="card.columnName">
+                        <div class="day-card-title" x-text="card.title"></div>
+                        <div class="day-card-meta">
+                            <template x-if="card.assignee"><span x-text="'&#128100; ' + card.assignee"></span></template>
+                            <template x-if="card.priority"><span x-text="'&#9889; ' + card.priority"></span></template>
+                            <template x-if="card.columnName"><span x-text="'&#128194; ' + card.columnName"></span></template>
+                        </div>
+                        <template x-if="card.body">
+                            <div class="day-card-body" x-text="card.body"></div>
+                        </template>
+                    </div>
+                </template>
+                <template x-if="cardsForDate(dayDate.dateStr).length === 0">
+                    <div style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No cards scheduled for this day.</div>
+                </template>
+            </div>
+        </template>
+
+        {{/* Unscheduled Cards */}}
+        <div class="calendar-unscheduled" x-show="unscheduledCards.length > 0">
+            <div class="calendar-unscheduled-header" @click="$refs.unschedCards.style.display = $refs.unschedCards.style.display === 'none' ? '' : 'none'">
+                <span>&#9660;</span>
+                <span>Unscheduled</span>
+                <span x-text="'(' + unscheduledCards.length + ')'"></span>
+            </div>
+            <div class="calendar-unscheduled-cards" x-ref="unschedCards">
+                <template x-for="card in unscheduledCards" :key="card.colIdx + '-' + card.cardIdx">
+                    <div class="calendar-card-chip card" :class="{ completed: card.completed }"
+                        draggable="true"
+                        @dragstart="handleDragStart($event, card)"
+                        @click.stop="openCardModal(card)"
+                        :data-col-idx="card.colIdx" :data-card-idx="card.cardIdx"
+                        :data-card-title="card.title" :data-card-body="card.body"
+                        :data-card-tags="card.tags" :data-card-assignee="card.assignee"
+                        :data-card-priority="card.priority" :data-card-due="card.due"
+                        :data-card-completed="card.completed" :data-card-column="card.columnName">
+                        <template x-if="card.priority">
+                            <span class="priority-dot" :class="'priority-' + card.priority"></span>
+                        </template>
+                        <span class="chip-title" x-text="card.title"></span>
+                        <template x-if="card.columnName">
+                            <span class="chip-assignee" x-text="card.columnName"></span>
+                        </template>
+                    </div>
+                </template>
+            </div>
         </div>
     </div>
     {{else}}
-    <div class="columns-container">
+    <div class="columns-container" :class="{ 'focus-mode': $store.ui.focusedColumn }">
+        <div class="focus-exit-bar" x-show="$store.ui.focusedColumn" x-cloak>
+            <span class="focus-exit-label" x-text="'Focusing: ' + $store.ui.focusedColumn"></span>
+            <button class="focus-exit-btn" @click="$store.ui.focusedColumn = ''">Exit Focus <span class="focus-exit-key">Esc</span></button>
+        </div>
         {{range $i, $column := .Board.Columns}}
-        <div class="column {{if $column.Collapsed}}collapsed{{end}}" draggable="true" data-column-name="{{$column.Name}}">
+        <div class="column {{if $column.Collapsed}}collapsed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-column-name="{{$column.Name}}" x-show="!$store.ui.focusedColumn || $store.ui.focusedColumn === '{{$column.Name}}'" x-cloak>
             <div class="column-header">
-                <span class="column-drag-handle">&#10303;</span>
+                {{if not $.ReadOnly}}<span class="column-drag-handle">&#10303;</span>{{end}}
                 <button class="column-collapse-btn" hx-post="/board/{{$.BoardSlug}}/columns/collapse" hx-vals='{"col_index":"{{$i}}"}' hx-target="#board-content" hx-swap="innerHTML" title="{{if $column.Collapsed}}Expand column{{else}}Collapse column{{end}}">{{if $column.Collapsed}}&#9654;{{else}}&#9660;{{end}}</button>
                 <h3>{{$column.Name}}</h3>
                 <span class="column-card-count">{{len $column.Cards}}</span>
-                <button class="column-menu-btn" data-column-name="{{$column.Name}}" title="Column options">&#8943;</button>
+                {{if not $.ReadOnly}}<button class="column-menu-btn" data-column-name="{{$column.Name}}" title="Column options">&#8943;</button>{{end}}
             </div>
             {{if not $column.Collapsed}}
-            <div class="cards" data-column="{{$column.Name}}">
+            <div class="cards" data-column="{{$column.Name}}" :class="{ 'focus-grid': $store.ui.focusedColumn }">
                 {{range $j, $card := .Cards}}
-                <div class="card {{if .Completed}}completed{{end}}" draggable="true" data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
-                    {{range $.Board.Columns}}
+                <div class="card {{if .Completed}}completed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
+                    {{if not $.ReadOnly}}{{range $.Board.Columns}}
                     {{if ne .Name $column.Name}}
                     <button class="move-trigger"
                         data-target="{{.Name}}"
@@ -283,9 +496,9 @@
                         hx-swap="innerHTML"></button>
                     {{end}}
                     {{end}}
-                    <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>
+                    <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>{{end}}
                     <div class="card-layout">
-                        {{if $.Settings.ShowCheckbox}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else}}<span class="card-drag-handle">::</span>{{end}}
+                        {{if and $.Settings.ShowCheckbox (not $.ReadOnly)}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else if not $.ReadOnly}}<span class="card-drag-handle">::</span>{{end}}
                         <div class="card-content">
                             <h4 class="card-title">{{.Title}}</h4>
 
@@ -318,25 +531,25 @@
                 {{end}}
             </div>
 
-            <div class="add-card-toggle">
+            {{if not $.ReadOnly}}<div class="add-card-toggle">
                 <form hx-post="/board/{{$.BoardSlug}}/cards" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none" onsubmit="var w=this.closest('.add-card-toggle');requestAnimationFrame(function(){w.querySelector('input[name=title]').value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''})">
                     <input type="hidden" name="column" value="{{$column.Name}}">
                     <input type="text" name="title" placeholder="Enter a title..." required onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.btn-add-card').style.display=''}">
                 </form>
                 <button onclick="var w=this.closest('.add-card-toggle');w.querySelector('.add-card-form').style.display='';w.querySelector('.btn-add-card').style.display='none';w.querySelector('input[name=title]').focus()" class="btn-add-card">+Add a card</button>
-            </div>
+            </div>{{end}}
             {{end}}
         </div>
         {{end}}
 
-        <div class="add-column-bar" onclick="var f=this.querySelector('.add-column-bar-form'),open=f.style.display==='flex';f.style.display=open?'none':'flex';this.classList.toggle('expanded',!open);if(!open)f.querySelector('input').focus()">
+        {{if not .ReadOnly}}<div class="add-column-bar" onclick="var f=this.querySelector('.add-column-bar-form'),open=f.style.display==='flex';f.style.display=open?'none':'flex';this.classList.toggle('expanded',!open);if(!open)f.querySelector('input').focus()">
             <span class="add-column-bar-label">+ Add list</span>
             <form hx-post="/board/{{.BoardSlug}}/columns" hx-target="#board-content" hx-swap="innerHTML" class="add-column-bar-form" style="display:none" onclick="event.stopPropagation()">
                 <input type="text" name="column_name" placeholder="List name" required
                        onkeydown="if(event.key==='Escape'){this.value='';var p=this.closest('.add-column-bar');p.querySelector('.add-column-bar-form').style.display='none';p.classList.remove('expanded')}">
                 <button type="submit" class="btn-small">Add</button>
             </form>
-        </div>
+        </div>{{end}}
     </div>
     {{end}}
     {{end}}

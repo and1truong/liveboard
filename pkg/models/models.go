@@ -11,6 +11,7 @@ type BoardSettings struct {
 	ExpandColumns   *bool   `yaml:"expand-columns,omitempty" json:"expand_columns,omitempty"`
 	ViewMode        *string `yaml:"view-mode,omitempty" json:"view_mode,omitempty"`
 	CardDisplayMode *string `yaml:"card-display-mode,omitempty" json:"card_display_mode,omitempty"`
+	WeekStart       *string `yaml:"week-start,omitempty" json:"week_start,omitempty"`
 }
 
 // Board represents a Kanban board backed by a single Markdown file.
