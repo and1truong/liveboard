@@ -1,4 +1,5 @@
 ---
+version: 3
 name: Techniques & Patterns
 description: Reusable prompt engineering patterns and research notes
 icon: "\U0001F9E0"
@@ -8,7 +9,7 @@ tags:
 list-collapse:
     - false
     - false
-    - true
+    - false
 settings:
     view-mode: board
     card-display-mode: full
@@ -16,49 +17,49 @@ settings:
 
 ## To Investigate
 
-- [ ] Constitutional AI self-critique chains #alignment
-  tags: alignment, safety
-  priority: high
+- [ ] Constitutional AI self-critique chains
+  tags: alignment, alignment, safety
   assignee: alex
+  priority: high
   Can we use critique-revision loops to reduce hallucination in our RAG prompts? Paper suggests 2-3 rounds optimal.
 
-- [ ] Prompt caching strategies for long system prompts #optimization
-  tags: optimization, cost
-  priority: high
+- [ ] Prompt caching strategies for long system prompts
+  tags: optimization, optimization, cost
   assignee: marco
+  priority: high
   Our system prompts average 2k tokens. Caching could cut costs 30-40% on high-volume endpoints.
 
-- [ ] Multi-turn vs single-turn for complex extraction #extraction
-  tags: extraction, architecture
-  priority: medium
+- [ ] Multi-turn vs single-turn for complex extraction
+  tags: extraction, extraction, architecture
   assignee: dana
+  priority: medium
   Invoice extractor uses single-turn. Hypothesis: multi-turn with verification step catches more edge cases but doubles latency.
 
-- [ ] Structured output with tool_use vs JSON mode #architecture
-  tags: architecture, reliability
-  priority: medium
+- [ ] Structured output with tool_use vs JSON mode
+  tags: architecture, architecture, reliability
   assignee: priya
+  priority: medium
   Compare reliability of tool_use-based structured output vs asking for JSON in prompt. Track parse failure rates.
 
 ## Active Research
 
-- [ ] Few-shot example selection — dynamic vs static #few-shot
-  tags: few-shot, retrieval
-  priority: high
+- [ ] Few-shot example selection — dynamic vs static
+  tags: few-shot, few-shot, retrieval
   assignee: alex
+  priority: high
   due: 2026-03-28
   Building retrieval-based example selector. Embed user query, find 3 nearest examples from bank. Early results: +8% on classification tasks vs static few-shot.
 
-- [ ] Chain-of-thought prompting for multi-step reasoning #reasoning
-  tags: reasoning, cot
-  priority: medium
+- [ ] Chain-of-thought prompting for multi-step reasoning
+  tags: reasoning, reasoning, cot
   assignee: marco
+  priority: medium
   Testing explicit CoT vs letting model reason implicitly. CoT adds ~200 tokens but improves accuracy 12% on complex SQL generation.
 
-- [ ] Prompt compression — removing filler without quality loss #optimization
-  tags: optimization, cost
-  priority: medium
+- [ ] Prompt compression — removing filler without quality loss
+  tags: optimization, optimization, cost
   assignee: dana
+  priority: medium
   Systematically removing polite filler, redundant instructions. Goal: 30% token reduction with <1% quality drop. At 22% reduction so far with no measurable quality change.
 
 ## Documented
