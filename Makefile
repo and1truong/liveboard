@@ -69,11 +69,11 @@ release-desktop: bundle-desktop-release
 
 # Build CSS with Tailwind
 css:
-	tailwindcss -i web/css/input.css -o web/css/board.css --minify
+	tailwindcss -i web/css/input.css -o web/css/liveboard.css --minify
 
 # Watch CSS for changes (dev mode)
 css-watch:
-	tailwindcss -i web/css/input.css -o web/css/board.css --watch
+	tailwindcss -i web/css/input.css -o web/css/liveboard.css --watch
 
 # Kill any process occupying the dev server port
 release-port:
@@ -85,7 +85,7 @@ lint:
 
 # Start dev server with live reload (uses air if available) + Tailwind watcher
 dev: release-port
-	@tailwindcss -i web/css/input.css -o web/css/board.css --watch & \
+	@tailwindcss -i web/css/input.css -o web/css/liveboard.css --watch & \
 	CSS_PID=$$!; \
 	trap "kill $$CSS_PID 2>/dev/null" EXIT; \
 	if command -v air >/dev/null 2>&1; then \

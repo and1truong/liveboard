@@ -964,7 +964,7 @@ func TestStaticCacheHeaders(t *testing.T) {
 		ts := httptest.NewServer(srv.Router())
 		defer ts.Close()
 
-		resp, err := http.Get(ts.URL + "/static/css/board.css")
+		resp, err := http.Get(ts.URL + "/static/css/liveboard.css")
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -981,7 +981,7 @@ func TestStaticCacheHeaders(t *testing.T) {
 		ts := httptest.NewServer(srv.Router())
 		defer ts.Close()
 
-		resp, err := http.Get(ts.URL + "/static/css/board.css")
+		resp, err := http.Get(ts.URL + "/static/css/liveboard.css")
 		if err != nil {
 			t.Fatal(err)
 		}

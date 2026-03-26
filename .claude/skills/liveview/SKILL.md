@@ -24,7 +24,7 @@ internal/
   api/
     server.go        — chi router, route registration, LiveView handler mounting
 web/
-  css/board.css      — All styles (CSS variables for theming)
+  css/liveboard.css      — All styles (CSS variables for theming)
   js/drag.js         — Client-side JS (drag-and-drop, context menus, modals, inline editing)
 ```
 
