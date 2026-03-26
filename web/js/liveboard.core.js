@@ -74,6 +74,13 @@ window.LB = window.LB || {};
     });
   });
 
+  // Clear focus mode on boosted navigation (board switch).
+  document.body.addEventListener("htmx:pushedIntoHistory", function () {
+    if (typeof Alpine !== 'undefined' && Alpine.store('ui')) {
+      Alpine.store('ui').focusedColumn = '';
+    }
+  });
+
   // After any swap, sync the board version from the hidden input and refresh store.
   document.body.addEventListener("htmx:afterSwap", function (e) {
     _conflictRetrying = false;
