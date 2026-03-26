@@ -52,12 +52,20 @@ type deleteCardInput struct {
 }
 
 func (m *Server) registerCardTools() {
+	m.registerCardCRUDTools()
+	m.registerCardActionTools()
+}
+
+func (m *Server) registerCardCRUDTools() {
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "add_card",
 		Description: "Add a new card to a column on a board",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args addCardInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		card, err := m.eng.AddCard(path, args.Column, args.Title, args.Prepend)
 		if err != nil {
 			return errResult(err)
@@ -70,7 +78,10 @@ func (m *Server) registerCardTools() {
 		Description: "Show full details of a card including body and metadata",
 		Annotations: &mcpsdk.ToolAnnotations{ReadOnlyHint: true},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args showCardInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		card, colName, err := m.eng.ShowCard(path, args.ColumnIndex, args.CardIndex)
 		if err != nil {
 			return errResult(err)
@@ -86,8 +97,11 @@ func (m *Server) registerCardTools() {
 		Description: "Edit a card's title, body, tags, priority, due date, or assignee. Only provided fields are updated.",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args editCardInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
-		err := m.eng.EditCard(path, args.ColumnIndex, args.CardIndex,
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
+		err = m.eng.EditCard(path, args.ColumnIndex, args.CardIndex,
 			args.Title, args.Body, args.Tags, args.Priority, args.Due, args.Assignee)
 		if err != nil {
 			return errResult(err)
@@ -96,11 +110,31 @@ func (m *Server) registerCardTools() {
 	})
 
 	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
+		Name:        "delete_card",
+		Description: "Delete a card from a board (irreversible)",
+		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(true)},
+	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args deleteCardInput) (*mcpsdk.CallToolResult, any, error) {
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
+		if err := m.eng.DeleteCard(path, args.ColumnIndex, args.CardIndex); err != nil {
+			return errResult(err)
+		}
+		return textResult("Card deleted")
+	})
+}
+
+func (m *Server) registerCardActionTools() {
+	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
 		Name:        "move_card",
 		Description: "Move a card to a different column",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args moveCardInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		if err := m.eng.MoveCard(path, args.ColumnIndex, args.CardIndex, args.TargetColumn); err != nil {
 			return errResult(err)
 		}
@@ -112,22 +146,13 @@ func (m *Server) registerCardTools() {
 		Description: "Toggle a card's completion status",
 		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(false)},
 	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args completeCardInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
+		path, err := m.ws.BoardPath(args.Board)
+		if err != nil {
+			return errResult(err)
+		}
 		if err := m.eng.CompleteCard(path, args.ColumnIndex, args.CardIndex); err != nil {
 			return errResult(err)
 		}
 		return textResult("Card completion toggled")
-	})
-
-	mcpsdk.AddTool(m.server, &mcpsdk.Tool{
-		Name:        "delete_card",
-		Description: "Delete a card from a board (irreversible)",
-		Annotations: &mcpsdk.ToolAnnotations{DestructiveHint: boolPtr(true)},
-	}, func(_ context.Context, _ *mcpsdk.CallToolRequest, args deleteCardInput) (*mcpsdk.CallToolResult, any, error) {
-		path := m.ws.BoardPath(args.Board)
-		if err := m.eng.DeleteCard(path, args.ColumnIndex, args.CardIndex); err != nil {
-			return errResult(err)
-		}
-		return textResult("Card deleted")
 	})
 }

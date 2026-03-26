@@ -16,25 +16,23 @@ func Render(board *models.Board) (string, error) {
 
 	// Write YAML frontmatter.
 	fm := struct {
-		Version      int                  `yaml:"version"`
-		Name         string               `yaml:"name"`
-		Description  string               `yaml:"description,omitempty"`
-		Icon         string               `yaml:"icon,omitempty"`
-		Tags         []string             `yaml:"tags,omitempty"`
-		TagColors    map[string]string    `yaml:"tag-colors,omitempty"`
-		Members      []string             `yaml:"members,omitempty"`
-		ListCollapse []bool               `yaml:"list-collapse,omitempty"`
-		Settings     models.BoardSettings `yaml:"settings,omitempty"`
+		Version     int                  `yaml:"version"`
+		Name        string               `yaml:"name"`
+		Description string               `yaml:"description,omitempty"`
+		Icon        string               `yaml:"icon,omitempty"`
+		Tags        []string             `yaml:"tags,omitempty"`
+		TagColors   map[string]string    `yaml:"tag-colors,omitempty"`
+		Members     []string             `yaml:"members,omitempty"`
+		Settings    models.BoardSettings `yaml:"settings,omitempty"`
 	}{
-		Version:      board.Version,
-		Name:         board.Name,
-		Description:  board.Description,
-		Icon:         board.Icon,
-		Tags:         board.Tags,
-		TagColors:    board.TagColors,
-		Members:      board.Members,
-		ListCollapse: board.ListCollapse,
-		Settings:     board.Settings,
+		Version:     board.Version,
+		Name:        board.Name,
+		Description: board.Description,
+		Icon:        board.Icon,
+		Tags:        board.Tags,
+		TagColors:   board.TagColors,
+		Members:     board.Members,
+		Settings:    board.Settings,
 	}
 	fmBytes, err := yaml.Marshal(fm)
 	if err != nil {

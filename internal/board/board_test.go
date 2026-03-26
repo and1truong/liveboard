@@ -409,44 +409,6 @@ func TestMoveColumnNotFound(t *testing.T) {
 	}
 }
 
-func TestToggleColumnCollapse(t *testing.T) {
-	path, eng := setupTestBoard(t)
-
-	// Toggle on
-	if err := eng.ToggleColumnCollapse(path, 0); err != nil {
-		t.Fatal(err)
-	}
-
-	board, err := eng.LoadBoard(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(board.ListCollapse) < 1 || !board.ListCollapse[0] {
-		t.Error("expected column 0 to be collapsed")
-	}
-
-	// Toggle off
-	if err = eng.ToggleColumnCollapse(path, 0); err != nil {
-		t.Fatal(err)
-	}
-	board, err = eng.LoadBoard(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if board.ListCollapse[0] {
-		t.Error("expected column 0 to be uncollapsed")
-	}
-}
-
-func TestToggleColumnCollapseInvalidIndex(t *testing.T) {
-	path, eng := setupTestBoard(t)
-
-	err := eng.ToggleColumnCollapse(path, 99)
-	if err == nil {
-		t.Fatal("expected error for invalid index")
-	}
-}
-
 func TestUpdateBoardMeta(t *testing.T) {
 	path, eng := setupTestBoard(t)
 

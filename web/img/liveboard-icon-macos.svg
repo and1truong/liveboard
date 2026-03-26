@@ -1,128 +1,98 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <!-- LiveBoard macOS App Icon — 1024×1024 -->
-  <!-- Full-bleed square canvas; macOS applies squircle mask -->
-  <!-- ~12% padding for mask safety -->
+  <!-- Full-bleed square; macOS applies squircle mask -->
+  <!-- Bold 3-column kanban, optimized for dock readability -->
 
   <defs>
-    <!-- Background gradient: Google blue tones, top-center light source -->
-    <linearGradient id="bgGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%" stop-color="#5B9BF7"/>
-      <stop offset="100%" stop-color="#3367D6"/>
+    <linearGradient id="bg" x1="0.5" y1="0" x2="0.5" y2="1">
+      <stop offset="0%" stop-color="#F8F9FA"/>
+      <stop offset="100%" stop-color="#E8EAED"/>
     </linearGradient>
 
-    <!-- Board surface: warm white with subtle depth -->
-    <linearGradient id="boardGrad" x1="0.5" y1="0" x2="0.5" y2="1">
-      <stop offset="0%" stop-color="#FFFFFF"/>
-      <stop offset="100%" stop-color="#F1F3F4"/>
-    </linearGradient>
-
-    <!-- Board shadow: top-center light -->
-    <filter id="boardShadow" x="-8%" y="-5%" width="116%" height="125%">
-      <feDropShadow dx="0" dy="12" stdDeviation="20" flood-color="#1A3A6E" flood-opacity="0.35"/>
+    <!-- Column shadows -->
+    <filter id="colShadow" x="-10%" y="-5%" width="120%" height="115%">
+      <feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity="0.12"/>
     </filter>
 
-    <!-- Card shadow: subtle lift -->
-    <filter id="cardShadow" x="-10%" y="-10%" width="130%" height="140%">
-      <feDropShadow dx="0" dy="3" stdDeviation="4" flood-color="#1A3A6E" flood-opacity="0.15"/>
+    <!-- Card shadows -->
+    <filter id="cardShadow" x="-15%" y="-10%" width="130%" height="130%">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#000" flood-opacity="0.10"/>
     </filter>
   </defs>
 
-  <!-- ── Background ── -->
-  <rect width="1024" height="1024" fill="url(#bgGrad)"/>
+  <!-- Background: warm light gray -->
+  <rect width="1024" height="1024" fill="url(#bg)"/>
 
-  <!-- Inner highlight (top-center light source) -->
-  <rect x="2" y="2" width="1020" height="1020" rx="2" fill="none" stroke="white" stroke-opacity="0.15" stroke-width="3"/>
+  <!-- Subtle top edge highlight -->
+  <rect x="0" y="0" width="1024" height="2" fill="white" opacity="0.8"/>
 
-  <!-- ── Board container ── -->
-  <g filter="url(#boardShadow)">
-    <rect x="130" y="170" width="764" height="690" rx="40" fill="url(#boardGrad)"/>
+  <!-- ── Column 1 — Blue ── -->
+  <g filter="url(#colShadow)">
+    <rect x="120" y="160" width="240" height="704" rx="28" fill="#4285F4"/>
   </g>
-  <rect x="130" y="170" width="764" height="690" rx="40" fill="none" stroke="#DADCE0" stroke-width="2" stroke-opacity="0.6"/>
-
-  <!-- Column dividers -->
-  <line x1="385" y1="230" x2="385" y2="810" stroke="#E8EAED" stroke-width="2"/>
-  <line x1="639" y1="230" x2="639" y2="810" stroke="#E8EAED" stroke-width="2"/>
-
-  <!-- ══ Column 1 — Blue (#4285F4) ══ -->
-  <!-- Header -->
-  <rect x="166" y="208" width="184" height="10" rx="5" fill="#4285F4"/>
-
-  <!-- Card 1 (tall) -->
+  <!-- Header bar -->
+  <rect x="148" y="200" width="120" height="14" rx="7" fill="white" opacity="0.5"/>
+  <!-- Cards -->
   <g filter="url(#cardShadow)">
-    <rect x="166" y="240" width="184" height="124" rx="14" fill="white"/>
+    <rect x="148" y="248" width="184" height="120" rx="18" fill="white"/>
   </g>
-  <rect x="182" y="260" width="100" height="11" rx="4" fill="#4285F4" opacity="0.75"/>
-  <rect x="182" y="280" width="152" height="8" rx="3" fill="#4285F4" opacity="0.18"/>
-  <rect x="182" y="296" width="120" height="8" rx="3" fill="#4285F4" opacity="0.12"/>
-  <rect x="182" y="322" width="42" height="18" rx="9" fill="#E8F0FE"/>
-  <rect x="230" y="322" width="52" height="18" rx="9" fill="#E8F0FE"/>
+  <rect x="172" y="276" width="100" height="12" rx="6" fill="#4285F4" opacity="0.7"/>
+  <rect x="172" y="298" width="136" height="10" rx="5" fill="#4285F4" opacity="0.2"/>
+  <rect x="172" y="318" width="50" height="20" rx="10" fill="#E8F0FE"/>
 
-  <!-- Card 2 (medium) -->
   <g filter="url(#cardShadow)">
-    <rect x="166" y="384" width="184" height="100" rx="14" fill="white"/>
+    <rect x="148" y="392" width="184" height="100" rx="18" fill="white"/>
   </g>
-  <rect x="182" y="404" width="120" height="11" rx="4" fill="#4285F4" opacity="0.75"/>
-  <rect x="182" y="424" width="152" height="8" rx="3" fill="#4285F4" opacity="0.18"/>
-  <rect x="182" y="448" width="38" height="18" rx="9" fill="#FBBC05" opacity="0.25"/>
+  <rect x="172" y="420" width="120" height="12" rx="6" fill="#4285F4" opacity="0.7"/>
+  <rect x="172" y="442" width="136" height="10" rx="5" fill="#4285F4" opacity="0.2"/>
 
-  <!-- Card 3 (short) -->
   <g filter="url(#cardShadow)">
-    <rect x="166" y="504" width="184" height="78" rx="14" fill="white"/>
+    <rect x="148" y="516" width="184" height="80" rx="18" fill="white"/>
   </g>
-  <rect x="182" y="524" width="140" height="11" rx="4" fill="#4285F4" opacity="0.75"/>
-  <rect x="182" y="544" width="152" height="8" rx="3" fill="#4285F4" opacity="0.12"/>
+  <rect x="172" y="540" width="90" height="12" rx="6" fill="#4285F4" opacity="0.7"/>
 
-  <!-- ══ Column 2 — Red (#EA4335) ══ -->
-  <!-- Header -->
-  <rect x="420" y="208" width="184" height="10" rx="5" fill="#EA4335"/>
+  <!-- ── Column 2 — Amber/Orange ── -->
+  <g filter="url(#colShadow)">
+    <rect x="392" y="160" width="240" height="704" rx="28" fill="#F9AB00"/>
+  </g>
+  <rect x="420" y="200" width="100" height="14" rx="7" fill="white" opacity="0.5"/>
 
-  <!-- Card 1 -->
   <g filter="url(#cardShadow)">
-    <rect x="420" y="240" width="184" height="114" rx="14" fill="white"/>
+    <rect x="420" y="248" width="184" height="100" rx="18" fill="white"/>
   </g>
-  <rect x="436" y="260" width="130" height="11" rx="4" fill="#EA4335" opacity="0.75"/>
-  <rect x="436" y="280" width="152" height="8" rx="3" fill="#EA4335" opacity="0.18"/>
-  <rect x="436" y="296" width="110" height="8" rx="3" fill="#EA4335" opacity="0.12"/>
-  <rect x="436" y="316" width="46" height="18" rx="9" fill="#FCE8E6"/>
+  <rect x="444" y="276" width="110" height="12" rx="6" fill="#F9AB00" opacity="0.7"/>
+  <rect x="444" y="298" width="136" height="10" rx="5" fill="#F9AB00" opacity="0.2"/>
 
-  <!-- Card 2 -->
   <g filter="url(#cardShadow)">
-    <rect x="420" y="374" width="184" height="90" rx="14" fill="white"/>
+    <rect x="420" y="372" width="184" height="130" rx="18" fill="white"/>
   </g>
-  <rect x="436" y="394" width="110" height="11" rx="4" fill="#EA4335" opacity="0.75"/>
-  <rect x="436" y="414" width="152" height="8" rx="3" fill="#EA4335" opacity="0.15"/>
-  <rect x="436" y="430" width="80" height="8" rx="3" fill="#EA4335" opacity="0.10"/>
+  <rect x="444" y="400" width="130" height="12" rx="6" fill="#F9AB00" opacity="0.7"/>
+  <rect x="444" y="422" width="136" height="10" rx="5" fill="#F9AB00" opacity="0.2"/>
+  <rect x="444" y="444" width="100" height="10" rx="5" fill="#F9AB00" opacity="0.15"/>
+  <rect x="444" y="468" width="46" height="20" rx="10" fill="#FEF7E0"/>
 
-  <!-- ══ Column 3 — Green (#34A853) ══ -->
-  <!-- Header -->
-  <rect x="674" y="208" width="184" height="10" rx="5" fill="#34A853"/>
+  <!-- ── Column 3 — Green ── -->
+  <g filter="url(#colShadow)">
+    <rect x="664" y="160" width="240" height="704" rx="28" fill="#34A853"/>
+  </g>
+  <rect x="692" y="200" width="80" height="14" rx="7" fill="white" opacity="0.5"/>
 
-  <!-- Card 1 -->
   <g filter="url(#cardShadow)">
-    <rect x="674" y="240" width="184" height="100" rx="14" fill="white"/>
+    <rect x="692" y="248" width="184" height="110" rx="18" fill="white"/>
   </g>
-  <rect x="690" y="260" width="90" height="11" rx="4" fill="#34A853" opacity="0.70"/>
-  <rect x="690" y="280" width="152" height="8" rx="3" fill="#34A853" opacity="0.18"/>
-  <rect x="690" y="304" width="46" height="18" rx="9" fill="#E6F4EA"/>
+  <rect x="716" y="276" width="90" height="12" rx="6" fill="#34A853" opacity="0.7"/>
+  <rect x="716" y="298" width="136" height="10" rx="5" fill="#34A853" opacity="0.2"/>
+  <rect x="716" y="318" width="56" height="20" rx="10" fill="#E6F4EA"/>
 
-  <!-- Card 2 -->
   <g filter="url(#cardShadow)">
-    <rect x="674" y="360" width="184" height="78" rx="14" fill="white"/>
+    <rect x="692" y="382" width="184" height="80" rx="18" fill="white"/>
   </g>
-  <rect x="690" y="380" width="110" height="11" rx="4" fill="#34A853" opacity="0.70"/>
-  <rect x="690" y="400" width="140" height="8" rx="3" fill="#34A853" opacity="0.15"/>
+  <rect x="716" y="406" width="120" height="12" rx="6" fill="#34A853" opacity="0.7"/>
 
-  <!-- Card 3 -->
   <g filter="url(#cardShadow)">
-    <rect x="674" y="458" width="184" height="90" rx="14" fill="white"/>
+    <rect x="692" y="486" width="184" height="100" rx="18" fill="white"/>
   </g>
-  <rect x="690" y="478" width="130" height="11" rx="4" fill="#34A853" opacity="0.70"/>
-  <rect x="690" y="498" width="152" height="8" rx="3" fill="#34A853" opacity="0.15"/>
-  <rect x="690" y="514" width="60" height="8" rx="3" fill="#34A853" opacity="0.10"/>
-
-  <!-- ── Live indicator dot (top-right, yellow accent) ── -->
-  <circle cx="830" cy="205" r="24" fill="#FBBC05"/>
-  <circle cx="830" cy="200" r="10" fill="white" opacity="0.35"/>
-  <circle cx="830" cy="205" r="8" fill="white" opacity="0.85"/>
+  <rect x="716" y="510" width="100" height="12" rx="6" fill="#34A853" opacity="0.7"/>
+  <rect x="716" y="532" width="136" height="10" rx="5" fill="#34A853" opacity="0.15"/>
 </svg>

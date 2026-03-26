@@ -43,10 +43,25 @@
 
   // Find which card in the zone the cursor is above (for insertion point).
   // Returns the card element to insert before, or null to append at end.
-  function getInsertionTarget(zone, clientY, excludeEl) {
+  function getInsertionTarget(zone, clientY, excludeEl, clientX) {
     var cards = Array.from(zone.querySelectorAll(".card[data-card-idx]")).filter(
       function (c) { return c !== excludeEl; }
     );
+    var isGrid = zone.classList.contains("focus-grid");
+    if (isGrid && clientX !== undefined) {
+      // In grid layout, use 2D position: find the first card whose
+      // row matches or is below cursor, then check X within that row.
+      for (var i = 0; i < cards.length; i++) {
+        var rect = cards[i].getBoundingClientRect();
+        // Card is on a row below the cursor — insert before it
+        if (rect.top > clientY) return cards[i];
+        // Card is on the same row as cursor
+        if (clientY < rect.bottom) {
+          if (clientX < rect.left + rect.width / 2) return cards[i];
+        }
+      }
+      return null;
+    }
     for (var i = 0; i < cards.length; i++) {
       var rect = cards[i].getBoundingClientRect();
       if (clientY < rect.top + rect.height / 2) {

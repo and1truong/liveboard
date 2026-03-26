@@ -1,0 +1,1080 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiveBoard — Kanban boards as they should be</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg width='128' height='128' viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Crect width='128' height='128' rx='28' fill='white'/%3E%3Crect x='16' y='16' width='28' height='96' rx='6' fill='%234285F4' opacity='0.15'/%3E%3Crect x='19' y='22' width='22' height='18' rx='4' fill='%234285F4'/%3E%3Crect x='19' y='44' width='22' height='26' rx='4' fill='%234285F4'/%3E%3Crect x='19' y='74' width='22' height='14' rx='4' fill='%234285F4'/%3E%3Crect x='50' y='16' width='28' height='96' rx='6' fill='%23EA4335' opacity='0.15'/%3E%3Crect x='53' y='22' width='22' height='14' rx='4' fill='%23EA4335'/%3E%3Crect x='53' y='40' width='22' height='22' rx='4' fill='%23EA4335'/%3E%3Crect x='84' y='16' width='28' height='96' rx='6' fill='%2334A853' opacity='0.15'/%3E%3Crect x='87' y='22' width='22' height='22' rx='4' fill='%2334A853'/%3E%3Crect x='87' y='48' width='22' height='14' rx='4' fill='%2334A853'/%3E%3Crect x='87' y='66' width='22' height='18' rx='4' fill='%2334A853'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+        :root {
+            --bg: #0a0a10;
+            --bg-elevated: #12121c;
+            --bg-card: #161622;
+            --bg-card-hover: #1c1c2e;
+            --accent: #818cf8;
+            --accent-bright: #a5b4fc;
+            --accent-dim: #6366f1;
+            --accent-muted: rgba(99,102,241,0.12);
+            --accent-border: rgba(99,102,241,0.25);
+            --blue: #4285F4;
+            --red: #EA4335;
+            --green: #34A853;
+            --amber: #F9AB00;
+            --text: #e0e2ef;
+            --text-muted: #8688a3;
+            --text-dim: #50526e;
+            --border: #1e1e30;
+            --heading: #f0f0f8;
+            --logo-live: #E8EAED;
+            --logo-board: #8AB4F8;
+            --grain-opacity: 0.03;
+            --glow-1: rgba(99,102,241,0.06);
+            --glow-2: rgba(66,133,244,0.04);
+            --card-bg-alpha: rgba(255,255,255,0.03);
+            --screenshot-shadow: 0 4px 24px rgba(0,0,0,0.3), 0 24px 80px rgba(0,0,0,0.25);
+            --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            --font-mono: 'JetBrains Mono', 'SF Mono', monospace;
+        }
+        html { scroll-behavior: smooth }
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font-body);
+            font-size: 16px;
+            line-height: 1.7;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+        }
+        body::after {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+            opacity: var(--grain-opacity);
+            pointer-events: none;
+            z-index: 9999;
+        }
+        .glow {
+            position: fixed;
+            width: 600px;
+            height: 600px;
+            border-radius: 50%;
+            pointer-events: none;
+            z-index: 0;
+        }
+        .glow-1 {
+            top: -200px;
+            right: -100px;
+            background: radial-gradient(circle, var(--glow-1) 0%, transparent 70%);
+        }
+        .glow-2 {
+            bottom: 20%;
+            left: -200px;
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--glow-2) 0%, transparent 70%);
+        }
+        .container {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 32px;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* Nav */
+        nav {
+            padding: 28px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border);
+        }
+        .logo {
+            font-family: var(--font-body);
+            font-size: 22px;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .logo-live { color: var(--logo-live) }
+        .logo-board { color: var(--logo-board); font-weight: 500 }
+        nav a.gh {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-muted);
+            text-decoration: none;
+            padding: 8px 16px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        nav a.gh:hover {
+            border-color: var(--accent-dim);
+            color: var(--accent-bright);
+        }
+
+        /* Hero */
+        .hero {
+            padding: 100px 0 80px;
+            text-align: center;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--accent);
+            background: var(--accent-muted);
+            border: 1px solid var(--accent-border);
+            padding: 6px 16px;
+            border-radius: 100px;
+            margin-bottom: 40px;
+            animation: fadeDown 0.6s ease;
+        }
+        .hero-badge .dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: var(--accent);
+            animation: pulse 2s ease infinite;
+        }
+        @keyframes pulse {
+            0%,100%{opacity:1}
+            50%{opacity:0.3}
+        }
+        h1 {
+            font-family: var(--font-body);
+            font-size: clamp(44px, 6.5vw, 80px);
+            font-weight: 700;
+            line-height: 1.08;
+            letter-spacing: -2px;
+            color: var(--heading);
+            max-width: 800px;
+            margin: 0 auto 28px;
+            animation: fadeDown 0.6s ease 0.1s both;
+        }
+        h1 em {
+            font-style: normal;
+            background: linear-gradient(135deg, var(--blue), var(--accent));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .hero p {
+            font-size: 18px;
+            color: var(--text-muted);
+            max-width: 540px;
+            margin: 0 auto 48px;
+            animation: fadeDown 0.6s ease 0.2s both;
+        }
+        @keyframes fadeDown {
+            from { opacity: 0; transform: translateY(12px) }
+            to { opacity: 1; transform: translateY(0) }
+        }
+        .install {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 14px 24px;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            animation: fadeDown 0.6s ease 0.3s both;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .install:hover { border-color: var(--accent-dim) }
+        .install .prompt { color: var(--text-dim); user-select: none }
+        .install .cmd { color: var(--accent-bright) }
+        .install .copy {
+            color: var(--text-dim);
+            font-size: 12px;
+            padding: 4px 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            background: transparent;
+            cursor: pointer;
+            font-family: var(--font-mono);
+            transition: all 0.2s;
+        }
+        .install .copy:hover {
+            border-color: var(--accent-dim);
+            color: var(--accent);
+        }
+
+        /* Screenshot */
+        .screenshot-wrap {
+            margin: 72px 0 0;
+            animation: fadeDown 0.8s ease 0.4s both;
+        }
+        .screenshot-frame {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--screenshot-shadow);
+        }
+        .screenshot-chrome {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.02);
+            border-bottom: 1px solid var(--border);
+        }
+        .screenshot-chrome .dots { display: flex; gap: 7px }
+        .screenshot-chrome .dot-r { width: 12px; height: 12px; border-radius: 50% }
+        .dot-red { background: #ff605c }
+        .dot-yellow { background: #ffbd44 }
+        .dot-green { background: #00ca4e }
+        .screenshot-chrome .url-bar {
+            flex: 1;
+            margin: 0 60px 0 12px;
+            background: rgba(255,255,255,0.04);
+            border-radius: 6px;
+            padding: 6px 14px;
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .screenshot-body { position: relative; overflow: hidden }
+        .screenshot-body img { width: 100%; display: block; opacity: 0.92 }
+        .screenshot-body .fade-bottom {
+            position: absolute;
+            bottom: 0; left: 0; right: 0;
+            height: 120px;
+            background: linear-gradient(to top, var(--bg), transparent);
+        }
+
+        /* Section headers */
+        .section-label {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            color: var(--accent);
+            margin-bottom: 16px;
+        }
+        h2 {
+            font-family: var(--font-body);
+            font-size: clamp(30px, 4vw, 48px);
+            font-weight: 700;
+            line-height: 1.12;
+            letter-spacing: -1px;
+            color: var(--heading);
+            margin-bottom: 20px;
+        }
+        h2 em {
+            font-style: normal;
+            color: var(--accent-bright);
+        }
+
+        /* Why LiveBoard */
+        .points { padding: 120px 0 }
+        .points-header {
+            text-align: center;
+            margin-bottom: 72px;
+        }
+        .points-header p {
+            font-size: 17px;
+            color: var(--text-muted);
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        .points-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+        }
+        @media (max-width: 800px) {
+            .points-grid { grid-template-columns: 1fr }
+        }
+        .point {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            padding: 32px 28px;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        .point:hover {
+            border-color: rgba(99,102,241,0.3);
+            background: var(--bg-card-hover);
+            transform: translateY(-2px);
+        }
+        .point::before {
+            content: '';
+            position: absolute;
+            top: 0; left: 0; right: 0;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .point:hover::before { opacity: 1 }
+        .point-icon {
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 18px;
+            font-size: 18px;
+            background: var(--accent-muted);
+            border: 1px solid var(--accent-border);
+            color: var(--accent);
+            font-family: var(--font-mono);
+        }
+        .point-icon.blue { background: rgba(66,133,244,0.1); border-color: rgba(66,133,244,0.2); color: #8AB4F8 }
+        .point-icon.red { background: rgba(234,67,53,0.1); border-color: rgba(234,67,53,0.2); color: #F28B82 }
+        .point-icon.green { background: rgba(52,168,83,0.1); border-color: rgba(52,168,83,0.2); color: #81C995 }
+        .point h3 {
+            font-size: 17px;
+            font-weight: 600;
+            color: var(--heading);
+            margin-bottom: 8px;
+            letter-spacing: -0.3px;
+        }
+        .point p {
+            font-size: 14px;
+            color: var(--text-muted);
+            line-height: 1.65;
+        }
+        .point.wide { grid-column: span 2 }
+        @media (max-width: 800px) {
+            .point.wide { grid-column: span 1 }
+        }
+
+        /* Markdown demo */
+        .md-demo { padding: 0 0 120px }
+        .md-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            align-items: start;
+        }
+        @media (max-width: 800px) {
+            .md-split { grid-template-columns: 1fr }
+        }
+        .md-pane {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+        }
+        .md-pane-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 18px;
+            border-bottom: 1px solid var(--border);
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .md-pane-header .file-dot {
+            width: 8px; height: 8px; border-radius: 50%;
+        }
+        .dot-md { background: var(--blue) }
+        .dot-ui { background: var(--amber) }
+        .md-pane pre {
+            padding: 20px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.8;
+            color: var(--text);
+            overflow-x: auto;
+            margin: 0;
+        }
+        .md-pane pre .kw { color: var(--accent-bright) }
+        .md-pane pre .cm { color: var(--text-dim) }
+        .md-pane pre .st { color: #F9AB00 }
+
+        /* Kanban mini preview */
+        .kanban-mini { padding: 20px }
+        .kanban-cols {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .kanban-col-label {
+            font-family: var(--font-mono);
+            font-size: 11px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .kanban-card {
+            background: var(--card-bg-alpha);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 12px;
+            margin-bottom: 6px;
+            font-size: 12px;
+            color: var(--text);
+            line-height: 1.4;
+        }
+        .kanban-card .tag {
+            display: inline-block;
+            font-family: var(--font-mono);
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-top: 6px;
+            margin-right: 3px;
+        }
+        .tag-red { background: rgba(234,67,53,0.12); color: #F28B82 }
+        .tag-amber { background: rgba(249,171,0,0.12); color: #FDD663 }
+        .tag-blue { background: rgba(66,133,244,0.12); color: #8AB4F8 }
+        .kanban-card .meta {
+            font-family: var(--font-mono);
+            font-size: 10px;
+            color: var(--text-dim);
+            margin-top: 4px;
+        }
+
+        /* Tech stack */
+        .stack { padding: 0 0 120px }
+        .stack-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 40px;
+        }
+        .stack-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 100px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text);
+            transition: all 0.2s;
+        }
+        .stack-pill:hover { border-color: var(--accent-dim) }
+        .stack-pill .pill-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+        }
+        .pill-blue { background: var(--blue) }
+        .pill-red { background: var(--red) }
+        .pill-green { background: var(--green) }
+        .pill-accent { background: var(--accent) }
+
+        /* CTA */
+        .cta { padding: 80px 0 120px; text-align: center }
+        .cta-box {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 64px 40px;
+            position: relative;
+            overflow: hidden;
+        }
+        .cta-box::before {
+            content: '';
+            position: absolute;
+            top: -1px; left: 20%; right: 20%;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--accent-dim), transparent);
+        }
+        .cta h2 { margin-bottom: 16px }
+        .cta p { color: var(--text-muted); font-size: 16px; margin-bottom: 36px }
+        .cta-buttons {
+            display: flex;
+            gap: 14px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 14px 28px;
+            border-radius: 10px;
+            font-family: var(--font-body);
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            transition: all 0.2s;
+            cursor: pointer;
+            border: none;
+        }
+        .btn-primary {
+            background: var(--accent-dim);
+            color: #fff;
+        }
+        .btn-primary:hover {
+            background: var(--accent);
+            transform: translateY(-1px);
+        }
+        .btn-secondary {
+            background: transparent;
+            color: var(--text);
+            border: 1px solid var(--border);
+        }
+        .btn-secondary:hover {
+            border-color: var(--accent-dim);
+            color: var(--accent-bright);
+        }
+
+        /* Footer */
+        footer {
+            padding: 32px 0;
+            border-top: 1px solid var(--border);
+            text-align: center;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-dim);
+        }
+        footer a { color: var(--accent); text-decoration: none }
+        footer a:hover { color: var(--accent-bright) }
+
+        /* Install tabs */
+        .install-methods {
+            animation: fadeDown 0.6s ease 0.3s both;
+        }
+        .install-tabs {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+        .install-tab {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .install-tab:hover {
+            border-color: var(--accent-dim);
+            color: var(--accent);
+        }
+        .install-tab.active {
+            background: var(--accent-muted);
+            border-color: var(--accent-border);
+            color: var(--accent);
+        }
+        .install-panel { display: none }
+        .install-panel.active { display: block }
+        .install-note {
+            font-family: var(--font-mono);
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 10px;
+        }
+        .install-note a { color: var(--accent); text-decoration: none }
+        .install-note a:hover { color: var(--accent-bright) }
+
+        /* Desktop section */
+        .desktop { padding: 0 0 120px }
+        .desktop-split {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            align-items: center;
+            margin-top: 48px;
+        }
+        @media (max-width: 800px) {
+            .desktop-split { grid-template-columns: 1fr }
+        }
+        .desktop-icon {
+            width: 120px;
+            height: 120px;
+            border-radius: 24px;
+            overflow: hidden;
+            margin-bottom: 24px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.12);
+        }
+        .desktop-icon img { width: 100%; height: 100%; display: block }
+        .desktop-info h3 {
+            font-size: 22px;
+            font-weight: 600;
+            color: var(--heading);
+            margin-bottom: 12px;
+        }
+        .desktop-info p {
+            font-size: 15px;
+            color: var(--text-muted);
+            line-height: 1.65;
+            margin-bottom: 20px;
+        }
+        .desktop-install-steps {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .desktop-step {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 12px 18px;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text);
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .desktop-step:hover { border-color: var(--accent-dim) }
+        .desktop-step .step-label {
+            font-family: var(--font-body);
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            min-width: 80px;
+        }
+        .desktop-step .step-cmd { color: var(--accent-bright) }
+        .desktop-img {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--screenshot-shadow);
+        }
+        .desktop-img img { width: 100%; display: block }
+
+        .nav-right { display: flex; align-items: center; gap: 12px }
+
+        /* Showcase gallery */
+        .showcase { padding: 0 0 120px }
+        .showcase-tabs {
+            display: flex;
+            gap: 6px;
+            justify-content: center;
+            margin: 40px 0 32px;
+            flex-wrap: wrap;
+        }
+        .showcase-tab {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            padding: 8px 18px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: transparent;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .showcase-tab:hover {
+            border-color: var(--accent-dim);
+            color: var(--accent);
+        }
+        .showcase-tab.active {
+            background: var(--accent-muted);
+            border-color: var(--accent-border);
+            color: var(--accent);
+        }
+        .showcase-frame {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            overflow: hidden;
+            box-shadow: var(--screenshot-shadow);
+        }
+        .showcase-frame img {
+            width: 100%;
+            display: none;
+        }
+        .showcase-frame img.active { display: block }
+        .showcase-caption {
+            font-family: var(--font-mono);
+            font-size: 13px;
+            color: var(--text-muted);
+            text-align: center;
+            padding: 14px 20px;
+            border-top: 1px solid var(--border);
+        }
+
+        /* Animations */
+        .reveal {
+            opacity: 0;
+            transform: translateY(24px);
+            transition: all 0.6s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body>
+    <div class="glow glow-1"></div>
+    <div class="glow glow-2"></div>
+
+    <div class="container">
+        <nav>
+            <a href="#" class="logo">
+                <svg width="40" height="32" viewBox="0 0 62 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <!-- Column 1 — Blue -->
+                    <rect x="0" y="0" width="18" height="48" rx="4" fill="#4285F4" opacity="0.15"/>
+                    <rect x="2" y="4" width="14" height="10" rx="3" fill="#4285F4"/>
+                    <rect x="2" y="17" width="14" height="14" rx="3" fill="#4285F4"/>
+                    <rect x="2" y="34" width="14" height="8" rx="3" fill="#4285F4"/>
+                    <!-- Column 2 — Red -->
+                    <rect x="22" y="0" width="18" height="48" rx="4" fill="#EA4335" opacity="0.15"/>
+                    <rect x="24" y="4" width="14" height="8" rx="3" fill="#EA4335"/>
+                    <rect x="24" y="15" width="14" height="12" rx="3" fill="#EA4335"/>
+                    <!-- Column 3 — Green -->
+                    <rect x="44" y="0" width="18" height="48" rx="4" fill="#34A853" opacity="0.15"/>
+                    <rect x="46" y="4" width="14" height="12" rx="3" fill="#34A853"/>
+                    <rect x="46" y="19" width="14" height="8" rx="3" fill="#34A853"/>
+                    <rect x="46" y="30" width="14" height="10" rx="3" fill="#34A853"/>
+                </svg>
+                <span><span class="logo-live">Live</span><span class="logo-board">Board</span></span>
+            </a>
+            <div class="nav-right">
+                <a href="https://github.com/and1truong/liveboard" class="gh">View on GitHub ↗</a>
+            </div>
+        </nav>
+    </div>
+
+    <section class="hero">
+        <div class="container">
+            <div class="hero-badge">
+                <span class="dot"></span>
+                Open source · MIT License
+            </div>
+            <h1>Kanban boards<br/>as they <em>should</em> be</h1>
+            <p>Plain Markdown files. No database. No cloud lock-in. Your tasks live in a folder you own — versioned with Git, synced however you want.</p>
+            <div class="install-methods">
+                <div class="install-tabs">
+                    <button class="install-tab active" data-panel="cli">CLI</button>
+                    <button class="install-tab" data-panel="desktop">Mac Desktop App</button>
+                    <button class="install-tab" data-panel="homebrew">Homebrew</button>
+                </div>
+                <div class="install-panel active" data-panel="cli">
+                    <div class="install" onclick="copyInstall('go install github.com/and1truong/liveboard@latest')">
+                        <span class="prompt">$</span>
+                        <span class="cmd">go install github.com/and1truong/liveboard@latest</span>
+                        <button class="copy" onclick="event.stopPropagation(); copyInstall('go install github.com/and1truong/liveboard@latest')">copy</button>
+                    </div>
+                </div>
+                <div class="install-panel" data-panel="desktop">
+                    <div class="install" onclick="copyInstall('brew install and1truong/tap/liveboard-desktop')">
+                        <span class="prompt">$</span>
+                        <span class="cmd">brew install and1truong/tap/liveboard-desktop</span>
+                        <button class="copy" onclick="event.stopPropagation(); copyInstall('brew install and1truong/tap/liveboard-desktop')">copy</button>
+                    </div>
+                    <div class="install-note">or <a href="https://github.com/and1truong/liveboard/releases">download from GitHub Releases</a></div>
+                </div>
+                <div class="install-panel" data-panel="homebrew">
+                    <div class="install" onclick="copyInstall('brew install and1truong/tap/liveboard')">
+                        <span class="prompt">$</span>
+                        <span class="cmd">brew install and1truong/tap/liveboard</span>
+                        <button class="copy" onclick="event.stopPropagation(); copyInstall('brew install and1truong/tap/liveboard')">copy</button>
+                    </div>
+                </div>
+            </div>
+            <div class="screenshot-wrap">
+                <div class="screenshot-frame">
+                    <div class="screenshot-chrome">
+                        <div class="dots">
+                            <div class="dot-r dot-red"></div>
+                            <div class="dot-r dot-yellow"></div>
+                            <div class="dot-r dot-green"></div>
+                        </div>
+                        <div class="url-bar">localhost:7070/board/oncall-week</div>
+                    </div>
+                    <div class="screenshot-body">
+                        <img src="screenshot-board.webp" alt="LiveBoard web UI showing a Kanban board with columns and task cards">
+                        <div class="fade-bottom"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="points reveal">
+        <div class="container">
+            <div class="points-header">
+                <div class="section-label">Why LiveBoard</div>
+                <h2>Built for developers<br/>who <em>own</em> their workflow</h2>
+                <p>No accounts. No subscriptions. No vendor telling you how to organize your work.</p>
+            </div>
+            <div class="points-grid">
+                <div class="point reveal">
+                    <div class="point-icon blue">#</div>
+                    <h3>Markdown is the database</h3>
+                    <p>Each board is a single <code>.md</code> file. Columns are H2 headings. Cards are list items. Human-readable, editable in any text editor.</p>
+                </div>
+                <div class="point reveal">
+                    <div class="point-icon red">⊘</div>
+                    <h3>No database. No provider.</h3>
+                    <p>Zero external dependencies. No cloud account, no API key, no sync server. Reads and writes flat files in a folder.</p>
+                </div>
+                <div class="point reveal">
+                    <div class="point-icon green">⊕</div>
+                    <h3>Your data. You own it.</h3>
+                    <p>Files live on your disk. You decide where they go, who sees them, and how long they exist. No telemetry, no data mining.</p>
+                </div>
+                <div class="point reveal">
+                    <div class="point-icon">⇄</div>
+                    <h3>Sync your way</h3>
+                    <p>Git, iCloud, Dropbox, Syncthing, rsync — if it can move files, it can sync your boards. Git integration built in.</p>
+                </div>
+                <div class="point reveal">
+                    <div class="point-icon blue">◈</div>
+                    <h3>Single binary. Cross platform.</h3>
+                    <p>Written in Go. One binary, no runtime deps. macOS, Linux, Windows. Download, run, done.</p>
+                </div>
+                <div class="point reveal">
+                    <div class="point-icon green">◧</div>
+                    <h3>Web UI with real-time updates</h3>
+                    <p>Drag-and-drop Kanban at <code>localhost:7070</code> with search, themes, calendar view, and SSE collaboration.</p>
+                </div>
+                <div class="point reveal">
+                    <div class="point-icon">👁</div>
+                    <h3>Read-only mode</h3>
+                    <p>Share boards safely. Read-only mode disables editing, deleting, and drag-and-drop — perfect for dashboards and public displays.</p>
+                </div>
+                <div class="point reveal">
+                    <div class="point-icon red">↓</div>
+                    <h3>Export to HTML + ZIP</h3>
+                    <p>Export your entire workspace as a self-contained ZIP of static HTML files. Share with anyone — no server needed to view.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="showcase reveal">
+        <div class="container">
+            <div class="section-label">See it in action</div>
+            <h2>Multiple views,<br/>one <em>Markdown</em> file</h2>
+            <div class="showcase-tabs">
+                <button class="showcase-tab active" data-img="board">Board</button>
+                <button class="showcase-tab" data-img="boards">All Boards</button>
+                <button class="showcase-tab" data-img="table">Table</button>
+                <button class="showcase-tab" data-img="calendar">Calendar</button>
+                <button class="showcase-tab" data-img="compact">Compact</button>
+                <button class="showcase-tab" data-img="command">Command Palette</button>
+                <button class="showcase-tab" data-img="settings">Settings</button>
+            </div>
+            <div class="showcase-frame">
+                <img class="showcase-img active" data-img="board" src="screenshot-board.webp" alt="Board view" data-caption="Board view — drag-and-drop Kanban columns with cards, tags, priorities, and assignees">
+                <img class="showcase-img" data-img="boards" src="screenshot-boards.webp" alt="All boards" data-caption="All Boards — overview of your workspace with board cards showing stats and tags">
+                <img class="showcase-img" data-img="table" src="screenshot-table.webp" alt="Table view" data-caption="Table view — see all cards as sortable rows with columns for assignee, priority, due date, and tags">
+                <img class="showcase-img" data-img="calendar" src="screenshot-calendar.webp" alt="Calendar view" data-caption="Calendar view — cards with due dates appear on a month, week, or day grid">
+                <img class="showcase-img" data-img="compact" src="screenshot-compact.webp" alt="Compact view" data-caption="Compact view — dense card layout for boards with many items">
+                <img class="showcase-img" data-img="command" src="screenshot-command.webp" alt="Command palette" data-caption="Command palette — Cmd+K to quickly navigate between boards and pages">
+                <img class="showcase-img" data-img="settings" src="screenshot-settings.webp" alt="Settings" data-caption="Settings — theme, color scheme, font, column width, sidebar position, and more">
+                <div class="showcase-caption">Board view — drag-and-drop Kanban columns with cards, tags, priorities, and assignees</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="md-demo reveal">
+        <div class="container">
+            <div class="section-label">How it works</div>
+            <h2>A board is just<br/>a <em>Markdown</em> file</h2>
+            <div class="md-split">
+                <div class="md-pane">
+                    <div class="md-pane-header">
+                        <span class="file-dot dot-md"></span>
+                        board-oncall.md
+                    </div>
+                    <pre><span class="cm">---</span>
+<span class="kw">name:</span> On-Call Week
+<span class="kw">tags:</span> [oncall, ops]
+<span class="cm">---</span>
+
+<span class="kw">## Active Incidents</span>
+
+- [ ] Redis cluster memory pressure
+  <span class="kw">tags:</span> incident, redis
+  <span class="kw">assignee:</span> hong
+  <span class="kw">priority:</span> critical
+
+<span class="kw">## Investigating</span>
+
+- [ ] Flaky health checks on k8s
+  <span class="kw">tags:</span> infra, kubernetes
+  <span class="kw">priority:</span> medium
+
+<span class="kw">## Follow-Ups</span>
+
+- [ ] Write postmortem for DB failover
+  <span class="kw">tags:</span> postmortem
+  <span class="kw">due:</span> 2026-03-21</pre>
+                </div>
+                <div class="md-pane">
+                    <div class="md-pane-header">
+                        <span class="file-dot dot-ui"></span>
+                        localhost:7070
+                    </div>
+                    <div class="kanban-mini">
+                        <div class="kanban-cols">
+                            <div>
+                                <div class="kanban-col-label">Active Incidents</div>
+                                <div class="kanban-card">
+                                    <div>Redis cluster memory pressure</div>
+                                    <span class="tag tag-red">incident</span><span class="tag tag-amber">redis</span>
+                                    <div class="meta">⚡ critical · hong</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="kanban-col-label">Investigating</div>
+                                <div class="kanban-card">
+                                    <div>Flaky health checks on k8s</div>
+                                    <span class="tag tag-blue">infra</span><span class="tag tag-blue">kubernetes</span>
+                                    <div class="meta">⚡ medium</div>
+                                </div>
+                            </div>
+                            <div>
+                                <div class="kanban-col-label">Follow-Ups</div>
+                                <div class="kanban-card">
+                                    <div>Write postmortem for DB failover</div>
+                                    <span class="tag tag-amber">postmortem</span>
+                                    <div class="meta">📅 due 2026-03-21</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="desktop reveal">
+        <div class="container">
+            <div class="section-label">Native experience</div>
+            <h2>Mac <em>Desktop</em> App</h2>
+            <div class="desktop-split">
+                <div class="desktop-info">
+                    <div class="desktop-icon">
+                        <img src="liveboard-icon.svg" alt="LiveBoard macOS app icon">
+                    </div>
+                    <h3>LiveBoard.app for macOS</h3>
+                    <p>Native macOS app powered by Wails. Runs the full LiveBoard web UI in a lightweight native window — no browser needed. Universal binary for Apple Silicon and Intel.</p>
+                    <div class="desktop-install-steps">
+                        <div class="desktop-step" onclick="copyInstall('brew install and1truong/tap/liveboard-desktop')">
+                            <span class="step-label">Homebrew</span>
+                            <span class="step-cmd">brew install and1truong/tap/liveboard-desktop</span>
+                        </div>
+                        <div class="desktop-step">
+                            <span class="step-label">Download</span>
+                            <a href="https://github.com/and1truong/liveboard/releases" style="color:var(--text);text-decoration:none">.zip from GitHub Releases</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="desktop-img">
+                    <img src="screenshot-boards.webp" alt="LiveBoard desktop app showing the boards overview">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="stack reveal">
+        <div class="container">
+            <div class="section-label">Technology</div>
+            <h2>Powered by <em>Go</em></h2>
+            <div class="stack-row">
+                <div class="stack-pill"><span class="pill-dot pill-blue"></span>Go</div>
+                <div class="stack-pill"><span class="pill-dot pill-blue"></span>Chi router</div>
+                <div class="stack-pill"><span class="pill-dot pill-red"></span>HTMX</div>
+                <div class="stack-pill"><span class="pill-dot pill-green"></span>Alpine.js</div>
+                <div class="stack-pill"><span class="pill-dot pill-accent"></span>SSE streaming</div>
+                <div class="stack-pill"><span class="pill-dot pill-accent"></span>Cobra CLI</div>
+                <div class="stack-pill"><span class="pill-dot pill-green"></span>Goldmark parser</div>
+                <div class="stack-pill"><span class="pill-dot pill-blue"></span>AI agent tools</div>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta reveal">
+        <div class="container">
+            <div class="cta-box">
+                <div class="section-label">Get started</div>
+                <h2>Take back your <em>Kanban</em></h2>
+                <p>One command to install. Zero accounts to create.</p>
+                <div class="cta-buttons">
+                    <a href="https://github.com/and1truong/liveboard" class="btn btn-primary">View on GitHub</a>
+                    <a href="https://github.com/and1truong/liveboard/blob/main/README.md" class="btn btn-secondary">Read the docs</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        Built with care by <a href="https://github.com/and1truong">Hong Truong</a> · MIT License · Written in Go
+    </footer>
+
+    <script>
+
+        const obs = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    e.target.classList.add('visible');
+                    obs.unobserve(e.target);
+                }
+            });
+        }, { threshold: 0.15 });
+        document.querySelectorAll('.reveal').forEach(el => obs.observe(el));
+        document.querySelectorAll('.point').forEach((p, i) => {
+            p.style.transitionDelay = `${i * 0.08}s`;
+            p.classList.add('reveal');
+            obs.observe(p);
+        });
+        // Showcase tabs
+        document.querySelectorAll('.showcase-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const img = tab.dataset.img;
+                document.querySelectorAll('.showcase-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.showcase-img').forEach(i => i.classList.remove('active'));
+                tab.classList.add('active');
+                const activeImg = document.querySelector(`.showcase-img[data-img="${img}"]`);
+                activeImg.classList.add('active');
+                document.querySelector('.showcase-caption').textContent = activeImg.dataset.caption;
+            });
+        });
+
+        // Install tabs
+        document.querySelectorAll('.install-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                const panel = tab.dataset.panel;
+                document.querySelectorAll('.install-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.install-panel').forEach(p => p.classList.remove('active'));
+                tab.classList.add('active');
+                document.querySelector(`.install-panel[data-panel="${panel}"]`).classList.add('active');
+            });
+        });
+
+        function copyInstall(cmd) {
+            navigator.clipboard.writeText(cmd).then(() => {
+                const btn = event.target.closest('.install, .desktop-step').querySelector('.copy') || event.target.closest('.install, .desktop-step');
+                if (btn.classList.contains('copy')) {
+                    const orig = btn.textContent;
+                    btn.textContent = 'copied!';
+                    setTimeout(() => btn.textContent = orig, 2000);
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -21,6 +21,7 @@ type LayoutSettings struct {
 	FontFamily        string `json:"layout_font_family"`
 	KeyboardShortcuts bool   `json:"layout_keyboard_shortcuts"`
 	Version           string `json:"layout_version"`
+	ReadOnly          bool   `json:"layout_read_only"`
 }
 
 // layoutSettings extracts layout-relevant fields from AppSettings and injects the build version.
@@ -33,6 +34,7 @@ func (h *Handler) layoutSettings(s AppSettings) LayoutSettings {
 		FontFamily:        s.FontFamily,
 		KeyboardShortcuts: s.KeyboardShortcuts,
 		Version:           h.version,
+		ReadOnly:          h.ReadOnly,
 	}
 }
 
@@ -51,6 +53,7 @@ type AppSettings struct {
 	CardDisplayMode   string   `json:"card_display_mode"`
 	PinnedBoards      []string `json:"pinned_boards,omitempty"`
 	KeyboardShortcuts bool     `json:"keyboard_shortcuts"`
+	WeekStart         string   `json:"week_start,omitempty"`
 }
 
 var validColorThemes = map[string]bool{
@@ -85,15 +88,20 @@ func (h *Handler) settingsPath() string {
 	return filepath.Join(h.ws.Dir, "settings.json")
 }
 
-// loadSettings reads settings.json, returning defaults if missing.
-func (h *Handler) loadSettings() AppSettings {
+// LoadSettingsFromDir reads settings.json from dir, returning defaults if missing.
+func LoadSettingsFromDir(dir string) AppSettings {
 	s := defaultSettings()
-	data, err := os.ReadFile(h.settingsPath())
+	data, err := os.ReadFile(filepath.Join(dir, "settings.json"))
 	if err != nil {
 		return s
 	}
 	_ = json.Unmarshal(data, &s)
 	return s
+}
+
+// loadSettings reads settings.json, returning defaults if missing.
+func (h *Handler) loadSettings() AppSettings {
+	return LoadSettingsFromDir(h.ws.Dir)
 }
 
 // saveSettings writes settings.json.
@@ -121,9 +129,9 @@ func (h *Handler) SettingsHandler() http.Handler {
 	tpl := template.Must(template.New("layout.html").Funcs(funcMap()).ParseFS(tmplfs.FS, "layout.html", "settings.html"))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		boards, _ := h.ws.ListBoards()
+		infos, _ := h.ws.ListBoardSummaries()
 		settings := h.loadSettings()
-		summaries := sortBoardsWithPins(toBoardSummaries(boards), settings.PinnedBoards)
+		summaries := sortBoardsWithPins(toBoardSummariesFast(infos), settings.PinnedBoards)
 		model := SettingsModel{
 			LayoutSettings: h.layoutSettings(settings),
 			Title:          "Settings — " + settings.SiteName,

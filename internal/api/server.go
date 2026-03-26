@@ -25,16 +25,18 @@ type Server struct {
 	router     chi.Router
 	httpServer *http.Server
 	noCache    bool
+	readOnly   bool
 }
 
 // NewServer creates a Server with all routes registered.
-func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache bool, version string) *Server {
+func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly bool, version string) *Server {
 	s := &Server{
 		ws:         ws,
 		eng:        eng,
-		webHandler: web.NewHandler(ws, eng, version),
+		webHandler: web.NewHandler(ws, eng, version, readOnly),
 		mcpServer:  livemcp.New(ws, eng, version),
 		noCache:    noCache,
+		readOnly:   readOnly,
 	}
 	s.router = s.buildRouter()
 	return s
@@ -84,6 +86,18 @@ func (s *Server) buildRouter() chi.Router {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
+	if s.readOnly {
+		r.Use(func(next http.Handler) http.Handler {
+			return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+				if req.Method != http.MethodGet && req.Method != http.MethodHead && req.Method != http.MethodOptions {
+					http.Error(w, "read-only mode", http.StatusMethodNotAllowed)
+					return
+				}
+				next.ServeHTTP(w, req)
+			})
+		})
+	}
+
 	// Serve static assets
 	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {
 		if s.noCache {
@@ -112,7 +126,6 @@ func (s *Server) buildRouter() chi.Router {
 	r.Post("/board/{slug}/columns", s.webHandler.HandleCreateColumn)
 	r.Post("/board/{slug}/columns/rename", s.webHandler.HandleRenameColumn)
 	r.Post("/board/{slug}/columns/delete", s.webHandler.HandleDeleteColumn)
-	r.Post("/board/{slug}/columns/collapse", s.webHandler.HandleToggleColumnCollapse)
 	r.Post("/board/{slug}/columns/sort", s.webHandler.HandleSortColumn)
 	r.Post("/board/{slug}/columns/move", s.webHandler.HandleMoveColumn)
 	r.Post("/board/{slug}/meta", s.webHandler.HandleUpdateBoardMeta)
@@ -124,7 +137,14 @@ func (s *Server) buildRouter() chi.Router {
 
 	r.Handle("/settings", s.webHandler.SettingsHandler())
 	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())
+	r.Get("/api/export", s.webHandler.ExportHandler().ServeHTTP)
 
+	s.mountAPIRoutes(r)
+
+	return r
+}
+
+func (s *Server) mountAPIRoutes(r chi.Router) {
 	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {
 		r.Use(jsonContentType)
@@ -160,8 +180,6 @@ func (s *Server) buildRouter() chi.Router {
 	r.Get("/search", s.stubHandler)
 	r.Get("/events", s.stubHandler)
 	r.Get("/events/ws", s.stubHandler)
-
-	return r
 }
 
 func jsonContentType(next http.Handler) http.Handler {

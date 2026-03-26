@@ -25,6 +25,7 @@ type ResolvedSettings struct {
 	ExpandColumns   bool   `json:"expand_columns"`
 	ViewMode        string `json:"view_mode"`
 	CardDisplayMode string `json:"card_display_mode"`
+	WeekStart       string `json:"week_start"`
 }
 
 // BoardSettingsView holds pre-formatted per-board override values for the template.
@@ -35,24 +36,34 @@ type BoardSettingsView struct {
 	ExpandColumns   string `json:"expand_columns"`
 	ViewMode        string `json:"view_mode"`
 	CardDisplayMode string `json:"card_display_mode"`
+	WeekStart       string `json:"week_start"`
+}
+
+// CardWithPosition holds a card along with its column/card indices for template use.
+type CardWithPosition struct {
+	models.Card
+	ColIdx     int    `json:"col_idx"`
+	CardIdx    int    `json:"card_idx"`
+	ColumnName string `json:"column_name"`
 }
 
 // BoardViewModel is the state for the board view page.
 type BoardViewModel struct {
 	LayoutSettings
-	Title          string            `json:"title"`
-	SiteName       string            `json:"site_name"`
-	Board          *models.Board     `json:"board"`
-	BoardName      string            `json:"board_name"`
-	BoardSlug      string            `json:"board_slug"`
-	Boards         []BoardSummary    `json:"boards"`
-	AllTags        []string          `json:"all_tags,omitempty"`
-	TagColorsJSON  string            `json:"tag_colors_json,omitempty"`
-	Error          string            `json:"error,omitempty"`
-	Version        int               `json:"version"`
-	Settings       ResolvedSettings  `json:"settings"`
-	BSView         BoardSettingsView `json:"bs_view"`
-	GlobalSettings AppSettings       `json:"global_settings"`
+	Title          string             `json:"title"`
+	SiteName       string             `json:"site_name"`
+	Board          *models.Board      `json:"board"`
+	BoardName      string             `json:"board_name"`
+	BoardSlug      string             `json:"board_slug"`
+	Boards         []BoardSummary     `json:"boards"`
+	AllTags        []string           `json:"all_tags,omitempty"`
+	TagColorsJSON  string             `json:"tag_colors_json,omitempty"`
+	Error          string             `json:"error,omitempty"`
+	Version        int                `json:"version"`
+	Settings       ResolvedSettings   `json:"settings"`
+	BSView         BoardSettingsView  `json:"bs_view"`
+	GlobalSettings AppSettings        `json:"global_settings"`
+	AllCards       []CardWithPosition `json:"all_cards,omitempty"`
 }
 
 // resolveSettings merges global defaults with per-board overrides.
@@ -83,6 +94,13 @@ func resolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettin
 	if bs.CardDisplayMode != nil {
 		rs.CardDisplayMode = *bs.CardDisplayMode
 	}
+	rs.WeekStart = global.WeekStart
+	if rs.WeekStart == "" {
+		rs.WeekStart = "sunday"
+	}
+	if bs.WeekStart != nil {
+		rs.WeekStart = *bs.WeekStart
+	}
 	return rs
 }
 
@@ -112,6 +130,9 @@ func toBoardSettingsView(bs models.BoardSettings) BoardSettingsView {
 	if bs.CardDisplayMode != nil {
 		v.CardDisplayMode = *bs.CardDisplayMode
 	}
+	if bs.WeekStart != nil {
+		v.WeekStart = *bs.WeekStart
+	}
 	return v
 }
 
@@ -121,15 +142,16 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 	if err != nil {
 		return BoardViewModel{BoardSlug: slug, Error: err.Error()}, err
 	}
-	allBoards, _ := h.ws.ListBoards()
+	allInfos, _ := h.ws.ListBoardSummaries()
 	global := h.loadSettings()
-	summaries := sortBoardsWithPins(toBoardSummaries(allBoards), global.PinnedBoards)
+	summaries := sortBoardsWithPins(toBoardSummariesFast(allInfos), global.PinnedBoards)
 	tcMap := b.TagColors
 	if tcMap == nil {
 		tcMap = map[string]string{}
 	}
 	tcJSON, _ := json.Marshal(tcMap)
-	return BoardViewModel{
+	resolved := resolveSettings(global, b.Settings)
+	vm := BoardViewModel{
 		LayoutSettings: h.layoutSettings(global),
 		Title:          b.Name + " — " + global.SiteName,
 		SiteName:       global.SiteName,
@@ -140,16 +162,23 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 		AllTags:        collectAllTags(summaries),
 		TagColorsJSON:  string(tcJSON),
 		Version:        b.Version,
-		Settings:       resolveSettings(global, b.Settings),
+		Settings:       resolved,
 		BSView:         toBoardSettingsView(b.Settings),
 		GlobalSettings: global,
-	}, nil
+	}
+	if resolved.ViewMode == "calendar" {
+		vm.AllCards = flattenCards(b)
+	}
+	return vm, nil
 }
 
 // mutateBoard runs a versioned mutation via eng.MutateBoard, publishes SSE,
 // and returns the refreshed view model. Returns ErrVersionConflict on stale version.
 func (h *Handler) mutateBoard(slug string, clientVersion int, op func(*models.Board) error) (BoardViewModel, error) {
-	boardPath := h.ws.BoardPath(slug)
+	boardPath, err := h.ws.BoardPath(slug)
+	if err != nil {
+		return BoardViewModel{}, err
+	}
 	if err := h.eng.MutateBoard(boardPath, clientVersion, op); err != nil {
 		if errors.Is(err, board.ErrVersionConflict) {
 			return BoardViewModel{}, board.ErrVersionConflict
@@ -665,12 +694,9 @@ func (h *Handler) HandleDeleteColumn(w http.ResponseWriter, r *http.Request) {
 	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
 		var cols []models.Column
 		found := false
-		for j, col := range b.Columns {
+		for _, col := range b.Columns {
 			if col.Name == colName {
 				found = true
-				if j < len(b.ListCollapse) {
-					b.ListCollapse = append(b.ListCollapse[:j], b.ListCollapse[j+1:]...)
-				}
 				continue
 			}
 			cols = append(cols, col)
@@ -736,41 +762,6 @@ func (h *Handler) HandleUpdateBoardMeta(w http.ResponseWriter, r *http.Request) 
 	h.renderBoardContent(w, model)
 }
 
-// HandleToggleColumnCollapse handles POST /board/{slug}/columns/collapse.
-func (h *Handler) HandleToggleColumnCollapse(w http.ResponseWriter, r *http.Request) {
-	slug := slugFromRequest(r)
-	if slug == "" {
-		model := BoardViewModel{Error: "Board name is required"}
-		h.renderBoardContent(w, model)
-		return
-	}
-
-	colIndex, err := formInt(r, "col_index")
-	if err != nil {
-		model, _ := h.boardViewModel(slug)
-		model.Error = err.Error()
-		h.renderBoardContent(w, model)
-		return
-	}
-
-	version := formVersion(r)
-	model, mutErr := h.mutateBoard(slug, version, func(b *models.Board) error {
-		if colIndex < 0 || colIndex >= len(b.Columns) {
-			return fmt.Errorf("column index %d out of range", colIndex)
-		}
-		for len(b.ListCollapse) < len(b.Columns) {
-			b.ListCollapse = append(b.ListCollapse, false)
-		}
-		b.ListCollapse[colIndex] = !b.ListCollapse[colIndex]
-		return nil
-	})
-	if errors.Is(mutErr, board.ErrVersionConflict) {
-		h.handleConflict(w, slug)
-		return
-	}
-	h.renderBoardContent(w, model)
-}
-
 // HandleSortColumn handles POST /board/{slug}/columns/sort.
 func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
 	slug := slugFromRequest(r)
@@ -822,20 +813,8 @@ func (h *Handler) HandleSortColumn(w http.ResponseWriter, r *http.Request) {
 	h.renderBoardContent(w, model)
 }
 
-// reorderColumns moves colName after afterCol (or to front if afterCol is empty)
-// and rebuilds ListCollapse to match the new order.
+// reorderColumns moves colName after afterCol (or to front if afterCol is empty).
 func reorderColumns(b *models.Board, colName, afterCol string) error {
-	// Align ListCollapse with columns.
-	for len(b.ListCollapse) < len(b.Columns) {
-		b.ListCollapse = append(b.ListCollapse, false)
-	}
-
-	// Build collapse state map.
-	collapseByName := make(map[string]bool, len(b.Columns))
-	for i, col := range b.Columns {
-		collapseByName[col.Name] = b.ListCollapse[i]
-	}
-
 	// Find and remove the column being moved.
 	var movingCol *models.Column
 	var remaining []models.Column
@@ -865,12 +844,6 @@ func reorderColumns(b *models.Board, colName, afterCol string) error {
 	}
 
 	b.Columns = reordered
-
-	// Rebuild ListCollapse to match new order.
-	b.ListCollapse = make([]bool, len(b.Columns))
-	for i, col := range b.Columns {
-		b.ListCollapse[i] = collapseByName[col.Name]
-	}
 	return nil
 }
 
@@ -926,8 +899,11 @@ func (h *Handler) HandleUpdateBoardSettings(w http.ResponseWriter, r *http.Reque
 		b := v == "true"
 		settings.ExpandColumns = &b
 	}
-	if v := r.FormValue("view_mode"); v == "board" || v == "table" {
+	if v := r.FormValue("view_mode"); v == "board" || v == "table" || v == "calendar" {
 		settings.ViewMode = &v
+	}
+	if v := r.FormValue("week_start"); v == "sunday" || v == "monday" {
+		settings.WeekStart = &v
 	}
 	if v := r.FormValue("card_display_mode"); v == "full" || v == "hide" || v == "trim" {
 		settings.CardDisplayMode = &v
@@ -1012,6 +988,22 @@ func sortCardsByDue(cards []models.Card) {
 		}
 		return a < b
 	})
+}
+
+// flattenCards collects all cards from all columns with their position indices.
+func flattenCards(b *models.Board) []CardWithPosition {
+	var all []CardWithPosition
+	for ci, col := range b.Columns {
+		for ci2, card := range col.Cards {
+			all = append(all, CardWithPosition{
+				Card:       card,
+				ColIdx:     ci,
+				CardIdx:    ci2,
+				ColumnName: col.Name,
+			})
+		}
+	}
+	return all
 }
 
 func priorityRank(p string) int {

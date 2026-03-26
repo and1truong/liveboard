@@ -54,6 +54,7 @@ document.addEventListener('alpine:init', function () {
     isDragging: false,
     sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
     activeTag: null,
+    focusedColumn: '',
 
     openModal: function (name) {
       this.activeModal = name;

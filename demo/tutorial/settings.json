@@ -1,0 +1,18 @@
+{
+  "site_name": "LiveBoard Tutorial",
+  "theme": "light",
+  "color_theme": "default",
+  "font_family": "system",
+  "column_width": 512,
+  "sidebar_position": "left",
+  "default_columns": [
+    "to-do",
+    "in-progress",
+    "done"
+  ],
+  "show_checkbox": true,
+  "newline_trigger": "shift-enter",
+  "card_position": "append",
+  "card_display_mode": "full",
+  "keyboard_shortcuts": true
+}

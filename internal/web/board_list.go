@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/and1truong/liveboard/internal/parser"
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
@@ -112,6 +113,31 @@ func toBoardSummaries(boards []models.Board) []BoardSummary {
 	return summaries
 }
 
+// toBoardSummariesFast converts lightweight parser summaries to BoardSummary
+// without full card parsing overhead.
+func toBoardSummariesFast(infos []parser.BoardSummaryInfo) []BoardSummary {
+	summaries := make([]BoardSummary, len(infos))
+	for i, info := range infos {
+		summaries[i] = BoardSummary{
+			Name:        info.Board.Name,
+			Slug:        boardSlug(info.Board),
+			Description: info.Board.Description,
+			Icon:        info.Board.Icon,
+			Tags:        info.Board.Tags,
+			CardCount:   info.CardCount,
+			DoneCount:   info.DoneCount,
+			ColumnCount: info.ColumnCount,
+			CreatedAt:   info.Board.CreatedAt,
+			UpdatedAt:   info.Board.UpdatedAt,
+			CreatedAgo:  relativeTime(info.Board.CreatedAt),
+			UpdatedAgo:  relativeTime(info.Board.UpdatedAt),
+			CreatedFull: info.Board.CreatedAt.Format("Created: Jan 2, 2006 3:04 PM"),
+			UpdatedFull: info.Board.UpdatedAt.Format("Updated: Jan 2, 2006 3:04 PM"),
+		}
+	}
+	return summaries
+}
+
 // collectAllTags returns sorted unique tags across all board summaries.
 func collectAllTags(boards []BoardSummary) []string {
 	seen := make(map[string]struct{})
@@ -154,12 +180,12 @@ func sortBoardsWithPins(boards []BoardSummary, pinned []string) []BoardSummary {
 
 // boardListModel loads the board list and returns a populated BoardListModel.
 func (h *Handler) boardListModel() (BoardListModel, error) {
-	boards, err := h.ws.ListBoards()
+	infos, err := h.ws.ListBoardSummaries()
 	if err != nil {
 		return BoardListModel{Error: err.Error()}, nil
 	}
 	settings := h.loadSettings()
-	summaries := toBoardSummaries(boards)
+	summaries := toBoardSummariesFast(infos)
 	summaries = sortBoardsWithPins(summaries, settings.PinnedBoards)
 	return BoardListModel{LayoutSettings: h.layoutSettings(settings), Title: settings.SiteName, SiteName: settings.SiteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
 }
@@ -223,7 +249,13 @@ func (h *Handler) HandleSetBoardIconList(w http.ResponseWriter, r *http.Request)
 
 	icon := r.FormValue("icon")
 
-	boardPath := h.ws.BoardPath(slug)
+	boardPath, err := h.ws.BoardPath(slug)
+	if err != nil {
+		model, _ := h.boardListModel()
+		model.Error = err.Error()
+		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		return
+	}
 	if err := h.eng.UpdateBoardIcon(boardPath, icon); err != nil {
 		model, _ := h.boardListModel()
 		model.Error = err.Error()

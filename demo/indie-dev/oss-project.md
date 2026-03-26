@@ -1,5 +1,5 @@
 ---
-version: 44
+version: 56
 name: OSS Tracker
 description: liveboard/liveboard — open source project board
 icon: "\U0001F4E6"
@@ -21,11 +21,13 @@ tag-colors:
     oss: '#e05252'
     parser: '#607080'
     ux: '#45aab5'
+members:
+    - contributor-alex
 list-collapse:
     - false
-    - false
-    - false
     - true
+    - true
+    - false
 settings:
     expand-columns: false
     view-mode: board
@@ -34,25 +36,25 @@ settings:
 
 ## Triage
 
-- [ ] Feature request: export board to JSON
-  tags: feature, api
+- [ ] Bug: SSE connection drops after 30min idle
+  tags: bug, backend
   priority: medium
-  Issue #175 — multiple users asking for this. Should be straightforward since we already have the models.
-
-- [ ] Feature request: keyboard shortcuts for card actions
-  tags: feature, ux
-  priority: low
-  Issue #168. Vim-style navigation requested. `j`/`k` to move between cards, `e` to edit, `d` to toggle done.
+  Issue #191. Browser closes the EventSource. Need server-side keepalive pings.
 
 - [ ] Bug: cards reorder incorrectly when column is collapsed
   tags: bug, frontend
   priority: high
   Reported in #182. Drag-and-drop index calculation is off when the source column is collapsed. Steps to reproduce in the issue.
 
-- [ ] Bug: SSE connection drops after 30min idle
-  tags: bug, backend
+- [ ] Feature request: keyboard shortcuts for card actions
+  tags: feature, ux
+  priority: low
+  Issue #168. Vim-style navigation requested. `j`/`k` to move between cards, `e` to edit, `d` to toggle done.
+
+- [ ] Feature request: export board to JSON
+  tags: feature, api
   priority: medium
-  Issue #191. Browser closes the EventSource. Need server-side keepalive pings.
+  Issue #175 — multiple users asking for this. Should be straightforward since we already have the models.
 
 ## Accepted
 

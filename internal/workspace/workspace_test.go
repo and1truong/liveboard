@@ -43,10 +43,47 @@ func TestOpen(t *testing.T) {
 
 func TestBoardPath(t *testing.T) {
 	ws := setupWorkspace(t)
-	got := ws.BoardPath("roadmap")
+	got, err := ws.BoardPath("roadmap")
+	if err != nil {
+		t.Fatal(err)
+	}
 	want := filepath.Join(ws.Dir, "roadmap.md")
 	if got != want {
 		t.Errorf("BoardPath = %q, want %q", got, want)
+	}
+}
+
+func TestBoardPath_Traversal(t *testing.T) {
+	ws := setupWorkspace(t)
+	cases := []string{
+		"../../../etc/passwd",
+		"../../escape",
+		"/etc/passwd",
+		"board/../../escape",
+		"valid/../../../escape",
+		"board\x00evil",
+	}
+	for _, name := range cases {
+		_, err := ws.BoardPath(name)
+		if err == nil {
+			t.Errorf("BoardPath(%q) should fail, but got nil error", name)
+		}
+	}
+}
+
+func TestValidateBoardName(t *testing.T) {
+	valid := []string{"roadmap", "my-board", "My Board", "board_v2", "日本語"}
+	for _, name := range valid {
+		if err := ValidateBoardName(name); err != nil {
+			t.Errorf("ValidateBoardName(%q) = %v, want nil", name, err)
+		}
+	}
+
+	invalid := []string{"", "../escape", "/absolute", "has/slash", "bad\x00null"}
+	for _, name := range invalid {
+		if err := ValidateBoardName(name); err == nil {
+			t.Errorf("ValidateBoardName(%q) = nil, want error", name)
+		}
 	}
 }
 
@@ -119,7 +156,9 @@ func TestCreateBoard(t *testing.T) {
 	if len(b.Columns) == 0 {
 		t.Error("expected default columns")
 	}
-	if _, err := os.Stat(ws.BoardPath("roadmap")); os.IsNotExist(err) {
+	if p, e := ws.BoardPath("roadmap"); e != nil {
+		t.Fatal(e)
+	} else if _, err := os.Stat(p); os.IsNotExist(err) {
 		t.Error("board file not created on disk")
 	}
 }
@@ -159,7 +198,9 @@ func TestDeleteBoard(t *testing.T) {
 	if err := ws.DeleteBoard("roadmap"); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := os.Stat(ws.BoardPath("roadmap")); !os.IsNotExist(err) {
+	if p, e := ws.BoardPath("roadmap"); e != nil {
+		t.Fatal(e)
+	} else if _, err := os.Stat(p); !os.IsNotExist(err) {
 		t.Error("expected board file to be deleted")
 	}
 }

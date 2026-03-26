@@ -18,7 +18,11 @@ func (s *Server) addColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err := s.ws.Engine.AddColumn(boardPath, body.Name); err != nil {
 		handleError(w, err)
 		return
@@ -32,7 +36,11 @@ func (s *Server) addColumn(w http.ResponseWriter, r *http.Request) {
 func (s *Server) deleteColumn(w http.ResponseWriter, r *http.Request) {
 	boardName := pathParam(r, "board")
 	colName := pathParam(r, "column")
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 
 	if err := s.ws.Engine.DeleteColumn(boardPath, colName); err != nil {
 		handleError(w, err)
@@ -57,7 +65,11 @@ func (s *Server) moveColumn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	boardPath := s.ws.BoardPath(boardName)
+	boardPath, err := s.ws.BoardPath(boardName)
+	if err != nil {
+		respondError(w, http.StatusBadRequest, err.Error())
+		return
+	}
 	if err := s.ws.Engine.MoveColumn(boardPath, colName, body.After); err != nil {
 		handleError(w, err)
 		return

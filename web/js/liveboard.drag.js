@@ -5,6 +5,8 @@
   var draggingSourceColumn = null;
   var draggingColumnEl = null;
 
+  var isReadOnly = document.documentElement.hasAttribute('data-readonly');
+
   function attach() {
     // Card click → open Alpine card modal
     document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
@@ -26,6 +28,7 @@
       });
     });
 
+    if (!isReadOnly) {
     // Card right-click → open Alpine quick edit
     document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
       if (card.dataset.ctxWired) return;
@@ -94,19 +97,10 @@
         }
       });
     });
-
-    // Collapsed column click → expand
-    document.addEventListener("click", function (e) {
-      var header = e.target.closest(".column-header");
-      if (!header) return;
-      var col = header.closest(".column");
-      if (!col || !col.classList.contains("collapsed")) return;
-      var btn = header.querySelector(".column-collapse-btn");
-      if (btn && e.target !== btn) btn.click();
-    });
+    } // end !isReadOnly
 
     // Cards: draggable
-    document.querySelectorAll(".card[draggable]").forEach(function (card) {
+    document.querySelectorAll(".card[draggable]:not(.calendar-card-chip)").forEach(function (card) {
       if (card.dataset.dragWired) return;
       card.dataset.dragWired = "1";
 
@@ -150,7 +144,7 @@
           zone._dragLeaveTimer = null;
         }
         zone.classList.remove("drag-over");
-        var beforeCard = LB.getInsertionTarget(zone, e.clientY, draggingCard);
+        var beforeCard = LB.getInsertionTarget(zone, e.clientY, draggingCard, e.clientX);
         LB.showDropIndicator(zone, beforeCard);
       });
 

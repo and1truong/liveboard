@@ -17,6 +17,46 @@ var (
 	hashTagRe = regexp.MustCompile(`#(\w[\w-]*)`)
 )
 
+// BoardSummaryInfo holds lightweight metadata extracted without full card parsing.
+type BoardSummaryInfo struct {
+	Board       models.Board
+	CardCount   int
+	DoneCount   int
+	ColumnCount int
+}
+
+// ParseSummary reads only the YAML frontmatter and counts columns/cards
+// without building full card objects. Much faster than Parse for listings.
+func ParseSummary(content string) (*BoardSummaryInfo, error) {
+	board := &models.Board{}
+
+	body := content
+	if strings.HasPrefix(content, "---\n") {
+		parts := strings.SplitN(content[4:], "\n---\n", 2)
+		if len(parts) == 2 {
+			if err := yaml.Unmarshal([]byte(parts[0]), board); err != nil {
+				return nil, err
+			}
+			body = parts[1]
+		}
+	}
+
+	info := &BoardSummaryInfo{Board: *board}
+	scanner := bufio.NewScanner(strings.NewReader(body))
+	for scanner.Scan() {
+		line := scanner.Text()
+		if strings.HasPrefix(line, "## ") {
+			info.ColumnCount++
+		} else if strings.HasPrefix(line, "- [") && len(line) > 5 && line[4] == ']' {
+			info.CardCount++
+			if line[3] == 'x' || line[3] == 'X' {
+				info.DoneCount++
+			}
+		}
+	}
+	return info, nil
+}
+
 // Parse reads a Markdown board string and returns a Board model.
 func Parse(content string) (*models.Board, error) {
 	board := &models.Board{}
@@ -128,13 +168,6 @@ func Parse(content string) (*models.Board, error) {
 	// Flush final card.
 	if currentCard != nil && currentCol != nil {
 		currentCol.Cards = append(currentCol.Cards, *currentCard)
-	}
-
-	// Populate collapsed state from front-matter.
-	for i := range board.Columns {
-		if i < len(board.ListCollapse) {
-			board.Columns[i].Collapsed = board.ListCollapse[i]
-		}
 	}
 
 	return board, nil

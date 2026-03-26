@@ -14,6 +14,7 @@ document.addEventListener('alpine:init', function () {
       expandColumns: 'false',
       viewMode: 'board',
       cardDisplayMode: '',
+      weekStart: '',
       slug: '',
 
       toggle: function () {
@@ -56,6 +57,7 @@ document.addEventListener('alpine:init', function () {
         this.expandColumns = bv.dataset.bsExpandColumns || 'false';
         this.viewMode = bv.dataset.bsViewMode || bv.dataset.viewMode || 'board';
         this.cardDisplayMode = bv.dataset.bsCardDisplayMode || '';
+        this.weekStart = bv.dataset.bsWeekStart || bv.dataset.weekStart || 'sunday';
       },
 
       applySettings: function () {
@@ -69,6 +71,8 @@ document.addEventListener('alpine:init', function () {
           bv.dataset.bsExpandColumns = this.expandColumns;
           bv.dataset.bsViewMode = this.viewMode;
           bv.dataset.bsCardDisplayMode = this.cardDisplayMode;
+          bv.dataset.bsWeekStart = this.weekStart;
+          bv.dataset.weekStart = this.weekStart || bv.dataset.weekStart || 'sunday';
           bv.dataset.viewMode = this.viewMode || bv.dataset.viewMode || 'board';
           bv.dataset.showCheckbox = this.showCheckbox || bv.dataset.globalShowCheckbox || 'true';
           bv.dataset.cardPosition = this.cardPosition || bv.dataset.globalCardPosition || 'append';
@@ -103,6 +107,7 @@ document.addEventListener('alpine:init', function () {
           params.expand_columns = self.expandColumns;
           params.view_mode = self.viewMode;
           if (self.cardDisplayMode !== '') params.card_display_mode = self.cardDisplayMode;
+          if (self.weekStart !== '') params.week_start = self.weekStart;
           htmx.ajax('POST', '/board/' + encodeURIComponent(self.slug) + '/settings', {
             values: params,
             target: '#board-content',
