@@ -97,7 +97,8 @@
     p { margin: 0 0 0.4em; }
     p:last-child { margin-bottom: 0; }
     h1, h2, h3 { margin: 0.5em 0 0.25em; font-size: 1em; font-weight: 600; color: var(--color-text-primary); }
-    ul, ol { margin: 0.25em 0; padding-left: 1.4em; }
+    ul { margin: 0.25em 0; padding-left: 1.4em; list-style-type: disc; }
+    ol { margin: 0.25em 0; padding-left: 1.4em; list-style-type: decimal; }
     li { margin-bottom: 0.15em; }
     code { background: var(--color-bg-secondary); padding: 0.1em 0.35em; border-radius: 3px; font-size: 0.9em; }
     pre { background: var(--color-bg-secondary); padding: 0.5em 0.75em; border-radius: var(--radius-md); overflow-x: auto; margin: 0.4em 0; }
