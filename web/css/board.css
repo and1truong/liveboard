@@ -145,43 +145,6 @@ html[data-theme="light"] {
     --shadow-sidebar: 2px 0 8px rgba(0,0,0,0.06);
 }
 
-/* === GITHUB THEME === */
-html[data-color-theme="github"] {
-    --color-accent:         #0969da;
-    --color-accent-hover:   #0550ae;
-    --color-accent-muted:   #ddf4ff;
-    --color-accent-text:    #0550ae;
-    --color-bg:             #f6f8fa;
-    --color-surface:        #ffffff;
-    --color-column-bg:      #ebeef1;
-    --color-border:         #d1d9e0;
-    --color-border-dashed:  #b8c0c8;
-}
-@media (prefers-color-scheme: dark) {
-    html[data-color-theme="github"]:not([data-theme]) {
-        --color-accent:         #58a6ff;
-        --color-accent-hover:   #79c0ff;
-        --color-accent-muted:   #0d1d30;
-        --color-accent-text:    #79c0ff;
-        --color-bg:             #0d1117;
-        --color-surface:        #161b22;
-        --color-column-bg:      #1c2128;
-        --color-border:         #30363d;
-        --color-border-dashed:  #484f58;
-    }
-}
-html[data-color-theme="github"][data-theme="dark"] {
-    --color-accent:         #58a6ff;
-    --color-accent-hover:   #79c0ff;
-    --color-accent-muted:   #0d1d30;
-    --color-accent-text:    #79c0ff;
-    --color-bg:             #0d1117;
-    --color-surface:        #161b22;
-    --color-column-bg:      #1c2128;
-    --color-border:         #30363d;
-    --color-border-dashed:  #484f58;
-}
-
 /* === GITLAB THEME === */
 html[data-color-theme="gitlab"] {
     --color-accent:         #6e49cb;
@@ -293,43 +256,6 @@ html[data-color-theme="rose"][data-theme="dark"] {
     --color-border-dashed:  #5c3542;
 }
 
-/* === SUNSET THEME === */
-html[data-color-theme="sunset"] {
-    --color-accent:         #ea580c;
-    --color-accent-hover:   #c2410c;
-    --color-accent-muted:   #ffedd5;
-    --color-accent-text:    #c2410c;
-    --color-bg:             #fdf7f2;
-    --color-surface:        #ffffff;
-    --color-column-bg:      #f0e8e0;
-    --color-border:         #e2d5c8;
-    --color-border-dashed:  #d0bfad;
-}
-@media (prefers-color-scheme: dark) {
-    html[data-color-theme="sunset"]:not([data-theme]) {
-        --color-accent:         #fb923c;
-        --color-accent-hover:   #fdba74;
-        --color-accent-muted:   #2d1306;
-        --color-accent-text:    #fdba74;
-        --color-bg:             #151008;
-        --color-surface:        #1f1810;
-        --color-column-bg:      #292016;
-        --color-border:         #403020;
-        --color-border-dashed:  #5c4630;
-    }
-}
-html[data-color-theme="sunset"][data-theme="dark"] {
-    --color-accent:         #fb923c;
-    --color-accent-hover:   #fdba74;
-    --color-accent-muted:   #2d1306;
-    --color-accent-text:    #fdba74;
-    --color-bg:             #151008;
-    --color-surface:        #1f1810;
-    --color-column-bg:      #292016;
-    --color-border:         #403020;
-    --color-border-dashed:  #5c4630;
-}
-
 /* === AQUA THEME (Classic Mac OS X) === */
 html[data-color-theme="aqua"] {
     --color-accent:         #007AFF;
@@ -365,80 +291,6 @@ html[data-color-theme="aqua"][data-theme="dark"] {
     --color-column-bg:      #38383A;
     --color-border:         #48484A;
     --color-border-dashed:  #636366;
-}
-
-/* === GRAPHITE THEME (Mac OS X Graphite) === */
-html[data-color-theme="graphite"] {
-    --color-accent:         #8E8E93;
-    --color-accent-hover:   #6E6E73;
-    --color-accent-muted:   #E8E8ED;
-    --color-accent-text:    #636366;
-    --color-bg:             #F2F2F7;
-    --color-surface:        #FFFFFF;
-    --color-column-bg:      #E5E5EA;
-    --color-border:         #D1D1D6;
-    --color-border-dashed:  #C7C7CC;
-}
-@media (prefers-color-scheme: dark) {
-    html[data-color-theme="graphite"]:not([data-theme]) {
-        --color-accent:         #98989D;
-        --color-accent-hover:   #AEAEB2;
-        --color-accent-muted:   #1C1C1E;
-        --color-accent-text:    #C7C7CC;
-        --color-bg:             #000000;
-        --color-surface:        #1C1C1E;
-        --color-column-bg:      #2C2C2E;
-        --color-border:         #38383A;
-        --color-border-dashed:  #48484A;
-    }
-}
-html[data-color-theme="graphite"][data-theme="dark"] {
-    --color-accent:         #98989D;
-    --color-accent-hover:   #AEAEB2;
-    --color-accent-muted:   #1C1C1E;
-    --color-accent-text:    #C7C7CC;
-    --color-bg:             #000000;
-    --color-surface:        #1C1C1E;
-    --color-column-bg:      #2C2C2E;
-    --color-border:         #38383A;
-    --color-border-dashed:  #48484A;
-}
-
-/* === MACOS THEME (Modern Sonoma/Sequoia) === */
-html[data-color-theme="macos"] {
-    --color-accent:         #007AFF;
-    --color-accent-hover:   #0062CC;
-    --color-accent-muted:   #E8F0FE;
-    --color-accent-text:    #0055B3;
-    --color-bg:             #F5F5F7;
-    --color-surface:        #FFFFFF;
-    --color-column-bg:      #EBEBED;
-    --color-border:         #D2D2D7;
-    --color-border-dashed:  #C6C6CB;
-}
-@media (prefers-color-scheme: dark) {
-    html[data-color-theme="macos"]:not([data-theme]) {
-        --color-accent:         #0A84FF;
-        --color-accent-hover:   #409CFF;
-        --color-accent-muted:   #0A1A2E;
-        --color-accent-text:    #64B5FF;
-        --color-bg:             #1D1D1F;
-        --color-surface:        #2C2C2E;
-        --color-column-bg:      #3A3A3C;
-        --color-border:         #48484A;
-        --color-border-dashed:  #545456;
-    }
-}
-html[data-color-theme="macos"][data-theme="dark"] {
-    --color-accent:         #0A84FF;
-    --color-accent-hover:   #409CFF;
-    --color-accent-muted:   #0A1A2E;
-    --color-accent-text:    #64B5FF;
-    --color-bg:             #1D1D1F;
-    --color-surface:        #2C2C2E;
-    --color-column-bg:      #3A3A3C;
-    --color-border:         #48484A;
-    --color-border-dashed:  #545456;
 }
 
 /* === SETTINGS PAGE === */
@@ -585,6 +437,7 @@ html[data-color-theme="macos"][data-theme="dark"] {
     gap: 8px;
 }
 .settings-swatch {
+    position: relative;
     width: 28px;
     height: 28px;
     border-radius: 50%;
@@ -609,15 +462,28 @@ html[data-color-theme="macos"][data-theme="dark"] {
     font-weight: 700;
     text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
-.settings-swatch[data-theme="default"]  { background-color: #6366f1; }
-.settings-swatch[data-theme="github"]   { background-color: #0969da; }
 .settings-swatch[data-theme="gitlab"]   { background-color: #6e49cb; }
 .settings-swatch[data-theme="emerald"]  { background-color: #059669; }
 .settings-swatch[data-theme="rose"]     { background-color: #e11d48; }
-.settings-swatch[data-theme="sunset"]   { background-color: #ea580c; }
 .settings-swatch[data-theme="aqua"]     { background-color: #007AFF; }
-.settings-swatch[data-theme="graphite"] { background-color: #8E8E93; }
-.settings-swatch[data-theme="macos"]    { background-color: #007AFF; }
+.settings-swatch-label {
+    position: absolute;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    white-space: nowrap;
+    background: var(--color-text-primary);
+    color: var(--color-surface);
+    padding: 2px 6px;
+    border-radius: 4px;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+.settings-swatch:hover .settings-swatch-label {
+    opacity: 1;
+}
 
 /* --- Range Slider --- */
 .settings-range-group {

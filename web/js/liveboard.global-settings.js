@@ -32,7 +32,7 @@ document.addEventListener('alpine:init', function () {
           .then(function (s) {
             self.siteName = s.site_name || 'LiveBoard';
             self.theme = s.theme || 'system';
-            self.colorTheme = s.color_theme || 'default';
+            self.colorTheme = s.color_theme || 'aqua';
             self.fontFamily = s.font_family || 'system';
             self.columnWidth = s.column_width || 280;
             self.sidebarPosition = s.sidebar_position || 'left';
@@ -105,8 +105,7 @@ document.addEventListener('alpine:init', function () {
             // Apply visual changes immediately
             if (s.theme === 'system') { el.removeAttribute('data-theme'); }
             else { el.setAttribute('data-theme', s.theme); }
-            if (s.color_theme && s.color_theme !== 'default') { el.setAttribute('data-color-theme', s.color_theme); }
-            else { el.removeAttribute('data-color-theme'); }
+            el.setAttribute('data-color-theme', s.color_theme || 'aqua');
             self.applyFont(s.font_family || 'system');
             el.style.setProperty('--column-width', s.column_width + 'px');
             if (s.sidebar_position === 'right') { el.setAttribute('data-sidebar-position', 'right'); }

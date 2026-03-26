@@ -54,9 +54,8 @@ type AppSettings struct {
 }
 
 var validColorThemes = map[string]bool{
-	"default": true, "github": true, "gitlab": true,
-	"emerald": true, "rose": true, "sunset": true,
-	"aqua": true, "graphite": true, "macos": true,
+	"gitlab":  true,
+	"emerald": true, "rose": true, "aqua": true,
 }
 
 var validFonts = map[string]bool{
@@ -158,7 +157,7 @@ func sanitizeSettings(s *AppSettings) {
 	}
 	s.Theme = oneOf(s.Theme, "system", "dark", "light")
 	if !validColorThemes[s.ColorTheme] {
-		s.ColorTheme = "default"
+		s.ColorTheme = "aqua"
 	}
 	if !validFonts[s.FontFamily] {
 		s.FontFamily = "system"
