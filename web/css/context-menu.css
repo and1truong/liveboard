@@ -5,10 +5,8 @@
     box-shadow: 0 8px 24px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.1);
     min-width: 180px;
     gap: 1px;
-}
 
-.card-context-menu.visible {
-    @apply flex;
+    &.visible { @apply flex; }
 }
 
 .ctx-item {
@@ -17,18 +15,14 @@
     padding: 8px 12px;
     font-family: var(--font-sans);
     transition: background 0.1s, color 0.1s;
-}
 
-.ctx-item:hover {
-    @apply bg-column-bg;
-}
+    &:hover { @apply bg-column-bg; }
 
-.ctx-item.ctx-danger {
-    @apply text-danger;
-}
+    &.ctx-danger {
+        @apply text-danger;
 
-.ctx-item.ctx-danger:hover {
-    @apply bg-danger-bg;
+        &:hover { @apply bg-danger-bg; }
+    }
 }
 
 .ctx-icon {
@@ -54,4 +48,3 @@
     letter-spacing: 0.05em;
     padding: 4px 12px 2px 12px;
 }
-

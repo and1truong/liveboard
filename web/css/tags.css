@@ -42,17 +42,17 @@
     height: 16px;
     border: 2px solid transparent;
     transition: transform 0.1s, border-color 0.1s, box-shadow 0.1s;
-}
 
-.color-swatch:hover {
-    transform: scale(1.25);
-    box-shadow: 0 0 0 1px var(--color-border);
-}
+    &:hover {
+        transform: scale(1.25);
+        box-shadow: 0 0 0 1px var(--color-border);
+    }
 
-.color-swatch.active {
-    border-color: var(--color-text-primary);
-    transform: scale(1.15);
-    box-shadow: 0 0 0 1px var(--color-text-primary);
+    &.active {
+        border-color: var(--color-text-primary);
+        transform: scale(1.15);
+        box-shadow: 0 0 0 1px var(--color-text-primary);
+    }
 }
 
 .color-swatch-clear {
@@ -61,10 +61,9 @@
     padding: 0 3px;
     opacity: 0.7;
     transition: opacity 0.1s, color 0.1s;
-}
 
-.color-swatch-clear:hover {
-    @apply text-text-primary;
-    opacity: 1;
+    &:hover {
+        @apply text-text-primary;
+        opacity: 1;
+    }
 }
-

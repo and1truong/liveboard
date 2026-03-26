@@ -31,15 +31,15 @@
     color: var(--color-text-tertiary);
     padding: 2px 5px;
     transition: opacity 0.15s, color 0.15s;
+
+    &:hover {
+        @apply text-text-primary;
+        background: var(--color-hover);
+    }
 }
 
 .board-topbar:hover .board-edit-btn {
     @apply opacity-100;
-}
-
-.board-edit-btn:hover {
-    @apply text-text-primary;
-    background: var(--color-hover);
 }
 
 .board-error-banner {
@@ -59,15 +59,25 @@
     width: var(--column-width);
     padding: 10px;
     max-height: 100%;
+
+    &[draggable] {
+        .column-header { @apply cursor-grab; }
+
+        &:active .column-header { cursor: grabbing; }
+    }
+
+    &.column-dragging { @apply opacity-40; }
+
+    &:hover .column-drag-handle { @apply opacity-100; }
+
+    h3 {
+        @apply text-base font-bold text-text-primary flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
+    }
 }
 
 .column-header {
     @apply flex items-center justify-between mb-2 shrink-0 gap-1;
     padding: 0 2px;
-}
-
-.column h3 {
-    @apply text-base font-bold text-text-primary flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
 }
 
 .column-menu-btn {
@@ -76,10 +86,8 @@
     font-size: 1rem;
     letter-spacing: 0.05em;
     transition: background 0.12s, color 0.12s;
-}
 
-.column-menu-btn:hover {
-    @apply bg-border text-text-primary;
+    &:hover { @apply bg-border text-text-primary; }
 }
 
 /* === Sidebar: Add Column Bar === */
@@ -88,15 +96,15 @@
     width: 40px;
     min-height: 120px;
     transition: background 0.2s ease, width 0.2s ease;
-}
 
-.add-column-bar:hover {
-    @apply bg-surface;
-}
+    &:hover { @apply bg-surface; }
 
-.add-column-bar.expanded {
-    @apply cursor-default;
-    width: 220px;
+    &.expanded {
+        @apply cursor-default;
+        width: 220px;
+
+        .add-column-bar-label { @apply hidden; }
+    }
 }
 
 .add-column-bar-label {
@@ -107,16 +115,10 @@
     letter-spacing: 0.5px;
 }
 
-.add-column-bar.expanded .add-column-bar-label {
-    @apply hidden;
-}
-
 .add-column-bar-form {
     @apply flex-col gap-2 p-3 w-full;
-}
 
-.add-column-bar-form input[type="text"] {
-    @apply bg-surface w-full;
+    input[type="text"] { @apply bg-surface w-full; }
 }
 
 .column-drag-handle {
@@ -124,14 +126,8 @@
     font-size: 14px;
     letter-spacing: -1px;
     transition: opacity 0.15s;
-}
 
-.column:hover .column-drag-handle {
-    @apply opacity-100;
-}
-
-.column-drag-handle:active {
-    cursor: grabbing;
+    &:active { cursor: grabbing; }
 }
 
 .column-card-count {
@@ -144,26 +140,17 @@
     padding: 2px;
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
-}
 
-.cards::-webkit-scrollbar {
-    width: 4px;
-}
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { background: transparent; }
+    &::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
 
-.cards::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.cards::-webkit-scrollbar-thumb {
-    background: var(--color-border);
-    border-radius: 2px;
-}
-
-.cards.drag-over {
-    @apply bg-accent-muted rounded-md;
-    outline: 2px dashed var(--color-accent);
-    outline-offset: -2px;
-    min-height: 60px;
+    &.drag-over {
+        @apply bg-accent-muted rounded-md;
+        outline: 2px dashed var(--color-accent);
+        outline-offset: -2px;
+        min-height: 60px;
+    }
 }
 
 .move-trigger,
@@ -181,18 +168,6 @@
 }
 
 /* === COLUMN DRAG === */
-.column[draggable] .column-header {
-    @apply cursor-grab;
-}
-
-.column[draggable]:active .column-header {
-    cursor: grabbing;
-}
-
-.column.column-dragging {
-    @apply opacity-40;
-}
-
 .table-group-cards.column-dragging {
     @apply opacity-40;
 }
@@ -207,4 +182,3 @@
     @apply w-auto self-auto;
     height: 3px;
 }
-

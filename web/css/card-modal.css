@@ -39,11 +39,11 @@
     width: 28px;
     height: 28px;
     transition: all 0.15s ease;
-}
 
-.card-modal-close:hover {
-    @apply bg-danger-bg text-danger;
-    transform: scale(1.1);
+    &:hover {
+        @apply bg-danger-bg text-danger;
+        transform: scale(1.1);
+    }
 }
 
 .card-modal-main {
@@ -71,15 +71,15 @@
     letter-spacing: -0.01em;
     min-height: 1.8em;
     transition: border-color 0.15s ease;
-}
 
-.card-modal-title:focus {
-    @apply outline-none;
-    border-bottom-color: var(--color-accent);
-}
+    &:focus {
+        @apply outline-none;
+        border-bottom-color: var(--color-accent);
+    }
 
-.card-modal-title::placeholder {
-    @apply text-text-muted;
+    &::placeholder {
+        @apply text-text-muted;
+    }
 }
 
 .card-modal-action-bar {
@@ -95,11 +95,11 @@
     padding: 7px 14px;
     border-radius: 8px;
     transition: all 0.15s ease;
-}
 
-.card-modal-action-btn:hover {
-    @apply bg-surface border-border text-text-primary;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    &:hover {
+        @apply bg-surface border-border text-text-primary;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    }
 }
 
 .card-modal-action-icon {
@@ -137,10 +137,10 @@
     padding: 4px 8px;
     color: var(--color-text-primary);
     border-radius: 4px;
-}
 
-.datepicker-nav:hover {
-    background: var(--color-column-bg);
+    &:hover {
+        background: var(--color-column-bg);
+    }
 }
 
 .datepicker-month {
@@ -173,33 +173,33 @@
     border-radius: 4px;
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
-}
 
-.datepicker-day:hover {
-    background: var(--color-column-bg);
-}
+    &:hover {
+        background: var(--color-column-bg);
+    }
 
-.datepicker-day--today {
-    font-weight: 700;
-    outline: 1px solid var(--color-border);
-}
+    &--today {
+        font-weight: 700;
+        outline: 1px solid var(--color-border);
+    }
 
-.datepicker-day--selected {
-    background: var(--color-accent);
-    color: #fff;
-}
+    &--selected {
+        background: var(--color-accent);
+        color: #fff;
 
-.datepicker-day--selected:hover {
-    background: var(--color-accent);
-    opacity: 0.9;
-}
+        &:hover {
+            background: var(--color-accent);
+            opacity: 0.9;
+        }
+    }
 
-.datepicker-day--empty {
-    cursor: default;
-}
+    &--empty {
+        cursor: default;
 
-.datepicker-day--empty:hover {
-    background: none;
+        &:hover {
+            background: none;
+        }
+    }
 }
 
 .datepicker-remove {
@@ -214,10 +214,10 @@
     font-size: var(--font-size-xs);
     color: var(--color-danger);
     text-align: center;
-}
 
-.datepicker-remove:hover {
-    background: var(--color-danger-bg);
+    &:hover {
+        background: var(--color-danger-bg);
+    }
 }
 
 /* Members Picker */
@@ -261,10 +261,10 @@
     cursor: pointer;
     font-size: var(--font-size-sm);
     font-weight: 600;
-}
 
-.memberspicker-add-btn:hover {
-    opacity: 0.9;
+    &:hover {
+        opacity: 0.9;
+    }
 }
 
 .memberspicker-list {
@@ -285,15 +285,15 @@
     font-size: var(--font-size-xs);
     color: var(--color-text-primary);
     text-align: left;
-}
 
-.memberspicker-item:hover {
-    background: var(--color-border);
-}
+    &:hover {
+        background: var(--color-border);
+    }
 
-.memberspicker-item--active {
-    background: color-mix(in srgb, var(--color-accent) 15%, transparent);
-    font-weight: 600;
+    &--active {
+        background: color-mix(in srgb, var(--color-accent) 15%, transparent);
+        font-weight: 600;
+    }
 }
 
 .memberspicker-avatar {
@@ -329,10 +329,10 @@
     font-size: var(--font-size-xs);
     color: var(--color-danger);
     text-align: center;
-}
 
-.memberspicker-clear:hover {
-    background: var(--color-danger-bg);
+    &:hover {
+        background: var(--color-danger-bg);
+    }
 }
 
 .card-modal-section-header {
@@ -356,11 +356,11 @@
     line-height: 1.6;
     min-height: 100px;
     transition: border-color 0.15s ease, box-shadow 0.15s ease;
-}
 
-.card-modal-body:focus {
-    @apply outline-none border-accent;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
+    &:focus {
+        @apply outline-none border-accent;
+        box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 15%, transparent);
+    }
 }
 
 .card-modal-body-preview {
@@ -376,10 +376,11 @@
     padding: 2px 10px;
     border-radius: 12px;
     transition: all 0.12s ease;
-}
-.card-modal-preview-toggle:hover {
-    @apply border-accent text-accent;
-    background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+
+    &:hover {
+        @apply border-accent text-accent;
+        background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    }
 }
 
 .card-modal-tags-container {
@@ -395,12 +396,12 @@
     cursor: text;
     position: relative;
     min-height: 36px;
-}
 
-.card-modal-tags-container:focus-within {
-    outline: 2px solid var(--color-accent);
-    outline-offset: -1px;
-    border-color: var(--color-accent);
+    &:focus-within {
+        outline: 2px solid var(--color-accent);
+        outline-offset: -1px;
+        border-color: var(--color-accent);
+    }
 }
 
 .card-modal-tag-chip {
@@ -416,10 +417,10 @@
     white-space: nowrap;
     line-height: 1.4;
     transition: transform 0.1s ease;
-}
 
-.card-modal-tag-chip:hover {
-    transform: scale(1.05);
+    &:hover {
+        transform: scale(1.05);
+    }
 }
 
 .card-modal-tag-chip-remove {
@@ -437,28 +438,29 @@
     line-height: 1;
     border-radius: 50%;
     opacity: 0.6;
+
+    &:hover {
+        opacity: 1;
+        background: rgba(0, 0, 0, 0.1);
+    }
 }
 
-.card-modal-tag-chip-remove:hover {
-    opacity: 1;
-    background: rgba(0, 0, 0, 0.1);
-}
+input.card-modal-tags-input {
+    &, &:focus {
+        border: none;
+        outline: none;
+        background: transparent;
+        font-size: var(--font-size-sm);
+        font-family: var(--font-sans);
+        color: var(--color-text-primary);
+        flex: 1;
+        min-width: 80px;
+        padding: 2px 4px;
+    }
 
-input.card-modal-tags-input,
-input.card-modal-tags-input:focus {
-    border: none;
-    outline: none;
-    background: transparent;
-    font-size: var(--font-size-sm);
-    font-family: var(--font-sans);
-    color: var(--color-text-primary);
-    flex: 1;
-    min-width: 80px;
-    padding: 2px 4px;
-}
-
-input.card-modal-tags-input::placeholder {
-    color: var(--color-text-muted);
+    &::placeholder {
+        color: var(--color-text-muted);
+    }
 }
 
 .card-modal-tags-dropdown {
@@ -475,10 +477,10 @@ input.card-modal-tags-input::placeholder {
     overflow-y: auto;
     margin-top: 4px;
     display: none;
-}
 
-.card-modal-tags-dropdown.open {
-    display: block;
+    &.open {
+        display: block;
+    }
 }
 
 .card-modal-tags-dropdown-item {
@@ -486,11 +488,10 @@ input.card-modal-tags-input::placeholder {
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
     cursor: pointer;
-}
 
-.card-modal-tags-dropdown-item:hover,
-.card-modal-tags-dropdown-item.active {
-    background: var(--color-column-bg);
+    &:hover, &.active {
+        background: var(--color-column-bg);
+    }
 }
 
 .card-modal-tags-dropdown-empty {
@@ -552,13 +553,13 @@ input.card-modal-tags-input::placeholder {
     cursor: pointer;
     transition: all 0.12s ease;
     font-family: var(--font-sans);
-}
 
-.card-modal-sidebar-btn:hover {
-    background: var(--color-column-bg);
-    border-color: var(--color-border-dashed);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    &:hover {
+        background: var(--color-column-bg);
+        border-color: var(--color-border-dashed);
+        transform: translateY(-1px);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+    }
 }
 
 .card-modal-sidebar-btn-move {
@@ -574,11 +575,11 @@ input.card-modal-tags-input::placeholder {
     color: var(--color-danger);
     border-color: var(--color-danger-bg);
     background: transparent;
-}
 
-.card-modal-sidebar-btn-danger:hover {
-    background: var(--color-danger-bg);
-    border-color: var(--color-danger);
+    &:hover {
+        background: var(--color-danger-bg);
+        border-color: var(--color-danger);
+    }
 }
 
 .card-modal-sidebar-sep {
@@ -625,34 +626,22 @@ input.card-modal-tags-input::placeholder {
     cursor: pointer;
     transition: all 0.12s ease;
     border-radius: 6px;
-}
 
-.card-modal-priority-btn:hover {
-    background: var(--color-column-bg);
-    color: var(--color-text-primary);
-    transform: translateY(-1px);
-}
+    &:hover {
+        background: var(--color-column-bg);
+        color: var(--color-text-primary);
+        transform: translateY(-1px);
+    }
 
-.card-modal-priority-btn--active {
-    background: var(--color-text-muted);
-    color: var(--color-surface);
-    border-color: transparent;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
-}
+    &--active {
+        background: var(--color-text-muted);
+        color: var(--color-surface);
+        border-color: transparent;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.12);
+    }
 
-.card-modal-priority-btn--low.card-modal-priority-btn--active {
-    @apply bg-priority-low text-white border-transparent;
+    &.card-modal-priority-btn--low.card-modal-priority-btn--active { @apply bg-priority-low text-white border-transparent; }
+    &.card-modal-priority-btn--medium.card-modal-priority-btn--active { @apply bg-priority-medium text-white border-transparent; }
+    &.card-modal-priority-btn--high.card-modal-priority-btn--active { @apply bg-priority-high text-white border-transparent; }
+    &.card-modal-priority-btn--critical.card-modal-priority-btn--active { @apply bg-priority-critical text-white border-transparent; }
 }
-
-.card-modal-priority-btn--medium.card-modal-priority-btn--active {
-    @apply bg-priority-medium text-white border-transparent;
-}
-
-.card-modal-priority-btn--high.card-modal-priority-btn--active {
-    @apply bg-priority-high text-white border-transparent;
-}
-
-.card-modal-priority-btn--critical.card-modal-priority-btn--active {
-    @apply bg-priority-critical text-white border-transparent;
-}
-

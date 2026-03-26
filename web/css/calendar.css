@@ -13,15 +13,13 @@
 
 .calendar-nav {
     @apply flex items-center gap-2;
-}
 
-.calendar-nav button {
-    @apply bg-transparent border border-border rounded-sm cursor-pointer text-text-primary text-sm;
-    padding: 4px 10px;
-}
+    button {
+        @apply bg-transparent border border-border rounded-sm cursor-pointer text-text-primary text-sm;
+        padding: 4px 10px;
 
-.calendar-nav button:hover {
-    @apply bg-column-bg;
+        &:hover { @apply bg-column-bg; }
+    }
 }
 
 .calendar-nav-title {
@@ -50,34 +48,30 @@
     border-right: 1px solid var(--color-border);
     border-bottom: 1px solid var(--color-border);
     padding: 4px;
-}
 
-.calendar-day:nth-child(7n) {
-    @apply border-r-0;
-}
-
-.calendar-day.today {
-    @apply bg-transparent;
-}
-
-.calendar-day.other-month {
-    @apply opacity-40;
+    &:nth-child(7n) { @apply border-r-0; }
+    &.today { @apply bg-transparent; }
+    &.other-month { @apply opacity-40; }
+    &.drag-over {
+        @apply outline-2 outline-dashed outline-accent;
+        background: rgba(99, 102, 241, 0.1);
+    }
 }
 
 .calendar-day-number {
     @apply font-medium text-text-secondary;
     font-size: 0.8rem;
     padding: 2px 4px;
-}
 
-.calendar-day-number.today {
-    @apply inline-flex items-center justify-center rounded-full font-semibold leading-none;
-    background: #e05252;
-    color: #fff;
-    width: 26px;
-    height: 26px;
-    padding: 0;
-    font-size: 0.8rem;
+    &.today {
+        @apply inline-flex items-center justify-center rounded-full font-semibold leading-none;
+        background: #e05252;
+        color: #fff;
+        width: 26px;
+        height: 26px;
+        padding: 0;
+        font-size: 0.8rem;
+    }
 }
 
 .calendar-month-label {
@@ -98,45 +92,40 @@
     padding: 2px 6px;
     border-radius: 3px;
     gap: 4px;
-}
 
-.calendar-card-chip:hover {
-    @apply bg-column-bg;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
+    &:hover {
+        @apply bg-column-bg;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
 
-.calendar-card-chip.completed {
-    @apply opacity-50 line-through;
-}
+    &.completed { @apply opacity-50 line-through; }
+    &.dragging { @apply opacity-40; }
 
-.calendar-card-chip .priority-dot {
-    @apply rounded-full shrink-0;
-    width: 6px;
-    height: 6px;
-}
+    .priority-dot {
+        @apply rounded-full shrink-0;
+        width: 6px;
+        height: 6px;
 
-.calendar-card-chip .priority-dot.priority-critical { @apply bg-priority-critical; }
-.calendar-card-chip .priority-dot.priority-high { @apply bg-priority-high; }
-.calendar-card-chip .priority-dot.priority-medium { @apply bg-priority-medium; }
-.calendar-card-chip .priority-dot.priority-low { @apply bg-priority-low; }
+        &.priority-critical { @apply bg-priority-critical; }
+        &.priority-high { @apply bg-priority-high; }
+        &.priority-medium { @apply bg-priority-medium; }
+        &.priority-low { @apply bg-priority-low; }
+    }
 
-.calendar-card-chip .chip-title {
-    @apply overflow-hidden text-ellipsis;
-}
+    .chip-title { @apply overflow-hidden text-ellipsis; }
 
-.calendar-card-chip .chip-assignee {
-    @apply text-text-secondary ml-auto shrink-0;
-    font-size: 0.65rem;
+    .chip-assignee {
+        @apply text-text-secondary ml-auto shrink-0;
+        font-size: 0.65rem;
+    }
 }
 
 /* Week view */
 .week-grid {
     @apply grid border border-border rounded-md overflow-hidden;
     grid-template-columns: repeat(7, 1fr);
-}
 
-.week-grid .calendar-day {
-    min-height: 200px;
+    .calendar-day { min-height: 200px; }
 }
 
 /* Day view */
@@ -149,32 +138,27 @@
 .calendar-day-card {
     @apply bg-surface border border-border rounded-md cursor-pointer;
     padding: 10px 12px;
-}
 
-.calendar-day-card:hover {
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-}
+    &:hover { box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08); }
+    &.completed { @apply opacity-60; }
 
-.calendar-day-card .day-card-title {
-    @apply font-medium;
-    font-size: 0.9rem;
-}
+    .day-card-title {
+        @apply font-medium;
+        font-size: 0.9rem;
+    }
 
-.calendar-day-card .day-card-meta {
-    @apply flex text-text-secondary;
-    gap: 8px;
-    font-size: 0.78rem;
-    margin-top: 4px;
-}
+    .day-card-meta {
+        @apply flex text-text-secondary;
+        gap: 8px;
+        font-size: 0.78rem;
+        margin-top: 4px;
+    }
 
-.calendar-day-card .day-card-body {
-    @apply text-text-secondary;
-    font-size: 0.82rem;
-    margin-top: 4px;
-}
-
-.calendar-day-card.completed {
-    @apply opacity-60;
+    .day-card-body {
+        @apply text-text-secondary;
+        font-size: 0.82rem;
+        margin-top: 4px;
+    }
 }
 
 /* Unscheduled section */
@@ -192,16 +176,6 @@
 .calendar-unscheduled-cards {
     @apply flex flex-wrap;
     gap: 4px;
-}
-
-/* Drag states */
-.calendar-day.drag-over {
-    @apply outline-2 outline-dashed outline-accent;
-    background: rgba(99, 102, 241, 0.1);
-}
-
-.calendar-card-chip.dragging {
-    @apply opacity-40;
 }
 
 .calendar-card-data {

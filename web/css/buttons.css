@@ -9,18 +9,14 @@
 
 .btn-primary {
     @apply bg-accent text-white;
-}
 
-.btn-primary:hover {
-    @apply bg-accent-hover;
+    &:hover { @apply bg-accent-hover; }
 }
 
 .btn-secondary {
     @apply bg-column-bg text-text-secondary border border-border;
-}
 
-.btn-secondary:hover {
-    @apply bg-border text-text-primary;
+    &:hover { @apply bg-border text-text-primary; }
 }
 
 .btn-small {
@@ -30,10 +26,8 @@
 
 .btn-danger {
     @apply bg-danger text-white;
-}
 
-.btn-danger:hover {
-    @apply bg-danger-hover;
+    &:hover { @apply bg-danger-hover; }
 }
 
 .btn-add-card {
@@ -42,8 +36,6 @@
     border: 1px dashed var(--color-border-dashed);
     transition: background 0.12s, color 0.12s, border-color 0.12s;
     margin-top: 6px;
-}
 
-.btn-add-card:hover {
-    @apply bg-column-bg text-text-secondary border-accent;
+    &:hover { @apply bg-column-bg text-text-secondary border-accent; }
 }

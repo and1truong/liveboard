@@ -8,11 +8,9 @@
     width: var(--sidebar-width);
     min-width: 287.5px;
     transition: width 0.2s ease;
-}
 
-.app-sidebar.collapsed {
-    @apply min-w-0 border-r-0;
-    width: 0;
+    &.collapsed { @apply min-w-0 border-r-0; width: 0; }
+    .sidebar-toggle { @apply hidden; }
 }
 
 .app-brand {
@@ -33,10 +31,8 @@
 .sidebar-menu-trigger {
     @apply bg-transparent border-none cursor-pointer text-text-muted p-1 rounded-sm flex items-center justify-center;
     transition: background 0.12s, color 0.12s;
-}
 
-.sidebar-menu-trigger:hover {
-    @apply bg-column-bg text-text-primary;
+    &:hover { @apply bg-column-bg text-text-primary; }
 }
 
 .sidebar-popup-menu {
@@ -46,30 +42,23 @@
     right: 8px;
     padding: 4px 0;
     box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
-}
 
-.sidebar-popup-menu.open {
-    @apply block;
+    &.open { @apply block; }
 }
 
 .sidebar-menu-item {
     @apply flex items-center gap-2.5 text-text-secondary no-underline text-sm;
     padding: 8px 14px;
     transition: background 0.12s, color 0.12s;
-}
 
-.sidebar-menu-item:hover {
-    @apply bg-column-bg text-text-primary;
-}
+    &:hover { @apply bg-column-bg text-text-primary; }
+    &.active { @apply text-accent-text; }
 
-.sidebar-menu-item.active {
-    @apply text-accent-text;
-}
-
-.sidebar-menu-item .menu-icon {
-    @apply shrink-0 text-center;
-    font-size: 0.9rem;
-    width: 18px;
+    .menu-icon {
+        @apply shrink-0 text-center;
+        font-size: 0.9rem;
+        width: 18px;
+    }
 }
 
 .sidebar-menu-separator {
@@ -80,10 +69,8 @@
 .brand-link {
     @apply flex items-center gap-2 no-underline text-text-primary font-semibold text-base flex-1 min-w-0 overflow-hidden;
     letter-spacing: -0.01em;
-}
 
-.brand-link:hover {
-    @apply text-accent;
+    &:hover { @apply text-accent; }
 }
 
 .brand-icon {
@@ -98,30 +85,22 @@
     width: 40px;
     padding: 5px;
     transition: background 0.12s, color 0.12s;
-}
 
-.sidebar-toggle:hover {
-    @apply bg-column-bg text-text-primary;
-}
-
-.app-sidebar .sidebar-toggle {
-    @apply hidden;
+    &:hover { @apply bg-column-bg text-text-primary; }
 }
 
 /* Sidebar on right side */
-[data-sidebar-position="right"] .app-shell {
-    flex-direction: row-reverse;
-}
-[data-sidebar-position="right"] .app-sidebar {
-    border-right: none;
-    border-left: 1px solid var(--color-border);
-}
-[data-sidebar-position="right"] .app-sidebar.collapsed {
-    border-left: none;
-}
-[data-sidebar-position="right"] .sidebar-toggle {
-    left: auto;
-    right: 0;
+[data-sidebar-position="right"] {
+    .app-shell { flex-direction: row-reverse; }
+
+    .app-sidebar {
+        border-right: none;
+        border-left: 1px solid var(--color-border);
+
+        &.collapsed { border-left: none; }
+    }
+
+    .sidebar-toggle { left: auto; right: 0; }
 }
 
 .sidebar-nav {
@@ -132,14 +111,17 @@
     @apply flex items-center gap-2 no-underline text-text-secondary text-sm font-medium;
     padding: 7px 16px;
     transition: background 0.12s, color 0.12s;
-}
 
-.sidebar-nav-item:hover {
-    @apply bg-column-bg text-text-primary;
-}
+    &:hover { @apply bg-column-bg text-text-primary; }
+    &.active { @apply bg-accent-muted text-accent-text; }
 
-.sidebar-nav-item.active {
-    @apply bg-accent-muted text-accent-text;
+    &:hover .sidebar-pin-btn { @apply opacity-100; }
+
+    /* Separator between pinned and unpinned boards */
+    &.pinned + .sidebar-nav-item:not(.pinned) {
+        @apply border-t border-border mt-0.5;
+        padding-top: 9px;
+    }
 }
 
 .nav-label-group {
@@ -163,30 +145,15 @@
     @apply opacity-0 bg-transparent border-none cursor-pointer text-text-muted shrink-0 ml-auto leading-none;
     padding: 2px;
     transition: opacity 0.15s, color 0.15s;
-}
-.sidebar-nav-item:hover .sidebar-pin-btn,
-.sidebar-pin-btn.pinned {
-    @apply opacity-100;
-}
-.sidebar-pin-btn.pinned {
-    @apply text-accent;
-}
-.sidebar-pin-btn:hover {
-    @apply text-accent;
-}
 
-/* Separator between pinned and unpinned boards */
-.sidebar-nav-item.pinned + .sidebar-nav-item:not(.pinned) {
-    @apply border-t border-border mt-0.5;
-    padding-top: 9px;
+    &.pinned { @apply opacity-100 text-accent; }
+    &:hover { @apply text-accent; }
 }
 
 .sidebar-new-board {
     @apply text-text-muted mt-1 border-t border-border;
-}
 
-.sidebar-new-board:hover {
-    @apply text-accent;
+    &:hover { @apply text-accent; }
 }
 
 /* Sidebar tag filter */
@@ -200,14 +167,9 @@
     padding: 1px 8px;
     font-size: 10px;
     transition: background 0.12s, color 0.12s, border-color 0.12s;
-}
 
-.sidebar-tag-btn:hover {
-    @apply bg-accent-muted text-accent-text border-accent-muted;
-}
-
-.sidebar-tag-btn.active {
-    @apply bg-accent text-white border-accent;
+    &:hover { @apply bg-accent-muted text-accent-text border-accent-muted; }
+    &.active { @apply bg-accent text-white border-accent; }
 }
 
 /* Sidebar board tag chips */
@@ -234,10 +196,8 @@
     @apply cursor-pointer;
     border-radius: 3px;
     transition: background 0.15s;
-}
 
-.emoji-picker-trigger:hover {
-    @apply bg-accent-muted;
+    &:hover { @apply bg-accent-muted; }
 }
 
 .emoji-picker-popup {
@@ -258,10 +218,8 @@
     width: 24px;
     height: 24px;
     transition: background 0.1s;
-}
 
-.emoji-picker-item:hover {
-    @apply bg-accent-muted;
+    &:hover { @apply bg-accent-muted; }
 }
 
 .emoji-picker-clear {
@@ -271,30 +229,20 @@
 
 .sidebar-footer {
     @apply p-0 shrink-0 relative border-t border-border;
-}
 
-.sidebar-footer .connection-status {
-    @apply p-0;
+    .connection-status { @apply p-0; }
 }
 
 .connection-status {
     @apply text-xs flex items-center gap-1;
+
+    .live-connected { @apply text-success hidden; }
+    .live-disconnected { @apply text-danger hidden; }
 }
 
-.connection-status .live-connected {
-    @apply text-success hidden;
-}
-
-.connection-status .live-disconnected {
-    @apply text-danger hidden;
-}
-
-.live-live.connected .live-connected {
-    @apply inline;
-}
-
-.live-live.disconnected .live-disconnected {
-    @apply inline;
+.live-live {
+    &.connected .live-connected { @apply inline; }
+    &.disconnected .live-disconnected { @apply inline; }
 }
 
 .app-workspace {
@@ -304,4 +252,3 @@
 .workspace-content {
     @apply flex-1 overflow-hidden flex flex-col;
 }
-

@@ -45,22 +45,26 @@
     gap: 10px;
     padding: 14px 16px;
 }
+
 .cmd-palette-search-icon {
     @apply shrink-0 text-text-secondary;
     width: 18px;
     height: 18px;
 }
+
 input.cmd-palette-input {
     @apply flex-1 p-0 border-none bg-transparent text-text-primary outline-none box-border;
     font-size: 16px;
     font-family: inherit;
+
+    &::placeholder {
+        color: var(--color-text-tertiary);
+        font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
+        font-size: 14px;
+        letter-spacing: 0.01em;
+    }
 }
-input.cmd-palette-input::placeholder {
-    color: var(--color-text-tertiary);
-    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
-    font-size: 14px;
-    letter-spacing: 0.01em;
-}
+
 .cmd-palette-kbd {
     @apply shrink-0 text-text-secondary border border-border;
     font-size: 11px;
@@ -76,10 +80,11 @@ input.cmd-palette-input::placeholder {
     max-height: 340px;
     scrollbar-width: thin;
     scrollbar-color: var(--color-border) transparent;
+
+    &::-webkit-scrollbar { width: 4px; }
+    &::-webkit-scrollbar-track { @apply bg-transparent; }
+    &::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
 }
-.cmd-palette-list::-webkit-scrollbar { width: 4px; }
-.cmd-palette-list::-webkit-scrollbar-track { @apply bg-transparent; }
-.cmd-palette-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
 
 /* category headers */
 .cmd-palette-category {
@@ -95,6 +100,7 @@ input.cmd-palette-input::placeholder {
     from { opacity: 0; transform: translateY(6px); }
     to   { opacity: 1; transform: translateY(0); }
 }
+
 .cmd-palette-item {
     @apply flex items-center cursor-pointer text-text-primary text-sm;
     gap: 12px;
@@ -103,22 +109,25 @@ input.cmd-palette-input::placeholder {
     animation: cmdItemIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
     animation-delay: calc(var(--i, 0) * 35ms);
     transition: background 0.1s ease, box-shadow 0.1s ease;
+
+    &:hover { background: var(--color-column-bg); }
+
+    &.active {
+        @apply rounded-none;
+        box-shadow: inset 2px 0 0 var(--color-accent);
+    }
 }
-.cmd-palette-item:hover {
-    background: var(--color-column-bg);
-}
-.cmd-palette-item.active {
-    @apply rounded-none;
-    box-shadow: inset 2px 0 0 var(--color-accent);
-}
+
 .cmd-palette-item-icon {
     @apply text-center shrink-0;
     font-size: 20px;
     width: 28px;
 }
+
 .cmd-palette-item-name {
     @apply flex-1 overflow-hidden text-ellipsis whitespace-nowrap;
 }
+
 .cmd-palette-item-arrow {
     @apply shrink-0 opacity-60;
     color: var(--color-text-tertiary);
@@ -141,4 +150,3 @@ mark.cmd-palette-highlight {
     color: var(--color-text-tertiary);
     font-size: 13px;
 }
-

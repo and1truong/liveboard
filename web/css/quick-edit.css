@@ -18,16 +18,9 @@
     @apply text-xs;
     padding: 4px 6px;
     min-height: 28px;
-}
 
-.qe-tags-container .card-modal-tags-input {
-    @apply text-xs;
-    min-width: 60px;
-}
-
-.qe-tags-container .card-modal-tag-chip {
-    font-size: 10px;
-    padding: 1px 6px;
+    .card-modal-tags-input { @apply text-xs; min-width: 60px; }
+    .card-modal-tag-chip { font-size: 10px; padding: 1px 6px; }
 }
 
 .qe-body {
@@ -47,11 +40,11 @@
 
 .ctx-priority-group {
     margin: 4px 8px;
-}
 
-.ctx-priority-group .card-modal-priority-btn {
-    @apply text-xs;
-    padding: 3px 0;
+    .card-modal-priority-btn {
+        @apply text-xs;
+        padding: 3px 0;
+    }
 }
 
 .qe-actions {
@@ -68,14 +61,7 @@
 .qe-delete-btn {
     @apply text-danger border-danger;
     transition: opacity 0.2s;
-}
 
-.qe-delete-btn:disabled {
-    @apply cursor-not-allowed;
-    opacity: 0.5;
+    &:disabled { @apply cursor-not-allowed; opacity: 0.5; }
+    &:not(:disabled):hover { @apply bg-danger-bg; }
 }
-
-.qe-delete-btn:not(:disabled):hover {
-    @apply bg-danger-bg;
-}
-
