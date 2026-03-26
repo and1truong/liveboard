@@ -389,7 +389,7 @@
     <!-- Column Menu (Alpine) -->
     <div x-data="columnMenu()" @keydown.escape.window="if(open) hide(); if(assistantOpen) closeAssistant(); if($store.ui.focusedColumn) $store.ui.focusedColumn = ''">
         <div id="alpine-column-menu" class="card-context-menu" :class="{ visible: open }" :style="'left:' + left + 'px;top:' + top + 'px'" role="menu" x-show="open" @click.outside="hide()" x-cloak>
-            <button class="ctx-item" role="menuitem" @click.stop="focusColumn()"><span class="ctx-icon">&#9906;</span> Focus</button>
+            <button class="ctx-item" role="menuitem" @click.stop="focusColumn()"><span class="ctx-icon">&#127919;</span> Focus</button>
             <button class="ctx-item" role="menuitem" @click.stop="editColumn()"><span class="ctx-icon">&#9999;&#65039;</span> Edit</button>
             <button class="ctx-item ctx-danger" role="menuitem" @click.stop="deleteColumn()"><span class="ctx-icon">&#128465;</span> Delete</button>
             <template x-if="colIdx >= 0">
@@ -406,8 +406,8 @@
             <div class="ctx-separator"></div>
             <div class="ctx-submenu-label">Assistant</div>
             <div class="ctx-submenu">
-                <button class="ctx-item" role="menuitem" @click.stop="showAssistant('summary')"><span class="ctx-icon">&#128203;</span> Summary</button>
-                <button class="ctx-item" role="menuitem" @click.stop="showAssistant('custom')"><span class="ctx-icon">&#9881;&#65039;</span> Custom instruction</button>
+                <button class="ctx-item" role="menuitem" @click.stop="showAssistant('summary')"><span class="ctx-icon">&#10024;</span> Summary</button>
+                <button class="ctx-item" role="menuitem" @click.stop="showAssistant('custom')"><span class="ctx-icon">&#128172;</span> Custom instruction</button>
             </div>
         </div>
 
