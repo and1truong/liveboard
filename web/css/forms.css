@@ -1,0 +1,25 @@
+/* === FORMS === */
+.add-card-form {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 8px;
+    flex-shrink: 0;
+}
+
+
+.add-card-form input[type="text"] {
+    padding: 10px 12px;
+    font-size: var(--font-size-base);
+    background: var(--color-surface);
+}
+
+/* === ERROR === */
+.error {
+    background: var(--color-danger-bg);
+    color: var(--color-danger-text);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    margin-bottom: 1rem;
+    font-size: var(--font-size-sm);
+}

@@ -1,0 +1,144 @@
+/* === CMD+K COMMAND PALETTE === */
+.cmd-palette-overlay {
+    @apply fixed inset-0 z-[9999] flex items-start justify-center;
+    padding-top: 18vh;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+/* overlay transitions */
+.cmd-overlay-enter { @apply transition-opacity duration-200 ease-out; }
+.cmd-overlay-enter-from { @apply opacity-0; }
+.cmd-overlay-enter-to { @apply opacity-100; }
+.cmd-overlay-leave { transition: opacity 0.15s ease-in; }
+.cmd-overlay-leave-from { @apply opacity-100; }
+.cmd-overlay-leave-to { @apply opacity-0; }
+
+.cmd-palette {
+    @apply w-full overflow-hidden;
+    max-width: 520px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.18),
+        0 8px 24px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+}
+/* palette transitions */
+.cmd-palette-enter { transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
+.cmd-palette-enter-from { @apply opacity-0; transform: scale(0.96) translateY(-8px); }
+.cmd-palette-enter-to { @apply opacity-100; transform: scale(1) translateY(0); }
+.cmd-palette-leave { transition: all 0.15s ease-in; }
+.cmd-palette-leave-from { @apply opacity-100; transform: scale(1); }
+.cmd-palette-leave-to { @apply opacity-0; transform: scale(0.96); }
+
+/* accent gradient bar */
+.cmd-palette-accent-bar {
+    @apply opacity-80;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover, var(--color-accent)), var(--color-accent));
+}
+
+.cmd-palette-input-wrapper {
+    @apply flex items-center border-b border-border;
+    gap: 10px;
+    padding: 14px 16px;
+}
+.cmd-palette-search-icon {
+    @apply shrink-0 text-text-secondary;
+    width: 18px;
+    height: 18px;
+}
+input.cmd-palette-input {
+    @apply flex-1 p-0 border-none bg-transparent text-text-primary outline-none box-border;
+    font-size: 16px;
+    font-family: inherit;
+}
+input.cmd-palette-input::placeholder {
+    color: var(--color-text-tertiary);
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
+    font-size: 14px;
+    letter-spacing: 0.01em;
+}
+.cmd-palette-kbd {
+    @apply shrink-0 text-text-secondary border border-border;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-column-bg);
+    line-height: 1.4;
+}
+
+.cmd-palette-list {
+    @apply overflow-y-auto p-2;
+    max-height: 340px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+}
+.cmd-palette-list::-webkit-scrollbar { width: 4px; }
+.cmd-palette-list::-webkit-scrollbar-track { @apply bg-transparent; }
+.cmd-palette-list::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 4px; }
+
+/* category headers */
+.cmd-palette-category {
+    @apply font-semibold uppercase select-none;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    padding: 10px 12px 4px;
+}
+
+/* staggered item entrance */
+@keyframes cmdItemIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+.cmd-palette-item {
+    @apply flex items-center cursor-pointer text-text-primary text-sm;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: var(--radius-md, 8px);
+    animation: cmdItemIn 0.25s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 35ms);
+    transition: background 0.1s ease, box-shadow 0.1s ease;
+}
+.cmd-palette-item:hover {
+    background: var(--color-column-bg);
+}
+.cmd-palette-item.active {
+    @apply rounded-none;
+    box-shadow: inset 2px 0 0 var(--color-accent);
+}
+.cmd-palette-item-icon {
+    @apply text-center shrink-0;
+    font-size: 20px;
+    width: 28px;
+}
+.cmd-palette-item-name {
+    @apply flex-1 overflow-hidden text-ellipsis whitespace-nowrap;
+}
+.cmd-palette-item-arrow {
+    @apply shrink-0 opacity-60;
+    color: var(--color-text-tertiary);
+}
+
+/* fuzzy match highlight */
+mark.cmd-palette-highlight {
+    all: unset;
+    @apply font-semibold;
+    background: color-mix(in srgb, var(--color-accent) 20%, transparent);
+    color: var(--color-accent-text, var(--color-accent));
+    border-radius: 2px;
+    padding: 0 1px;
+}
+
+/* empty state */
+.cmd-palette-empty {
+    @apply text-center italic;
+    padding: 24px 16px;
+    color: var(--color-text-tertiary);
+    font-size: 13px;
+}
+

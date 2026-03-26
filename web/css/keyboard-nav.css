@@ -1,0 +1,120 @@
+/* ── Keyboard navigation ── */
+.card-focused {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -1px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
+    position: relative;
+    z-index: 2;
+}
+.table-row.card-focused {
+    outline: 2px solid var(--color-accent);
+    outline-offset: -2px;
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
+}
+
+/* Keyboard shortcuts help overlay */
+.keyboard-help-overlay {
+    @apply fixed inset-0 z-[9999] flex items-start justify-center opacity-0;
+    padding-top: 18vh;
+    background: rgba(0, 0, 0, 0.25);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    transition: opacity 0.2s ease-out;
+}
+.keyboard-help-overlay.is-visible {
+    @apply opacity-100;
+}
+.keyboard-help-panel {
+    @apply w-full text-text-primary overflow-hidden opacity-0;
+    max-width: 460px;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg, 12px);
+    box-shadow:
+        0 24px 80px rgba(0, 0, 0, 0.18),
+        0 8px 24px rgba(0, 0, 0, 0.1),
+        0 0 0 1px rgba(255, 255, 255, 0.05);
+    transform: scale(0.96) translateY(-8px);
+    transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.keyboard-help-overlay.is-visible .keyboard-help-panel {
+    @apply opacity-100;
+    transform: scale(1) translateY(0);
+}
+.keyboard-help-accent-bar {
+    @apply opacity-80;
+    height: 2px;
+    background: linear-gradient(90deg, var(--color-accent), var(--color-accent-hover, var(--color-accent)), var(--color-accent));
+}
+.keyboard-help-title {
+    @apply flex items-center text-sm font-semibold border-b border-border;
+    gap: 10px;
+    padding: 14px 16px;
+}
+.keyboard-help-title-icon {
+    @apply shrink-0 text-text-secondary;
+    width: 18px;
+    height: 18px;
+}
+.keyboard-help-title-text {
+    @apply flex-1;
+}
+.keyboard-help-title-kbd {
+    @apply shrink-0 text-text-secondary border border-border;
+    font-size: 11px;
+    font-family: inherit;
+    padding: 2px 6px;
+    border-radius: var(--radius-sm, 4px);
+    background: var(--color-column-bg);
+    line-height: 1.4;
+}
+.keyboard-help-grid {
+    @apply grid items-center gap-0 overflow-y-auto p-2;
+    grid-template-columns: auto 1fr;
+    max-height: 340px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+}
+.keyboard-help-grid::-webkit-scrollbar { width: 4px; }
+.keyboard-help-grid::-webkit-scrollbar-thumb { background: var(--color-border); border-radius: 2px; }
+.keyboard-help-row {
+    @apply contents;
+}
+.keyboard-help-row:hover .keyboard-help-key,
+.keyboard-help-row:hover .keyboard-help-desc {
+    background: var(--color-column-bg);
+}
+.keyboard-help-key {
+    @apply font-medium text-text-primary whitespace-nowrap;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
+    font-size: 12px;
+    padding: 8px 12px;
+    border-radius: 8px 0 0 8px;
+    transition: background 0.1s;
+}
+.keyboard-help-key kbd {
+    @apply inline-block border border-border text-center;
+    font-family: inherit;
+    background: var(--color-column-bg);
+    border-radius: var(--radius-sm, 4px);
+    padding: 1px 6px;
+    font-size: inherit;
+    min-width: 20px;
+}
+.keyboard-help-desc {
+    @apply text-text-secondary;
+    font-size: 13px;
+    padding: 8px 12px 8px 4px;
+    border-radius: 0 8px 8px 0;
+    transition: background 0.1s;
+}
+.keyboard-help-section {
+    @apply col-span-full font-medium uppercase;
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    color: var(--color-text-tertiary);
+    padding: 10px 12px 4px;
+}
+.keyboard-help-section:first-child {
+    padding-top: 4px;
+}

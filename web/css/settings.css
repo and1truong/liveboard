@@ -1,0 +1,153 @@
+/* === SETTINGS PAGE === */
+.settings-view {
+    @apply flex flex-col h-full overflow-hidden;
+}
+
+.settings-body {
+    @apply flex-1 overflow-y-auto;
+    padding: 32px 24px;
+}
+
+.settings-category-label {
+    @apply text-xs font-semibold uppercase tracking-wide text-text-muted mb-2 pl-1;
+    max-width: 540px;
+}
+
+.settings-section {
+    @apply bg-surface border border-border rounded-xl px-5 py-4 mb-6;
+    max-width: 540px;
+    box-shadow: 0 0 0 0.5px rgba(0,0,0,0.03), 0 1px 3px rgba(0,0,0,0.04);
+}
+
+.settings-field {
+    @apply flex items-center justify-between gap-4;
+    padding: 10px 0;
+}
+
+.settings-field + .settings-field {
+    @apply border-t border-border;
+}
+
+.settings-label {
+    @apply text-sm font-medium text-text-primary;
+}
+
+.settings-label-hint {
+    @apply text-xs text-text-muted mt-0.5;
+}
+
+.settings-control {
+    @apply shrink-0;
+}
+
+.settings-control-full {
+    @apply shrink w-full min-w-0;
+}
+
+/* --- Toggle Switch --- */
+.settings-toggle {
+    @apply relative inline-block cursor-pointer;
+    width: 44px;
+    height: 24px;
+}
+.settings-toggle input {
+    @apply opacity-0 absolute;
+    width: 0;
+    height: 0;
+}
+.settings-toggle-track {
+    @apply absolute inset-0 bg-border rounded-xl;
+    transition: background 0.2s ease;
+}
+.settings-toggle-track::after {
+    @apply absolute rounded-full;
+    content: '';
+    top: 2px;
+    left: 2px;
+    width: 20px;
+    height: 20px;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: transform 0.2s ease;
+}
+.settings-toggle input:checked + .settings-toggle-track {
+    @apply bg-accent;
+}
+.settings-toggle input:checked + .settings-toggle-track::after {
+    transform: translateX(20px);
+}
+
+/* --- Segmented Control --- */
+.settings-segmented {
+    @apply inline-flex bg-column-bg rounded-lg p-0.5 gap-px;
+}
+.settings-segmented label {
+    @apply px-3 py-1 rounded-md text-sm cursor-pointer text-text-secondary whitespace-nowrap select-none;
+    transition: background 0.15s, box-shadow 0.15s;
+}
+.settings-segmented label.active {
+    @apply bg-surface text-text-primary font-medium;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.settings-segmented input {
+    @apply hidden;
+}
+
+/* --- Color Swatches --- */
+.settings-color-swatches {
+    @apply flex flex-wrap gap-2;
+}
+.settings-swatch {
+    @apply relative rounded-full border-2 border-transparent cursor-pointer flex items-center justify-center p-0 outline-none;
+    width: 28px;
+    height: 28px;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+.settings-swatch:hover {
+    box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-border);
+}
+.settings-swatch.active {
+    box-shadow: 0 0 0 2px var(--color-surface), 0 0 0 4px var(--color-text-primary);
+}
+.settings-swatch-check {
+    @apply text-white font-bold;
+    font-size: 13px;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+}
+.settings-swatch[data-theme="gitlab"]   { background-color: #6e49cb; }
+.settings-swatch[data-theme="emerald"]  { background-color: #059669; }
+.settings-swatch[data-theme="rose"]     { background-color: #e11d48; }
+.settings-swatch[data-theme="aqua"]     { background-color: #007AFF; }
+.settings-swatch-label {
+    @apply absolute whitespace-nowrap bg-text-primary text-surface rounded-sm pointer-events-none opacity-0;
+    bottom: -28px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 11px;
+    padding: 2px 6px;
+    transition: opacity 0.15s;
+}
+.settings-swatch:hover .settings-swatch-label {
+    @apply opacity-100;
+}
+
+/* --- Range Slider --- */
+.settings-range-group {
+    @apply flex items-center gap-3;
+}
+.settings-range {
+    width: 160px;
+    accent-color: var(--color-accent);
+}
+.settings-range-value {
+    @apply text-sm text-text-secondary text-right tabular-nums;
+    min-width: 48px;
+}
+
+.settings-export-btn {
+    @apply px-4 py-1.5 text-sm font-medium text-white bg-accent border-none rounded-md cursor-pointer;
+    transition: background 0.15s;
+}
+.settings-export-btn:hover {
+    background: var(--color-accent-hover);
+}

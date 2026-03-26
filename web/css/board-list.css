@@ -1,0 +1,185 @@
+/* === BOARD LIST === */
+.board-list {
+    @apply flex flex-col h-full overflow-hidden;
+}
+
+.workspace-header {
+    @apply flex items-center justify-between bg-surface border-b border-border shrink-0;
+    height: var(--topbar-height);
+    padding: 0 24px 0 48px;
+}
+
+.workspace-title {
+    @apply text-lg font-semibold text-text-primary;
+    letter-spacing: -0.01em;
+}
+
+.workspace-body {
+    @apply flex-1 overflow-y-auto p-6;
+}
+
+.boards-grid {
+    @apply grid;
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
+    gap: 1.125rem;
+}
+
+/* --- Board card entrance animation --- */
+@keyframes boardCardIn {
+    from { opacity: 0; transform: translateY(14px) scale(0.97); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.board-card {
+    @apply bg-surface border border-border rounded-lg shadow-card relative;
+    padding: 1.125rem 1.25rem;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+    animation: boardCardIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation-delay: calc(var(--i, 0) * 60ms);
+}
+
+.board-card:hover {
+    @apply shadow-raised border-accent;
+    transform: translateY(-3px);
+}
+
+.board-link {
+    @apply no-underline text-inherit flex flex-col gap-2;
+}
+
+/* --- Card header: icon + title + pin --- */
+.board-card-header {
+    @apply flex items-center gap-2 min-w-0;
+}
+
+.board-card-icon {
+    @apply leading-none shrink-0 text-center;
+    font-size: 1.35rem;
+    width: 28px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.1));
+}
+
+.board-card-header h3 {
+    @apply text-text-primary text-base font-semibold whitespace-nowrap overflow-hidden text-ellipsis flex-1 min-w-0;
+}
+
+.board-card-pin {
+    @apply shrink-0 opacity-60;
+    font-size: 0.85rem;
+}
+
+/* --- Description --- */
+.board-card-desc {
+    @apply text-text-secondary text-sm overflow-hidden;
+    line-height: 1.45;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+}
+
+/* --- Progress bar --- */
+.board-card-progress {
+    @apply flex items-center gap-2;
+}
+
+.board-card-progress-bar {
+    @apply flex-1 bg-column-bg overflow-hidden;
+    height: 4px;
+    border-radius: 2px;
+}
+
+.board-card-progress-fill {
+    @apply h-full bg-accent min-w-0;
+    border-radius: 2px;
+    transition: width 0.4s ease;
+}
+
+.board-card-progress-label {
+    @apply text-xs text-text-muted whitespace-nowrap tabular-nums;
+}
+
+.board-card-progress-label--empty {
+    @apply italic;
+}
+
+/* --- Footer: tags + timestamp --- */
+.board-card-footer {
+    @apply flex items-center justify-between gap-2;
+    min-height: 20px;
+}
+
+.board-card-tags {
+    @apply flex flex-wrap gap-1 flex-1 min-w-0 overflow-hidden;
+}
+
+.board-card-tags .tag {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+    max-width: 100px;
+}
+
+.board-card-time {
+    @apply text-xs text-text-muted whitespace-nowrap shrink-0;
+}
+
+/* --- Delete button (repositioned) --- */
+.btn-delete {
+    @apply absolute bg-transparent text-text-muted border-none rounded-sm text-sm cursor-pointer opacity-0 leading-none;
+    bottom: 0.75rem;
+    right: 0.75rem;
+    padding: 2px 6px;
+    transition: opacity 0.15s, color 0.15s, background 0.15s;
+}
+
+.board-card:hover .btn-delete {
+    @apply opacity-60;
+}
+
+.btn-delete:hover {
+    @apply text-danger bg-danger-bg;
+    opacity: 1 !important;
+}
+
+/* --- Empty state (home) --- */
+.empty-state {
+    @apply text-center text-text-muted text-sm;
+    padding: 3rem;
+}
+
+.empty-state-home {
+    @apply text-center flex flex-col items-center;
+    padding: 4rem 2rem;
+    gap: 0.75rem;
+    animation: boardCardIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.empty-state-icon {
+    @apply text-text-muted opacity-50 mb-2;
+}
+
+.empty-state-title {
+    font-size: var(--font-size-lg);
+    font-weight: 600;
+    color: var(--color-text-secondary);
+}
+
+.empty-state-subtitle {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    margin-bottom: 0.5rem;
+}
+
+.create-board-form {
+    background: var(--color-surface);
+    padding: 10px 12px;
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow-card);
+    margin-bottom: 1.25rem;
+    display: flex;
+    gap: 6px;
+}
+
+.create-board-form input[type="text"] {
+    flex: 1;
+}
+

@@ -1,0 +1,311 @@
+/* === APP SHELL === */
+.app-shell {
+    @apply flex h-screen overflow-hidden;
+}
+
+.app-sidebar {
+    @apply shrink-0 bg-surface border-r border-border shadow-sidebar flex flex-col overflow-hidden;
+    width: var(--sidebar-width);
+    min-width: 287.5px;
+    transition: width 0.2s ease;
+}
+
+.app-sidebar.collapsed {
+    @apply min-w-0 border-r-0;
+    width: 0;
+}
+
+.app-brand {
+    @apply flex items-center justify-between border-b border-border shrink-0 gap-1;
+    height: var(--topbar-height);
+    padding: 0 10px 0 16px;
+}
+
+.sidebar-footer-brand {
+    @apply flex items-center gap-1;
+    padding: 8px 10px 8px 16px;
+}
+
+.sidebar-footer-right {
+    @apply flex items-center gap-0.5 shrink-0;
+}
+
+.sidebar-menu-trigger {
+    @apply bg-transparent border-none cursor-pointer text-text-muted p-1 rounded-sm flex items-center justify-center;
+    transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-menu-trigger:hover {
+    @apply bg-column-bg text-text-primary;
+}
+
+.sidebar-popup-menu {
+    @apply hidden absolute bg-surface border border-border rounded-lg z-100;
+    bottom: 100%;
+    left: 8px;
+    right: 8px;
+    padding: 4px 0;
+    box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+}
+
+.sidebar-popup-menu.open {
+    @apply block;
+}
+
+.sidebar-menu-item {
+    @apply flex items-center gap-2.5 text-text-secondary no-underline text-sm;
+    padding: 8px 14px;
+    transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-menu-item:hover {
+    @apply bg-column-bg text-text-primary;
+}
+
+.sidebar-menu-item.active {
+    @apply text-accent-text;
+}
+
+.sidebar-menu-item .menu-icon {
+    @apply shrink-0 text-center;
+    font-size: 0.9rem;
+    width: 18px;
+}
+
+.sidebar-menu-separator {
+    @apply bg-border my-1;
+    height: 1px;
+}
+
+.brand-link {
+    @apply flex items-center gap-2 no-underline text-text-primary font-semibold text-base flex-1 min-w-0 overflow-hidden;
+    letter-spacing: -0.01em;
+}
+
+.brand-link:hover {
+    @apply text-accent;
+}
+
+.brand-icon {
+    @apply text-accent shrink-0;
+    width: 24px;
+    height: 24px;
+}
+
+.sidebar-toggle {
+    @apply absolute top-0 left-0 bg-transparent border-none cursor-pointer text-text-muted rounded-none flex items-center justify-center shrink-0 z-10;
+    height: var(--topbar-height);
+    width: 40px;
+    padding: 5px;
+    transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-toggle:hover {
+    @apply bg-column-bg text-text-primary;
+}
+
+.app-sidebar .sidebar-toggle {
+    @apply hidden;
+}
+
+/* Sidebar on right side */
+[data-sidebar-position="right"] .app-shell {
+    flex-direction: row-reverse;
+}
+[data-sidebar-position="right"] .app-sidebar {
+    border-right: none;
+    border-left: 1px solid var(--color-border);
+}
+[data-sidebar-position="right"] .app-sidebar.collapsed {
+    border-left: none;
+}
+[data-sidebar-position="right"] .sidebar-toggle {
+    left: auto;
+    right: 0;
+}
+
+.sidebar-nav {
+    @apply flex-1 py-2 overflow-y-auto;
+}
+
+.sidebar-nav-item {
+    @apply flex items-center gap-2 no-underline text-text-secondary text-sm font-medium;
+    padding: 7px 16px;
+    transition: background 0.12s, color 0.12s;
+}
+
+.sidebar-nav-item:hover {
+    @apply bg-column-bg text-text-primary;
+}
+
+.sidebar-nav-item.active {
+    @apply bg-accent-muted text-accent-text;
+}
+
+.nav-label-group {
+    @apply flex flex-col min-w-0 flex-1;
+}
+
+.nav-meta {
+    @apply font-normal text-text-muted leading-tight;
+    font-size: 10px;
+    opacity: 0.7;
+}
+
+.sidebar-section-label {
+    @apply text-xs font-bold uppercase text-text-muted;
+    letter-spacing: 0.07em;
+    padding: 10px 16px 4px;
+}
+
+/* Pin button in sidebar */
+.sidebar-pin-btn {
+    @apply opacity-0 bg-transparent border-none cursor-pointer text-text-muted shrink-0 ml-auto leading-none;
+    padding: 2px;
+    transition: opacity 0.15s, color 0.15s;
+}
+.sidebar-nav-item:hover .sidebar-pin-btn,
+.sidebar-pin-btn.pinned {
+    @apply opacity-100;
+}
+.sidebar-pin-btn.pinned {
+    @apply text-accent;
+}
+.sidebar-pin-btn:hover {
+    @apply text-accent;
+}
+
+/* Separator between pinned and unpinned boards */
+.sidebar-nav-item.pinned + .sidebar-nav-item:not(.pinned) {
+    @apply border-t border-border mt-0.5;
+    padding-top: 9px;
+}
+
+.sidebar-new-board {
+    @apply text-text-muted mt-1 border-t border-border;
+}
+
+.sidebar-new-board:hover {
+    @apply text-accent;
+}
+
+/* Sidebar tag filter */
+.sidebar-tag-filter {
+    @apply flex flex-wrap gap-1;
+    padding: 4px 16px 8px;
+}
+
+.sidebar-tag-btn {
+    @apply bg-column-bg text-text-secondary border border-border rounded-full font-medium cursor-pointer leading-normal;
+    padding: 1px 8px;
+    font-size: 10px;
+    transition: background 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.sidebar-tag-btn:hover {
+    @apply bg-accent-muted text-accent-text border-accent-muted;
+}
+
+.sidebar-tag-btn.active {
+    @apply bg-accent text-white border-accent;
+}
+
+/* Sidebar board tag chips */
+.nav-tags {
+    @apply flex flex-wrap mt-0.5;
+    gap: 3px;
+}
+
+.nav-tag {
+    @apply bg-column-bg text-text-muted font-medium;
+    padding: 0 5px;
+    border-radius: 6px;
+    font-size: 9px;
+    line-height: 1.6;
+}
+
+.nav-icon {
+    @apply shrink-0 text-center;
+    font-size: 0.85rem;
+    width: 16px;
+}
+
+.emoji-picker-trigger {
+    @apply cursor-pointer;
+    border-radius: 3px;
+    transition: background 0.15s;
+}
+
+.emoji-picker-trigger:hover {
+    background: var(--color-accent-muted, rgba(0,0,0,0.08));
+}
+
+.emoji-picker-popup {
+    @apply fixed z-1000 bg-surface border border-border rounded-lg p-2;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    width: 220px;
+}
+
+.emoji-picker-grid {
+    @apply grid gap-0.5;
+    grid-template-columns: repeat(8, 1fr);
+}
+
+.emoji-picker-item {
+    all: unset;
+    cursor: pointer;
+    font-size: 1rem;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 4px;
+    transition: background 0.1s;
+}
+
+.emoji-picker-item:hover {
+    background: var(--color-accent-muted, rgba(0,0,0,0.08));
+}
+
+.emoji-picker-clear {
+    @apply text-text-muted;
+    font-size: 0.75rem;
+}
+
+.sidebar-footer {
+    @apply p-0 shrink-0 relative border-t border-border;
+}
+
+.sidebar-footer .connection-status {
+    @apply p-0;
+}
+
+.connection-status {
+    @apply text-xs flex items-center gap-1;
+}
+
+.connection-status .live-connected {
+    @apply text-success hidden;
+}
+
+.connection-status .live-disconnected {
+    @apply text-danger hidden;
+}
+
+.live-live.connected .live-connected {
+    @apply inline;
+}
+
+.live-live.disconnected .live-disconnected {
+    @apply inline;
+}
+
+.app-workspace {
+    @apply flex-1 flex flex-col overflow-hidden min-w-0 relative;
+}
+
+.workspace-content {
+    @apply flex-1 overflow-hidden flex flex-col;
+}
+

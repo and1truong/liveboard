@@ -1,0 +1,210 @@
+/* === BOARD VIEW === */
+.board-view {
+    @apply flex flex-col h-full overflow-hidden;
+}
+
+#board-content {
+    @apply flex flex-col flex-1 min-h-0 overflow-hidden;
+}
+
+.board-topbar {
+    @apply flex items-center justify-between bg-surface border-b border-border shrink-0 gap-3;
+    height: var(--topbar-height);
+    padding: 0 20px 0 48px;
+}
+
+.board-topbar-left {
+    @apply flex items-center gap-2.5 min-w-0 overflow-hidden;
+}
+
+.board-title {
+    @apply text-lg font-semibold text-text-primary whitespace-nowrap overflow-hidden text-ellipsis;
+    letter-spacing: -0.01em;
+}
+
+.board-description {
+    @apply text-sm text-text-secondary whitespace-nowrap overflow-hidden text-ellipsis;
+}
+
+.board-edit-btn {
+    @apply bg-transparent border-none cursor-pointer text-sm rounded-sm opacity-0 shrink-0;
+    color: var(--color-text-tertiary);
+    padding: 2px 5px;
+    transition: opacity 0.15s, color 0.15s;
+}
+
+.board-topbar:hover .board-edit-btn {
+    @apply opacity-100;
+}
+
+.board-edit-btn:hover {
+    @apply text-text-primary;
+    background: var(--color-hover);
+}
+
+.board-error-banner {
+    @apply bg-danger-bg text-danger-text text-sm border-b border-danger shrink-0;
+    padding: 8px 20px;
+}
+
+.columns-container {
+    @apply flex flex-1 overflow-x-auto overflow-y-hidden items-start;
+    gap: 10px;
+    padding: 12px 16px;
+}
+
+.column {
+    @apply bg-column-bg rounded-lg flex flex-col shrink-0;
+    min-width: var(--column-width);
+    width: var(--column-width);
+    padding: 10px;
+    max-height: 100%;
+}
+
+.column-header {
+    @apply flex items-center justify-between mb-2 shrink-0 gap-1;
+    padding: 0 2px;
+}
+
+.column h3 {
+    @apply text-base font-bold text-text-primary flex-1 min-w-0 overflow-hidden text-ellipsis whitespace-nowrap;
+}
+
+.column-menu-btn {
+    @apply bg-transparent border-none cursor-pointer text-text-muted rounded-sm shrink-0 leading-none;
+    padding: 2px 5px;
+    font-size: 1rem;
+    letter-spacing: 0.05em;
+    transition: background 0.12s, color 0.12s;
+}
+
+.column-menu-btn:hover {
+    @apply bg-border text-text-primary;
+}
+
+/* === Sidebar: Add Column Bar === */
+.add-column-bar {
+    @apply ml-auto shrink-0 self-stretch bg-column-bg border border-border rounded-lg cursor-pointer flex items-center justify-center relative;
+    width: 40px;
+    min-height: 120px;
+    transition: background 0.2s ease, width 0.2s ease;
+}
+
+.add-column-bar:hover {
+    @apply bg-surface;
+}
+
+.add-column-bar.expanded {
+    @apply cursor-default;
+    width: 220px;
+}
+
+.add-column-bar-label {
+    @apply font-medium text-text-secondary select-none whitespace-nowrap;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-size: 13px;
+    letter-spacing: 0.5px;
+}
+
+.add-column-bar.expanded .add-column-bar-label {
+    @apply hidden;
+}
+
+.add-column-bar-form {
+    @apply flex-col gap-2 p-3 w-full;
+}
+
+.add-column-bar-form input[type="text"] {
+    @apply bg-surface w-full;
+}
+
+.column-drag-handle {
+    @apply shrink-0 text-text-muted leading-none cursor-grab select-none opacity-0;
+    font-size: 14px;
+    letter-spacing: -1px;
+    transition: opacity 0.15s;
+}
+
+.column:hover .column-drag-handle {
+    @apply opacity-100;
+}
+
+.column-drag-handle:active {
+    cursor: grabbing;
+}
+
+.column-card-count {
+    @apply text-sm font-semibold text-text-muted shrink-0 leading-normal;
+}
+
+.cards {
+    @apply flex flex-col flex-1 overflow-y-auto;
+    gap: 6px;
+    padding: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border) transparent;
+}
+
+.cards::-webkit-scrollbar {
+    width: 4px;
+}
+
+.cards::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.cards::-webkit-scrollbar-thumb {
+    background: var(--color-border);
+    border-radius: 2px;
+}
+
+.cards.drag-over {
+    @apply bg-accent-muted rounded-md;
+    outline: 2px dashed var(--color-accent);
+    outline-offset: -2px;
+    min-height: 60px;
+}
+
+.move-trigger,
+.delete-trigger {
+    @apply absolute overflow-hidden border-0 p-0;
+    width: 1px;
+    height: 1px;
+    clip: rect(0, 0, 0, 0);
+}
+
+.drop-indicator {
+    @apply bg-accent pointer-events-none shrink-0;
+    height: 3px;
+    border-radius: 2px;
+}
+
+/* === COLUMN DRAG === */
+.column[draggable] .column-header {
+    @apply cursor-grab;
+}
+
+.column[draggable]:active .column-header {
+    cursor: grabbing;
+}
+
+.column.column-dragging {
+    @apply opacity-40;
+}
+
+.table-group-cards.column-dragging {
+    @apply opacity-40;
+}
+
+.column-drop-indicator {
+    @apply bg-accent pointer-events-none shrink-0 self-stretch;
+    width: 3px;
+    border-radius: 2px;
+}
+
+.column-drop-indicator-horizontal {
+    @apply w-auto self-auto;
+    height: 3px;
+}
+
