@@ -1,15 +1,11 @@
 /* ── Keyboard navigation ── */
 .card-focused {
-    outline: 2px solid var(--color-accent);
+    @apply outline-2 outline-accent shadow-focus-ring relative z-2;
     outline-offset: -1px;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
-    position: relative;
-    z-index: 2;
 }
 .table-row.card-focused {
-    outline: 2px solid var(--color-accent);
+    @apply outline-2 outline-accent shadow-focus-ring;
     outline-offset: -2px;
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 25%, transparent);
 }
 
 /* Keyboard shortcuts help overlay */
@@ -25,11 +21,7 @@
     @apply opacity-100;
 }
 .keyboard-help-panel {
-    @apply w-full text-text-primary overflow-hidden opacity-0;
-    max-width: 460px;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius-lg, 12px);
+    @apply w-full text-text-primary overflow-hidden opacity-0 bg-surface border border-border rounded-lg;
     box-shadow:
         0 24px 80px rgba(0, 0, 0, 0.18),
         0 8px 24px rgba(0, 0, 0, 0.1),
@@ -60,12 +52,10 @@
     @apply flex-1;
 }
 .keyboard-help-title-kbd {
-    @apply shrink-0 text-text-secondary border border-border;
+    @apply shrink-0 text-text-secondary border border-border rounded-sm bg-column-bg;
     font-size: 11px;
     font-family: inherit;
     padding: 2px 6px;
-    border-radius: var(--radius-sm, 4px);
-    background: var(--color-column-bg);
     line-height: 1.4;
 }
 .keyboard-help-grid {
@@ -93,10 +83,7 @@
     transition: background 0.1s;
 }
 .keyboard-help-key kbd {
-    @apply inline-block border border-border text-center;
-    font-family: inherit;
-    background: var(--color-column-bg);
-    border-radius: var(--radius-sm, 4px);
+    @apply inline-block border border-border text-center bg-column-bg rounded-sm;
     padding: 1px 6px;
     font-size: inherit;
     min-width: 20px;
@@ -109,10 +96,9 @@
     transition: background 0.1s;
 }
 .keyboard-help-section {
-    @apply col-span-full font-medium uppercase;
+    @apply col-span-full font-medium uppercase text-text-tertiary;
     font-size: 11px;
     letter-spacing: 0.06em;
-    color: var(--color-text-tertiary);
     padding: 10px 12px 4px;
 }
 .keyboard-help-section:first-child {

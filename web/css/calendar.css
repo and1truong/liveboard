@@ -115,10 +115,10 @@
     height: 6px;
 }
 
-.calendar-card-chip .priority-dot.priority-critical { background: #dc2626; }
-.calendar-card-chip .priority-dot.priority-high { background: #ef4444; }
-.calendar-card-chip .priority-dot.priority-medium { background: #f59e0b; }
-.calendar-card-chip .priority-dot.priority-low { background: #3b82f6; }
+.calendar-card-chip .priority-dot.priority-critical { @apply bg-priority-critical; }
+.calendar-card-chip .priority-dot.priority-high { @apply bg-priority-high; }
+.calendar-card-chip .priority-dot.priority-medium { @apply bg-priority-medium; }
+.calendar-card-chip .priority-dot.priority-low { @apply bg-priority-low; }
 
 .calendar-card-chip .chip-title {
     @apply overflow-hidden text-ellipsis;

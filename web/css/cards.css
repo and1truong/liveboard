@@ -59,8 +59,7 @@
 }
 
 .card-checkbox.checked {
-    background: var(--color-success-text);
-    border-color: var(--color-success-text);
+    @apply bg-success-text border-success-text;
 }
 
 .card-checkbox.checked::after {
@@ -87,8 +86,7 @@
 }
 
 .status-badge.completed {
-    background: var(--color-success-bg);
-    color: var(--color-success-text);
+    @apply bg-success-bg text-success-text;
 }
 
 .card-body {

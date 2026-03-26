@@ -1,25 +1,17 @@
 /* === FORMS === */
 .add-card-form {
-    display: flex;
-    flex-direction: column;
+    @apply flex flex-col shrink-0;
     gap: 5px;
     margin-top: 8px;
-    flex-shrink: 0;
 }
 
-
 .add-card-form input[type="text"] {
+    @apply bg-surface text-base;
     padding: 10px 12px;
-    font-size: var(--font-size-base);
-    background: var(--color-surface);
 }
 
 /* === ERROR === */
 .error {
-    background: var(--color-danger-bg);
-    color: var(--color-danger-text);
+    @apply bg-danger-bg text-danger-text rounded-sm mb-4 text-sm;
     padding: 8px 12px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 1rem;
-    font-size: var(--font-size-sm);
 }

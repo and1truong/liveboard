@@ -108,14 +108,14 @@
     width: 7px;
     height: 7px;
 }
-.priority-indicator.priority-critical::before { background: #dc2626; }
-.priority-indicator.priority-high::before { background: #ef4444; }
-.priority-indicator.priority-medium::before { background: #f59e0b; }
-.priority-indicator.priority-low::before { background: #3b82f6; }
-.priority-indicator.priority-critical { color: #dc2626; }
-.priority-indicator.priority-high { color: #ef4444; }
+.priority-indicator.priority-critical::before { @apply bg-priority-critical; }
+.priority-indicator.priority-high::before { @apply bg-priority-high; }
+.priority-indicator.priority-medium::before { @apply bg-priority-medium; }
+.priority-indicator.priority-low::before { @apply bg-priority-low; }
+.priority-indicator.priority-critical { @apply text-priority-critical; }
+.priority-indicator.priority-high { @apply text-priority-high; }
 .priority-indicator.priority-medium { color: #d97706; }
-.priority-indicator.priority-low { color: #3b82f6; }
+.priority-indicator.priority-low { @apply text-priority-low; }
 
 /* Tags in table */
 .table-cell-tags {

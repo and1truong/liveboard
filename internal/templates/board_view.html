@@ -271,7 +271,7 @@
             </div>{{end}}
         </div>
         {{end}}
-        {{if not .ReadOnly}}<div class="table-add-column add-card-toggle" style="margin-top: 8px">
+        {{if not .ReadOnly}}<div class="table-add-column add-card-toggle mt-2">
             <form hx-post="/board/{{.BoardSlug}}/columns" hx-target="#board-content" hx-swap="innerHTML" class="add-card-form" style="display:none">
                 <input type="text" name="column_name" placeholder="List name" required
                        onkeydown="if(event.key==='Escape'){var w=this.closest('.add-card-toggle');this.value='';w.querySelector('.add-card-form').style.display='none';w.querySelector('.table-add-card-link').style.display=''}">
@@ -432,7 +432,7 @@
                     </div>
                 </template>
                 <template x-if="cardsForDate(dayDate.dateStr).length === 0">
-                    <div style="color: var(--color-text-secondary); padding: 20px; text-align: center;">No cards scheduled for this day.</div>
+                    <div class="text-text-secondary p-5 text-center">No cards scheduled for this day.</div>
                 </template>
             </div>
         </template>

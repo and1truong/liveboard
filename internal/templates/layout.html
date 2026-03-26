@@ -134,12 +134,12 @@
                 </div>
             </div>
             <button class="sidebar-toggle" @click="$store.ui.toggleSidebar()" title="Toggle sidebar">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink: 0;"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="shrink-0"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
             </button>
         </aside>
         <div class="app-workspace">
             <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" onclick="if(typeof Alpine!=='undefined'){Alpine.store('ui').toggleSidebar()}">
-                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" style="flex-shrink: 0;"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" class="shrink-0"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
             </button>
             <main class="workspace-content">
                 {{template "content" .}}
@@ -212,11 +212,11 @@
                 <button class="card-modal-close" @click="close()">&times;</button>
                 <div class="card-modal-main">
                     <span class="card-modal-column-pill" x-text="columnName"></span>
-                    <span x-show="completed" class="status-badge completed" style="margin-left:8px">&#10003; Done</span>
+                    <span x-show="completed" class="status-badge completed ml-2">&#10003; Done</span>
 
                     <textarea class="card-modal-title" x-model="title" rows="1" @input="autoResize($event)" @keydown="handleTitleKeydown($event)"></textarea>
 
-                    <div class="card-modal-action-bar" style="position:relative">
+                    <div class="card-modal-action-bar relative">
                         <button class="card-modal-action-btn"><span class="card-modal-action-icon">&#127991;</span> Labels</button>
                         <button class="card-modal-action-btn" @click.stop="showDatePicker = !showDatePicker; showMembersPicker = false"><span class="card-modal-action-icon">&#128197;</span> Dates</button>
                         <button class="card-modal-action-btn"><span class="card-modal-action-icon">&#9745;</span> Checklist</button>
@@ -417,11 +417,11 @@
                 <button class="card-modal-close" @click="closeAssistant()">&times;</button>
                 <div class="card-modal-main">
                     <div class="card-modal-section-header"><span class="card-modal-section-icon">&#9881;&#65039;</span> Assistant &mdash; <span x-text="columnName"></span></div>
-                    <p style="font-size:var(--font-size-sm);color:var(--color-text-secondary);margin-top:8px" x-text="assistantMode === 'summary' ? 'Generate a summary of all cards in this column:' : 'Custom instruction for the assistant:'"></p>
+                    <p class="text-sm text-text-secondary mt-2" x-text="assistantMode === 'summary' ? 'Generate a summary of all cards in this column:' : 'Custom instruction for the assistant:'"></p>
                     <textarea class="card-modal-body assistant-textarea" :placeholder="assistantMode === 'summary' ? 'E.g. Summarize as a priority list...' : 'E.g. Write a status update based on these cards...'" rows="5" x-model="assistantPrompt"></textarea>
                     <div class="card-modal-save-row">
                         <button class="btn-primary btn-small" @click="runAssistant()">Run</button>
-                        <button class="btn-small" style="margin-left:8px" @click="closeAssistant()">Cancel</button>
+                        <button class="btn-small ml-2" @click="closeAssistant()">Cancel</button>
                     </div>
                 </div>
             </div>

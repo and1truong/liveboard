@@ -641,26 +641,18 @@ input.card-modal-tags-input::placeholder {
 }
 
 .card-modal-priority-btn--low.card-modal-priority-btn--active {
-    background: #3b82f6;
-    color: #fff;
-    border-color: transparent;
+    @apply bg-priority-low text-white border-transparent;
 }
 
 .card-modal-priority-btn--medium.card-modal-priority-btn--active {
-    background: #f59e0b;
-    color: #fff;
-    border-color: transparent;
+    @apply bg-priority-medium text-white border-transparent;
 }
 
 .card-modal-priority-btn--high.card-modal-priority-btn--active {
-    background: #ef4444;
-    color: #fff;
-    border-color: transparent;
+    @apply bg-priority-high text-white border-transparent;
 }
 
 .card-modal-priority-btn--critical.card-modal-priority-btn--active {
-    background: #dc2626;
-    color: #fff;
-    border-color: transparent;
+    @apply bg-priority-critical text-white border-transparent;
 }
 
