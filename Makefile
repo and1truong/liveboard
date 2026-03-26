@@ -4,7 +4,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop
+.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch
 
 # Build CLI binary (no CGO, single arch)
 build:
@@ -67,6 +67,14 @@ release-desktop: bundle-desktop-release
 	gh release upload "$$TAG" "LiveBoard-$(VERSION)-macos-universal.zip" --clobber
 	bash scripts/update-desktop-cask.sh "$(VERSION)"
 
+# Build CSS with Tailwind
+css:
+	tailwindcss -i web/css/input.css -o web/css/board.css --minify
+
+# Watch CSS for changes (dev mode)
+css-watch:
+	tailwindcss -i web/css/input.css -o web/css/board.css --watch
+
 # Kill any process occupying the dev server port
 release-port:
 	-lsof -ti :$(PORT) | xargs kill -9 2>/dev/null
@@ -75,9 +83,12 @@ release-port:
 lint:
 	golangci-lint run ./...
 
-# Start dev server with live reload (uses air if available)
+# Start dev server with live reload (uses air if available) + Tailwind watcher
 dev: release-port
-	@if command -v air >/dev/null 2>&1; then \
+	@tailwindcss -i web/css/input.css -o web/css/board.css --watch & \
+	CSS_PID=$$!; \
+	trap "kill $$CSS_PID 2>/dev/null" EXIT; \
+	if command -v air >/dev/null 2>&1; then \
 		NO_CACHE=1 air -- serve --dir=demo/$(DEMO)/ --port $(PORT); \
 	else \
 		echo "Tip: install 'air' for live reload: go install github.com/air-verse/air@latest"; \
