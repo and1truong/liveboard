@@ -3,6 +3,7 @@ package writer
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"gopkg.in/yaml.v3"
@@ -16,23 +17,25 @@ func Render(board *models.Board) (string, error) {
 
 	// Write YAML frontmatter.
 	fm := struct {
-		Version     int                  `yaml:"version"`
-		Name        string               `yaml:"name"`
-		Description string               `yaml:"description,omitempty"`
-		Icon        string               `yaml:"icon,omitempty"`
-		Tags        []string             `yaml:"tags,omitempty"`
-		TagColors   map[string]string    `yaml:"tag-colors,omitempty"`
-		Members     []string             `yaml:"members,omitempty"`
-		Settings    models.BoardSettings `yaml:"settings,omitempty"`
+		Version      int                  `yaml:"version"`
+		Name         string               `yaml:"name"`
+		Description  string               `yaml:"description,omitempty"`
+		Icon         string               `yaml:"icon,omitempty"`
+		Tags         []string             `yaml:"tags,omitempty"`
+		TagColors    map[string]string    `yaml:"tag-colors,omitempty"`
+		Members      []string             `yaml:"members,omitempty"`
+		ListCollapse []bool               `yaml:"list-collapse,omitempty"`
+		Settings     models.BoardSettings `yaml:"settings,omitempty"`
 	}{
-		Version:     board.Version,
-		Name:        board.Name,
-		Description: board.Description,
-		Icon:        board.Icon,
-		Tags:        board.Tags,
-		TagColors:   board.TagColors,
-		Members:     board.Members,
-		Settings:    board.Settings,
+		Version:      board.Version,
+		Name:         board.Name,
+		Description:  board.Description,
+		Icon:         board.Icon,
+		Tags:         board.Tags,
+		TagColors:    board.TagColors,
+		Members:      board.Members,
+		ListCollapse: board.ListCollapse,
+		Settings:     board.Settings,
 	}
 	fmBytes, err := yaml.Marshal(fm)
 	if err != nil {
@@ -56,14 +59,28 @@ func Render(board *models.Board) (string, error) {
 }
 
 func writeCard(b *strings.Builder, card *models.Card) {
-	checkbox := " "
-	if card.Completed {
-		checkbox = "x"
+	// Build title with inline tags restored.
+	title := card.Title
+	if len(card.InlineTags) > 0 {
+		for _, t := range card.InlineTags {
+			title += " #" + t
+		}
 	}
-	fmt.Fprintf(b, "- [%s] %s\n", checkbox, card.Title)
 
-	if len(card.Tags) > 0 {
-		b.WriteString("  tags: " + strings.Join(card.Tags, ", ") + "\n")
+	if card.NoCheckbox {
+		fmt.Fprintf(b, "- %s\n", title)
+	} else {
+		checkbox := " "
+		if card.Completed {
+			checkbox = "x"
+		}
+		fmt.Fprintf(b, "- [%s] %s\n", checkbox, title)
+	}
+
+	// Write metadata-only tags (exclude inline tags already in title).
+	metaTags := metadataOnlyTags(card.Tags, card.InlineTags)
+	if len(metaTags) > 0 {
+		b.WriteString("  tags: " + strings.Join(metaTags, ", ") + "\n")
 	}
 	if card.Assignee != "" {
 		b.WriteString("  assignee: " + card.Assignee + "\n")
@@ -74,12 +91,40 @@ func writeCard(b *strings.Builder, card *models.Card) {
 	if card.Due != "" {
 		b.WriteString("  due: " + card.Due + "\n")
 	}
-	for k, v := range card.Metadata {
-		fmt.Fprintf(b, "  %s: %s\n", k, v)
+
+	// Sort metadata keys for deterministic output.
+	if len(card.Metadata) > 0 {
+		keys := make([]string, 0, len(card.Metadata))
+		for k := range card.Metadata {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			fmt.Fprintf(b, "  %s: %s\n", k, card.Metadata[k])
+		}
 	}
+
 	if card.Body != "" {
 		for _, line := range strings.Split(card.Body, "\n") {
 			b.WriteString("  " + line + "\n")
 		}
 	}
+}
+
+// metadataOnlyTags returns tags that are NOT in the inline set.
+func metadataOnlyTags(all, inline []string) []string {
+	if len(inline) == 0 {
+		return all
+	}
+	inlineSet := make(map[string]struct{}, len(inline))
+	for _, t := range inline {
+		inlineSet[t] = struct{}{}
+	}
+	var out []string
+	for _, t := range all {
+		if _, ok := inlineSet[t]; !ok {
+			out = append(out, t)
+		}
+	}
+	return out
 }

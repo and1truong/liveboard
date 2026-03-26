@@ -16,18 +16,19 @@ type BoardSettings struct {
 
 // Board represents a Kanban board backed by a single Markdown file.
 type Board struct {
-	Version     int               `yaml:"version" json:"version"`
-	Name        string            `yaml:"name" json:"name"`
-	Description string            `yaml:"description,omitempty" json:"description,omitempty"`
-	Icon        string            `yaml:"icon,omitempty" json:"icon,omitempty"`
-	Tags        []string          `yaml:"tags,omitempty" json:"tags,omitempty"`
-	TagColors   map[string]string `yaml:"tag-colors,omitempty" json:"tag_colors,omitempty"`
-	Members     []string          `yaml:"members,omitempty" json:"members,omitempty"`
-	Settings    BoardSettings     `yaml:"settings,omitempty" json:"settings,omitempty"`
-	Columns     []Column          `yaml:"-" json:"columns"`
-	FilePath    string            `yaml:"-" json:"file_path"`
-	CreatedAt   time.Time         `yaml:"-" json:"created_at"`
-	UpdatedAt   time.Time         `yaml:"-" json:"updated_at"`
+	Version      int               `yaml:"version" json:"version"`
+	Name         string            `yaml:"name" json:"name"`
+	Description  string            `yaml:"description,omitempty" json:"description,omitempty"`
+	Icon         string            `yaml:"icon,omitempty" json:"icon,omitempty"`
+	Tags         []string          `yaml:"tags,omitempty" json:"tags,omitempty"`
+	TagColors    map[string]string `yaml:"tag-colors,omitempty" json:"tag_colors,omitempty"`
+	Members      []string          `yaml:"members,omitempty" json:"members,omitempty"`
+	ListCollapse []bool            `yaml:"list-collapse,omitempty" json:"list_collapse,omitempty"`
+	Settings     BoardSettings     `yaml:"settings,omitempty" json:"settings,omitempty"`
+	Columns      []Column          `yaml:"-" json:"columns"`
+	FilePath     string            `yaml:"-" json:"file_path"`
+	CreatedAt    time.Time         `yaml:"-" json:"created_at"`
+	UpdatedAt    time.Time         `yaml:"-" json:"updated_at"`
 }
 
 // Column represents a Kanban column (H2 heading in Markdown).
@@ -38,14 +39,16 @@ type Column struct {
 
 // Card represents a task item (list item in Markdown).
 type Card struct {
-	Title     string            `json:"title"`
-	Completed bool              `json:"completed"`
-	Tags      []string          `json:"tags,omitempty"`
-	Assignee  string            `json:"assignee,omitempty"`
-	Priority  string            `json:"priority,omitempty"`
-	Due       string            `json:"due,omitempty"`
-	Metadata  map[string]string `json:"metadata,omitempty"`
-	Body      string            `json:"body,omitempty"`
+	Title      string            `json:"title"`
+	Completed  bool              `json:"completed"`
+	NoCheckbox bool              `json:"no_checkbox,omitempty"`
+	Tags       []string          `json:"tags,omitempty"`
+	InlineTags []string          `json:"inline_tags,omitempty"`
+	Assignee   string            `json:"assignee,omitempty"`
+	Priority   string            `json:"priority,omitempty"`
+	Due        string            `json:"due,omitempty"`
+	Metadata   map[string]string `json:"metadata,omitempty"`
+	Body       string            `json:"body,omitempty"`
 }
 
 // Config represents global or project-level configuration.

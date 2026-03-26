@@ -12,9 +12,10 @@ import (
 )
 
 var (
-	cardRe    = regexp.MustCompile(`^- \[([ xX])\] (.+)$`)
-	metaRe    = regexp.MustCompile(`^  (\w+): (.+)$`)
-	hashTagRe = regexp.MustCompile(`#(\w[\w-]*)`)
+	cardRe      = regexp.MustCompile(`^- \[([ xX])\] (.+)$`)
+	plainCardRe = regexp.MustCompile(`^- (.+)$`)
+	metaRe      = regexp.MustCompile(`^  ([\w-]+): ?(.*)$`)
+	hashTagRe   = regexp.MustCompile(`#(\w[\w-]*)`)
 )
 
 // BoardSummaryInfo holds lightweight metadata extracted without full card parsing.
@@ -94,7 +95,7 @@ func Parse(content string) (*models.Board, error) {
 			continue
 		}
 
-		// Card line.
+		// Checkbox card line: - [ ] or - [x]
 		if m := cardRe.FindStringSubmatch(line); m != nil {
 			// Flush previous card.
 			if currentCard != nil && currentCol != nil {
@@ -113,9 +114,35 @@ func Parse(content string) (*models.Board, error) {
 			}
 
 			currentCard = &models.Card{
-				Title:     title,
-				Completed: completed,
-				Tags:      inlineTags,
+				Title:      title,
+				Completed:  completed,
+				Tags:       inlineTags,
+				InlineTags: inlineTags,
+			}
+			continue
+		}
+
+		// Plain list item: - Title (no checkbox)
+		if m := plainCardRe.FindStringSubmatch(line); m != nil {
+			// Flush previous card.
+			if currentCard != nil && currentCol != nil {
+				currentCol.Cards = append(currentCol.Cards, *currentCard)
+			}
+			title := m[1]
+
+			var inlineTags []string
+			if matches := hashTagRe.FindAllStringSubmatch(title, -1); matches != nil {
+				for _, match := range matches {
+					inlineTags = append(inlineTags, match[1])
+				}
+				title = strings.TrimSpace(hashTagRe.ReplaceAllString(title, ""))
+			}
+
+			currentCard = &models.Card{
+				Title:      title,
+				NoCheckbox: true,
+				Tags:       inlineTags,
+				InlineTags: inlineTags,
 			}
 			continue
 		}

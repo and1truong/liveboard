@@ -167,6 +167,10 @@ func TestParseInlineHashTags(t *testing.T) {
 	if card.Tags[0] != "urgent" || card.Tags[1] != "backend" {
 		t.Errorf("tags = %v", card.Tags)
 	}
+	// InlineTags should match.
+	if len(card.InlineTags) != 2 || card.InlineTags[0] != "urgent" || card.InlineTags[1] != "backend" {
+		t.Errorf("inline_tags = %v, want [urgent backend]", card.InlineTags)
+	}
 }
 
 func TestParseDueDate(t *testing.T) {
@@ -236,5 +240,124 @@ func TestParseCardBodyWithMetadata(t *testing.T) {
 	}
 	if card.Body != "Some body text here.\nMore body text." {
 		t.Errorf("body = %q", card.Body)
+	}
+}
+
+func TestParseHyphenatedMetadataKeys(t *testing.T) {
+	md := "## Todo\n\n- [ ] Task\n  custom-key: some value\n  story-points: 5\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Metadata == nil {
+		t.Fatal("expected metadata map")
+	}
+	if card.Metadata["custom-key"] != "some value" {
+		t.Errorf("custom-key = %q, want %q", card.Metadata["custom-key"], "some value")
+	}
+	if card.Metadata["story-points"] != "5" {
+		t.Errorf("story-points = %q, want %q", card.Metadata["story-points"], "5")
+	}
+	// Should NOT be in body.
+	if card.Body != "" {
+		t.Errorf("body should be empty, got %q", card.Body)
+	}
+}
+
+func TestParseEmptyMetadataValue(t *testing.T) {
+	md := "## Todo\n\n- [ ] Task\n  note:\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Metadata == nil {
+		t.Fatal("expected metadata map")
+	}
+	if v, ok := card.Metadata["note"]; !ok {
+		t.Error("note key should exist in metadata")
+	} else if v != "" {
+		t.Errorf("note = %q, want empty", v)
+	}
+}
+
+func TestParsePlainListItem(t *testing.T) {
+	md := "## Todo\n\n- Plain task\n  priority: low\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns[0].Cards) != 1 {
+		t.Fatalf("cards = %d, want 1", len(board.Columns[0].Cards))
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Title != "Plain task" {
+		t.Errorf("title = %q", card.Title)
+	}
+	if !card.NoCheckbox {
+		t.Error("expected NoCheckbox = true")
+	}
+	if card.Completed {
+		t.Error("plain item should not be completed")
+	}
+	if card.Priority != "low" {
+		t.Errorf("priority = %q", card.Priority)
+	}
+}
+
+func TestParsePlainListItemWithInlineTags(t *testing.T) {
+	md := "## Todo\n\n- Deploy service #ops #infra\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Title != "Deploy service" {
+		t.Errorf("title = %q", card.Title)
+	}
+	if !card.NoCheckbox {
+		t.Error("expected NoCheckbox = true")
+	}
+	if len(card.Tags) != 2 || card.Tags[0] != "ops" || card.Tags[1] != "infra" {
+		t.Errorf("tags = %v", card.Tags)
+	}
+	if len(card.InlineTags) != 2 {
+		t.Errorf("inline_tags = %v", card.InlineTags)
+	}
+}
+
+func TestParseListCollapse(t *testing.T) {
+	md := "---\nname: Test\nlist-collapse:\n    - false\n    - true\n---\n\n## A\n\n## B\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.ListCollapse) != 2 {
+		t.Fatalf("list-collapse = %v", board.ListCollapse)
+	}
+	if board.ListCollapse[0] != false || board.ListCollapse[1] != true {
+		t.Errorf("list-collapse = %v", board.ListCollapse)
+	}
+}
+
+func TestParseMixedCheckboxAndPlain(t *testing.T) {
+	md := "## Todo\n\n- [ ] Checkbox task\n\n- Plain task\n\n- [x] Done task\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := board.Columns[0].Cards
+	if len(cards) != 3 {
+		t.Fatalf("cards = %d, want 3", len(cards))
+	}
+	if cards[0].NoCheckbox || cards[0].Completed {
+		t.Error("first card: expected checkbox, uncompleted")
+	}
+	if !cards[1].NoCheckbox {
+		t.Error("second card: expected plain item")
+	}
+	if cards[2].NoCheckbox || !cards[2].Completed {
+		t.Error("third card: expected checkbox, completed")
 	}
 }
