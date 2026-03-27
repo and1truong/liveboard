@@ -4,7 +4,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch
+.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch online
 
 # Fail fast if tailwindcss is missing
 check-tailwind:
@@ -78,6 +78,10 @@ css: check-tailwind
 # Watch CSS for changes (dev mode)
 css-watch:
 	tailwindcss -i web/css/input.css -o web/css/liveboard.css --watch
+
+# Build LiveBoard Online (browser-only SPA with localStorage)
+online: check-tailwind
+	bash online/build.sh
 
 # Kill any process occupying the dev server port
 release-port:

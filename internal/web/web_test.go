@@ -237,7 +237,7 @@ func TestSettingsAPIHandler(t *testing.T) {
 		t.Errorf("default theme = %q", got.Theme)
 	}
 
-	body := `{"theme":"dark","color_theme":"github","column_width":300,"sidebar_position":"right","show_checkbox":false,"newline_trigger":"enter","card_position":"prepend"}`
+	body := `{"theme":"dark","color_theme":"gitlab","column_width":300,"sidebar_position":"right","show_checkbox":false,"newline_trigger":"enter","card_position":"prepend"}`
 	req = httptest.NewRequest("POST", "/api/settings", strings.NewReader(body))
 	w = httptest.NewRecorder()
 	handler.ServeHTTP(w, req)
@@ -253,7 +253,7 @@ func TestSettingsAPIHandler(t *testing.T) {
 	if saved.Theme != "dark" {
 		t.Errorf("saved theme = %q", saved.Theme)
 	}
-	if saved.ColorTheme != "github" {
+	if saved.ColorTheme != "gitlab" {
 		t.Errorf("saved color_theme = %q", saved.ColorTheme)
 	}
 	if saved.CardPosition != "prepend" {
@@ -322,8 +322,8 @@ func TestSettingsValidation(t *testing.T) {
 	if s.Theme != "system" {
 		t.Errorf("theme = %q, want 'system'", s.Theme)
 	}
-	if s.ColorTheme != "default" {
-		t.Errorf("color_theme = %q, want 'default'", s.ColorTheme)
+	if s.ColorTheme != "aqua" {
+		t.Errorf("color_theme = %q, want 'aqua'", s.ColorTheme)
 	}
 	if s.SidebarPosition != "left" {
 		t.Errorf("sidebar_position = %q, want 'left'", s.SidebarPosition)
@@ -367,7 +367,7 @@ func TestLoadSaveSettingsRoundTrip(t *testing.T) {
 }
 
 func TestValidColorThemes(t *testing.T) {
-	expected := []string{"default", "github", "gitlab", "emerald", "rose", "sunset", "aqua", "graphite", "macos"}
+	expected := []string{"gitlab", "emerald", "rose", "aqua"}
 	for _, theme := range expected {
 		if !validColorThemes[theme] {
 			t.Errorf("expected %q to be valid", theme)

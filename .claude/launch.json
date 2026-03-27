@@ -21,6 +21,13 @@
       "runtimeArgs": ["dev", "DEMO=tutorial"],
       "port": 7070,
       "autoPort": true
+    },
+    {
+      "name": "online",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": ["-m", "http.server", "8090", "-d", "dist/online"],
+      "port": 8090,
+      "autoPort": true
     }
   ]
 }
