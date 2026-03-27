@@ -209,7 +209,7 @@
                                                         <label class="settings-label-stacked">Tags</label>
                                                         <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
                                                             <template x-for="(tag, idx) in tags" :key="tag + idx">
-                                                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
+                                                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" @click.stop="removeTag(idx)">&times;</button></span>
                                                             </template>
                                                             <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" aria-label="Add tag" @keydown.enter.prevent="addTag($event.target.value); $event.target.value = ''">
                                                         </div>
@@ -505,7 +505,7 @@
 
                         <div class="card-modal-section-header">
                             <span class="card-modal-section-icon">&#8801;</span> Description
-                            <button type="button" class="card-modal-preview-toggle" type="button" @click="showBodyPreview = !showBodyPreview" x-text="showBodyPreview ? 'Edit' : 'Preview'" x-show="body.trim()"></button>
+                            <button type="button" class="card-modal-preview-toggle" @click="showBodyPreview = !showBodyPreview" x-text="showBodyPreview ? 'Edit' : 'Preview'" x-show="body.trim()"></button>
                         </div>
                         <textarea class="card-modal-body" placeholder="Add a more detailed description..." x-model="body" rows="4" @input="autoResize($event)" x-show="!showBodyPreview"></textarea>
                         <div class="card-modal-body-preview md-content" x-show="showBodyPreview" x-html="renderMarkdown(body)"></div>
@@ -513,7 +513,7 @@
                         <div class="card-modal-section-header"><span class="card-modal-section-icon">&#127991;</span> Tags</div>
                         <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:8px">
                             <template x-for="(tag, idx) in tags" :key="tag + idx">
-                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" type="button" @click.stop="tags.splice(idx, 1)">&times;</button></span>
+                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" @click.stop="tags.splice(idx, 1)">&times;</button></span>
                             </template>
                             <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" aria-label="Add card tag" @keydown.enter.prevent="var v=$event.target.value.trim(); if(v && tags.indexOf(v)===-1) tags.push(v); $event.target.value=''">
                         </div>

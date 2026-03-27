@@ -449,6 +449,12 @@
       members: [],
       refresh: function () {
         var slug = Alpine.store('lb')._currentSlug || '';
+        if (!slug || !Alpine.store('lb').getBoard(slug)) {
+          this.slug = '';
+          this.tags = [];
+          this.members = [];
+          return;
+        }
         this.slug = slug;
         this.tags = Alpine.store('lb').boardTags(slug);
         this.members = Alpine.store('lb').boardMembers(slug);

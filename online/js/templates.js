@@ -17,6 +17,9 @@ document.addEventListener('alpine:init', function () {
           if (r.view === 'board') {
             Alpine.store('lb')._currentSlug = r.slug;
             Alpine.store('board').refresh();
+          } else {
+            Alpine.store('lb')._currentSlug = '';
+            Alpine.store('board').refresh();
           }
           // Update page title
           self.updateTitle();
@@ -255,8 +258,13 @@ document.addEventListener('alpine:init', function () {
           .replace(/_([^_]+)_/g, '<em>$1</em>')
           .replace(/~~([^~]+)~~/g, '<del>$1</del>')
           .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, text, url) {
-            if (/^\s*(javascript|data|vbscript):/i.test(url)) return text;
-            return '<a href="' + url + '" target="_blank" rel="noopener">' + text + '</a>';
+            var u = url.trim();
+            // Allowlist: http(s), mailto, tel, relative/fragment URLs
+            if (/^https?:\/\//i.test(u) || /^mailto:/i.test(u) || /^tel:/i.test(u) || /^[#\/\.]/.test(u)) {
+              return '<a href="' + u.replace(/"/g, '&quot;') + '" target="_blank" rel="noopener">' + text + '</a>';
+            }
+            // Block everything else (javascript:, data:, vbscript:, etc.)
+            return text;
           })
           .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
           .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
