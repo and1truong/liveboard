@@ -37,9 +37,28 @@
     &.drag-over { @apply bg-accent-muted rounded-md; }
 }
 
+.table-group-cards.collapsed .table-row.card,
+.table-group-cards.collapsed .table-row-add {
+    display: none;
+}
+
 .table-group-header {
     @apply flex items-center gap-2;
     padding: 8px 12px 4px;
+    cursor: pointer;
+    user-select: none;
+
+    .group-collapse-icon {
+        font-size: 9px;
+        color: var(--color-text-muted);
+        width: 14px;
+        text-align: center;
+        transition: color 0.12s;
+    }
+
+    &:hover .group-collapse-icon {
+        color: var(--color-text-secondary);
+    }
 
     .group-name { @apply text-sm font-semibold text-text-primary; }
 

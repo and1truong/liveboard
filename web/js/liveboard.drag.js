@@ -99,6 +99,16 @@
     });
     } // end !isReadOnly
 
+    // Collapsed column click → expand
+    document.addEventListener("click", function (e) {
+      var header = e.target.closest(".column-header");
+      if (!header) return;
+      var col = header.closest(".column");
+      if (!col || !col.classList.contains("collapsed")) return;
+      var btn = header.querySelector(".column-collapse-btn");
+      if (btn && e.target !== btn) btn.click();
+    });
+
     // Cards: draggable
     document.querySelectorAll(".card[draggable]:not(.calendar-card-chip)").forEach(function (card) {
       if (card.dataset.dragWired) return;

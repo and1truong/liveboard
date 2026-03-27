@@ -33,8 +33,9 @@ type Board struct {
 
 // Column represents a Kanban column (H2 heading in Markdown).
 type Column struct {
-	Name  string `json:"name"`
-	Cards []Card `json:"cards"`
+	Name      string `json:"name"`
+	Collapsed bool   `json:"collapsed"`
+	Cards     []Card `json:"cards"`
 }
 
 // Card represents a task item (list item in Markdown).
