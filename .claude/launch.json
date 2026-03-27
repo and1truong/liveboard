@@ -26,7 +26,8 @@
       "name": "online",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8090", "-d", "dist/online"],
-      "port": 8090
+      "port": 8090,
+      "autoPort": true
     }
   ]
 }

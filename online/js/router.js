@@ -26,6 +26,7 @@
         self._notify();
       });
       this.current = this.parse();
+      this._notify();
     },
 
     _listeners: [],

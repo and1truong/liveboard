@@ -36,7 +36,7 @@
     <script src="js/alpine.min.js" defer></script>
 </head>
 <body>
-    <div class="app-shell" x-data="lbApp()" x-data.onlineEmojiPicker="onlineEmojiPicker()">
+    <div class="app-shell" x-data="lbApp()">
         <!-- Sidebar -->
         <aside class="app-sidebar" id="appSidebar" :class="{ collapsed: $store.ui.sidebarCollapsed }">
             <nav class="sidebar-nav">
@@ -59,7 +59,7 @@
                                     </span>
                                 </template>
                             </span>
-                            <button class="sidebar-pin-btn" :class="{ pinned: b.pinned }" @click.prevent.stop="lb.togglePin(b.slug)" :title="b.pinned ? 'Unpin' : 'Pin to top'">
+                            <button type="button" class="sidebar-pin-btn" :class="{ pinned: b.pinned }" @click.prevent.stop="lb.togglePin(b.slug)" :title="b.pinned ? 'Unpin' : 'Pin to top'">
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 17v5"/><path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24z"/></svg>
                             </button>
                         </a>
@@ -81,13 +81,13 @@
                     </div>
                 </div>
             </div>
-            <button class="sidebar-toggle" @click="$store.ui.toggleSidebar()" title="Toggle sidebar">
+            <button type="button" class="sidebar-toggle" @click="$store.ui.toggleSidebar()" title="Toggle sidebar">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
             </button>
         </aside>
 
         <div class="app-workspace">
-            <button class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" @click="$store.ui.toggleSidebar()">
+            <button type="button" class="sidebar-toggle" id="sidebarToggle" title="Toggle sidebar" @click="$store.ui.toggleSidebar()">
                 <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor"><path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z"></path></svg>
             </button>
             <main class="workspace-content">
@@ -99,7 +99,7 @@
                     <div class="board-list" x-data="boardList()">
                         <div class="workspace-header">
                             <h2 class="workspace-title">My Boards</h2>
-                            <button @click="showForm = true; $nextTick(function(){ document.querySelector('#online-create-input').focus() })" class="btn-primary">+ New Board</button>
+                            <button type="button" @click="showForm = true; $nextTick(function(){ document.querySelector('#online-create-input').focus() })" class="btn-primary">+ New Board</button>
                         </div>
                         <div class="workspace-body">
                             <form id="online-create-form" x-show="showForm" @submit.prevent="createBoard()" class="create-board-form" x-cloak>
@@ -143,7 +143,7 @@
                                                         </div>
                                                     </div>
                                                 </a>
-                                                <button @click="deleteBoard(b.slug, b.name)" class="btn-delete" title="Delete board">&#x2715;</button>
+                                                <button type="button" @click="deleteBoard(b.slug, b.name)" class="btn-delete" title="Delete board">&#x2715;</button>
                                             </div>
                                         </template>
                                     </div>
@@ -153,7 +153,7 @@
                                         <svg class="empty-state-icon" width="80" height="80" viewBox="0 0 80 80" fill="none"><rect x="6" y="12" width="68" height="56" rx="8" stroke="currentColor" stroke-width="2" opacity="0.3"/><rect x="11" y="22" width="14" height="6" rx="2" fill="currentColor" opacity="0.25"/><rect x="11" y="32" width="14" height="6" rx="2" fill="currentColor" opacity="0.15"/><rect x="34" y="22" width="14" height="6" rx="2" fill="currentColor" opacity="0.35"/><rect x="56" y="22" width="14" height="6" rx="2" fill="currentColor" opacity="0.45"/></svg>
                                         <p class="empty-state-title">No boards yet</p>
                                         <p class="empty-state-subtitle">Create your first board to start organizing</p>
-                                        <button @click="showForm = true; $nextTick(function(){ document.querySelector('#online-create-input').focus() })" class="btn-primary">+ Create Board</button>
+                                        <button type="button" @click="showForm = true; $nextTick(function(){ document.querySelector('#online-create-input').focus() })" class="btn-primary">+ Create Board</button>
                                     </div>
                                 </template>
                             </div>
@@ -172,7 +172,7 @@
                                 <div class="board-topbar">
                                     <div class="board-topbar-left">
                                         <h2 class="board-title" x-text="board.name" title="Click gear to edit" @dblclick="$dispatch('toggle-board-settings')"></h2>
-                                        <button class="board-settings-btn" title="Board settings" @click="$dispatch('toggle-board-settings')">&#9881;</button>
+                                        <button type="button" class="board-settings-btn" title="Board settings" @click="$dispatch('toggle-board-settings')">&#9881;</button>
                                         <template x-if="board.tags && board.tags.length">
                                             <div class="tags">
                                                 <template x-for="t in board.tags" :key="t">
@@ -192,7 +192,7 @@
                                         <div class="board-settings-panel">
                                             <div class="board-settings-panel-header">
                                                 <span>Board Settings</span>
-                                                <button class="board-settings-close" @click="close()">&times;</button>
+                                                <button type="button" class="board-settings-close" @click="close()">&times;</button>
                                             </div>
                                             <div class="board-settings-panel-body">
                                                 <div class="settings-category-label">Board Info</div>
@@ -209,7 +209,7 @@
                                                         <label class="settings-label-stacked">Tags</label>
                                                         <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center">
                                                             <template x-for="(tag, idx) in tags" :key="tag + idx">
-                                                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
+                                                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
                                                             </template>
                                                             <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" @keydown.enter.prevent="addTag($event.target.value); $event.target.value = ''">
                                                         </div>
@@ -267,7 +267,7 @@
                                                 </div>
 
                                                 <div class="board-settings-apply">
-                                                    <button class="btn-apply-settings" @click="applySettings()">Apply settings</button>
+                                                    <button type="button" class="btn-apply-settings" @click="applySettings()">Apply settings</button>
                                                 </div>
                                             </div>
                                         </div>
@@ -278,7 +278,7 @@
                                 <div class="columns-container" :class="{ 'focus-mode': $store.ui.focusedColumn, 'expand-columns': expandColumns }">
                                     <div class="focus-exit-bar" x-show="$store.ui.focusedColumn" x-cloak>
                                         <span class="focus-exit-label" x-text="'Focusing: ' + $store.ui.focusedColumn"></span>
-                                        <button class="focus-exit-btn" @click="$store.ui.focusedColumn = ''">Exit Focus</button>
+                                        <button type="button" class="focus-exit-btn" @click="$store.ui.focusedColumn = ''">Exit Focus</button>
                                     </div>
 
                                     <template x-for="(col, colIdx) in board.columns" :key="col.name + colIdx">
@@ -288,7 +288,7 @@
                                                 <span class="column-drag-handle">&#10303;</span>
                                                 <h3 x-text="col.name"></h3>
                                                 <span class="column-card-count" x-text="col.cards.length"></span>
-                                                <button class="column-menu-btn" :data-column-name="col.name" :data-col-idx="colIdx" title="Column options" @click="$dispatch('show-column-menu', { event: $event, colName: col.name, colIdx: colIdx })">&#8943;</button>
+                                                <button type="button" class="column-menu-btn" :data-column-name="col.name" :data-col-idx="colIdx" title="Column options" @click="$dispatch('show-column-menu', { event: $event, colName: col.name, colIdx: colIdx })">&#8943;</button>
                                             </div>
                                             <div class="cards" :data-column="col.name" :data-col-idx="colIdx">
                                                 <template x-for="(card, cardIdx) in col.cards" :key="card.title + cardIdx">
@@ -306,7 +306,7 @@
                                                          @contextmenu.prevent="$dispatch('open-card-modal', { colIdx: colIdx, cardIdx: cardIdx })">
                                                         <div class="card-layout">
                                                             <template x-if="showCheckbox">
-                                                                <button class="card-checkbox" :class="{ checked: card.completed }" @click.stop="toggleComplete(colIdx, cardIdx)" title="Toggle complete"></button>
+                                                                <button type="button" class="card-checkbox" :class="{ checked: card.completed }" @click.stop="toggleComplete(colIdx, cardIdx)" title="Toggle complete"></button>
                                                             </template>
                                                             <template x-if="!showCheckbox">
                                                                 <span class="card-drag-handle">::</span>
@@ -346,7 +346,7 @@
                                                     </form>
                                                 </template>
                                                 <template x-if="addCardCol !== col.name">
-                                                    <button @click="showAddCard(col.name)" class="btn-add-card">+Add a card</button>
+                                                    <button type="button" @click="showAddCard(col.name)" class="btn-add-card">+Add a card</button>
                                                 </template>
                                             </div>
                                         </div>
@@ -494,7 +494,7 @@
         <div x-data="onlineCardModal()" @open-card-modal.window="show($event.detail.colIdx, $event.detail.cardIdx)" @keydown.escape.window="if(open) close()">
             <div class="card-modal-backdrop" x-show="open" @click.self="close()" x-cloak>
                 <div class="card-modal">
-                    <button class="card-modal-close" @click="close()">&times;</button>
+                    <button type="button" class="card-modal-close" @click="close()">&times;</button>
                     <div class="card-modal-main">
                         <span class="card-modal-column-pill" x-text="columnName"></span>
                         <span x-show="completed" class="status-badge completed ml-2">&#10003; Done</span>
@@ -502,7 +502,7 @@
 
                         <div class="card-modal-section-header">
                             <span class="card-modal-section-icon">&#8801;</span> Description
-                            <button class="card-modal-preview-toggle" type="button" @click="showBodyPreview = !showBodyPreview" x-text="showBodyPreview ? 'Edit' : 'Preview'" x-show="body.trim()"></button>
+                            <button type="button" class="card-modal-preview-toggle" type="button" @click="showBodyPreview = !showBodyPreview" x-text="showBodyPreview ? 'Edit' : 'Preview'" x-show="body.trim()"></button>
                         </div>
                         <textarea class="card-modal-body" placeholder="Add a more detailed description..." x-model="body" rows="4" @input="autoResize($event)" x-show="!showBodyPreview"></textarea>
                         <div class="card-modal-body-preview md-content" x-show="showBodyPreview" x-html="renderMarkdown(body)"></div>
@@ -510,7 +510,7 @@
                         <div class="card-modal-section-header"><span class="card-modal-section-icon">&#127991;</span> Tags</div>
                         <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:8px">
                             <template x-for="(tag, idx) in tags" :key="tag + idx">
-                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="tags.splice(idx, 1)">&times;</button></span>
+                                <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" type="button" @click.stop="tags.splice(idx, 1)">&times;</button></span>
                             </template>
                             <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" @keydown.enter.prevent="var v=$event.target.value.trim(); if(v && tags.indexOf(v)===-1) tags.push(v); $event.target.value=''">
                         </div>
@@ -522,12 +522,12 @@
                         <input type="date" x-model="due" style="margin-bottom:8px">
 
                         <div class="card-modal-save-row">
-                            <button class="btn-primary btn-small" @click="save()">Save</button>
+                            <button type="button" class="btn-primary btn-small" @click="save()">Save</button>
                         </div>
                     </div>
                     <div class="card-modal-sidebar">
                         <div class="card-modal-sidebar-label">Actions</div>
-                        <button class="card-modal-sidebar-btn" @click="toggleComplete()">
+                        <button type="button" class="card-modal-sidebar-btn" @click="toggleComplete()">
                             <span class="card-modal-action-icon" x-text="completed ? '\u21A9' : '\u2713'"></span>
                             <span x-text="completed ? 'Mark Incomplete' : 'Complete'"></span>
                         </button>
@@ -535,7 +535,7 @@
                             <div>
                                 <div class="card-modal-sidebar-sublabel">Move to</div>
                                 <template x-for="col in otherColumns" :key="col">
-                                    <button class="card-modal-sidebar-btn card-modal-sidebar-btn-move" @click="moveTo(col)">
+                                    <button type="button" class="card-modal-sidebar-btn card-modal-sidebar-btn-move" @click="moveTo(col)">
                                         <span class="card-modal-action-icon">&rarr;</span> <span x-text="col"></span>
                                     </button>
                                 </template>
@@ -545,11 +545,11 @@
                         <div class="card-modal-sidebar-label">Priority</div>
                         <div class="card-modal-priority-group">
                             <template x-for="opt in [{val:'critical',label:'!!!'},{val:'high',label:'!!'},{val:'medium',label:'!'},{val:'low',label:'\u2193'},{val:'',label:'\u2205'}]" :key="opt.val">
-                                <button class="card-modal-priority-btn" :class="{ 'card-modal-priority-btn--active': opt.val === priority, ['card-modal-priority-btn--' + opt.val]: opt.val }" x-text="opt.label" @click="priority = priority === opt.val ? '' : opt.val"></button>
+                                <button type="button" class="card-modal-priority-btn" :class="{ 'card-modal-priority-btn--active': opt.val === priority, ['card-modal-priority-btn--' + opt.val]: opt.val }" x-text="opt.label" @click="priority = priority === opt.val ? '' : opt.val"></button>
                             </template>
                         </div>
                         <div class="card-modal-sidebar-sep"></div>
-                        <button class="card-modal-sidebar-btn card-modal-sidebar-btn-danger" @click="if(confirm('Delete this card?')) deleteCard()">
+                        <button type="button" class="card-modal-sidebar-btn card-modal-sidebar-btn-danger" @click="if(confirm('Delete this card?')) deleteCard()">
                             <span class="card-modal-action-icon">&#128465;</span> Delete
                         </button>
                     </div>
@@ -560,17 +560,17 @@
         <!-- Column Menu -->
         <div x-data="onlineColumnMenu()" @show-column-menu.window="show($event.detail.event, $event.detail.colName, $event.detail.colIdx)" @keydown.escape.window="if(open) hide(); if($store.ui.focusedColumn) $store.ui.focusedColumn = ''">
             <div class="card-context-menu" :class="{ visible: open }" :style="'left:' + left + 'px;top:' + top + 'px'" role="menu" x-show="open" @click.outside="hide()" x-cloak>
-                <button class="ctx-item" role="menuitem" @click.stop="focusColumn()"><span class="ctx-icon">&#9906;</span> Focus</button>
-                <button class="ctx-item" role="menuitem" @click.stop="renameColumn()"><span class="ctx-icon">&#9999;&#65039;</span> Edit</button>
-                <button class="ctx-item ctx-danger" role="menuitem" @click.stop="deleteColumn()"><span class="ctx-icon">&#128465;</span> Delete</button>
+                <button type="button" class="ctx-item" role="menuitem" @click.stop="focusColumn()"><span class="ctx-icon">&#9906;</span> Focus</button>
+                <button type="button" class="ctx-item" role="menuitem" @click.stop="renameColumn()"><span class="ctx-icon">&#9999;&#65039;</span> Edit</button>
+                <button type="button" class="ctx-item ctx-danger" role="menuitem" @click.stop="deleteColumn()"><span class="ctx-icon">&#128465;</span> Delete</button>
                 <template x-if="colIdx >= 0">
                     <div>
                         <div class="ctx-separator"></div>
                         <div class="ctx-submenu-label">Sort</div>
                         <div class="ctx-submenu">
-                            <button class="ctx-item" role="menuitem" @click.stop="sortBy('name')"><span class="ctx-icon">&#128292;</span> By Name</button>
-                            <button class="ctx-item" role="menuitem" @click.stop="sortBy('priority')"><span class="ctx-icon">&#9889;</span> By Priority</button>
-                            <button class="ctx-item" role="menuitem" @click.stop="sortBy('due')"><span class="ctx-icon">&#128197;</span> By Due Date</button>
+                            <button type="button" class="ctx-item" role="menuitem" @click.stop="sortBy('name')"><span class="ctx-icon">&#128292;</span> By Name</button>
+                            <button type="button" class="ctx-item" role="menuitem" @click.stop="sortBy('priority')"><span class="ctx-icon">&#9889;</span> By Priority</button>
+                            <button type="button" class="ctx-item" role="menuitem" @click.stop="sortBy('due')"><span class="ctx-icon">&#128197;</span> By Due Date</button>
                         </div>
                     </div>
                 </template>

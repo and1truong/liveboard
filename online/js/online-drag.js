@@ -185,13 +185,19 @@
         if (afterCol === colName) return;
         var slug = getSlug();
         Alpine.store('lb').moveColumn(slug, colName, afterCol);
+        Alpine.store('board').refresh();
       });
     });
   }
 
-  // MutationObserver to re-attach after Alpine re-renders
+  // MutationObserver to re-attach after Alpine re-renders (debounced)
+  var _attachTimer = null;
   var observer = new MutationObserver(function () {
-    requestAnimationFrame(attach);
+    if (_attachTimer) return;
+    _attachTimer = requestAnimationFrame(function () {
+      _attachTimer = null;
+      attach();
+    });
   });
 
   if (document.readyState === 'loading') {

@@ -114,7 +114,8 @@ document.addEventListener('alpine:init', function () {
         this.addCardCol = colName;
         this.addCardTitle = '';
         this.$nextTick(function () {
-          var input = document.querySelector('.online-add-card-input');
+          var col = document.querySelector('.cards[data-column="' + colName + '"]');
+          var input = col ? col.closest('.column').querySelector('.online-add-card-input') : document.querySelector('.online-add-card-input');
           if (input) input.focus();
         });
       },
@@ -253,7 +254,10 @@ document.addEventListener('alpine:init', function () {
           .replace(/\*([^*]+)\*/g, '<em>$1</em>')
           .replace(/_([^_]+)_/g, '<em>$1</em>')
           .replace(/~~([^~]+)~~/g, '<del>$1</del>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, text, url) {
+            if (/^\s*javascript:/i.test(url)) return text;
+            return '<a href="' + url + '" target="_blank" rel="noopener">' + text + '</a>';
+          })
           .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
           .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
           .replace(/<\/ul>\s*<ul>/g, '');
@@ -385,8 +389,7 @@ document.addEventListener('alpine:init', function () {
 
       get tagSuggestions() {
         var slug = Alpine.store('lb')._currentSlug;
-        var all = Alpine.store('lb').boardTags(slug);
-        var self = this;
+        var all = Alpine.store('lb').boardTags(slug).slice();
         this.tags.forEach(function (t) { if (all.indexOf(t) === -1) all.push(t); });
         return all.sort();
       },
@@ -512,7 +515,7 @@ document.addEventListener('alpine:init', function () {
       targetSlug: '',
       emojis: ['\u{1F680}','\u{1F4CB}','\u{2B50}','\u{1F525}','\u{1F4A1}','\u{1F3AF}','\u{1F527}','\u{1F4DA}','\u{1F381}','\u{1F30D}',
                '\u{2764}\uFE0F','\u{1F4E6}','\u{1F389}','\u{1F6A7}','\u{1F3C6}','\u{1F4DD}','\u{1F512}','\u{26A1}','\u{1F331}','\u{1F41B}',
-               '\u{1F504}','\u{1F4AC}','\u{1F3E0}','\u{1F4CA}','\u{1F4C5}','\u{1F50D}','\u{2705}','\u{274C}','\u{1F514}','\u{2699}\uFE0F}'],
+               '\u{1F504}','\u{1F4AC}','\u{1F3E0}','\u{1F4CA}','\u{1F4C5}','\u{1F50D}','\u{2705}','\u{274C}','\u{1F514}','\u{2699}\uFE0F'],
 
       show: function (el, slug) {
         var rect = el.getBoundingClientRect();

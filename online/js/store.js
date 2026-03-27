@@ -225,8 +225,8 @@
           b.columns.unshift(col);
         } else {
           var afterIdx = -1;
-          for (var i = 0; i < b.columns.length; i++) {
-            if (b.columns[i].name === afterColName) { afterIdx = i; break; }
+          for (var j = 0; j < b.columns.length; j++) {
+            if (b.columns[j].name === afterColName) { afterIdx = j; break; }
           }
           b.columns.splice(afterIdx + 1, 0, col);
         }

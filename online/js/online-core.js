@@ -17,7 +17,24 @@ window.LB = window.LB || {};
     return 0.2126 * toLinear(r) + 0.7152 * toLinear(g) + 0.0722 * toLinear(b);
   };
 
-  LB.applyTagColors = function () {};
+  LB.applyTagColors = function () {
+    if (typeof Alpine === 'undefined') return;
+    var lb = Alpine.store('lb');
+    var slug = lb._currentSlug;
+    var b = lb.getBoard(slug);
+    if (!b || !b.tag_colors) return;
+    var map = b.tag_colors;
+    document.querySelectorAll('.tag[data-tag]').forEach(function (el) {
+      var color = map[el.dataset.tag];
+      if (color) {
+        el.style.background = color;
+        el.style.color = LB.colorLuminance(color) > 0.35 ? '#111' : '#fff';
+      } else {
+        el.style.background = '';
+        el.style.color = '';
+      }
+    });
+  };
 
   // New line trigger helper
   window.__lbNewLineTrigger = function () {
