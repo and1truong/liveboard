@@ -325,12 +325,12 @@
         if (!b) return;
         var card = b.columns[srcColIdx] && b.columns[srcColIdx].cards[srcCardIdx];
         if (!card) return;
-        b.columns[srcColIdx].cards.splice(srcCardIdx, 1);
         var targetColIdx = -1;
         for (var i = 0; i < b.columns.length; i++) {
           if (b.columns[i].name === targetColumn) { targetColIdx = i; break; }
         }
         if (targetColIdx < 0) return;
+        b.columns[srcColIdx].cards.splice(srcCardIdx, 1);
         if (beforeIdx < 0 || beforeIdx >= b.columns[targetColIdx].cards.length) {
           b.columns[targetColIdx].cards.push(card);
         } else {
