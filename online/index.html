@@ -103,7 +103,7 @@
                         </div>
                         <div class="workspace-body">
                             <form id="online-create-form" x-show="showForm" @submit.prevent="createBoard()" class="create-board-form" x-cloak>
-                                <input id="online-create-input" type="text" x-model="newName" placeholder="Board name" required @keydown.escape="showForm = false; newName = ''">
+                                <input id="online-create-input" type="text" x-model="newName" placeholder="Board name" required aria-label="Board name" @keydown.escape="showForm = false; newName = ''">
                                 <button type="submit" class="btn-primary">Create</button>
                                 <button type="button" @click="showForm = false; newName = ''" class="btn-secondary">Cancel</button>
                             </form>
@@ -199,7 +199,7 @@
                                                 <div class="settings-section bs-section">
                                                     <div class="settings-field-stacked">
                                                         <label class="settings-label-stacked">Board name</label>
-                                                        <input type="text" class="settings-input" maxlength="100" x-model="boardName">
+                                                        <input type="text" class="settings-input" maxlength="100" x-model="boardName" aria-label="Board name">
                                                     </div>
                                                     <div class="settings-field-stacked">
                                                         <label class="settings-label-stacked">Description</label>
@@ -211,7 +211,7 @@
                                                             <template x-for="(tag, idx) in tags" :key="tag + idx">
                                                                 <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
                                                             </template>
-                                                            <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" @keydown.enter.prevent="addTag($event.target.value); $event.target.value = ''">
+                                                            <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" aria-label="Add tag" @keydown.enter.prevent="addTag($event.target.value); $event.target.value = ''">
                                                         </div>
                                                     </div>
                                                     <template x-if="tagSuggestions.length > 0">
@@ -302,8 +302,11 @@
                                                          :data-card-due="card.due || ''"
                                                          :data-card-completed="card.completed"
                                                          :data-card-column="col.name"
+                                                         tabindex="0"
                                                          @click="if(!window.LB.isDragging && !$event.target.closest('button')) $dispatch('open-card-modal', { colIdx: colIdx, cardIdx: cardIdx })"
-                                                         @contextmenu.prevent="$dispatch('open-card-modal', { colIdx: colIdx, cardIdx: cardIdx })">
+                                                         @contextmenu.prevent="$dispatch('open-card-modal', { colIdx: colIdx, cardIdx: cardIdx })"
+                                                         @keydown.enter.self="if(!window.LB.isDragging) $dispatch('open-card-modal', { colIdx: colIdx, cardIdx: cardIdx })"
+                                                         @keydown.space.self.prevent="if(!window.LB.isDragging) $dispatch('open-card-modal', { colIdx: colIdx, cardIdx: cardIdx })">
                                                         <div class="card-layout">
                                                             <template x-if="showCheckbox">
                                                                 <button type="button" class="card-checkbox" :class="{ checked: card.completed }" @click.stop="toggleComplete(colIdx, cardIdx)" title="Toggle complete"></button>
@@ -342,7 +345,7 @@
                                             <div class="add-card-toggle">
                                                 <template x-if="addCardCol === col.name">
                                                     <form @submit.prevent="submitAddCard()" class="add-card-form" style="display:flex">
-                                                        <input type="text" class="online-add-card-input" x-model="addCardTitle" placeholder="Enter a title..." required @keydown.escape="cancelAddCard()">
+                                                        <input type="text" class="online-add-card-input" x-model="addCardTitle" placeholder="Enter a title..." required aria-label="Card title" @keydown.escape="cancelAddCard()">
                                                     </form>
                                                 </template>
                                                 <template x-if="addCardCol !== col.name">
@@ -356,7 +359,7 @@
                                     <div class="add-column-bar" :class="{ expanded: showAddCol }" @click="if(!showAddCol) { showAddCol = true; $nextTick(function(){ var i = document.querySelector('.online-add-col-input'); if(i) i.focus(); }) }">
                                         <span class="add-column-bar-label">+ Add list</span>
                                         <form x-show="showAddCol" @submit.prevent="submitAddColumn()" class="add-column-bar-form" style="display:flex" @click.stop x-cloak>
-                                            <input type="text" class="online-add-col-input" x-model="addColName" placeholder="List name" required @keydown.escape="showAddCol = false; addColName = ''">
+                                            <input type="text" class="online-add-col-input" x-model="addColName" placeholder="List name" required aria-label="Column name" @keydown.escape="showAddCol = false; addColName = ''">
                                             <button type="submit" class="btn-small">Add</button>
                                         </form>
                                     </div>
@@ -385,12 +388,12 @@
                             <div class="settings-section">
                                 <div class="settings-field">
                                     <div><div class="settings-label">Site name</div><div class="settings-label-hint">Brand name shown in sidebar and page titles</div></div>
-                                    <div class="settings-control"><input type="text" maxlength="50" placeholder="LiveBoard" x-model="siteName" @input.debounce.500ms="save()"></div>
+                                    <div class="settings-control"><input type="text" maxlength="50" placeholder="LiveBoard" x-model="siteName" aria-label="Site name" @input.debounce.500ms="save()"></div>
                                 </div>
                                 <div class="settings-field">
                                     <div><div class="settings-label">Storage</div><div class="settings-label-hint">Data is stored in your browser's localStorage</div></div>
                                     <div class="settings-control">
-                                        <button type="button" class="settings-export-btn" style="background:var(--color-danger,#e05252);color:#fff" @click="if(confirm('Reset all data to defaults? This cannot be undone.')) { Alpine.store('lb').reset(); location.reload(); }">Reset Data</button>
+                                        <button type="button" class="settings-export-btn" style="background:var(--color-danger,#e05252);color:#fff" @click="var v=prompt('Type DELETE to reset all data. This cannot be undone.'); if(v && v.trim()==='DELETE'){ Alpine.store('lb').reset(); location.reload(); }">Reset Data</button>
                                     </div>
                                 </div>
                             </div>
@@ -512,11 +515,11 @@
                             <template x-for="(tag, idx) in tags" :key="tag + idx">
                                 <span class="card-modal-tag-chip"><span x-text="tag"></span><button type="button" class="card-modal-tag-chip-remove" type="button" @click.stop="tags.splice(idx, 1)">&times;</button></span>
                             </template>
-                            <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" @keydown.enter.prevent="var v=$event.target.value.trim(); if(v && tags.indexOf(v)===-1) tags.push(v); $event.target.value=''">
+                            <input type="text" style="flex:1;min-width:80px" placeholder="Add tag + Enter" aria-label="Add card tag" @keydown.enter.prevent="var v=$event.target.value.trim(); if(v && tags.indexOf(v)===-1) tags.push(v); $event.target.value=''">
                         </div>
 
                         <div class="card-modal-section-header"><span class="card-modal-section-icon">&#128100;</span> Assignee</div>
-                        <input type="text" x-model="assignee" placeholder="Assignee" style="margin-bottom:8px;width:100%">
+                        <input type="text" x-model="assignee" placeholder="Assignee" aria-label="Assignee" style="margin-bottom:8px;width:100%">
 
                         <div class="card-modal-section-header"><span class="card-modal-section-icon">&#128197;</span> Due Date</div>
                         <input type="date" x-model="due" style="margin-bottom:8px">

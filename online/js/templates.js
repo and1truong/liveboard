@@ -255,7 +255,7 @@ document.addEventListener('alpine:init', function () {
           .replace(/_([^_]+)_/g, '<em>$1</em>')
           .replace(/~~([^~]+)~~/g, '<del>$1</del>')
           .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (m, text, url) {
-            if (/^\s*javascript:/i.test(url)) return text;
+            if (/^\s*(javascript|data|vbscript):/i.test(url)) return text;
             return '<a href="' + url + '" target="_blank" rel="noopener">' + text + '</a>';
           })
           .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
