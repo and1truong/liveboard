@@ -441,7 +441,7 @@
                                     <div><div class="settings-label">Column width</div><div class="settings-label-hint">Width of board columns in pixels</div></div>
                                     <div class="settings-control">
                                         <div class="settings-range-group">
-                                            <input type="range" min="180" max="600" step="10" x-model="columnWidth" @input.debounce.300ms="save()" class="settings-range">
+                                            <input type="range" min="180" max="600" step="10" x-model="columnWidth" @input.debounce.300ms="save()" class="settings-range" aria-label="Column width">
                                             <span class="settings-range-value" x-text="columnWidth + 'px'"></span>
                                         </div>
                                     </div>
@@ -522,7 +522,7 @@
                         <input type="text" x-model="assignee" placeholder="Assignee" aria-label="Assignee" style="margin-bottom:8px;width:100%">
 
                         <div class="card-modal-section-header"><span class="card-modal-section-icon">&#128197;</span> Due Date</div>
-                        <input type="date" x-model="due" style="margin-bottom:8px">
+                        <input type="date" x-model="due" aria-label="Due date" style="margin-bottom:8px">
 
                         <div class="card-modal-save-row">
                             <button type="button" class="btn-primary btn-small" @click="save()">Save</button>
