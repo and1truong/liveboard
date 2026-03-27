@@ -2,6 +2,10 @@ version: 2
 
 project_name: liveboard
 
+before:
+  hooks:
+    - make css
+
 builds:
   - main: ./cmd/liveboard
     binary: liveboard

@@ -4,10 +4,14 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch
+.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch
+
+# Fail fast if tailwindcss is missing
+check-tailwind:
+	@command -v tailwindcss >/dev/null 2>&1 || { echo "Error: tailwindcss is not installed. Install it: https://tailwindcss.com/blog/standalone-cli"; exit 1; }
 
 # Build CLI binary (no CGO, single arch)
-build:
+build: css
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o liveboard ./cmd/liveboard
 
 # Compile desktop binary only (fast recompile for dev — assumes bundle structure already exists)
@@ -68,7 +72,7 @@ release-desktop: bundle-desktop-release
 	bash scripts/update-desktop-cask.sh "$(VERSION)"
 
 # Build CSS with Tailwind
-css:
+css: check-tailwind
 	tailwindcss -i web/css/input.css -o web/css/liveboard.css --minify
 
 # Watch CSS for changes (dev mode)
