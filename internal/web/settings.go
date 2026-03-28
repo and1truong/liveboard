@@ -54,6 +54,7 @@ type AppSettings struct {
 	PinnedBoards      []string `json:"pinned_boards,omitempty"`
 	KeyboardShortcuts bool     `json:"keyboard_shortcuts"`
 	WeekStart         string   `json:"week_start,omitempty"`
+	LastBoard         string   `json:"last_board,omitempty"`
 }
 
 var validColorThemes = map[string]bool{

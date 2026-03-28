@@ -241,6 +241,15 @@ func (h *Handler) BoardViewPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/?error="+url.QueryEscape(fmt.Sprintf("Board '%s' not found", slug)), http.StatusSeeOther)
 		return
 	}
+
+	// Persist last-viewed board for desktop restore-on-launch.
+	if !h.ReadOnly {
+		if s := h.loadSettings(); s.LastBoard != slug {
+			s.LastBoard = slug
+			_ = h.saveSettings(s)
+		}
+	}
+
 	renderFullPage(w, h.boardViewTpl, model)
 }
 
