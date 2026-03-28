@@ -173,33 +173,33 @@
     border-radius: 4px;
     font-size: var(--font-size-sm);
     color: var(--color-text-primary);
+}
 
-    &:hover {
-        background: var(--color-column-bg);
-    }
+.datepicker-day:hover {
+    background: var(--color-column-bg);
+}
 
-    &--today {
-        font-weight: 700;
-        outline: 1px solid var(--color-border);
-    }
+.datepicker-day--today {
+    font-weight: 700;
+    outline: 1px solid var(--color-border);
+}
 
-    &--selected {
-        background: var(--color-accent);
-        color: #fff;
+.datepicker-day--selected {
+    background: var(--color-accent);
+    color: #fff;
+}
 
-        &:hover {
-            background: var(--color-accent);
-            opacity: 0.9;
-        }
-    }
+.datepicker-day--selected:hover {
+    background: var(--color-accent);
+    opacity: 0.9;
+}
 
-    &--empty {
-        cursor: default;
+.datepicker-day--empty {
+    cursor: default;
+}
 
-        &:hover {
-            background: none;
-        }
-    }
+.datepicker-day--empty:hover {
+    background: none;
 }
 
 .datepicker-remove {
