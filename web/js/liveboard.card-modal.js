@@ -152,7 +152,8 @@ document.addEventListener('alpine:init', function () {
             version: window.LB.getBoardVersion()
           },
           target: '#board-content',
-          swap: 'innerHTML'
+          swap: 'innerHTML',
+          headers: { 'X-Prefer-Minimal': 'true' }
         });
         this.close();
       },
@@ -163,7 +164,8 @@ document.addEventListener('alpine:init', function () {
         htmx.ajax('POST', '/board/' + encodeURIComponent(this.slug) + '/cards/complete', {
           values: { col_idx: this.colIdx, card_idx: this.cardIdx, name: this.slug, version: window.LB.getBoardVersion() },
           target: '#board-content',
-          swap: 'innerHTML'
+          swap: 'innerHTML',
+          headers: { 'X-Prefer-Minimal': 'true' }
         });
       },
 

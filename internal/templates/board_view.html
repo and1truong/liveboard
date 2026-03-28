@@ -250,7 +250,7 @@
                 {{end}}
                 {{end}}
                 <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>{{end}}
-                <div class="table-cell table-cell-status">{{if and $.Settings.ShowCheckbox (not $.ReadOnly)}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else if not $.ReadOnly}}<span class="card-drag-handle">::</span>{{end}}</div>
+                <div class="table-cell table-cell-status">{{if and $.Settings.ShowCheckbox (not $.ReadOnly)}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" hx-headers='{"X-Prefer-Minimal":"true"}' title="Toggle complete"></button>{{else if not $.ReadOnly}}<span class="card-drag-handle">::</span>{{end}}</div>
                 <div class="table-cell table-cell-card">
                     <div class="table-card-title"><span>{{.Title}}</span></div>
                 </div>
@@ -499,7 +499,7 @@
                     {{end}}
                     <button class="delete-trigger" hx-post="/board/{{$.BoardSlug}}/cards/delete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML"></button>{{end}}
                     <div class="card-layout">
-                        {{if and $.Settings.ShowCheckbox (not $.ReadOnly)}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" title="Toggle complete"></button>{{else if not $.ReadOnly}}<span class="card-drag-handle">::</span>{{end}}
+                        {{if and $.Settings.ShowCheckbox (not $.ReadOnly)}}<button class="card-checkbox {{if .Completed}}checked{{end}}" hx-post="/board/{{$.BoardSlug}}/cards/complete" hx-vals='{"col_idx":"{{$i}}","card_idx":"{{$j}}"}' hx-target="#board-content" hx-swap="innerHTML" hx-headers='{"X-Prefer-Minimal":"true"}' title="Toggle complete"></button>{{else if not $.ReadOnly}}<span class="card-drag-handle">::</span>{{end}}
                         <div class="card-content">
                             <h4 class="card-title">{{.Title}}</h4>
 

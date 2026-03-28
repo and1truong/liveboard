@@ -113,7 +113,8 @@ document.addEventListener('alpine:init', function () {
             version: window.LB.getBoardVersion()
           },
           target: '#board-content',
-          swap: 'innerHTML'
+          swap: 'innerHTML',
+          headers: { 'X-Prefer-Minimal': 'true' }
         });
         this.hide();
       },

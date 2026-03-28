@@ -525,6 +525,15 @@ func (h *Handler) HandleToggleComplete(w http.ResponseWriter, r *http.Request) {
 		h.handleConflict(w, slug)
 		return
 	}
+	if r.Header.Get("X-Prefer-Minimal") == "true" {
+		w.Header().Set("X-Board-Version", strconv.Itoa(model.Version))
+		w.Header().Set("HX-Trigger", fmt.Sprintf(
+			`{"boardToggled":{"colIdx":%d,"cardIdx":%d,"completed":%t}}`,
+			colIdx, cardIdx, model.Board.Columns[colIdx].Cards[cardIdx].Completed,
+		))
+		w.Header().Set("HX-Reswap", "none")
+		return
+	}
 	h.renderBoardContent(w, model)
 }
 
@@ -603,6 +612,23 @@ func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
 	})
 	if errors.Is(mutErr, board.ErrVersionConflict) {
 		h.handleConflict(w, slug)
+		return
+	}
+	if r.Header.Get("X-Prefer-Minimal") == "true" {
+		card := model.Board.Columns[colIdx].Cards[cardIdx]
+		cardJSON, _ := json.Marshal(map[string]any{
+			"colIdx":   colIdx,
+			"cardIdx":  cardIdx,
+			"title":    card.Title,
+			"body":     card.Body,
+			"tags":     card.Tags,
+			"priority": card.Priority,
+			"due":      card.Due,
+			"assignee": card.Assignee,
+		})
+		w.Header().Set("X-Board-Version", strconv.Itoa(model.Version))
+		w.Header().Set("HX-Trigger", `{"cardEdited":`+string(cardJSON)+`}`)
+		w.Header().Set("HX-Reswap", "none")
 		return
 	}
 	h.renderBoardContent(w, model)

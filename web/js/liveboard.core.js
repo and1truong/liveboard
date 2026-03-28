@@ -25,15 +25,23 @@ window.LB = window.LB || {};
     var c = document.querySelector(".columns-container");
     if (c) _savedScrollLeft = c.scrollLeft;
 
-    // Suppress SSE echo: our POST already swapped fresh HTML.
-    if (_lastMutationSwapAt && e.detail.requestConfig) {
-      var cfg = e.detail.requestConfig;
-      if (cfg.verb === "get" && Date.now() - _lastMutationSwapAt < 2000) {
-        var isSSE = cfg.triggeringEvent && cfg.triggeringEvent.type === "sse:board-update";
-        if (isSSE) {
-          e.preventDefault();
-          return;
-        }
+    var cfg = e.detail.requestConfig;
+    if (!cfg) return;
+
+    // Mark POST mutations so SSE echo can be suppressed.
+    if (cfg.verb === "post") {
+      var tgt = e.detail.target || e.detail.elt;
+      if (tgt && tgt.id === "board-content") {
+        _lastMutationSwapAt = Date.now();
+      }
+    }
+
+    // Suppress SSE echo: our POST already handled the update.
+    if (_lastMutationSwapAt && cfg.verb === "get" && Date.now() - _lastMutationSwapAt < 2000) {
+      var isSSE = cfg.triggeringEvent && cfg.triggeringEvent.type === "sse:board-update";
+      if (isSSE) {
+        e.preventDefault();
+        return;
       }
     }
   });
@@ -97,14 +105,6 @@ window.LB = window.LB || {};
   // After any swap, sync the board version from the hidden input and refresh store.
   document.body.addEventListener("htmx:afterSwap", function (e) {
     _conflictRetrying = false;
-
-    // Track POST swaps so we can suppress the redundant SSE echo.
-    if (e.detail.requestConfig && e.detail.requestConfig.verb === "post") {
-      var tgt = e.detail.target || e.detail.elt;
-      if (tgt && tgt.id === "board-content") {
-        _lastMutationSwapAt = Date.now();
-      }
-    }
 
     var versionEl = document.getElementById("board-version");
     var boardView = document.querySelector(".board-view");
@@ -173,6 +173,133 @@ window.LB = window.LB || {};
       }
     });
   };
+
+  // Minimal toggle: update card UI client-side when server returns no body.
+  document.body.addEventListener("boardToggled", function (e) {
+    var d = e.detail;
+    var card = document.querySelector(
+      '.card[data-col-idx="' + d.colIdx + '"][data-card-idx="' + d.cardIdx + '"]'
+    );
+    if (!card) return;
+    card.classList.toggle("completed", d.completed);
+    card.dataset.cardCompleted = String(d.completed);
+    var cb = card.querySelector(".card-checkbox");
+    if (cb) cb.classList.toggle("checked", d.completed);
+  });
+
+  // Minimal card edit: update card UI client-side when server returns no body.
+  document.body.addEventListener("cardEdited", function (e) {
+    var d = e.detail;
+    var card = document.querySelector(
+      '.card[data-col-idx="' + d.colIdx + '"][data-card-idx="' + d.cardIdx + '"]'
+    );
+    if (!card) return;
+
+    // Update data attributes so quick-edit reads fresh values.
+    card.dataset.cardTitle = d.title || '';
+    card.dataset.cardBody = d.body || '';
+    card.dataset.cardTags = (d.tags || []).join(', ');
+    card.dataset.cardPriority = d.priority || '';
+    card.dataset.cardDue = d.due || '';
+    card.dataset.cardAssignee = d.assignee || '';
+
+    var isTable = card.classList.contains('table-row');
+
+    // --- Title ---
+    var titleEl = isTable
+      ? card.querySelector('.table-card-title span')
+      : card.querySelector('.card-title');
+    if (titleEl) titleEl.textContent = d.title || '';
+
+    // --- Tags ---
+    var tagsHTML = '';
+    (d.tags || []).forEach(function (t) {
+      tagsHTML += '<span class="tag" data-tag="' + t.replace(/"/g, '&quot;') + '">' + t + '</span>';
+    });
+    if (isTable) {
+      var tc = card.querySelector('.table-cell-tags');
+      if (tc) tc.innerHTML = tagsHTML;
+    } else {
+      var tagsDiv = card.querySelector('.card-tags');
+      if (d.tags && d.tags.length) {
+        if (!tagsDiv) {
+          tagsDiv = document.createElement('div');
+          tagsDiv.className = 'card-tags';
+          var content = card.querySelector('.card-content');
+          if (content) {
+            var titleH = content.querySelector('.card-title');
+            var bodyDiv = content.querySelector('.card-body');
+            var after = bodyDiv || titleH;
+            if (after && after.nextSibling) content.insertBefore(tagsDiv, after.nextSibling);
+            else content.appendChild(tagsDiv);
+          }
+        }
+        tagsDiv.innerHTML = tagsHTML;
+      } else if (tagsDiv) {
+        tagsDiv.remove();
+      }
+    }
+
+    // --- Priority + Assignee ---
+    if (isTable) {
+      var pc = card.querySelector('.table-cell-priority');
+      if (pc) pc.innerHTML = d.priority ? '<span class="priority-indicator priority-' + d.priority + '">' + d.priority + '</span>' : '';
+      var ac = card.querySelector('.table-cell-assignee');
+      if (ac) ac.textContent = d.assignee || '';
+    } else {
+      var metaRow = card.querySelector('.card-meta-row');
+      if (d.assignee || d.priority) {
+        var metaHTML = '';
+        if (d.assignee) metaHTML += '<span class="card-meta">&#128100; ' + d.assignee + '</span>';
+        if (d.priority) metaHTML += '<span class="card-meta">&#9889; ' + d.priority + '</span>';
+        if (!metaRow) {
+          metaRow = document.createElement('div');
+          metaRow.className = 'card-meta-row';
+          var content = card.querySelector('.card-content');
+          if (content) content.appendChild(metaRow);
+        }
+        metaRow.innerHTML = metaHTML;
+      } else if (metaRow) {
+        metaRow.remove();
+      }
+    }
+
+    // --- Due date ---
+    if (isTable) {
+      var dc = card.querySelector('.table-cell-due');
+      if (dc) dc.textContent = d.due || '';
+    } else {
+      // Due is a <p class="card-meta"> after .card-meta-row; find by content pattern.
+      var content = card.querySelector('.card-content');
+      if (content) {
+        var dueParagraphs = content.querySelectorAll('p.card-meta');
+        dueParagraphs.forEach(function (p) { p.remove(); });
+        if (d.due) {
+          var p = document.createElement('p');
+          p.className = 'card-meta';
+          p.innerHTML = '&#128197; ' + d.due;
+          content.appendChild(p);
+        }
+      }
+    }
+
+    LB.applyTagColors();
+  });
+
+  // Pick up X-Board-Version header from minimal (no-body) responses.
+  document.body.addEventListener("htmx:afterRequest", function (e) {
+    var xhr = e.detail.xhr;
+    if (!xhr) return;
+    var v = xhr.getResponseHeader("X-Board-Version");
+    if (!v) return;
+    var el = document.getElementById("board-version");
+    if (el) el.value = v;
+    var bv = document.querySelector(".board-view");
+    if (bv) bv.dataset.boardVersion = v;
+    if (typeof Alpine !== 'undefined' && Alpine.store('board')) {
+      Alpine.store('board').refresh();
+    }
+  });
 
   document.addEventListener('DOMContentLoaded', LB.applyTagColors);
   document.addEventListener('htmx:afterSwap', LB.applyTagColors);
