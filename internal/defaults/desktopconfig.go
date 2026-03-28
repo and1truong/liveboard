@@ -13,6 +13,8 @@ const maxRecentWorkspaces = 10
 type DesktopConfig struct {
 	LastWorkspace    string   `json:"last_workspace"`
 	RecentWorkspaces []string `json:"recent_workspaces"`
+	WindowWidth      int      `json:"window_width,omitempty"`
+	WindowHeight     int      `json:"window_height,omitempty"`
 }
 
 func desktopConfigPath() string {

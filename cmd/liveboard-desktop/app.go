@@ -15,6 +15,7 @@ import (
 	"github.com/and1truong/liveboard/internal/api"
 	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/internal/defaults"
+	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
 
@@ -63,6 +64,12 @@ func (a *App) startup(ctx context.Context) {
 			Message: fmt.Sprintf("Failed to start server: %v", err),
 		})
 		runtime.Quit(a.ctx)
+		return
+	}
+
+	// Restore last viewed board
+	if s := web.LoadSettingsFromDir(dir); s.LastBoard != "" {
+		a.url = a.url + "/board/" + s.LastBoard
 	}
 }
 
@@ -108,8 +115,12 @@ func (a *App) switchWorkspace(dir string) {
 			log.Printf("failed to save desktop config: %v", err)
 		}
 
-		// Navigate webview to new server
-		runtime.WindowExecJS(a.ctx, fmt.Sprintf(`window.location.href = "%s"`, a.url))
+		// Navigate webview to new server, restoring last board if available
+		target := a.url
+		if s := web.LoadSettingsFromDir(dir); s.LastBoard != "" {
+			target = a.url + "/board/" + s.LastBoard
+		}
+		runtime.WindowExecJS(a.ctx, fmt.Sprintf(`window.location.href = "%s"`, target))
 
 		// Rebuild menu to update recent workspaces list
 		appMenu := a.buildMenu()
@@ -214,6 +225,17 @@ func (a *App) domReady(ctx context.Context) {
 }
 
 func (a *App) shutdown(_ context.Context) {
+	// Persist window size for next launch
+	w, h := runtime.WindowGetSize(a.ctx)
+	if w > 0 && h > 0 {
+		cfg := defaults.LoadDesktopConfig()
+		cfg.WindowWidth = w
+		cfg.WindowHeight = h
+		if err := cfg.Save(); err != nil {
+			log.Printf("failed to save window size: %v", err)
+		}
+	}
+
 	shutCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	if err := a.srv.Shutdown(shutCtx); err != nil {

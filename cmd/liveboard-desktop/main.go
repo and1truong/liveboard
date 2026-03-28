@@ -7,6 +7,8 @@ import (
 	"github.com/wailsapp/wails/v2/pkg/options"
 	"github.com/wailsapp/wails/v2/pkg/options/assetserver"
 	"github.com/wailsapp/wails/v2/pkg/options/mac"
+
+	"github.com/and1truong/liveboard/internal/defaults"
 )
 
 var version = "dev"
@@ -17,10 +19,15 @@ var placeholder embed.FS
 func main() {
 	app := NewApp(version)
 
+	width, height := 1280, 860
+	if cfg := defaults.LoadDesktopConfig(); cfg.WindowWidth > 0 && cfg.WindowHeight > 0 {
+		width, height = cfg.WindowWidth, cfg.WindowHeight
+	}
+
 	if err := wails.Run(&options.App{
 		Title:     "LiveBoard",
-		Width:     1280,
-		Height:    860,
+		Width:     width,
+		Height:    height,
 		MinWidth:  800,
 		MinHeight: 600,
 		Menu:      app.buildMenu(),
