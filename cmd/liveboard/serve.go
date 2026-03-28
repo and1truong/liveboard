@@ -25,7 +25,7 @@ func serveCmd() *cobra.Command {
 				port = 7777
 			}
 			noCache := os.Getenv("NO_CACHE") != ""
-			srv := api.NewServer(ws, ws.Engine, noCache, readOnly, version)
+			srv := api.NewServer(ws, ws.Engine, noCache, readOnly, false, version)
 			addr := fmt.Sprintf("%s:%d", host, port)
 			fmt.Printf("LiveBoard Web UI: http://%s:%d\n", host, port)
 			fmt.Printf("REST API: http://%s:%d/boards\n", host, port)

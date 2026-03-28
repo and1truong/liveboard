@@ -18,7 +18,7 @@ func setupTest(t *testing.T) *httptest.Server {
 	t.Helper()
 	dir := t.TempDir()
 	ws := workspace.Open(dir)
-	srv := NewServer(ws, ws.Engine, false, false, "test")
+	srv := NewServer(ws, ws.Engine, false, false, false, "test")
 	return httptest.NewServer(srv.Router())
 }
 
@@ -960,7 +960,7 @@ func TestStaticCacheHeaders(t *testing.T) {
 	ws := workspace.Open(dir)
 
 	t.Run("default serves with cache headers", func(t *testing.T) {
-		srv := NewServer(ws, ws.Engine, false, false, "test")
+		srv := NewServer(ws, ws.Engine, false, false, false, "test")
 		ts := httptest.NewServer(srv.Router())
 		defer ts.Close()
 
@@ -977,7 +977,7 @@ func TestStaticCacheHeaders(t *testing.T) {
 	})
 
 	t.Run("noCache disables cache headers", func(t *testing.T) {
-		srv := NewServer(ws, ws.Engine, true, false, "test")
+		srv := NewServer(ws, ws.Engine, true, false, false, "test")
 		ts := httptest.NewServer(srv.Router())
 		defer ts.Close()
 

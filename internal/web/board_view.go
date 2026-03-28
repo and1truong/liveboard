@@ -243,7 +243,7 @@ func (h *Handler) BoardViewPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Persist last-viewed board for desktop restore-on-launch.
-	if !h.ReadOnly {
+	if h.IsDesktop && !h.ReadOnly {
 		if s := h.loadSettings(); s.LastBoard != slug {
 			s.LastBoard = slug
 			_ = h.saveSettings(s)

@@ -772,7 +772,7 @@ func TestNewHandler(t *testing.T) {
 	ws := workspace.Open(dir)
 	eng := board.New()
 
-	h := NewHandler(ws, eng, "test", false)
+	h := NewHandler(ws, eng, "test", false, false)
 	if h == nil {
 		t.Fatal("handler is nil")
 	}

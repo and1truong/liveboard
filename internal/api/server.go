@@ -29,11 +29,11 @@ type Server struct {
 }
 
 // NewServer creates a Server with all routes registered.
-func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly bool, version string) *Server {
+func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, isDesktop bool, version string) *Server {
 	s := &Server{
 		ws:         ws,
 		eng:        eng,
-		webHandler: web.NewHandler(ws, eng, version, readOnly),
+		webHandler: web.NewHandler(ws, eng, version, readOnly, isDesktop),
 		mcpServer:  livemcp.New(ws, eng, version),
 		noCache:    noCache,
 		readOnly:   readOnly,
