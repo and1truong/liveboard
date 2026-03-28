@@ -5,6 +5,7 @@ window.LB = window.LB || {};
   var LB = window.LB;
   var _conflictRetrying = false;
   var _savedScrollLeft = 0;
+  var _lastMutationSwapAt = 0;
 
   LB.isDragging = false;
 
@@ -20,9 +21,21 @@ window.LB = window.LB || {};
   }
 
   // Save horizontal scroll position before HTMX replaces board content.
-  document.body.addEventListener("htmx:beforeRequest", function () {
+  document.body.addEventListener("htmx:beforeRequest", function (e) {
     var c = document.querySelector(".columns-container");
     if (c) _savedScrollLeft = c.scrollLeft;
+
+    // Suppress SSE echo: our POST already swapped fresh HTML.
+    if (_lastMutationSwapAt && e.detail.requestConfig) {
+      var cfg = e.detail.requestConfig;
+      if (cfg.verb === "get" && Date.now() - _lastMutationSwapAt < 2000) {
+        var isSSE = cfg.triggeringEvent && cfg.triggeringEvent.type === "sse:board-update";
+        if (isSSE) {
+          e.preventDefault();
+          return;
+        }
+      }
+    }
   });
 
   // Auto-inject version into all HTMX form submissions (hx-post, hx-vals).
@@ -84,6 +97,15 @@ window.LB = window.LB || {};
   // After any swap, sync the board version from the hidden input and refresh store.
   document.body.addEventListener("htmx:afterSwap", function (e) {
     _conflictRetrying = false;
+
+    // Track POST swaps so we can suppress the redundant SSE echo.
+    if (e.detail.requestConfig && e.detail.requestConfig.verb === "post") {
+      var tgt = e.detail.target || e.detail.elt;
+      if (tgt && tgt.id === "board-content") {
+        _lastMutationSwapAt = Date.now();
+      }
+    }
+
     var versionEl = document.getElementById("board-version");
     var boardView = document.querySelector(".board-view");
     if (versionEl && boardView) {
@@ -91,7 +113,11 @@ window.LB = window.LB || {};
     }
     // Restore horizontal scroll position after board content is replaced.
     var cols = document.querySelector(".columns-container");
-    if (cols && _savedScrollLeft) cols.scrollLeft = _savedScrollLeft;
+    if (cols && _savedScrollLeft) {
+      requestAnimationFrame(function () {
+        cols.scrollLeft = _savedScrollLeft;
+      });
+    }
     // Refresh board store with fresh DOM data
     if (typeof Alpine !== 'undefined' && Alpine.store('board')) {
       Alpine.store('board').refresh();
