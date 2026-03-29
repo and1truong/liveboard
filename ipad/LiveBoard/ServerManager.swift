@@ -8,6 +8,7 @@ final class ServerManager: ObservableObject {
     @Published var error: String?
 
     private var started = false
+    private var startToken: UUID?
 
     func start() {
         guard !started else { return }
@@ -28,12 +29,17 @@ final class ServerManager: ObservableObject {
         }
 
         let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "dev"
+        let token = UUID()
+        startToken = token
 
         Task.detached { [weak self] in
             var err: NSError?
             let urlString = GobridgeStart(workDir, version, &err)
 
             await MainActor.run {
+                // If stop() was called while we were starting, discard result.
+                guard self?.startToken == token else { return }
+
                 if let err = err {
                     self?.error = err.localizedDescription
                     self?.started = false
@@ -50,6 +56,7 @@ final class ServerManager: ObservableObject {
     }
 
     func stop() {
+        startToken = nil
         GobridgeStop()
         started = false
         serverURL = nil

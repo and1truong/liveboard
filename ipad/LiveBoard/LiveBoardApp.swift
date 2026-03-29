@@ -10,9 +10,11 @@ struct LiveBoardApp: App {
             ContentView()
                 .environmentObject(server)
         }
-        .onChange(of: scenePhase) { _, phase in
+        .onChange(of: scenePhase) { phase in
             if phase == .background {
                 server.stop()
+            } else if phase == .active {
+                server.start()
             }
         }
     }
