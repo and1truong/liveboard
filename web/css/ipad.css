@@ -1,0 +1,87 @@
+/* === iPad APP (WKWebView) === */
+
+/* Safe area insets for iPads with rounded corners / home indicator */
+.ipad-app {
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+    --safe-left: env(safe-area-inset-left, 0px);
+    --safe-right: env(safe-area-inset-right, 0px);
+}
+
+.ipad-app .app-shell {
+    padding-top: var(--safe-top);
+    padding-bottom: var(--safe-bottom);
+    padding-left: var(--safe-left);
+    padding-right: var(--safe-right);
+}
+
+/* Prevent rubber-band overscroll in the WKWebView */
+.ipad-app {
+    overscroll-behavior: none;
+}
+
+/* Status bar clearance — top padding for sidebar and topbar */
+.ipad-app .app-sidebar {
+    padding-top: var(--safe-top);
+}
+
+/* Disable text selection on interactive elements (native feel) */
+.ipad-app button,
+.ipad-app .card,
+.ipad-app .sidebar-nav a {
+    -webkit-user-select: none;
+    user-select: none;
+}
+
+/* Larger tap targets for touch */
+.ipad-app .sidebar-nav a {
+    min-height: 44px;
+    display: flex;
+    align-items: center;
+}
+
+.ipad-app .column-header button {
+    min-height: 44px;
+    min-width: 44px;
+}
+
+/* Disable hover-triggered opacity for touch — always show action buttons */
+.ipad-app .board-settings-btn {
+    opacity: 1;
+}
+
+/* Smooth momentum scrolling for board columns */
+.ipad-app .board-columns {
+    -webkit-overflow-scrolling: touch;
+}
+
+/* Pointer cursor support — iPad trackpad/mouse */
+@media (pointer: fine) {
+    .ipad-app .card {
+        cursor: pointer;
+    }
+
+    .ipad-app .card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+}
+
+/* Multi-window / Split View — compact layout when narrow */
+@media (max-width: 500px) {
+    .ipad-app .app-sidebar {
+        width: 100%;
+        height: var(--topbar-height);
+        flex-direction: row;
+        border-right: none;
+        border-bottom: 1px solid var(--color-border);
+    }
+
+    .ipad-app .sidebar-nav {
+        display: none;
+    }
+
+    .ipad-app .sidebar-board-dropdown {
+        display: flex;
+    }
+}
