@@ -131,10 +131,12 @@ ipad-project: ipad-framework
 	cd ipad && xcodegen generate
 	@echo "Generated ipad/LiveBoard.xcodeproj"
 
+SIMULATOR_DEST ?= generic/platform=iOS Simulator
+
 # Build iPad app for simulator
 ipad: ipad-project
 	cd ipad && xcodebuild -project LiveBoard.xcodeproj \
 		-scheme LiveBoard \
-		-destination 'platform=iOS Simulator,name=iPad Pro 13-inch (M4)' \
+		-destination '$(SIMULATOR_DEST)' \
 		-configuration Debug \
 		build

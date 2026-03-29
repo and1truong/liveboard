@@ -13,23 +13,14 @@ struct LiveBoardWebView: UIViewRepresentable {
         let config = WKWebViewConfiguration()
         config.allowsInlineMediaPlayback = true
 
-        // Allow the web content to fill the viewport properly.
         let prefs = WKWebpagePreferences()
-        prefs.allowsContentProcessUseThisPolicy = true
+        prefs.allowsContentJavaScript = true
         config.defaultWebpagePreferences = prefs
 
         let webView = WKWebView(frame: .zero, configuration: config)
         webView.navigationDelegate = context.coordinator
         webView.allowsBackForwardNavigationGestures = true
         webView.scrollView.contentInsetAdjustmentBehavior = .never
-
-        // Mark as iPad app so CSS can target it.
-        webView.evaluateJavaScript(
-            "document.documentElement.classList.add('ipad-app')",
-            completionHandler: nil
-        )
-
-        // Support pointer (trackpad/mouse) and keyboard on iPad.
         webView.allowsLinkPreview = true
 
         webView.load(URLRequest(url: url))
@@ -37,7 +28,6 @@ struct LiveBoardWebView: UIViewRepresentable {
     }
 
     func updateUIView(_ webView: WKWebView, context: Context) {
-        // If the server URL changes (workspace switch), reload.
         if webView.url?.host != url.host || webView.url?.port != url.port {
             webView.load(URLRequest(url: url))
         }
@@ -45,7 +35,6 @@ struct LiveBoardWebView: UIViewRepresentable {
 
     class Coordinator: NSObject, WKNavigationDelegate {
         func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
-            // Add iPad-specific class after each navigation.
             webView.evaluateJavaScript(
                 "document.documentElement.classList.add('ipad-app')",
                 completionHandler: nil
@@ -57,8 +46,9 @@ struct LiveBoardWebView: UIViewRepresentable {
             decidePolicyFor navigationAction: WKNavigationAction,
             decisionHandler: @escaping (WKNavigationActionPolicy) -> Void
         ) {
-            // Open external links in Safari.
             if let url = navigationAction.request.url,
+               let scheme = url.scheme?.lowercased(),
+               (scheme == "http" || scheme == "https"),
                url.host != "127.0.0.1" && url.host != "localhost" {
                 UIApplication.shared.open(url)
                 decisionHandler(.cancel)
