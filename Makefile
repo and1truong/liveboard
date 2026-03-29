@@ -4,7 +4,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch online
+.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch online ipad-framework ipad-project ipad
 
 # Fail fast if tailwindcss is missing
 check-tailwind:
@@ -120,3 +120,23 @@ demo-family: dev
 
 demo-prompt-eng: DEMO=prompt-eng
 demo-prompt-eng: dev
+
+# Build Go xcframework for iPad (requires gomobile: go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init)
+ipad-framework: css
+	gomobile bind -target=ios -o ipad/Gobridge.xcframework ./mobile/gobridge
+	@echo "Built ipad/Gobridge.xcframework"
+
+# Generate Xcode project for iPad app (requires xcodegen: brew install xcodegen)
+ipad-project: ipad-framework
+	cd ipad && xcodegen generate
+	@echo "Generated ipad/LiveBoard.xcodeproj"
+
+SIMULATOR_DEST ?= generic/platform=iOS Simulator
+
+# Build iPad app for simulator
+ipad: ipad-project
+	cd ipad && xcodebuild -project LiveBoard.xcodeproj \
+		-scheme LiveBoard \
+		-destination '$(SIMULATOR_DEST)' \
+		-configuration Debug \
+		build

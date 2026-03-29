@@ -26,6 +26,7 @@ html { opacity: 1; }
 @import "./toasts.css";
 @import "./keyboard-nav.css";
 @import "./desktop.css";
+@import "./ipad.css";
 @import "./focus-mode.css";
 @import "./calendar.css";
 @import "./responsive.css";
