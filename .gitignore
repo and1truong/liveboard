@@ -4,3 +4,5 @@ LiveBoard.app/
 /tmp/
 web/css/liveboard.css
 dist/
+ipad/Gobridge.xcframework/
+ipad/LiveBoard.xcodeproj/
