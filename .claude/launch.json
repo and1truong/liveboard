@@ -3,8 +3,8 @@
   "configurations": [
     {
       "name": "dev",
-      "runtimeExecutable": "make",
-      "runtimeArgs": ["dev"],
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=/usr/local/bin:$HOME/go/bin:/usr/local/go/bin:$PATH && make dev"],
       "port": 7070,
       "autoPort": true
     },
