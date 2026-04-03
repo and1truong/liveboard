@@ -120,7 +120,7 @@ func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*mo
 			return card, nil
 		}
 	}
-	return nil, fmt.Errorf("column %q not found", columnName)
+	return nil, fmt.Errorf("column %q: %w", columnName, ErrNotFound)
 }
 
 // MoveCard moves a card to a different column.
