@@ -164,7 +164,7 @@
 
     <!-- Cmd+K Command Palette -->
     <div x-data="cmdPalette([{{range .Boards}}{name:'{{.Name}}',slug:'{{.Slug}}',icon:'{{.Icon}}'},{{end}}], '{{.BoardSlug}}')" @keydown.window="handleKeydown($event)">
-        <div class="cmd-palette-overlay" x-show="open" @click.self="open = false" x-cloak
+        <div class="cmd-palette-overlay" x-show="open" @click.self="open = false" x-cloak role="dialog" aria-modal="true" aria-label="Command palette"
              x-transition:enter="cmd-overlay-enter"
              x-transition:enter-start="cmd-overlay-enter-from"
              x-transition:enter-end="cmd-overlay-enter-to"
@@ -212,14 +212,14 @@
 
     <!-- Card Modal (Alpine) -->
     <div x-data="cardModal()" @keydown.escape.window="if(open) close()">
-        <div class="card-modal-backdrop" x-show="open" @click.self="close()" x-cloak>
+        <div class="card-modal-backdrop" x-show="open" @click.self="close()" x-cloak role="dialog" aria-modal="true" aria-label="Edit card">
             <div class="card-modal">
-                <button class="card-modal-close" @click="close()">&times;</button>
+                <button class="card-modal-close" @click="close()" aria-label="Close">&times;</button>
                 <div class="card-modal-main">
                     <span class="card-modal-column-pill" x-text="columnName"></span>
                     <span x-show="completed" class="status-badge completed ml-2">&#10003; Done</span>
 
-                    <textarea class="card-modal-title" x-model="title" rows="1" @input="autoResize($event)" @keydown="handleTitleKeydown($event)"></textarea>
+                    <textarea class="card-modal-title" x-model="title" rows="1" @input="autoResize($event)" @keydown="handleTitleKeydown($event)" aria-label="Card title"></textarea>
 
                     <div class="card-modal-action-bar relative">
                         <button class="card-modal-action-btn"><span class="card-modal-action-icon">&#127991;</span> Labels</button>
@@ -357,8 +357,8 @@
 
     <!-- Quick Edit + Context Menu (Alpine) -->
     <div x-data="quickEdit()" @keydown.escape.window="if(open) hide()">
-        <div class="quick-edit-overlay" x-show="open" :style="'left:' + left + 'px;top:' + top + 'px;width:' + width + 'px;min-height:' + minHeight + 'px'" x-cloak>
-            <textarea class="qe-title" x-model="title" rows="2" @keydown="handleTitleKeydown($event)"></textarea>
+        <div class="quick-edit-overlay" x-show="open" role="dialog" aria-modal="true" aria-label="Quick edit card" :style="'left:' + left + 'px;top:' + top + 'px;width:' + width + 'px;min-height:' + minHeight + 'px'" x-cloak>
+            <textarea class="qe-title" x-model="title" rows="2" @keydown="handleTitleKeydown($event)" aria-label="Card title"></textarea>
             <div class="card-modal-tags-container qe-tags-container" x-data="tagChips()" data-qe-tags @click="$refs.input.focus()">
                 <template x-for="(tag, idx) in tags" :key="tag">
                     <span class="card-modal-tag-chip"><span x-text="tag"></span><button class="card-modal-tag-chip-remove" type="button" @click.stop="removeTag(idx)">&times;</button></span>
@@ -371,7 +371,7 @@
                     <div x-show="filtered.length === 0 && tcInput.trim()" class="card-modal-tags-dropdown-empty">Press Enter to add "<span x-text="tcInput"></span>"</div>
                 </div>
             </div>
-            <textarea class="qe-body" placeholder="Description (optional)" x-model="body" rows="2" @keydown="handleBodyKeydown($event)"></textarea>
+            <textarea class="qe-body" placeholder="Description (optional)" x-model="body" rows="2" @keydown="handleBodyKeydown($event)" aria-label="Card description"></textarea>
             <div class="qe-actions">
                 <button class="btn-small qe-delete-btn" x-show="ctxHasDelete" :disabled="qeDeleting && !qeDeleteArmed" @click="qeDelete()"><span x-text="qeDeleteLabel">Delete</span></button>
                 <div class="qe-actions-right">
