@@ -42,6 +42,80 @@
     @apply opacity-100;
 }
 
+/* === TOPBAR ACTIONS (search + hide-completed) === */
+.board-topbar-actions {
+    @apply flex items-center gap-1.5 shrink-0;
+    margin-left: auto;
+}
+
+.topbar-toggle-btn {
+    @apply flex items-center justify-center bg-transparent border border-transparent cursor-pointer text-text-muted rounded-md shrink-0;
+    width: 28px;
+    height: 28px;
+    font-size: 12px;
+    transition: all 0.15s;
+
+    &:hover {
+        background: var(--color-column-bg);
+        color: var(--color-text-primary);
+    }
+
+    &.active {
+        background: color-mix(in srgb, var(--color-accent) 12%, transparent);
+        color: var(--color-accent);
+        border-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
+    }
+}
+
+.topbar-search {
+    @apply flex items-center relative;
+    width: 140px;
+    transition: width 0.2s ease;
+
+    &.active, &:focus-within {
+        width: 200px;
+    }
+}
+
+.topbar-search-icon {
+    @apply absolute pointer-events-none text-text-muted;
+    left: 7px;
+    width: 13px;
+    height: 13px;
+}
+
+.topbar-search-input {
+    @apply w-full text-text-primary;
+    font-size: 0.8125rem;
+    background: var(--color-column-bg) !important;
+    border: 1px solid transparent !important;
+    border-radius: 6px;
+    padding: 4px 24px 4px 24px !important;
+    outline: none !important;
+    box-shadow: none !important;
+    transition: border-color 0.15s, background 0.15s;
+
+    &::placeholder { color: var(--color-text-muted); }
+
+    &:focus {
+        border-color: var(--color-border) !important;
+        background: var(--color-surface) !important;
+    }
+}
+
+.topbar-search-clear {
+    @apply absolute bg-transparent border-none cursor-pointer text-text-muted leading-none p-0;
+    right: 6px;
+    font-size: 14px;
+    transition: color 0.12s;
+
+    &:hover { color: var(--color-text-primary); }
+}
+
+/* === FILTER HIDING === */
+.board-view[data-hide-completed="true"] .card.completed { display: none !important; }
+.search-hidden { display: none !important; }
+
 .board-error-banner {
     @apply bg-danger-bg text-danger-text text-sm border-b border-danger shrink-0;
     padding: 8px 20px;

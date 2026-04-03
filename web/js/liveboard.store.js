@@ -55,6 +55,16 @@ document.addEventListener('alpine:init', function () {
     sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true',
     activeTag: null,
     focusedColumn: '',
+    hideCompleted: localStorage.getItem('lb_hideCompleted') === 'true',
+    searchQuery: '',
+
+    toggleHideCompleted: function () {
+      this.hideCompleted = !this.hideCompleted;
+      localStorage.setItem('lb_hideCompleted', this.hideCompleted);
+      var bv = document.querySelector('.board-view');
+      if (bv) bv.setAttribute('data-hide-completed', this.hideCompleted);
+      if (window.LB && LB.applyFilters) LB.applyFilters();
+    },
 
     openModal: function (name) {
       this.activeModal = name;

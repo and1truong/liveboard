@@ -47,22 +47,22 @@
     }
 
     .section-name {
-        font-size: 1.15rem;
-        font-weight: 700;
+        font-size: 1.05rem;
+        font-weight: 600;
         letter-spacing: -0.01em;
-        color: var(--color-accent);
+        color: var(--color-text-primary);
     }
 
     .section-count {
-        @apply text-xs text-text-muted text-center;
+        @apply text-xs text-center;
         margin-left: auto;
         padding: 1px 8px;
         border-radius: 12px;
         min-width: 22px;
         line-height: 1.7;
-        background: color-mix(in srgb, var(--color-accent) 10%, transparent);
-        color: var(--color-accent);
-        font-weight: 600;
+        background: var(--color-column-bg);
+        color: var(--color-text-muted);
+        font-weight: 500;
         font-variant-numeric: tabular-nums;
     }
 }
@@ -109,8 +109,19 @@
         @apply opacity-50;
 
         .list-item-title {
-            @apply line-through;
             color: var(--color-text-muted);
+
+            &::after {
+                content: 'Done';
+                @apply inline-block text-xs font-medium ml-1.5 align-middle;
+                font-size: 0.6rem;
+                padding: 0px 5px;
+                border-radius: 8px;
+                background: var(--color-success-bg);
+                color: var(--color-success-text);
+                line-height: 1.6;
+                letter-spacing: 0.02em;
+            }
         }
     }
 
@@ -123,10 +134,10 @@
 /* Circle checkbox — Apple Reminders style with fill animation */
 .list-checkbox {
     @apply shrink-0 bg-transparent cursor-pointer;
-    width: 24px;
-    height: 24px;
+    width: 16px;
+    height: 16px;
     border-radius: 50%;
-    border: 2px solid color-mix(in srgb, var(--color-text-muted) 60%, transparent);
+    border: 1.5px solid color-mix(in srgb, var(--color-text-muted) 60%, transparent);
     margin-top: 0px;
     padding: 0;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
@@ -145,7 +156,7 @@
     &.checked {
         @apply bg-accent border-accent;
         background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2.5-2.5a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
-        background-size: 14px;
+        background-size: 9px;
         background-position: center;
         background-repeat: no-repeat;
         animation: checkPop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -232,9 +243,9 @@
 
 .list-quick-add-icon {
     @apply flex items-center justify-center shrink-0 text-accent font-bold;
-    width: 24px;
-    height: 24px;
-    font-size: 18px;
+    width: 20px;
+    height: 20px;
+    font-size: 16px;
     line-height: 1;
     opacity: 0.7;
     transition: opacity 0.15s;
@@ -338,6 +349,6 @@
     }
 
     .list-section-header .section-name {
-        font-size: 1.05rem;
+        font-size: 0.95rem;
     }
 }

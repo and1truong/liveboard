@@ -122,6 +122,8 @@ window.LB = window.LB || {};
     if (typeof Alpine !== 'undefined' && Alpine.store('board')) {
       Alpine.store('board').refresh();
     }
+    // Re-apply client-side filters after content swap
+    LB.applyFilters();
   });
 
   function showConflictToast() {
@@ -146,6 +148,62 @@ window.LB = window.LB || {};
   }
 
   window.__lbNewLineTrigger = getNewLineTrigger;
+
+  // Apply client-side filters (search + hide-completed) and update visible counts.
+  LB.applyFilters = function () {
+    var ui = (typeof Alpine !== 'undefined' && Alpine.store('ui')) ? Alpine.store('ui') : null;
+    var query = ui ? (ui.searchQuery || '').toLowerCase().trim() : '';
+
+    // Re-sync hide-completed attr on stable parent
+    var bv = document.querySelector('.board-view');
+    if (bv && ui) bv.setAttribute('data-hide-completed', ui.hideCompleted);
+
+    // Search filter: toggle .search-hidden on cards
+    var cards = document.querySelectorAll('.card[data-card-title]');
+    cards.forEach(function (c) {
+      if (!query) {
+        c.classList.remove('search-hidden');
+        return;
+      }
+      var haystack = [
+        c.dataset.cardTitle || '',
+        c.dataset.cardBody || '',
+        c.dataset.cardTags || '',
+        c.dataset.cardAssignee || '',
+        c.dataset.cardColumn || ''
+      ].join(' ').toLowerCase();
+      c.classList.toggle('search-hidden', haystack.indexOf(query) === -1);
+    });
+
+    // Update column card counts (board view)
+    document.querySelectorAll('.column').forEach(function (col) {
+      var countEl = col.querySelector('.column-card-count');
+      if (!countEl) return;
+      var visible = col.querySelectorAll('.card[data-card-title]:not(.search-hidden):not([style*="display: none"])');
+      // Also exclude hide-completed cards via data attr
+      var hideCompleted = bv && bv.getAttribute('data-hide-completed') === 'true';
+      var count = 0;
+      visible.forEach(function (c) {
+        if (hideCompleted && c.classList.contains('completed')) return;
+        count++;
+      });
+      countEl.textContent = count;
+    });
+
+    // Update section counts (list view)
+    document.querySelectorAll('.list-section').forEach(function (sec) {
+      var countEl = sec.querySelector('.section-count');
+      if (!countEl) return;
+      var hideCompleted = bv && bv.getAttribute('data-hide-completed') === 'true';
+      var count = 0;
+      sec.querySelectorAll('.list-item.card').forEach(function (c) {
+        if (c.classList.contains('search-hidden')) return;
+        if (hideCompleted && c.classList.contains('completed')) return;
+        count++;
+      });
+      countEl.textContent = count;
+    });
+  };
 
   LB.getBoardVersion = getBoardVersion;
 

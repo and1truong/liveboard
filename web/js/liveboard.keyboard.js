@@ -19,7 +19,7 @@
   }
 
   function isTableView() {
-    return !!document.querySelector('.table-container');
+    return !!document.querySelector('.list-container');
   }
 
   function isModalOpen() {
@@ -49,7 +49,7 @@
   }
 
   function getTableCards() {
-    return Array.from(document.querySelectorAll('.table-row.card'));
+    return Array.from(document.querySelectorAll('.list-item.card'));
   }
 
   function getAllBoardCards() {
@@ -116,7 +116,7 @@
 
   function focusAddCard() {
     if (isTableView()) {
-      var link = document.querySelector('.table-add-card-link');
+      var link = document.querySelector('.list-add-link');
       if (link) link.click();
     } else {
       var cols = getColumns();
@@ -176,6 +176,7 @@
     ['x', 'Toggle card complete'],
     ['n', 'New card in column'],
     ['/ ', 'Open command palette'],
+    ['f', 'Focus search filter'],
     ['Shift+D', 'Toggle dark/light theme'],
     ['Esc', 'Clear focus'],
     ['?', 'This help'],
@@ -305,6 +306,12 @@
     if (e.metaKey || e.ctrlKey || e.altKey) return;
 
     var key = e.key;
+
+    // f → focus search/filter input
+    if (key === 'f') {
+      var searchInput = document.querySelector('.topbar-search-input');
+      if (searchInput) { e.preventDefault(); searchInput.focus(); return; }
+    }
 
     // Shift+D → toggle theme
     if (key === 'D' && e.shiftKey) {

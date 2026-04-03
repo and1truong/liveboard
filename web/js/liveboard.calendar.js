@@ -220,12 +220,25 @@ document.addEventListener('alpine:init', function () {
         this._unscheduledCards = unscheduled;
       },
 
+      _matchesFilter: function (card) {
+        var ui = Alpine.store('ui');
+        if (ui && ui.hideCompleted && card.completed) return false;
+        var q = ui ? (ui.searchQuery || '').toLowerCase().trim() : '';
+        if (q) {
+          var hay = [card.title, card.body, card.tags, card.assignee, card.columnName].join(' ').toLowerCase();
+          if (hay.indexOf(q) === -1) return false;
+        }
+        return true;
+      },
+
       cardsForDate: function (dateStr) {
-        return this._cardsByDate[dateStr] || [];
+        var self = this;
+        return (this._cardsByDate[dateStr] || []).filter(function (c) { return self._matchesFilter(c); });
       },
 
       get unscheduledCards() {
-        return this._unscheduledCards;
+        var self = this;
+        return this._unscheduledCards.filter(function (c) { return self._matchesFilter(c); });
       },
 
       selectDay: function (dateStr) {
