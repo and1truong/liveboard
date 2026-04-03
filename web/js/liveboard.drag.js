@@ -118,7 +118,7 @@
         LB.isDragging = true;
         if (typeof Alpine !== 'undefined') Alpine.store('ui').isDragging = true;
         draggingCard = card;
-        var zone = card.closest(".cards[data-column], .table-group-cards[data-column]");
+        var zone = card.closest(".cards[data-column], .list-section[data-column]");
         draggingSourceColumn = zone ? zone.dataset.column : null;
         card.classList.add("dragging");
         e.dataTransfer.effectAllowed = "move";
@@ -131,7 +131,7 @@
         if (typeof Alpine !== 'undefined') Alpine.store('ui').isDragging = false;
         card.classList.remove("dragging");
         LB.clearDropIndicators();
-        document.querySelectorAll(".cards.drag-over, .table-group-cards.drag-over").forEach(function (el) {
+        document.querySelectorAll(".cards.drag-over, .list-section.drag-over").forEach(function (el) {
           el.classList.remove("drag-over");
         });
         draggingCard = null;
@@ -139,8 +139,8 @@
       });
     });
 
-    // Drop zones: .cards containers (board view) and .table-group-cards (table view)
-    document.querySelectorAll(".cards[data-column], .table-group-cards[data-column]").forEach(function (zone) {
+    // Drop zones: .cards containers (board view) and .list-section (list view)
+    document.querySelectorAll(".cards[data-column], .list-section[data-column]").forEach(function (zone) {
       if (zone.dataset.dropWired) return;
       zone.dataset.dropWired = "1";
 
@@ -192,7 +192,7 @@
           return;
         }
 
-        var sourceZone = card.closest(".cards[data-column], .table-group-cards[data-column]");
+        var sourceZone = card.closest(".cards[data-column], .list-section[data-column]");
         var sourceColumn = sourceZone ? sourceZone.dataset.column : null;
 
         var indicator = zone.querySelector(".drop-indicator");
@@ -251,7 +251,7 @@
     }
 
     function getColumnInsertionTarget(container, clientX, excludeEl, isTable) {
-      var selector = isTable ? ".table-group-cards[data-column]" : ".column[data-column-name]";
+      var selector = isTable ? ".list-section[data-column]" : ".column[data-column-name]";
       var columns = Array.from(container.querySelectorAll(selector)).filter(
         function (c) { return c !== excludeEl; }
       );
@@ -373,8 +373,8 @@
       });
     });
 
-    // Table mode: column groups
-    document.querySelectorAll(".table-group-cards[draggable][data-column]").forEach(function (group) {
+    // List mode: section groups
+    document.querySelectorAll(".list-section[draggable][data-column]").forEach(function (group) {
       if (group.dataset.colDragWired) return;
       group.dataset.colDragWired = "1";
 
@@ -396,8 +396,8 @@
       });
     });
 
-    // Table mode: drop zone is .table-container
-    document.querySelectorAll(".table-container").forEach(function (container) {
+    // List mode: drop zone is .list-container
+    document.querySelectorAll(".list-container").forEach(function (container) {
       if (container.dataset.colDropWired) return;
       container.dataset.colDropWired = "1";
 
@@ -405,7 +405,7 @@
         if (!draggingColumnEl) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
-        var groups = Array.from(container.querySelectorAll(".table-group-cards[data-column]")).filter(
+        var groups = Array.from(container.querySelectorAll(".list-section[data-column]")).filter(
           function (g) { return g !== draggingColumnEl; }
         );
         var beforeGroup = null;
@@ -435,7 +435,7 @@
         var afterCol = "";
         if (indicator) {
           var prev = indicator.previousElementSibling;
-          while (prev && !prev.classList.contains("table-group-cards")) {
+          while (prev && !prev.classList.contains("list-section")) {
             prev = prev.previousElementSibling;
           }
           if (prev && prev.dataset.column) {
@@ -446,7 +446,7 @@
 
         if (afterCol === colName) return;
         var prevSib = draggingColumnEl.previousElementSibling;
-        while (prevSib && !prevSib.classList.contains("table-group-cards")) {
+        while (prevSib && !prevSib.classList.contains("list-section")) {
           prevSib = prevSib.previousElementSibling;
         }
         if (afterCol === "" && !prevSib) return;
