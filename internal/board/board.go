@@ -38,7 +38,11 @@ func New() *Engine {
 // boardLock returns the per-board mutex, creating one if needed.
 func (e *Engine) boardLock(boardPath string) *sync.Mutex {
 	val, _ := e.locks.LoadOrStore(boardPath, &sync.Mutex{})
-	return val.(*sync.Mutex)
+	mu, ok := val.(*sync.Mutex)
+	if !ok {
+		panic("boardLock: unexpected type in sync.Map")
+	}
+	return mu
 }
 
 // MutateBoard serializes access to a board, checks the client version against the

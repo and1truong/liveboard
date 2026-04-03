@@ -105,7 +105,7 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 
 	fm := template.FuncMap{
 		"md": func(s string) template.HTML {
-			buf := mdBufPool.Get().(*bytes.Buffer)
+			buf, _ := mdBufPool.Get().(*bytes.Buffer)
 			buf.Reset()
 			defer mdBufPool.Put(buf)
 			if mdErr := mdRenderer.Convert([]byte(s), buf); mdErr != nil {

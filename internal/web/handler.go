@@ -50,7 +50,7 @@ func funcMap() template.FuncMap {
 			return m["id"]
 		},
 		"md": func(s string) template.HTML {
-			buf := mdBufPool.Get().(*bytes.Buffer)
+			buf, _ := mdBufPool.Get().(*bytes.Buffer)
 			buf.Reset()
 			defer mdBufPool.Put(buf)
 			if err := mdRenderer.Convert([]byte(s), buf); err != nil {

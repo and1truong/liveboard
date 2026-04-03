@@ -32,8 +32,8 @@ type Server struct {
 	reminderScheduler *reminder.Scheduler
 	router            chi.Router
 	httpServer        *http.Server
-	noCache  bool
-	readOnly bool
+	noCache           bool
+	readOnly          bool
 }
 
 // NewServer creates a Server with all routes registered.
@@ -44,8 +44,8 @@ func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, is
 		eng:        eng,
 		webHandler: h,
 		mcpServer:  livemcp.New(ws, eng, version),
-		noCache:  noCache,
-		readOnly: readOnly,
+		noCache:    noCache,
+		readOnly:   readOnly,
 	}
 
 	// Initialize reminder scheduler if enabled
@@ -206,6 +206,23 @@ func (s *Server) buildRouter() chi.Router {
 		staticHandler.ServeHTTP(w, req)
 	})
 
+	s.mountWebRoutes(r)
+	s.mountAPIRoutes(r)
+
+	if os.Getenv("LIVEBOARD_PPROF") != "" {
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		r.HandleFunc("/debug/pprof/{name}", pprof.Index)
+		log.Println("pprof profiling enabled at /debug/pprof/")
+	}
+
+	return r
+}
+
+func (s *Server) mountWebRoutes(r chi.Router) {
 	h := s.webHandler
 
 	// Board list routes
@@ -255,20 +272,6 @@ func (s *Server) buildRouter() chi.Router {
 	r.Post("/reminders/clear-fired", h.Reminders.HandleClearFired)
 	r.Post("/reminders/clear-history", h.Reminders.HandleClearHistory)
 	r.Post("/reminders/settings", h.Reminders.HandleUpdateReminderSettings)
-
-	s.mountAPIRoutes(r)
-
-	if os.Getenv("LIVEBOARD_PPROF") != "" {
-		r.HandleFunc("/debug/pprof/", pprof.Index)
-		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
-		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
-		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
-		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
-		r.HandleFunc("/debug/pprof/{name}", pprof.Index)
-		log.Println("pprof profiling enabled at /debug/pprof/")
-	}
-
-	return r
 }
 
 func (s *Server) mountAPIRoutes(r chi.Router) {

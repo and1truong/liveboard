@@ -28,9 +28,9 @@ type Scheduler struct {
 	notifyFn NotifyFunc
 	statsFn  BoardStatsFunc
 
-	mu     sync.Mutex             // protects cancel
+	mu     sync.Mutex // protects cancel
 	cancel context.CancelFunc
-	wg     sync.WaitGroup         // tracks in-flight fireReminder goroutines
+	wg     sync.WaitGroup // tracks in-flight fireReminder goroutines
 }
 
 // NewScheduler creates a scheduler that ticks at the given interval.
