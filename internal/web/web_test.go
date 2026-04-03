@@ -728,8 +728,8 @@ func TestBoardViewModelIncludesVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if model.Version != 0 {
-		t.Errorf("initial version = %d, want 0", model.Version)
+	if model.BoardVersion != 0 {
+		t.Errorf("initial version = %d, want 0", model.BoardVersion)
 	}
 
 	// Mutate to increment version.
@@ -742,8 +742,8 @@ func TestBoardViewModelIncludesVersion(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if model.Version != 1 {
-		t.Errorf("version after mutation = %d, want 1", model.Version)
+	if model.BoardVersion != 1 {
+		t.Errorf("version after mutation = %d, want 1", model.BoardVersion)
 	}
 }
 

@@ -195,14 +195,15 @@ func (s *Server) buildRouter() chi.Router {
 		})
 	}
 
-	// Serve static assets
+	// Serve static assets (handler allocated once, not per-request)
+	staticHandler := http.StripPrefix("/static/", http.FileServer(http.FS(staticweb.FS)))
 	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {
 		if s.noCache {
 			w.Header().Set("Cache-Control", "no-cache, no-store")
 		} else {
 			w.Header().Set("Cache-Control", "public, max-age=3600")
 		}
-		http.StripPrefix("/static/", http.FileServer(http.FS(staticweb.FS))).ServeHTTP(w, req)
+		staticHandler.ServeHTTP(w, req)
 	})
 
 	// Web UI routes (HTMX)

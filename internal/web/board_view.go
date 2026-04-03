@@ -61,7 +61,7 @@ type BoardViewModel struct {
 	AllTags        []string           `json:"all_tags,omitempty"`
 	TagColorsJSON  string             `json:"tag_colors_json,omitempty"`
 	Error          string             `json:"error,omitempty"`
-	Version        int                `json:"version"`
+	BoardVersion   int                `json:"version"`
 	Settings       ResolvedSettings   `json:"settings"`
 	BSView         BoardSettingsView  `json:"bs_view"`
 	GlobalSettings AppSettings        `json:"global_settings"`
@@ -166,7 +166,7 @@ func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
 		Boards:         summaries,
 		AllTags:        collectAllTags(summaries),
 		TagColorsJSON:  string(tcJSON),
-		Version:        b.Version,
+		BoardVersion:   b.Version,
 		Settings:       resolved,
 		BSView:         toBoardSettingsView(b.Settings),
 		GlobalSettings: global,
