@@ -12,9 +12,13 @@ import (
 
 // SendSystemNotification sends a macOS notification via osascript.
 func SendSystemNotification(title, body, _ string) error {
-	// Escape quotes for AppleScript
-	title = strings.ReplaceAll(title, `"`, `\"`)
-	body = strings.ReplaceAll(body, `"`, `\"`)
+	// Escape for AppleScript: backslashes first, then quotes, then newlines
+	for _, p := range []*string{&title, &body} {
+		*p = strings.ReplaceAll(*p, `\`, `\\`)
+		*p = strings.ReplaceAll(*p, `"`, `\"`)
+		*p = strings.ReplaceAll(*p, "\n", " ")
+		*p = strings.ReplaceAll(*p, "\r", " ")
+	}
 
 	script := fmt.Sprintf(`display notification "%s" with title "%s" sound name "default"`, body, title)
 

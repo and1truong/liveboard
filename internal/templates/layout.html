@@ -163,7 +163,7 @@
     </div>
 
     <!-- Cmd+K Command Palette -->
-    <div x-data="cmdPalette([{{range .Boards}}{name:'{{.Name}}',slug:'{{.Slug}}',icon:'{{.Icon}}'},{{end}}], '{{.BoardSlug}}')" @keydown.window="handleKeydown($event)">
+    <div x-data="cmdPalette({{boardsJSON .Boards}}, '{{.BoardSlug}}')" @keydown.window="handleKeydown($event)">
         <div class="cmd-palette-overlay" x-show="open" @click.self="open = false" x-cloak role="dialog" aria-modal="true" aria-label="Command palette"
              x-transition:enter="cmd-overlay-enter"
              x-transition:enter-start="cmd-overlay-enter-from"

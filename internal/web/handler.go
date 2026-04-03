@@ -3,6 +3,7 @@ package web
 
 import (
 	"bytes"
+	"encoding/json"
 	"html/template"
 	"net/http"
 	"strings"
@@ -48,6 +49,19 @@ func funcMap() template.FuncMap {
 				return ""
 			}
 			return m["id"]
+		},
+		"boardsJSON": func(boards []BoardSummary) template.JS {
+			type entry struct {
+				Name string `json:"name"`
+				Slug string `json:"slug"`
+				Icon string `json:"icon"`
+			}
+			entries := make([]entry, len(boards))
+			for i, b := range boards {
+				entries[i] = entry{Name: b.Name, Slug: b.Slug, Icon: b.Icon}
+			}
+			data, _ := json.Marshal(entries)
+			return template.JS(data) //nolint:gosec // json.Marshal output is safe JS
 		},
 		"md": func(s string) template.HTML {
 			buf, _ := mdBufPool.Get().(*bytes.Buffer)

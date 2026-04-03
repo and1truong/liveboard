@@ -105,7 +105,9 @@ document.addEventListener('alpine:init', function () {
         if (!text) return '';
         var sanitizeURL = function (url) {
           url = url.replace(/&amp;/g, '&');
-          if (/^\s*javascript\s*:/i.test(url) || /^\s*data\s*:/i.test(url) || /^\s*vbscript\s*:/i.test(url)) return '';
+          var decoded = url;
+          try { decoded = decodeURIComponent(url); } catch (e) { /* malformed URI — test raw */ }
+          if (/^\s*javascript\s*:/i.test(decoded) || /^\s*data\s*:/i.test(decoded) || /^\s*vbscript\s*:/i.test(decoded)) return '';
           return url.replace(/"/g, '&quot;');
         };
         var s = text
