@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"slices"
 	"sort"
 	"strings"
 	"sync"
@@ -26,23 +27,18 @@ var (
 
 // Engine provides CRUD operations on boards backed by Markdown files.
 type Engine struct {
-	mu    sync.Mutex
-	locks map[string]*sync.Mutex
+	locks sync.Map // map[string]*sync.Mutex — per-board locks
 }
 
 // New creates a new Engine instance.
 func New() *Engine {
-	return &Engine{locks: make(map[string]*sync.Mutex)}
+	return &Engine{}
 }
 
 // boardLock returns the per-board mutex, creating one if needed.
 func (e *Engine) boardLock(boardPath string) *sync.Mutex {
-	e.mu.Lock()
-	defer e.mu.Unlock()
-	if e.locks[boardPath] == nil {
-		e.locks[boardPath] = &sync.Mutex{}
-	}
-	return e.locks[boardPath]
+	val, _ := e.locks.LoadOrStore(boardPath, &sync.Mutex{})
+	return val.(*sync.Mutex)
 }
 
 // MutateBoard serializes access to a board, checks the client version against the
@@ -100,6 +96,10 @@ func renderAndWrite(board *models.Board, path string) error {
 // AddCard adds a new card to the specified column.
 // If prepend is true, the card is inserted at the beginning; otherwise appended.
 func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*models.Card, error) {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return nil, err
@@ -125,6 +125,10 @@ func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*mo
 
 // MoveCard moves a card to a different column.
 func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -150,6 +154,10 @@ func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn st
 // ReorderCard moves a card to a specific position within a column.
 // beforeIdx is the index to insert before; -1 means append to end.
 func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -178,7 +186,7 @@ func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, t
 	if beforeIdx < 0 || beforeIdx >= len(cards) {
 		cards = append(cards, card)
 	} else {
-		cards = append(cards[:beforeIdx], append([]models.Card{card}, cards[beforeIdx:]...)...)
+		cards = slices.Insert(cards, beforeIdx, card)
 	}
 	board.Columns[targetIdx].Cards = cards
 
@@ -187,6 +195,10 @@ func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, t
 
 // CompleteCard toggles the completed state of a card.
 func (e *Engine) CompleteCard(boardPath string, colIdx, cardIdx int) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -202,6 +214,10 @@ func (e *Engine) CompleteCard(boardPath string, colIdx, cardIdx int) error {
 
 // TagCard adds tags to a card.
 func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -227,6 +243,10 @@ func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) e
 
 // EditCard updates a card's title, body, tags, priority, due, and assignee in-place.
 func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority, due, assignee string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -251,6 +271,10 @@ func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body str
 
 // DeleteCard removes a card by column and card index.
 func (e *Engine) DeleteCard(boardPath string, colIdx, cardIdx int) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -266,6 +290,10 @@ func (e *Engine) DeleteCard(boardPath string, colIdx, cardIdx int) error {
 
 // ShowCard returns a card by column and card index.
 func (e *Engine) ShowCard(boardPath string, colIdx, cardIdx int) (*models.Card, string, error) {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return nil, "", err
@@ -281,6 +309,10 @@ func (e *Engine) ShowCard(boardPath string, colIdx, cardIdx int) (*models.Card, 
 
 // AddColumn adds a new column to the board.
 func (e *Engine) AddColumn(boardPath, colName string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -291,6 +323,10 @@ func (e *Engine) AddColumn(boardPath, colName string) error {
 
 // DeleteColumn removes a column and all its cards.
 func (e *Engine) DeleteColumn(boardPath, colName string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -317,6 +353,10 @@ func (e *Engine) DeleteColumn(boardPath, colName string) error {
 
 // RenameColumn renames a column in-place.
 func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -336,6 +376,10 @@ func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
 
 // MoveColumn reorders a column to be after another column.
 func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	content, err := os.ReadFile(boardPath)
 	if err != nil {
 		return err
@@ -397,6 +441,10 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 
 // ToggleColumnCollapse toggles the collapsed state of a column by index.
 func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -418,6 +466,10 @@ func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
 
 // UpdateBoardMeta updates a board's name, description, and tags.
 func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -432,6 +484,10 @@ func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []str
 
 // UpdateBoardMembers sets the member list for a board.
 func (e *Engine) UpdateBoardMembers(boardPath string, members []string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -442,6 +498,10 @@ func (e *Engine) UpdateBoardMembers(boardPath string, members []string) error {
 
 // UpdateBoardIcon sets the emoji icon for a board.
 func (e *Engine) UpdateBoardIcon(boardPath, icon string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -467,6 +527,10 @@ func removeCardAt(cards []models.Card, idx int) []models.Card {
 // SortColumn sorts the cards in a column by the given key.
 // Supported keys: "name", "priority", "due".
 func (e *Engine) SortColumn(boardPath string, colIdx int, sortBy string) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
@@ -526,6 +590,10 @@ func priorityRank(p string) int {
 
 // UpdateBoardSettings replaces a board's per-board settings overrides.
 func (e *Engine) UpdateBoardSettings(boardPath string, settings models.BoardSettings) error {
+	lock := e.boardLock(boardPath)
+	lock.Lock()
+	defer lock.Unlock()
+
 	board, err := e.LoadBoard(boardPath)
 	if err != nil {
 		return err
