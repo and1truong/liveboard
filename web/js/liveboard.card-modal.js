@@ -103,6 +103,11 @@ document.addEventListener('alpine:init', function () {
 
       renderMarkdown: function (text) {
         if (!text) return '';
+        var sanitizeURL = function (url) {
+          url = url.replace(/&amp;/g, '&');
+          if (/^\s*javascript\s*:/i.test(url) || /^\s*data\s*:/i.test(url) || /^\s*vbscript\s*:/i.test(url)) return '';
+          return url.replace(/"/g, '&quot;');
+        };
         var s = text
           .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
           .replace(/^### (.+)$/gm, '<h3>$1</h3>')
@@ -114,7 +119,11 @@ document.addEventListener('alpine:init', function () {
           .replace(/\*([^*]+)\*/g, '<em>$1</em>')
           .replace(/_([^_]+)_/g, '<em>$1</em>')
           .replace(/~~([^~]+)~~/g, '<del>$1</del>')
-          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>')
+          .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, label, url) {
+            var safe = sanitizeURL(url);
+            if (!safe) return label;
+            return '<a href="' + safe + '" target="_blank" rel="noopener">' + label + '</a>';
+          })
           .replace(/^[-*] (.+)$/gm, '<li>$1</li>')
           .replace(/(<li>.*<\/li>)/gs, '<ul>$1</ul>')
           .replace(/<\/ul>\s*<ul>/g, '');
