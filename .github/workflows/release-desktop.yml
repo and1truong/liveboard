@@ -1,0 +1,66 @@
+name: Release Desktop
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  release-desktop:
+    name: Release macOS Desktop
+    runs-on: macos-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Go
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c # v6
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install Tailwind CSS
+        run: |
+          curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/latest/download/tailwindcss-macos-arm64
+          chmod +x tailwindcss-macos-arm64
+          sudo mv tailwindcss-macos-arm64 /usr/local/bin/tailwindcss
+
+      - name: Wait for GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          echo "Waiting for release $TAG to exist..."
+          for i in $(seq 1 20); do
+            if gh release view "$TAG" --repo "$GITHUB_REPOSITORY" > /dev/null 2>&1; then
+              echo "Release $TAG found"
+              exit 0
+            fi
+            echo "Attempt $i/20 — release not found yet, waiting 15s..."
+            sleep 15
+          done
+          echo "Timed out waiting for release $TAG"
+          exit 1
+
+      - name: Build desktop bundle
+        run: make bundle-desktop-release
+
+      - name: Upload to GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          gh release upload "$TAG" LiveBoard-*-macos-universal.zip --clobber
+
+      - name: Update Homebrew cask
+        env:
+          GH_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+        run: |
+          VERSION="${GITHUB_REF#refs/tags/v}"
+          bash scripts/update-desktop-cask.sh "$VERSION"
