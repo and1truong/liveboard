@@ -1039,7 +1039,10 @@ func TestHandleCreateCard(t *testing.T) {
 		t.Fatalf("status = %d", w.Code)
 	}
 	// Verify card added
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	found := false
 	for _, c := range b.Columns[0].Cards {
 		if c.Title == "New Card" {
@@ -1093,7 +1096,10 @@ func TestHandleMoveCard(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	// Card A should now be in Done
 	found := false
 	for _, c := range b.Columns[1].Cards {
@@ -1117,7 +1123,10 @@ func TestHandleReorderCard(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if b.Columns[0].Cards[0].Title != "Card B" {
 		t.Errorf("expected Card B first, got %q", b.Columns[0].Cards[0].Title)
 	}
@@ -1134,7 +1143,10 @@ func TestHandleDeleteCard(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(b.Columns[0].Cards) != 1 {
 		t.Errorf("expected 1 card in Todo, got %d", len(b.Columns[0].Cards))
 	}
@@ -1151,7 +1163,10 @@ func TestHandleToggleComplete(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if !b.Columns[0].Cards[0].Completed {
 		t.Error("card should be completed")
 	}
@@ -1170,7 +1185,10 @@ func TestHandleEditCard(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	c := b.Columns[0].Cards[0]
 	if c.Title != "Updated" {
 		t.Errorf("title = %q", c.Title)
@@ -1213,7 +1231,10 @@ func TestHandleCreateColumn(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	found := false
 	for _, col := range b.Columns {
 		if col.Name == "In Progress" {
@@ -1247,7 +1268,10 @@ func TestHandleRenameColumn(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if b.Columns[0].Name != "Backlog" {
 		t.Errorf("name = %q, want Backlog", b.Columns[0].Name)
 	}
@@ -1284,7 +1308,10 @@ func TestHandleDeleteColumn(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(b.Columns) != 1 {
 		t.Errorf("expected 1 column, got %d", len(b.Columns))
 	}
@@ -1310,7 +1337,10 @@ func TestHandleToggleColumnCollapse(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(b.ListCollapse) == 0 || !b.ListCollapse[0] {
 		t.Error("column 0 should be collapsed")
 	}
@@ -1365,7 +1395,10 @@ func TestHandleMoveColumn(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if b.Columns[0].Name != "Done" {
 		t.Errorf("first column = %q, want Done", b.Columns[0].Name)
 	}
@@ -1395,7 +1428,10 @@ func TestHandleUpdateBoardMeta(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if b.Name != "Renamed" {
 		t.Errorf("name = %q", b.Name)
 	}
@@ -1431,7 +1467,10 @@ func TestHandleUpdateBoardSettings(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if b.Settings.ShowCheckbox == nil || *b.Settings.ShowCheckbox {
 		t.Error("show_checkbox should be false")
 	}
@@ -1459,7 +1498,10 @@ func TestHandleSetBoardIcon(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if b.Icon != "🎯" {
 		t.Errorf("icon = %q", b.Icon)
 	}
@@ -2086,7 +2128,10 @@ func TestHandleUpdateBoardMeta_TagColors(t *testing.T) {
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}
-	b, _ := h.ws.LoadBoard(slug)
+	b, err := h.ws.LoadBoard(slug)
+	if err != nil {
+		t.Fatal(err)
+	}
 	if b.TagColors == nil || b.TagColors["go"] != "#00ff00" {
 		t.Errorf("tag_colors = %v", b.TagColors)
 	}
