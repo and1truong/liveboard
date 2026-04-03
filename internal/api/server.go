@@ -7,6 +7,8 @@ import (
 	"log"
 	"net"
 	"net/http"
+	"net/http/pprof"
+	"os"
 	"time"
 
 	"github.com/go-chi/chi/v5"
@@ -30,8 +32,8 @@ type Server struct {
 	reminderScheduler *reminder.Scheduler
 	router            chi.Router
 	httpServer        *http.Server
-	noCache           bool
-	readOnly          bool
+	noCache  bool
+	readOnly bool
 }
 
 // NewServer creates a Server with all routes registered.
@@ -42,8 +44,8 @@ func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, is
 		eng:        eng,
 		webHandler: h,
 		mcpServer:  livemcp.New(ws, eng, version),
-		noCache:    noCache,
-		readOnly:   readOnly,
+		noCache:  noCache,
+		readOnly: readOnly,
 	}
 
 	// Initialize reminder scheduler if enabled
@@ -249,6 +251,16 @@ func (s *Server) buildRouter() chi.Router {
 	r.Post("/reminders/settings", s.webHandler.HandleUpdateReminderSettings)
 
 	s.mountAPIRoutes(r)
+
+	if os.Getenv("LIVEBOARD_PPROF") != "" {
+		r.HandleFunc("/debug/pprof/", pprof.Index)
+		r.HandleFunc("/debug/pprof/cmdline", pprof.Cmdline)
+		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
+		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
+		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+		r.HandleFunc("/debug/pprof/{name}", pprof.Index)
+		log.Println("pprof profiling enabled at /debug/pprof/")
+	}
 
 	return r
 }
