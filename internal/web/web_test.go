@@ -1,14 +1,22 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
+	"html/template"
+	"net/http"
 	"net/http/httptest"
+	neturl "net/url"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/parser"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -825,5 +833,1447 @@ func TestSSEBrokerUnsubscribe(t *testing.T) {
 		t.Error("should not receive after unsubscribe")
 	default:
 		// Expected
+	}
+}
+
+// --- Helpers for HTTP handler tests ---
+
+func setupTestHandler(t *testing.T) (*Handler, string) {
+	t.Helper()
+	dir := t.TempDir()
+	ws := workspace.Open(dir)
+	eng := board.New()
+	h := NewHandler(ws, eng, "test", false, false)
+	if _, err := ws.CreateBoard("test-board"); err != nil {
+		t.Fatal(err)
+	}
+	return h, "test-board"
+}
+
+func withSlug(r *http.Request, slug string) *http.Request {
+	rctx := chi.NewRouteContext()
+	rctx.URLParams.Add("slug", slug)
+	return r.WithContext(context.WithValue(r.Context(), chi.RouteCtxKey, rctx))
+}
+
+func postForm(url string, values map[string]string) *http.Request {
+	form := make(neturl.Values)
+	for k, v := range values {
+		form.Set(k, v)
+	}
+	r := httptest.NewRequest("POST", url, strings.NewReader(form.Encode()))
+	r.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	return r
+}
+
+// setupBoardWithColumn creates a board with one column containing cards for mutation tests.
+func setupBoardWithColumn(t *testing.T) (*Handler, string) {
+	t.Helper()
+	h, slug := setupTestHandler(t)
+	_, err := h.mutateBoard(slug, -1, func(b *models.Board) error {
+		b.Columns = []models.Column{
+			{Name: "Todo", Cards: []models.Card{
+				{Title: "Card A"},
+				{Title: "Card B", Priority: "high", Due: "2026-03-25"},
+			}},
+			{Name: "Done", Cards: []models.Card{
+				{Title: "Card C", Completed: true},
+			}},
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return h, slug
+}
+
+// --- Board list handler tests ---
+
+func TestBoardListPage(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/", nil)
+	h.BoardListPage(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d, want 200", w.Code)
+	}
+	if !strings.Contains(w.Body.String(), "test-board") {
+		t.Error("response should contain board name")
+	}
+}
+
+func TestHandleCreateBoard(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/new", map[string]string{"name": "new-board"})
+	h.HandleCreateBoard(w, r)
+	if got := w.Header().Get("HX-Redirect"); got != "/board/new-board" {
+		t.Errorf("HX-Redirect = %q, want /board/new-board", got)
+	}
+}
+
+func TestHandleCreateBoard_EmptyName(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/new", map[string]string{})
+	h.HandleCreateBoard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if w.Body.Len() == 0 {
+		t.Error("expected non-empty body with error")
+	}
+}
+
+func TestHandleDeleteBoard(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/delete", map[string]string{"name": "test-board"})
+	h.HandleDeleteBoard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	// Board should be gone
+	model, _ := h.boardListModel()
+	if len(model.Boards) != 0 {
+		t.Errorf("expected 0 boards, got %d", len(model.Boards))
+	}
+}
+
+func TestHandleDeleteBoard_EmptyName(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/delete", map[string]string{})
+	h.HandleDeleteBoard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if w.Body.Len() == 0 {
+		t.Error("expected non-empty body with error")
+	}
+}
+
+func TestHandleTogglePin(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/api/boards/pin", map[string]string{"slug": "test-board"})
+	h.HandleTogglePin(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	// Verify pinned
+	s := h.loadSettings()
+	found := false
+	for _, p := range s.PinnedBoards {
+		if p == "test-board" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("board should be pinned")
+	}
+}
+
+func TestHandleTogglePin_Unpin(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	// Pin first
+	r := postForm("/api/boards/pin", map[string]string{"slug": "test-board"})
+	h.HandleTogglePin(httptest.NewRecorder(), r)
+	// Unpin
+	w := httptest.NewRecorder()
+	r = postForm("/api/boards/pin", map[string]string{"slug": "test-board"})
+	h.HandleTogglePin(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	s := h.loadSettings()
+	for _, p := range s.PinnedBoards {
+		if p == "test-board" {
+			t.Error("board should be unpinned")
+		}
+	}
+}
+
+func TestHandleTogglePin_EmptySlug(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/api/boards/pin", map[string]string{})
+	h.HandleTogglePin(w, r)
+	if w.Code != 400 {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestHandleSetBoardIconList(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/icon", map[string]string{"name": "test-board", "icon": "🚀"})
+	h.HandleSetBoardIconList(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleSidebarBoards(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/api/boards/sidebar?slug=test-board", nil)
+	h.HandleSidebarBoards(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if w.Body.Len() == 0 {
+		t.Error("expected non-empty sidebar")
+	}
+}
+
+// --- Card handler tests ---
+
+func TestHandleCreateCard(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards", map[string]string{
+		"column": "Todo", "title": "New Card",
+	})
+	r = withSlug(r, slug)
+	h.HandleCreateCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	// Verify card added
+	b, _ := h.ws.LoadBoard(slug)
+	found := false
+	for _, c := range b.Columns[0].Cards {
+		if c.Title == "New Card" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("card not created")
+	}
+}
+
+func TestHandleCreateCard_MissingFields(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+
+	// Missing title
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards", map[string]string{"column": "Todo"})
+	r = withSlug(r, slug)
+	h.HandleCreateCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing column
+	w = httptest.NewRecorder()
+	r = postForm("/board/"+slug+"/cards", map[string]string{"title": "X"})
+	r = withSlug(r, slug)
+	h.HandleCreateCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing slug
+	w = httptest.NewRecorder()
+	r = postForm("/board/x/cards", map[string]string{"column": "Todo", "title": "X"})
+	// no withSlug — slug will be empty
+	h.HandleCreateCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleMoveCard(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards/move", map[string]string{
+		"col_idx": "0", "card_idx": "0", "target_column": "Done",
+	})
+	r = withSlug(r, slug)
+	h.HandleMoveCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	// Card A should now be in Done
+	found := false
+	for _, c := range b.Columns[1].Cards {
+		if c.Title == "Card A" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("card not moved to Done")
+	}
+}
+
+func TestHandleReorderCard(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards/reorder", map[string]string{
+		"col_idx": "0", "card_idx": "1", "column": "Todo", "before_idx": "0",
+	})
+	r = withSlug(r, slug)
+	h.HandleReorderCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if b.Columns[0].Cards[0].Title != "Card B" {
+		t.Errorf("expected Card B first, got %q", b.Columns[0].Cards[0].Title)
+	}
+}
+
+func TestHandleDeleteCard(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards/delete", map[string]string{
+		"col_idx": "0", "card_idx": "0",
+	})
+	r = withSlug(r, slug)
+	h.HandleDeleteCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if len(b.Columns[0].Cards) != 1 {
+		t.Errorf("expected 1 card in Todo, got %d", len(b.Columns[0].Cards))
+	}
+}
+
+func TestHandleToggleComplete(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards/complete", map[string]string{
+		"col_idx": "0", "card_idx": "0",
+	})
+	r = withSlug(r, slug)
+	h.HandleToggleComplete(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if !b.Columns[0].Cards[0].Completed {
+		t.Error("card should be completed")
+	}
+}
+
+func TestHandleEditCard(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards/edit", map[string]string{
+		"col_idx": "0", "card_idx": "0",
+		"title": "Updated", "body": "body text", "tags": "go, web",
+		"priority": "critical", "due": "2026-12-01", "assignee": "alice",
+	})
+	r = withSlug(r, slug)
+	h.HandleEditCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	c := b.Columns[0].Cards[0]
+	if c.Title != "Updated" {
+		t.Errorf("title = %q", c.Title)
+	}
+	if c.Body != "body text" {
+		t.Errorf("body = %q", c.Body)
+	}
+	if len(c.Tags) != 2 {
+		t.Errorf("tags = %v", c.Tags)
+	}
+	if c.Priority != "critical" {
+		t.Errorf("priority = %q", c.Priority)
+	}
+	if c.Due != "2026-12-01" {
+		t.Errorf("due = %q", c.Due)
+	}
+	if c.Assignee != "alice" {
+		t.Errorf("assignee = %q", c.Assignee)
+	}
+	// Check assignee added to members
+	found := false
+	for _, m := range b.Members {
+		if m == "alice" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("alice should be in members")
+	}
+}
+
+// --- Column handler tests ---
+
+func TestHandleCreateColumn(t *testing.T) {
+	h, slug := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns", map[string]string{"column_name": "In Progress"})
+	r = withSlug(r, slug)
+	h.HandleCreateColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	found := false
+	for _, col := range b.Columns {
+		if col.Name == "In Progress" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("column not created")
+	}
+}
+
+func TestHandleCreateColumn_EmptyName(t *testing.T) {
+	h, slug := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns", map[string]string{})
+	r = withSlug(r, slug)
+	h.HandleCreateColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleRenameColumn(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/rename", map[string]string{
+		"old_name": "Todo", "new_name": "Backlog",
+	})
+	r = withSlug(r, slug)
+	h.HandleRenameColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if b.Columns[0].Name != "Backlog" {
+		t.Errorf("name = %q, want Backlog", b.Columns[0].Name)
+	}
+}
+
+func TestHandleRenameColumn_MissingNames(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+
+	// Missing old_name
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/rename", map[string]string{"new_name": "X"})
+	r = withSlug(r, slug)
+	h.HandleRenameColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing new_name
+	w = httptest.NewRecorder()
+	r = postForm("/board/"+slug+"/columns/rename", map[string]string{"old_name": "Todo"})
+	r = withSlug(r, slug)
+	h.HandleRenameColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleDeleteColumn(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/delete", map[string]string{"column_name": "Done"})
+	r = withSlug(r, slug)
+	h.HandleDeleteColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if len(b.Columns) != 1 {
+		t.Errorf("expected 1 column, got %d", len(b.Columns))
+	}
+}
+
+func TestHandleDeleteColumn_EmptyName(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/delete", map[string]string{})
+	r = withSlug(r, slug)
+	h.HandleDeleteColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleToggleColumnCollapse(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/collapse", map[string]string{"col_index": "0"})
+	r = withSlug(r, slug)
+	h.HandleToggleColumnCollapse(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if len(b.ListCollapse) == 0 || !b.ListCollapse[0] {
+		t.Error("column 0 should be collapsed")
+	}
+}
+
+func TestHandleToggleColumnCollapse_EmptySlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/x/columns/collapse", map[string]string{"col_index": "0"})
+	// no withSlug
+	h.HandleToggleColumnCollapse(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleSortColumn(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+
+	for _, sortBy := range []string{"name", "priority", "due"} {
+		w := httptest.NewRecorder()
+		r := postForm("/board/"+slug+"/columns/sort", map[string]string{
+			"col_idx": "0", "sort_by": sortBy,
+		})
+		r = withSlug(r, slug)
+		h.HandleSortColumn(w, r)
+		if w.Code != 200 {
+			t.Fatalf("sort_by=%s: status = %d", sortBy, w.Code)
+		}
+	}
+}
+
+func TestHandleSortColumn_MissingSortBy(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/sort", map[string]string{"col_idx": "0"})
+	r = withSlug(r, slug)
+	h.HandleSortColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleMoveColumn(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/move", map[string]string{
+		"column": "Done", "after_column": "",
+	})
+	r = withSlug(r, slug)
+	h.HandleMoveColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if b.Columns[0].Name != "Done" {
+		t.Errorf("first column = %q, want Done", b.Columns[0].Name)
+	}
+}
+
+func TestHandleMoveColumn_EmptyColumn(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/columns/move", map[string]string{})
+	r = withSlug(r, slug)
+	h.HandleMoveColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+// --- Board meta/settings handler tests ---
+
+func TestHandleUpdateBoardMeta(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/meta", map[string]string{
+		"board_name": "Renamed", "description": "A board", "tags": "go, web",
+	})
+	r = withSlug(r, slug)
+	h.HandleUpdateBoardMeta(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if b.Name != "Renamed" {
+		t.Errorf("name = %q", b.Name)
+	}
+	if b.Description != "A board" {
+		t.Errorf("description = %q", b.Description)
+	}
+	if len(b.Tags) != 2 {
+		t.Errorf("tags = %v", b.Tags)
+	}
+}
+
+func TestHandleUpdateBoardMeta_EmptySlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/meta", map[string]string{"board_name": "X"})
+	// no withSlug
+	h.HandleUpdateBoardMeta(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleUpdateBoardSettings(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/settings", map[string]string{
+		"show_checkbox": "false", "view_mode": "list",
+		"card_position": "prepend", "expand_columns": "true",
+		"card_display_mode": "trim", "week_start": "monday",
+	})
+	r = withSlug(r, slug)
+	h.HandleUpdateBoardSettings(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if b.Settings.ShowCheckbox == nil || *b.Settings.ShowCheckbox {
+		t.Error("show_checkbox should be false")
+	}
+	if b.Settings.ViewMode == nil || *b.Settings.ViewMode != "list" {
+		t.Error("view_mode should be list")
+	}
+}
+
+func TestHandleUpdateBoardSettings_EmptySlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/settings", map[string]string{"show_checkbox": "true"})
+	h.HandleUpdateBoardSettings(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleSetBoardIcon(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/icon", map[string]string{"icon": "🎯"})
+	r = withSlug(r, slug)
+	h.HandleSetBoardIcon(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if b.Icon != "🎯" {
+		t.Errorf("icon = %q", b.Icon)
+	}
+}
+
+func TestHandleSetBoardIcon_EmptySlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/icon", map[string]string{"icon": "🎯"})
+	h.HandleSetBoardIcon(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+// --- Page handler tests ---
+
+func TestBoardViewPage(t *testing.T) {
+	h, slug := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/board/"+slug, nil)
+	r = withSlug(r, slug)
+	h.BoardViewPage(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if w.Body.Len() == 0 {
+		t.Error("expected non-empty HTML")
+	}
+}
+
+func TestBoardViewPage_EmptySlug(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/board/", nil)
+	h.BoardViewPage(w, r)
+	if w.Code != 400 {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestBoardViewPage_NotFound(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/board/nonexistent", nil)
+	r = withSlug(r, "nonexistent")
+	h.BoardViewPage(w, r)
+	if w.Code != 303 {
+		t.Fatalf("status = %d, want 303 redirect", w.Code)
+	}
+}
+
+func TestBoardViewPage_DesktopLastBoard(t *testing.T) {
+	h, slug := setupTestHandler(t)
+	h.IsDesktop = true
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/board/"+slug, nil)
+	r = withSlug(r, slug)
+	h.BoardViewPage(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	s := h.loadSettings()
+	if s.LastBoard != slug {
+		t.Errorf("last_board = %q, want %q", s.LastBoard, slug)
+	}
+}
+
+func TestBoardContent(t *testing.T) {
+	h, slug := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/board/"+slug+"/content", nil)
+	r = withSlug(r, slug)
+	h.BoardContent(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if w.Body.Len() == 0 {
+		t.Error("expected non-empty content")
+	}
+}
+
+func TestBoardContent_EmptySlug(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/board//content", nil)
+	h.BoardContent(w, r)
+	if w.Code != 400 {
+		t.Fatalf("status = %d, want 400", w.Code)
+	}
+}
+
+func TestBoardContent_NotFound(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/board/nonexistent/content", nil)
+	r = withSlug(r, "nonexistent")
+	h.BoardContent(w, r)
+	if w.Code != 404 {
+		t.Fatalf("status = %d, want 404", w.Code)
+	}
+}
+
+func TestExportHandler(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	handler := h.ExportHandler()
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/export", nil)
+	handler.ServeHTTP(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	ct := w.Header().Get("Content-Type")
+	if ct != "application/zip" {
+		t.Errorf("content-type = %q, want application/zip", ct)
+	}
+}
+
+func TestSettingsHandler(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	handler := h.SettingsHandler()
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/settings", nil)
+	handler.ServeHTTP(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if w.Body.Len() == 0 {
+		t.Error("expected non-empty settings page")
+	}
+}
+
+// --- Helper/utility function tests ---
+
+func TestSplitTags(t *testing.T) {
+	cases := []struct {
+		in   string
+		want int
+	}{
+		{"go, web, api", 3},
+		{"", 0},
+		{",,,", 0},
+		{"single", 1},
+		{" spaced , tags ", 2},
+	}
+	for _, tc := range cases {
+		got := splitTags(tc.in)
+		if len(got) != tc.want {
+			t.Errorf("splitTags(%q) = %d tags, want %d", tc.in, len(got), tc.want)
+		}
+	}
+}
+
+func TestEnsureMember(t *testing.T) {
+	b := &models.Board{Members: []string{"alice"}}
+	ensureMember(b, "alice")
+	if len(b.Members) != 1 {
+		t.Error("duplicate added")
+	}
+	ensureMember(b, "bob")
+	if len(b.Members) != 2 {
+		t.Error("new member not added")
+	}
+}
+
+func TestValidateIndices(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{
+			{Name: "A", Cards: []models.Card{{Title: "1"}, {Title: "2"}}},
+		},
+	}
+	if err := validateIndices(b, 0, 0); err != nil {
+		t.Errorf("valid: %v", err)
+	}
+	if err := validateIndices(b, 0, 1); err != nil {
+		t.Errorf("valid: %v", err)
+	}
+	if err := validateIndices(b, -1, 0); err == nil {
+		t.Error("expected error for negative col")
+	}
+	if err := validateIndices(b, 1, 0); err == nil {
+		t.Error("expected error for out-of-range col")
+	}
+	if err := validateIndices(b, 0, 5); err == nil {
+		t.Error("expected error for out-of-range card")
+	}
+	if err := validateIndices(b, 0, -1); err == nil {
+		t.Error("expected error for negative card")
+	}
+}
+
+func TestRemoveCardAt(t *testing.T) {
+	cards := []models.Card{{Title: "A"}, {Title: "B"}, {Title: "C"}}
+	result := removeCardAt(cards, 1)
+	if len(result) != 2 {
+		t.Fatalf("len = %d", len(result))
+	}
+	if result[0].Title != "A" || result[1].Title != "C" {
+		t.Errorf("got %v", result)
+	}
+}
+
+func TestSortCardsByName(t *testing.T) {
+	cards := []models.Card{{Title: "Banana"}, {Title: "apple"}, {Title: "cherry"}}
+	sortCardsByName(cards)
+	if cards[0].Title != "apple" {
+		t.Errorf("first = %q", cards[0].Title)
+	}
+}
+
+func TestSortCardsByPriority(t *testing.T) {
+	cards := []models.Card{
+		{Title: "Low", Priority: "low"},
+		{Title: "Crit", Priority: "critical"},
+		{Title: "Med", Priority: "medium"},
+	}
+	sortCardsByPriority(cards)
+	if cards[0].Title != "Crit" {
+		t.Errorf("first = %q", cards[0].Title)
+	}
+}
+
+func TestSortCardsByDue(t *testing.T) {
+	cards := []models.Card{
+		{Title: "No due"},
+		{Title: "Later", Due: "2026-12-01"},
+		{Title: "Sooner", Due: "2026-01-01"},
+	}
+	sortCardsByDue(cards)
+	if cards[0].Title != "Sooner" {
+		t.Errorf("first = %q", cards[0].Title)
+	}
+	if cards[2].Title != "No due" {
+		t.Errorf("last = %q", cards[2].Title)
+	}
+}
+
+func TestPriorityRank(t *testing.T) {
+	cases := map[string]int{
+		"critical": 4, "high": 3, "medium": 2, "low": 1, "": 0, "unknown": 0,
+	}
+	for p, want := range cases {
+		if got := priorityRank(p); got != want {
+			t.Errorf("priorityRank(%q) = %d, want %d", p, got, want)
+		}
+	}
+}
+
+func TestFlattenCards(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{
+			{Name: "A", Cards: []models.Card{{Title: "1"}, {Title: "2"}}},
+			{Name: "B", Cards: []models.Card{{Title: "3"}}},
+		},
+	}
+	all := flattenCards(b)
+	if len(all) != 3 {
+		t.Fatalf("len = %d", len(all))
+	}
+	if all[0].ColIdx != 0 || all[0].CardIdx != 0 || all[0].ColumnName != "A" {
+		t.Errorf("first = %+v", all[0])
+	}
+	if all[2].ColIdx != 1 || all[2].CardIdx != 0 || all[2].ColumnName != "B" {
+		t.Errorf("last = %+v", all[2])
+	}
+}
+
+func TestReorderColumns(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{
+			{Name: "A"}, {Name: "B"}, {Name: "C"},
+		},
+	}
+
+	// Move C to front
+	if err := reorderColumns(b, "C", ""); err != nil {
+		t.Fatal(err)
+	}
+	if b.Columns[0].Name != "C" {
+		t.Errorf("first = %q", b.Columns[0].Name)
+	}
+
+	// Move A after C
+	if err := reorderColumns(b, "A", "C"); err != nil {
+		t.Fatal(err)
+	}
+	if b.Columns[0].Name != "C" || b.Columns[1].Name != "A" {
+		t.Errorf("order = %v %v %v", b.Columns[0].Name, b.Columns[1].Name, b.Columns[2].Name)
+	}
+
+	// Nonexistent column
+	if err := reorderColumns(b, "Z", ""); err == nil {
+		t.Error("expected error for nonexistent column")
+	}
+}
+
+func TestRelativeTime(t *testing.T) {
+	if relativeTime(time.Time{}) != "" {
+		t.Error("zero time should return empty")
+	}
+	if got := relativeTime(time.Now().Add(-30 * time.Second)); got != "just now" {
+		t.Errorf("30s ago = %q", got)
+	}
+	if got := relativeTime(time.Now().Add(-1 * time.Minute)); got != "1m ago" {
+		t.Errorf("1m ago = %q", got)
+	}
+	if got := relativeTime(time.Now().Add(-5 * time.Minute)); got != "5m ago" {
+		t.Errorf("5m ago = %q", got)
+	}
+	if got := relativeTime(time.Now().Add(-1 * time.Hour)); got != "1h ago" {
+		t.Errorf("1h ago = %q", got)
+	}
+	if got := relativeTime(time.Now().Add(-3 * time.Hour)); got != "3h ago" {
+		t.Errorf("3h ago = %q", got)
+	}
+	if got := relativeTime(time.Now().Add(-24 * time.Hour)); got != "1d ago" {
+		t.Errorf("1d ago = %q", got)
+	}
+	if got := relativeTime(time.Now().Add(-5 * 24 * time.Hour)); got != "5d ago" {
+		t.Errorf("5d ago = %q", got)
+	}
+	if got := relativeTime(time.Now().Add(-60 * 24 * time.Hour)); !strings.Contains(got, "200") {
+		// Should be formatted as a date
+		if len(got) < 5 {
+			t.Errorf("60d ago = %q, expected date format", got)
+		}
+	}
+}
+
+func TestCollectAllTags(t *testing.T) {
+	boards := []BoardSummary{
+		{Tags: []string{"go", "web"}},
+		{Tags: []string{"web", "api"}},
+		{Tags: nil},
+	}
+	tags := collectAllTags(boards)
+	if len(tags) != 3 {
+		t.Fatalf("len = %d, want 3", len(tags))
+	}
+	// Should be sorted
+	if tags[0] != "api" || tags[1] != "go" || tags[2] != "web" {
+		t.Errorf("tags = %v", tags)
+	}
+}
+
+func TestSortBoardsWithPins(t *testing.T) {
+	boards := []BoardSummary{
+		{Name: "C", Slug: "c"},
+		{Name: "A", Slug: "a"},
+		{Name: "B", Slug: "b"},
+	}
+	result := sortBoardsWithPins(boards, []string{"b"})
+	if result[0].Slug != "b" {
+		t.Errorf("first = %q, want pinned 'b'", result[0].Slug)
+	}
+	if !result[0].Pinned {
+		t.Error("b should be pinned")
+	}
+	if result[1].Slug != "a" {
+		t.Errorf("second = %q, want 'a'", result[1].Slug)
+	}
+}
+
+func TestToBoardSummariesFast(t *testing.T) {
+	infos := []parser.BoardSummaryInfo{
+		{
+			Board:       models.Board{Name: "Test", FilePath: "/test.md", Icon: "🚀"},
+			CardCount:   5,
+			DoneCount:   2,
+			ColumnCount: 3,
+		},
+	}
+	summaries := toBoardSummariesFast(infos)
+	if len(summaries) != 1 {
+		t.Fatalf("len = %d", len(summaries))
+	}
+	if summaries[0].Name != "Test" {
+		t.Errorf("name = %q", summaries[0].Name)
+	}
+	if summaries[0].CardCount != 5 {
+		t.Errorf("card_count = %d", summaries[0].CardCount)
+	}
+	if summaries[0].DoneCount != 2 {
+		t.Errorf("done_count = %d", summaries[0].DoneCount)
+	}
+	if summaries[0].ColumnCount != 3 {
+		t.Errorf("column_count = %d", summaries[0].ColumnCount)
+	}
+	if summaries[0].Icon != "🚀" {
+		t.Errorf("icon = %q", summaries[0].Icon)
+	}
+}
+
+// --- Additional edge-case handler tests ---
+
+func TestHandleMoveCard_MissingFields(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+
+	// Missing col_idx
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards/move", map[string]string{
+		"card_idx": "0", "target_column": "Done",
+	})
+	r = withSlug(r, slug)
+	h.HandleMoveCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing card_idx
+	w = httptest.NewRecorder()
+	r = postForm("/board/"+slug+"/cards/move", map[string]string{
+		"col_idx": "0", "target_column": "Done",
+	})
+	r = withSlug(r, slug)
+	h.HandleMoveCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing target_column
+	w = httptest.NewRecorder()
+	r = postForm("/board/"+slug+"/cards/move", map[string]string{
+		"col_idx": "0", "card_idx": "0",
+	})
+	r = withSlug(r, slug)
+	h.HandleMoveCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing slug
+	w = httptest.NewRecorder()
+	r = postForm("/board/x/cards/move", map[string]string{
+		"col_idx": "0", "card_idx": "0", "target_column": "Done",
+	})
+	h.HandleMoveCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleReorderCard_MissingFields(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+
+	// Missing col_idx
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/cards/reorder", map[string]string{
+		"card_idx": "0", "column": "Todo",
+	})
+	r = withSlug(r, slug)
+	h.HandleReorderCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing card_idx
+	w = httptest.NewRecorder()
+	r = postForm("/board/"+slug+"/cards/reorder", map[string]string{
+		"col_idx": "0", "column": "Todo",
+	})
+	r = withSlug(r, slug)
+	h.HandleReorderCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing column
+	w = httptest.NewRecorder()
+	r = postForm("/board/"+slug+"/cards/reorder", map[string]string{
+		"col_idx": "0", "card_idx": "0",
+	})
+	r = withSlug(r, slug)
+	h.HandleReorderCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing slug
+	w = httptest.NewRecorder()
+	r = postForm("/board/x/cards/reorder", map[string]string{
+		"col_idx": "0", "card_idx": "0", "column": "Todo",
+	})
+	h.HandleReorderCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleDeleteCard_MissingFields(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+
+	// Missing slug
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/cards/delete", map[string]string{
+		"col_idx": "0", "card_idx": "0",
+	})
+	h.HandleDeleteCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleToggleComplete_MissingFields(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+
+	// Missing slug
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/cards/complete", map[string]string{
+		"col_idx": "0", "card_idx": "0",
+	})
+	h.HandleToggleComplete(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	// Missing col_idx
+	w = httptest.NewRecorder()
+	r = postForm("/board/"+slug+"/cards/complete", map[string]string{"card_idx": "0"})
+	r = withSlug(r, slug)
+	h.HandleToggleComplete(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleEditCard_MissingFields(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+
+	// Missing slug
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/cards/edit", map[string]string{
+		"col_idx": "0", "card_idx": "0", "title": "X",
+	})
+	h.HandleEditCard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleCreateColumn_MissingSlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/columns", map[string]string{"column_name": "New"})
+	h.HandleCreateColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleRenameColumn_MissingSlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/columns/rename", map[string]string{
+		"old_name": "Todo", "new_name": "New",
+	})
+	h.HandleRenameColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleDeleteColumn_MissingSlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/columns/delete", map[string]string{"column_name": "Todo"})
+	h.HandleDeleteColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleSortColumn_MissingSlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/columns/sort", map[string]string{
+		"col_idx": "0", "sort_by": "name",
+	})
+	h.HandleSortColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleMoveColumn_MissingSlug(t *testing.T) {
+	h, _ := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/x/columns/move", map[string]string{"column": "Todo"})
+	h.HandleMoveColumn(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestOneOf(t *testing.T) {
+	if oneOf("dark", "system", "dark", "light") != "dark" {
+		t.Error("valid value not returned")
+	}
+	if oneOf("invalid", "system", "dark", "light") != "system" {
+		t.Error("default not returned for invalid")
+	}
+}
+
+func TestLayoutSettings(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	s := defaultSettings()
+	ls := h.layoutSettings(s)
+	if ls.Theme != "system" {
+		t.Errorf("theme = %q", ls.Theme)
+	}
+	if ls.Version != "test" {
+		t.Errorf("version = %q", ls.Version)
+	}
+}
+
+func TestHandleUpdateBoardMeta_TagColors(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+slug+"/meta", map[string]string{
+		"board_name": "Test", "tag_colors": `{"go":"#00ff00"}`,
+	})
+	r = withSlug(r, slug)
+	h.HandleUpdateBoardMeta(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	b, _ := h.ws.LoadBoard(slug)
+	if b.TagColors == nil || b.TagColors["go"] != "#00ff00" {
+		t.Errorf("tag_colors = %v", b.TagColors)
+	}
+}
+
+func TestHandleConflict(t *testing.T) {
+	h, slug := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	h.handleConflict(w, slug)
+	if w.Code != 409 {
+		t.Fatalf("status = %d, want 409", w.Code)
+	}
+}
+
+func TestRenderFullPageAndPartial(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	model, _ := h.boardListModel()
+
+	// renderFullPage
+	w := httptest.NewRecorder()
+	renderFullPage(w, h.boardListTpl, model)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+	if ct := w.Header().Get("Content-Type"); ct != "text/html; charset=utf-8" {
+		t.Errorf("content-type = %q", ct)
+	}
+}
+
+func TestLoadSettingsFromDir(t *testing.T) {
+	// Nonexistent dir returns defaults
+	s := LoadSettingsFromDir("/nonexistent/path/xyz")
+	if s.Theme != "system" {
+		t.Errorf("theme = %q", s.Theme)
+	}
+
+	// Valid dir with settings
+	dir := t.TempDir()
+	data := []byte(`{"theme":"dark","site_name":"Test"}`)
+	os.WriteFile(filepath.Join(dir, "settings.json"), data, 0644)
+	s = LoadSettingsFromDir(dir)
+	if s.Theme != "dark" {
+		t.Errorf("theme = %q", s.Theme)
+	}
+	if s.SiteName != "Test" {
+		t.Errorf("site_name = %q", s.SiteName)
+	}
+}
+
+func TestHandleSetBoardIconList_EmptyName(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/icon", map[string]string{"icon": "🚀"})
+	h.HandleSetBoardIconList(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleSetBoardIconList_NonexistentBoard(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/icon", map[string]string{"name": "nonexistent", "icon": "🚀"})
+	h.HandleSetBoardIconList(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestHandleSidebarBoards_NoSlug(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/api/boards/sidebar", nil)
+	h.HandleSidebarBoards(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestResolveSettings_ViewModeTable(t *testing.T) {
+	global := defaultSettings()
+	vm := "table"
+	bs := models.BoardSettings{ViewMode: &vm}
+	rs := resolveSettings(global, bs)
+	if rs.ViewMode != "list" {
+		t.Errorf("table should map to list, got %q", rs.ViewMode)
+	}
+}
+
+func TestResolveSettings_WeekStart(t *testing.T) {
+	global := defaultSettings()
+	ws := "monday"
+	bs := models.BoardSettings{WeekStart: &ws}
+	rs := resolveSettings(global, bs)
+	if rs.WeekStart != "monday" {
+		t.Errorf("week_start = %q", rs.WeekStart)
+	}
+}
+
+func TestResolveSettings_CardDisplayMode(t *testing.T) {
+	global := defaultSettings()
+	cdm := "trim"
+	bs := models.BoardSettings{CardDisplayMode: &cdm}
+	rs := resolveSettings(global, bs)
+	if rs.CardDisplayMode != "trim" {
+		t.Errorf("card_display_mode = %q", rs.CardDisplayMode)
+	}
+}
+
+func TestToBoardSettingsView_AllFields(t *testing.T) {
+	vm := "list"
+	cdm := "hide"
+	ws := "monday"
+	v := toBoardSettingsView(models.BoardSettings{
+		ViewMode:        &vm,
+		CardDisplayMode: &cdm,
+		WeekStart:       &ws,
+	})
+	if v.ViewMode != "list" {
+		t.Errorf("view_mode = %q", v.ViewMode)
+	}
+	if v.CardDisplayMode != "hide" {
+		t.Errorf("card_display_mode = %q", v.CardDisplayMode)
+	}
+	if v.WeekStart != "monday" {
+		t.Errorf("week_start = %q", v.WeekStart)
+	}
+}
+
+func TestHandleCreateBoard_Duplicate(t *testing.T) {
+	h, _ := setupTestHandler(t)
+	w := httptest.NewRecorder()
+	r := postForm("/boards/new", map[string]string{"name": "test-board"})
+	h.HandleCreateBoard(w, r)
+	// Should get an error partial since test-board already exists
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+}
+
+func TestFuncMap(t *testing.T) {
+	fm := funcMap()
+	mdFunc, ok := fm["md"]
+	if !ok {
+		t.Fatal("md function not found")
+	}
+	fn := mdFunc.(func(string) template.HTML)
+	result := fn("**bold**")
+	if !strings.Contains(string(result), "<strong>") {
+		t.Errorf("md output = %q", result)
+	}
+	// Test with link
+	result = fn("https://example.com")
+	if !strings.Contains(string(result), "target=\"_blank\"") {
+		t.Errorf("link output = %q", result)
+	}
+}
+
+func TestSortCardsByDue_BothEmpty(t *testing.T) {
+	cards := []models.Card{
+		{Title: "A"},
+		{Title: "B"},
+	}
+	sortCardsByDue(cards)
+	// Order should remain stable
+	if cards[0].Title != "A" {
+		t.Errorf("first = %q", cards[0].Title)
+	}
+}
+
+func TestReorderColumns_WithCollapse(t *testing.T) {
+	b := &models.Board{
+		Columns:      []models.Column{{Name: "A"}, {Name: "B"}, {Name: "C"}},
+		ListCollapse: []bool{true, false, true},
+	}
+	if err := reorderColumns(b, "C", "A"); err != nil {
+		t.Fatal(err)
+	}
+	// C should be after A: A, C, B
+	if b.Columns[0].Name != "A" || b.Columns[1].Name != "C" || b.Columns[2].Name != "B" {
+		t.Errorf("order = %s %s %s", b.Columns[0].Name, b.Columns[1].Name, b.Columns[2].Name)
+	}
+	// Collapse should follow: A=true, C=true, B=false
+	if !b.ListCollapse[0] || !b.ListCollapse[1] || b.ListCollapse[2] {
+		t.Errorf("collapse = %v", b.ListCollapse)
 	}
 }

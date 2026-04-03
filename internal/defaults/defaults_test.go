@@ -1,0 +1,459 @@
+package defaults
+
+import (
+	"encoding/json"
+	"os"
+	"path/filepath"
+	"testing"
+)
+
+// --- helpers for testing Load/Save without polluting real config ---
+
+func backupConfig(t *testing.T) func() {
+	t.Helper()
+	path := desktopConfigPath()
+	if path == "" {
+		return func() {}
+	}
+	orig, err := os.ReadFile(path)
+	if err != nil {
+		// no existing file — cleanup means removing whatever the test wrote
+		return func() {
+			os.Remove(path)
+		}
+	}
+	return func() {
+		os.WriteFile(path, orig, 0o644)
+	}
+}
+
+func TestDesktopConfig_LoadSave(t *testing.T) {
+	restore := backupConfig(t)
+	defer restore()
+
+	want := &DesktopConfig{
+		LastWorkspace:    "/tmp/test-workspace",
+		RecentWorkspaces: []string{"/tmp/test-workspace", "/tmp/other"},
+		WindowWidth:      1200,
+		WindowHeight:     800,
+	}
+
+	if err := want.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	got := LoadDesktopConfig()
+
+	if got.LastWorkspace != want.LastWorkspace {
+		t.Errorf("LastWorkspace = %q, want %q", got.LastWorkspace, want.LastWorkspace)
+	}
+	if got.WindowWidth != want.WindowWidth {
+		t.Errorf("WindowWidth = %d, want %d", got.WindowWidth, want.WindowWidth)
+	}
+	if got.WindowHeight != want.WindowHeight {
+		t.Errorf("WindowHeight = %d, want %d", got.WindowHeight, want.WindowHeight)
+	}
+	if len(got.RecentWorkspaces) != len(want.RecentWorkspaces) {
+		t.Fatalf("RecentWorkspaces len = %d, want %d", len(got.RecentWorkspaces), len(want.RecentWorkspaces))
+	}
+	for i, ws := range want.RecentWorkspaces {
+		if got.RecentWorkspaces[i] != ws {
+			t.Errorf("RecentWorkspaces[%d] = %q, want %q", i, got.RecentWorkspaces[i], ws)
+		}
+	}
+}
+
+func TestDesktopConfig_AddRecent(t *testing.T) {
+	t.Run("most recent first", func(t *testing.T) {
+		c := &DesktopConfig{}
+		c.AddRecent("/a")
+		c.AddRecent("/b")
+		c.AddRecent("/c")
+
+		if c.RecentWorkspaces[0] != "/c" {
+			t.Errorf("first = %q, want /c", c.RecentWorkspaces[0])
+		}
+		if c.LastWorkspace != "/c" {
+			t.Errorf("LastWorkspace = %q, want /c", c.LastWorkspace)
+		}
+	})
+
+	t.Run("deduplication", func(t *testing.T) {
+		c := &DesktopConfig{}
+		c.AddRecent("/a")
+		c.AddRecent("/b")
+		c.AddRecent("/a") // re-add
+
+		if len(c.RecentWorkspaces) != 2 {
+			t.Fatalf("len = %d, want 2", len(c.RecentWorkspaces))
+		}
+		if c.RecentWorkspaces[0] != "/a" {
+			t.Errorf("first = %q, want /a (moved to front)", c.RecentWorkspaces[0])
+		}
+		if c.RecentWorkspaces[1] != "/b" {
+			t.Errorf("second = %q, want /b", c.RecentWorkspaces[1])
+		}
+	})
+
+	t.Run("cap at 10", func(t *testing.T) {
+		c := &DesktopConfig{}
+		for i := 0; i < 15; i++ {
+			c.AddRecent(filepath.Join("/ws", string(rune('a'+i))))
+		}
+		if len(c.RecentWorkspaces) != maxRecentWorkspaces {
+			t.Errorf("len = %d, want %d", len(c.RecentWorkspaces), maxRecentWorkspaces)
+		}
+	})
+}
+
+func TestDesktopConfig_CleanStale(t *testing.T) {
+	// Create real temp dirs
+	real1 := t.TempDir()
+	real2 := t.TempDir()
+	fake1 := "/tmp/liveboard-test-nonexistent-xyz123"
+	fake2 := "/tmp/liveboard-test-nonexistent-abc456"
+
+	c := &DesktopConfig{
+		LastWorkspace:    fake1,
+		RecentWorkspaces: []string{real1, fake1, real2, fake2},
+	}
+
+	c.CleanStale()
+
+	if len(c.RecentWorkspaces) != 2 {
+		t.Fatalf("len = %d, want 2", len(c.RecentWorkspaces))
+	}
+	if c.RecentWorkspaces[0] != real1 || c.RecentWorkspaces[1] != real2 {
+		t.Errorf("RecentWorkspaces = %v, want [%s %s]", c.RecentWorkspaces, real1, real2)
+	}
+	if c.LastWorkspace != "" {
+		t.Errorf("LastWorkspace = %q, want empty (was stale)", c.LastWorkspace)
+	}
+}
+
+func TestDesktopConfig_CleanStale_ValidLast(t *testing.T) {
+	realDir := t.TempDir()
+	c := &DesktopConfig{
+		LastWorkspace:    realDir,
+		RecentWorkspaces: []string{realDir},
+	}
+	c.CleanStale()
+	if c.LastWorkspace != realDir {
+		t.Errorf("LastWorkspace should remain %q, got %q", realDir, c.LastWorkspace)
+	}
+}
+
+func TestDesktopConfig_MissingFile(t *testing.T) {
+	// Write a config pointing to a nonexistent path, then load.
+	// But LoadDesktopConfig uses the hardcoded path.
+	// Instead, test that loading when the file has invalid JSON returns zero-value.
+
+	restore := backupConfig(t)
+	defer restore()
+
+	path := desktopConfigPath()
+	if path == "" {
+		t.Skip("cannot determine config path")
+	}
+
+	// Remove the file so LoadDesktopConfig hits the read-error branch
+	os.Remove(path)
+
+	cfg := LoadDesktopConfig()
+	if cfg.LastWorkspace != "" {
+		t.Errorf("LastWorkspace = %q, want empty", cfg.LastWorkspace)
+	}
+	if len(cfg.RecentWorkspaces) != 0 {
+		t.Errorf("RecentWorkspaces = %v, want empty", cfg.RecentWorkspaces)
+	}
+
+	// Also test invalid JSON
+	os.MkdirAll(filepath.Dir(path), 0o755)
+	os.WriteFile(path, []byte("{invalid json}"), 0o644)
+	cfg2 := LoadDesktopConfig()
+	if cfg2.LastWorkspace != "" {
+		t.Errorf("invalid JSON: LastWorkspace = %q, want empty", cfg2.LastWorkspace)
+	}
+}
+
+func TestDesktopConfigPath(t *testing.T) {
+	path := desktopConfigPath()
+	if path == "" {
+		t.Skip("UserHomeDir failed")
+	}
+	if filepath.Base(path) != "desktop.json" {
+		t.Errorf("config filename = %q, want desktop.json", filepath.Base(path))
+	}
+}
+
+func TestDesktopConfig_JSON_Roundtrip(t *testing.T) {
+	// Test marshal/unmarshal directly (doesn't touch filesystem)
+	want := DesktopConfig{
+		LastWorkspace:    "/test",
+		RecentWorkspaces: []string{"/test", "/other"},
+		WindowWidth:      800,
+		WindowHeight:     600,
+	}
+	data, err := json.Marshal(&want)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var got DesktopConfig
+	if err := json.Unmarshal(data, &got); err != nil {
+		t.Fatal(err)
+	}
+	if got.LastWorkspace != want.LastWorkspace || got.WindowWidth != want.WindowWidth {
+		t.Errorf("roundtrip mismatch: got %+v", got)
+	}
+}
+
+func TestWorkDir(t *testing.T) {
+	// WorkDir should return a non-empty string. If iCloud dir doesn't exist,
+	// it falls back to cwd.
+	dir, isCloud := WorkDir()
+	if dir == "" {
+		t.Error("WorkDir returned empty string")
+	}
+
+	// On most test machines, iCloud dir won't exist, so we get cwd
+	cwd, _ := os.Getwd()
+
+	home, _ := os.UserHomeDir()
+	icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
+	if _, err := os.Stat(icloud); err != nil {
+		// iCloud doesn't exist — should fall back to cwd
+		if isCloud {
+			t.Error("isCloud=true but iCloud dir doesn't exist")
+		}
+		if dir != cwd {
+			t.Errorf("WorkDir = %q, want cwd %q", dir, cwd)
+		}
+	} else {
+		// iCloud exists — should use it
+		if !isCloud {
+			t.Error("isCloud=false but iCloud dir exists")
+		}
+		if dir != icloud {
+			t.Errorf("WorkDir = %q, want %q", dir, icloud)
+		}
+	}
+}
+
+func TestWorkDir_Fallback(t *testing.T) {
+	// Verify WorkDir returns something valid regardless of environment
+	dir, _ := WorkDir()
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatalf("WorkDir returned non-existent path: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("WorkDir returned a non-directory path")
+	}
+}
+
+func TestDesktopWorkDir(t *testing.T) {
+	restore := backupConfig(t)
+	defer restore()
+
+	// Clear any saved config so it falls through to WorkDir logic
+	path := desktopConfigPath()
+	if path != "" {
+		os.Remove(path)
+	}
+
+	dir, _ := DesktopWorkDir()
+	if dir == "" {
+		t.Error("DesktopWorkDir returned empty string")
+	}
+	// Should be a real directory
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatalf("DesktopWorkDir returned non-existent path %q: %v", dir, err)
+	}
+	if !info.IsDir() {
+		t.Error("DesktopWorkDir returned a non-directory")
+	}
+}
+
+func TestDesktopWorkDir_SavedConfig(t *testing.T) {
+	restore := backupConfig(t)
+	defer restore()
+
+	// Create a temp dir and save it as LastWorkspace
+	tmpDir := t.TempDir()
+	cfg := &DesktopConfig{LastWorkspace: tmpDir}
+	if err := cfg.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	dir, isCloud := DesktopWorkDir()
+	if dir != tmpDir {
+		t.Errorf("DesktopWorkDir = %q, want saved workspace %q", dir, tmpDir)
+	}
+	if isCloud {
+		t.Error("isCloud should be false for saved workspace")
+	}
+}
+
+func TestDesktopWorkDir_StaleConfig(t *testing.T) {
+	restore := backupConfig(t)
+	defer restore()
+
+	// Save config pointing to nonexistent dir — should fall through
+	cfg := &DesktopConfig{LastWorkspace: "/tmp/liveboard-nonexistent-xyz789"}
+	if err := cfg.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	dir, _ := DesktopWorkDir()
+	if dir == "/tmp/liveboard-nonexistent-xyz789" {
+		t.Error("DesktopWorkDir should not return stale path")
+	}
+	if dir == "" {
+		t.Error("DesktopWorkDir returned empty string")
+	}
+}
+
+func TestDesktopConfig_SaveCreatesDir(t *testing.T) {
+	// Verify that Save creates the parent directory if needed.
+	// This is implicitly tested by LoadSave, but let's verify the file exists.
+	restore := backupConfig(t)
+	defer restore()
+
+	cfg := &DesktopConfig{LastWorkspace: "/test"}
+	if err := cfg.Save(); err != nil {
+		t.Fatalf("Save: %v", err)
+	}
+
+	path := desktopConfigPath()
+	if _, err := os.Stat(path); err != nil {
+		t.Errorf("config file not created: %v", err)
+	}
+}
+
+func TestDesktopWorkDir_RootCwd(t *testing.T) {
+	restore := backupConfig(t)
+	defer restore()
+
+	// Clear saved config
+	path := desktopConfigPath()
+	if path != "" {
+		os.Remove(path)
+	}
+
+	// Check if iCloud dir exists — if it does, DesktopWorkDir won't reach
+	// the "/" fallback regardless of cwd, so skip.
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Skip("no home dir")
+	}
+	icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
+	if _, err := os.Stat(icloud); err == nil {
+		t.Skip("iCloud dir exists, can't test root fallback")
+	}
+
+	// Save cwd and change to /
+	origDir, err := os.Getwd()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer os.Chdir(origDir)
+
+	if err := os.Chdir("/"); err != nil {
+		t.Fatal(err)
+	}
+
+	dir, isCloud := DesktopWorkDir()
+	if isCloud {
+		t.Error("expected isCloud=false")
+	}
+	// Should fall back to ~/LiveBoard (created if needed)
+	expected := filepath.Join(home, "LiveBoard")
+	if dir != expected {
+		t.Errorf("DesktopWorkDir from / = %q, want %q", dir, expected)
+	}
+	// Verify it was actually created
+	info, err := os.Stat(dir)
+	if err != nil {
+		t.Fatalf("fallback dir not created: %v", err)
+	}
+	if !info.IsDir() {
+		t.Error("fallback is not a directory")
+	}
+}
+
+func TestDesktopConfig_EmptyHome(t *testing.T) {
+	// Unset HOME to trigger desktopConfigPath() returning ""
+	origHome := os.Getenv("HOME")
+	os.Unsetenv("HOME")
+	defer os.Setenv("HOME", origHome)
+
+	// desktopConfigPath should return ""
+	p := desktopConfigPath()
+	if p != "" {
+		t.Errorf("desktopConfigPath = %q with no HOME, want empty", p)
+	}
+
+	// LoadDesktopConfig with no HOME => zero-value
+	cfg := LoadDesktopConfig()
+	if cfg.LastWorkspace != "" || len(cfg.RecentWorkspaces) != 0 {
+		t.Error("expected zero-value config with no HOME")
+	}
+
+	// Save with no HOME => nil error (no-op)
+	err := cfg.Save()
+	if err != nil {
+		t.Errorf("Save with no HOME: %v", err)
+	}
+}
+
+func TestWorkDir_NoHome(t *testing.T) {
+	origHome := os.Getenv("HOME")
+	os.Unsetenv("HOME")
+	defer os.Setenv("HOME", origHome)
+
+	dir, isCloud := WorkDir()
+	if isCloud {
+		t.Error("isCloud=true with no HOME")
+	}
+	// Should fall back to cwd
+	cwd, _ := os.Getwd()
+	if dir != cwd {
+		t.Errorf("WorkDir = %q, want cwd %q", dir, cwd)
+	}
+}
+
+func TestDesktopWorkDir_NoHome(t *testing.T) {
+	origHome := os.Getenv("HOME")
+	os.Unsetenv("HOME")
+	defer os.Setenv("HOME", origHome)
+
+	dir, isCloud := DesktopWorkDir()
+	if isCloud {
+		t.Error("isCloud=true with no HOME")
+	}
+	// LoadDesktopConfig returns zero (no HOME), WorkDir falls back to cwd
+	cwd, _ := os.Getwd()
+	if dir != cwd {
+		t.Errorf("DesktopWorkDir = %q, want cwd %q", dir, cwd)
+	}
+}
+
+func TestDesktopConfig_CleanStale_FileNotDir(t *testing.T) {
+	// A file (not directory) in RecentWorkspaces should be cleaned
+	tmpFile := filepath.Join(t.TempDir(), "afile")
+	os.WriteFile(tmpFile, []byte("hi"), 0o644)
+
+	c := &DesktopConfig{
+		LastWorkspace:    tmpFile,
+		RecentWorkspaces: []string{tmpFile},
+	}
+	c.CleanStale()
+
+	if len(c.RecentWorkspaces) != 0 {
+		t.Errorf("file entry not cleaned: %v", c.RecentWorkspaces)
+	}
+	if c.LastWorkspace != "" {
+		t.Errorf("LastWorkspace not cleared for file: %q", c.LastWorkspace)
+	}
+}

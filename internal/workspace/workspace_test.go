@@ -261,3 +261,238 @@ func TestGetDefaultColumns_FromConfig(t *testing.T) {
 		}
 	}
 }
+
+func TestListBoardSummaries(t *testing.T) {
+	ws := setupWorkspace(t)
+	createBoardFile(t, ws.Dir, "roadmap")
+	createBoardFile(t, ws.Dir, "sprints")
+
+	summaries, err := ws.ListBoardSummaries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(summaries) != 2 {
+		t.Fatalf("expected 2 summaries, got %d", len(summaries))
+	}
+	for _, s := range summaries {
+		if s.Board.FilePath == "" {
+			t.Error("expected FilePath to be set")
+		}
+		if s.ColumnCount != 2 {
+			t.Errorf("expected 2 columns, got %d", s.ColumnCount)
+		}
+		if s.CardCount != 1 {
+			t.Errorf("expected 1 card, got %d", s.CardCount)
+		}
+		if s.Board.UpdatedAt.IsZero() {
+			t.Error("expected UpdatedAt to be set")
+		}
+	}
+}
+
+func TestListBoardSummaries_Empty(t *testing.T) {
+	ws := setupWorkspace(t)
+	summaries, err := ws.ListBoardSummaries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(summaries) != 0 {
+		t.Errorf("expected 0 summaries, got %d", len(summaries))
+	}
+}
+
+func TestListBoardSummaries_SkipsReadmeAndDirs(t *testing.T) {
+	ws := setupWorkspace(t)
+	createBoardFile(t, ws.Dir, "roadmap")
+	if err := os.WriteFile(filepath.Join(ws.Dir, "README.md"), []byte("# Readme\n"), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(ws.Dir, "subdir"), 0755); err != nil {
+		t.Fatal(err)
+	}
+
+	summaries, err := ws.ListBoardSummaries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(summaries) != 1 {
+		t.Errorf("expected 1 summary (README and dirs excluded), got %d", len(summaries))
+	}
+}
+
+func TestListBoardSummaries_SkipsUnparseable(t *testing.T) {
+	ws := setupWorkspace(t)
+	createBoardFile(t, ws.Dir, "good")
+	// Write a file with broken frontmatter that parser.ParseSummary should still handle
+	if err := os.WriteFile(filepath.Join(ws.Dir, "bad.md"), []byte("not valid board content"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	summaries, err := ws.ListBoardSummaries()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// ParseSummary may or may not error on content without frontmatter;
+	// either way it should not crash and we get at least the good board
+	if len(summaries) < 1 {
+		t.Errorf("expected at least 1 summary, got %d", len(summaries))
+	}
+}
+
+func TestListBoardSummaries_BadDir(t *testing.T) {
+	ws := Open("/nonexistent/path")
+	_, err := ws.ListBoardSummaries()
+	if err == nil {
+		t.Error("expected error for nonexistent directory")
+	}
+}
+
+func TestListBoards_BadDir(t *testing.T) {
+	ws := Open("/nonexistent/path")
+	_, err := ws.ListBoards()
+	if err == nil {
+		t.Error("expected error for nonexistent directory")
+	}
+}
+
+func TestCreateBoard_WithSettingsDefaultColumns(t *testing.T) {
+	ws := setupWorkspace(t)
+	settingsContent := `{"default_columns": ["Inbox", "In Progress", "Review", "Shipped"]}`
+	if err := os.WriteFile(filepath.Join(ws.Dir, "settings.json"), []byte(settingsContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := ws.CreateBoard("roadmap")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	wantCols := []string{"Inbox", "In Progress", "Review", "Shipped"}
+	if len(b.Columns) != len(wantCols) {
+		t.Fatalf("expected %d columns, got %d", len(wantCols), len(b.Columns))
+	}
+	for i, want := range wantCols {
+		if b.Columns[i].Name != want {
+			t.Errorf("column[%d] = %q, want %q", i, b.Columns[i].Name, want)
+		}
+	}
+}
+
+func TestGetDefaultColumns_SettingsJsonTakesPrecedence(t *testing.T) {
+	ws := setupWorkspace(t)
+
+	// Create both settings.json and .liveboard/config.yaml
+	settingsContent := `{"default_columns": ["A", "B"]}`
+	if err := os.WriteFile(filepath.Join(ws.Dir, "settings.json"), []byte(settingsContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+	configDir := filepath.Join(ws.Dir, ".liveboard")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	configContent := "board:\n  default_columns:\n    - X\n    - Y\n    - Z\n"
+	if err := os.WriteFile(filepath.Join(configDir, "config.yaml"), []byte(configContent), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cols := ws.getDefaultColumns()
+	// settings.json should win
+	if len(cols) != 2 {
+		t.Fatalf("expected 2 columns from settings.json, got %d", len(cols))
+	}
+	if cols[0] != "A" || cols[1] != "B" {
+		t.Errorf("cols = %v, want [A B]", cols)
+	}
+}
+
+func TestGetDefaultColumns_InvalidSettingsJson(t *testing.T) {
+	ws := setupWorkspace(t)
+	// Write invalid JSON — should fall through to defaults
+	if err := os.WriteFile(filepath.Join(ws.Dir, "settings.json"), []byte("{bad json}"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cols := ws.getDefaultColumns()
+	if len(cols) != len(defaultColumns) {
+		t.Fatalf("expected fallback to default columns, got %d", len(cols))
+	}
+}
+
+func TestGetDefaultColumns_EmptySettingsJsonColumns(t *testing.T) {
+	ws := setupWorkspace(t)
+	// settings.json with empty default_columns — should fall through
+	if err := os.WriteFile(filepath.Join(ws.Dir, "settings.json"), []byte(`{"default_columns": []}`), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	cols := ws.getDefaultColumns()
+	if len(cols) != len(defaultColumns) {
+		t.Fatalf("expected fallback to default columns when settings has empty array, got %d", len(cols))
+	}
+}
+
+func TestCreateBoard_InvalidName(t *testing.T) {
+	ws := setupWorkspace(t)
+	_, err := ws.CreateBoard("../escape")
+	if err == nil {
+		t.Error("expected error for invalid board name")
+	}
+}
+
+func TestDeleteBoard_InvalidName(t *testing.T) {
+	ws := setupWorkspace(t)
+	err := ws.DeleteBoard("../escape")
+	if err == nil {
+		t.Error("expected error for invalid board name")
+	}
+}
+
+func TestLoadBoard_NotFound(t *testing.T) {
+	ws := setupWorkspace(t)
+	_, err := ws.LoadBoard("nonexistent")
+	if err == nil {
+		t.Error("expected error for missing board")
+	}
+}
+
+func TestLoadBoard_InvalidName(t *testing.T) {
+	ws := setupWorkspace(t)
+	_, err := ws.LoadBoard("../escape")
+	if err == nil {
+		t.Error("expected error for invalid board name")
+	}
+}
+
+func TestListBoards_SkipsUnparseableFiles(t *testing.T) {
+	ws := setupWorkspace(t)
+	createBoardFile(t, ws.Dir, "good")
+	// Write a non-board .md file that the parser will reject
+	if err := os.WriteFile(filepath.Join(ws.Dir, "broken.md"), []byte("not a board"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	boards, err := ws.ListBoards()
+	if err != nil {
+		t.Fatal(err)
+	}
+	// "broken.md" may or may not parse, but we should get at least the good board and no crash
+	if len(boards) < 1 {
+		t.Errorf("expected at least 1 board, got %d", len(boards))
+	}
+}
+
+func TestListBoards_SkipsNonMdFiles(t *testing.T) {
+	ws := setupWorkspace(t)
+	createBoardFile(t, ws.Dir, "roadmap")
+	if err := os.WriteFile(filepath.Join(ws.Dir, "notes.txt"), []byte("text file"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	boards, err := ws.ListBoards()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(boards) != 1 {
+		t.Errorf("expected 1 board (txt excluded), got %d", len(boards))
+	}
+}

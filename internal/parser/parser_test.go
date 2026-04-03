@@ -361,3 +361,313 @@ func TestParseMixedCheckboxAndPlain(t *testing.T) {
 		t.Error("third card: expected checkbox, completed")
 	}
 }
+
+// --- Edge case tests appended below ---
+
+func TestParseSummaryBasic(t *testing.T) {
+	info, err := ParseSummary(sampleBoard)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Board.Name != "Product Roadmap" {
+		t.Errorf("name = %q", info.Board.Name)
+	}
+	if info.ColumnCount != 3 {
+		t.Errorf("columns = %d, want 3", info.ColumnCount)
+	}
+	if info.CardCount != 4 {
+		t.Errorf("cards = %d, want 4", info.CardCount)
+	}
+	if info.DoneCount != 1 {
+		t.Errorf("done = %d, want 1", info.DoneCount)
+	}
+}
+
+func TestParseSummaryInvalidYAML(t *testing.T) {
+	md := "---\nname: [broken\n---\n\n## Col\n"
+	_, err := ParseSummary(md)
+	if err == nil {
+		t.Fatal("expected error for invalid YAML in ParseSummary")
+	}
+}
+
+func TestParseSummaryNoFrontmatter(t *testing.T) {
+	md := "## Col\n\n- [x] Done\n- [ ] Open\n"
+	info, err := ParseSummary(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.ColumnCount != 1 {
+		t.Errorf("columns = %d, want 1", info.ColumnCount)
+	}
+	if info.CardCount != 2 {
+		t.Errorf("cards = %d, want 2", info.CardCount)
+	}
+	if info.DoneCount != 1 {
+		t.Errorf("done = %d, want 1", info.DoneCount)
+	}
+}
+
+func TestParseSummaryUppercaseX(t *testing.T) {
+	md := "## Col\n\n- [X] Done with uppercase\n"
+	info, err := ParseSummary(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.DoneCount != 1 {
+		t.Errorf("done = %d, want 1", info.DoneCount)
+	}
+}
+
+func TestParseEmptyBoardFrontmatterOnly(t *testing.T) {
+	md := "---\nname: Empty Board\ndescription: no columns\n---\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board.Name != "Empty Board" {
+		t.Errorf("name = %q", board.Name)
+	}
+	if len(board.Columns) != 0 {
+		t.Errorf("columns = %d, want 0", len(board.Columns))
+	}
+}
+
+func TestParseColumnsWithNoCards(t *testing.T) {
+	md := "---\nname: Sparse\n---\n\n## Empty Column\n\n## Another Empty\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns) != 2 {
+		t.Fatalf("columns = %d, want 2", len(board.Columns))
+	}
+	if len(board.Columns[0].Cards) != 0 {
+		t.Errorf("first col cards = %d, want 0", len(board.Columns[0].Cards))
+	}
+	if len(board.Columns[1].Cards) != 0 {
+		t.Errorf("second col cards = %d, want 0", len(board.Columns[1].Cards))
+	}
+}
+
+func TestParseUppercaseXCheckbox(t *testing.T) {
+	md := "## Done\n\n- [X] Completed with uppercase X\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if !card.Completed {
+		t.Error("card with [X] should be completed")
+	}
+}
+
+func TestParseUnicodeInTitleAndMetadata(t *testing.T) {
+	md := "## 🚀 Sprint\n\n- [ ] Lörem ïpsum 日本語タスク\n  assignee: José García\n  priority: high\n  custom-note: données résumé\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board.Columns[0].Name != "🚀 Sprint" {
+		t.Errorf("col name = %q", board.Columns[0].Name)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Title != "Lörem ïpsum 日本語タスク" {
+		t.Errorf("title = %q", card.Title)
+	}
+	if card.Assignee != "José García" {
+		t.Errorf("assignee = %q", card.Assignee)
+	}
+	if card.Metadata["custom-note"] != "données résumé" {
+		t.Errorf("custom-note = %q", card.Metadata["custom-note"])
+	}
+}
+
+func TestParseSpecialCharsInTitle(t *testing.T) {
+	md := "## Todo\n\n- [ ] Fix \"quotes\" and [brackets] & <angles>\n- Plain item with (parens) + {braces}\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := board.Columns[0].Cards
+	if len(cards) != 2 {
+		t.Fatalf("cards = %d, want 2", len(cards))
+	}
+	if cards[0].Title != `Fix "quotes" and [brackets] & <angles>` {
+		t.Errorf("title = %q", cards[0].Title)
+	}
+	if cards[1].Title != "Plain item with (parens) + {braces}" {
+		t.Errorf("title = %q", cards[1].Title)
+	}
+}
+
+func TestParseNoFrontmatter(t *testing.T) {
+	md := "## Col A\n\n- [ ] Task one\n\n## Col B\n\n- [ ] Task two\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board.Name != "" {
+		t.Errorf("name should be empty, got %q", board.Name)
+	}
+	if len(board.Columns) != 2 {
+		t.Fatalf("columns = %d, want 2", len(board.Columns))
+	}
+	if len(board.Columns[0].Cards) != 1 || len(board.Columns[1].Cards) != 1 {
+		t.Errorf("expected 1 card in each column")
+	}
+}
+
+func TestParseCardBeforeAnyColumn(t *testing.T) {
+	// A card defined before any column heading gets attached to the first
+	// column encountered (flushed when the next card is parsed).
+	md := "- [ ] Orphan card\n\n## Real Column\n\n- [ ] Real card\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns) != 1 {
+		t.Fatalf("columns = %d, want 1", len(board.Columns))
+	}
+	// Both cards end up in "Real Column"
+	if len(board.Columns[0].Cards) != 2 {
+		t.Errorf("cards = %d, want 2", len(board.Columns[0].Cards))
+	}
+}
+
+func TestParseTagsWithEmptyEntries(t *testing.T) {
+	md := "## Todo\n\n- [ ] Task\n  tags: a,,b, ,c\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	// Empty entries should be filtered out
+	for _, tag := range card.Tags {
+		if tag == "" {
+			t.Error("empty tag should not be present")
+		}
+	}
+	if len(card.Tags) != 3 {
+		t.Errorf("tags = %v, want [a b c]", card.Tags)
+	}
+}
+
+func TestParseCollapseFewerThanColumns(t *testing.T) {
+	md := "---\nname: Test\nlist-collapse:\n    - true\n---\n\n## A\n\n## B\n\n## C\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns) != 3 {
+		t.Fatalf("columns = %d", len(board.Columns))
+	}
+	if !board.Columns[0].Collapsed {
+		t.Error("col A should be collapsed")
+	}
+	if board.Columns[1].Collapsed {
+		t.Error("col B should not be collapsed (no collapse entry)")
+	}
+	if board.Columns[2].Collapsed {
+		t.Error("col C should not be collapsed (no collapse entry)")
+	}
+}
+
+func TestParseNonIndentedLineBreaksCard(t *testing.T) {
+	// A non-indented, non-card, non-heading line after card metadata
+	md := "## Todo\n\n- [ ] Task\n  priority: high\nsome random line\n- [ ] Next task\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	cards := board.Columns[0].Cards
+	if len(cards) != 2 {
+		t.Fatalf("cards = %d, want 2", len(cards))
+	}
+	if cards[0].Priority != "high" {
+		t.Errorf("first card priority = %q", cards[0].Priority)
+	}
+}
+
+func TestParseSummaryFrontmatterOnly(t *testing.T) {
+	md := "---\nname: Just Frontmatter\n---\n"
+	info, err := ParseSummary(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.Board.Name != "Just Frontmatter" {
+		t.Errorf("name = %q", info.Board.Name)
+	}
+	if info.ColumnCount != 0 || info.CardCount != 0 || info.DoneCount != 0 {
+		t.Errorf("counts should all be 0: col=%d card=%d done=%d", info.ColumnCount, info.CardCount, info.DoneCount)
+	}
+}
+
+func TestParseMultipleCardsFlushBetweenColumns(t *testing.T) {
+	// Ensure the last card in col A is flushed when col B starts
+	md := "## A\n\n- [ ] Card in A\n  assignee: alice\n\n## B\n\n- [ ] Card in B\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns[0].Cards) != 1 {
+		t.Fatalf("col A cards = %d, want 1", len(board.Columns[0].Cards))
+	}
+	if board.Columns[0].Cards[0].Assignee != "alice" {
+		t.Errorf("col A card assignee = %q", board.Columns[0].Cards[0].Assignee)
+	}
+	if len(board.Columns[1].Cards) != 1 {
+		t.Fatalf("col B cards = %d, want 1", len(board.Columns[1].Cards))
+	}
+}
+
+func TestParseInlineTagsMergedWithMetaTags(t *testing.T) {
+	md := "## Todo\n\n- [ ] Task #inline-tag\n  tags: meta-tag\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if len(card.Tags) != 2 {
+		t.Fatalf("tags = %v, want [inline-tag meta-tag]", card.Tags)
+	}
+	if card.Tags[0] != "inline-tag" || card.Tags[1] != "meta-tag" {
+		t.Errorf("tags = %v", card.Tags)
+	}
+	if len(card.InlineTags) != 1 || card.InlineTags[0] != "inline-tag" {
+		t.Errorf("inline_tags = %v", card.InlineTags)
+	}
+}
+
+func TestParseEmptyContent(t *testing.T) {
+	board, err := Parse("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(board.Columns) != 0 {
+		t.Errorf("columns = %d, want 0", len(board.Columns))
+	}
+}
+
+func TestParseSummaryEmptyContent(t *testing.T) {
+	info, err := ParseSummary("")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if info.ColumnCount != 0 || info.CardCount != 0 {
+		t.Errorf("expected all zeros")
+	}
+}
+
+func TestParseHTMLCommentIndented(t *testing.T) {
+	// HTML comment with leading whitespace should still be skipped
+	md := "## Todo\n\n- [ ] Task\n  <!-- some comment -->\n  priority: high\n"
+	board, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := board.Columns[0].Cards[0]
+	if card.Priority != "high" {
+		t.Errorf("priority = %q, want high", card.Priority)
+	}
+}

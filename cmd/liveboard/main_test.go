@@ -6,7 +6,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
+
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/defaults"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -371,5 +374,338 @@ func TestColumnMoveCmd(t *testing.T) {
 	}
 	if b.Columns[1].Name != "Done" {
 		t.Errorf("column[1] = %q, want %q", b.Columns[1].Name, "Done")
+	}
+}
+
+// --- Export command tests ---
+
+func TestExportCmd(t *testing.T) {
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "export-test")
+	suppressStdout(t)
+
+	outDir := filepath.Join(t.TempDir(), "exported")
+	cmd := exportCmd()
+	cmd.SetArgs([]string{"--output", outDir})
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+	entries, err := os.ReadDir(outDir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(entries) == 0 {
+		t.Error("expected exported files")
+	}
+}
+
+func TestExportCmd_DefaultOutput(t *testing.T) {
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "test")
+	suppressStdout(t)
+
+	old, _ := os.Getwd()
+	os.Chdir(t.TempDir())
+	t.Cleanup(func() { os.Chdir(old) })
+
+	cmd := exportCmd()
+	if err := cmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// --- Serve/MCP command construction tests ---
+
+func TestServeCmdFlags(t *testing.T) {
+	cmd := serveCmd()
+	if cmd.Use != "serve" {
+		t.Errorf("Use = %q", cmd.Use)
+	}
+	if cmd.Short == "" {
+		t.Error("missing Short description")
+	}
+	if f := cmd.Flags().Lookup("port"); f == nil {
+		t.Error("missing --port flag")
+	}
+	if f := cmd.Flags().Lookup("host"); f == nil {
+		t.Error("missing --host flag")
+	}
+	if f := cmd.Flags().Lookup("readonly"); f == nil {
+		t.Error("missing --readonly flag")
+	}
+}
+
+func TestMcpCmdFlags(t *testing.T) {
+	cmd := mcpCmd()
+	if cmd.Use != "mcp" {
+		t.Errorf("Use = %q", cmd.Use)
+	}
+	if cmd.Short == "" {
+		t.Error("missing Short description")
+	}
+}
+
+// --- Board list with description ---
+
+func TestBoardListCmd_WithDescription(t *testing.T) {
+	dir := setupCLI(t)
+	content := "---\nname: Test\ndescription: A test board\n---\n\n## Col\n"
+	os.WriteFile(filepath.Join(dir, "test.md"), []byte(content), 0644)
+	suppressStdout(t)
+
+	cmd := boardListCmd()
+	if err := cmd.RunE(cmd, nil); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// --- Card show with metadata ---
+
+func TestCardShowCmd_WithMetadata(t *testing.T) {
+	dir := setupCLI(t)
+	content := `---
+name: Meta Board
+---
+
+## Backlog
+
+- [ ] Rich card #frontend
+  tags: backend, api
+  assignee: alice
+  priority: high
+  due: 2026-03-25
+  Body text here.
+`
+	os.WriteFile(filepath.Join(dir, "metaboard.md"), []byte(content), 0644)
+	suppressStdout(t)
+
+	cmd := cardShowCmd()
+	if err := cmd.RunE(cmd, []string{"metaboard", "0", "0"}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// --- Parent command construction tests ---
+
+func TestBoardCmd_Subcommands(t *testing.T) {
+	cmd := boardCmd()
+	if cmd.Use != "board" {
+		t.Errorf("Use = %q", cmd.Use)
+	}
+	names := map[string]bool{}
+	for _, sub := range cmd.Commands() {
+		names[sub.Name()] = true
+	}
+	for _, want := range []string{"list", "create", "delete"} {
+		if !names[want] {
+			t.Errorf("missing subcommand %q", want)
+		}
+	}
+}
+
+func TestCardCmd_Subcommands(t *testing.T) {
+	cmd := cardCmd()
+	if cmd.Use != "card" {
+		t.Errorf("Use = %q", cmd.Use)
+	}
+	names := map[string]bool{}
+	for _, sub := range cmd.Commands() {
+		names[sub.Name()] = true
+	}
+	for _, want := range []string{"add", "move", "complete", "tag", "show", "delete"} {
+		if !names[want] {
+			t.Errorf("missing subcommand %q", want)
+		}
+	}
+}
+
+func TestColumnCmd_Subcommands(t *testing.T) {
+	cmd := columnCmd()
+	if cmd.Use != "column" {
+		t.Errorf("Use = %q", cmd.Use)
+	}
+	names := map[string]bool{}
+	for _, sub := range cmd.Commands() {
+		names[sub.Name()] = true
+	}
+	for _, want := range []string{"add", "move", "delete"} {
+		if !names[want] {
+			t.Errorf("missing subcommand %q", want)
+		}
+	}
+}
+
+// --- Card show completed card ---
+
+func TestCardShowCmd_Completed(t *testing.T) {
+	dir := setupCLI(t)
+	content := "---\nname: Done Board\n---\n\n## Done\n\n- [x] Finished task\n"
+	os.WriteFile(filepath.Join(dir, "doneboard.md"), []byte(content), 0644)
+	suppressStdout(t)
+
+	cmd := cardShowCmd()
+	if err := cmd.RunE(cmd, []string{"doneboard", "0", "0"}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// --- Serve command env var branches ---
+
+func TestServeCmdFlags_WithEnvVars(t *testing.T) {
+	t.Setenv("LIVEBOARD_HOST", "0.0.0.0")
+	t.Setenv("LIVEBOARD_PORT", "9090")
+	cmd := serveCmd()
+	f := cmd.Flags().Lookup("host")
+	if f == nil {
+		t.Fatal("missing --host flag")
+	}
+	if f.DefValue != "0.0.0.0" {
+		t.Errorf("host default = %q, want 0.0.0.0", f.DefValue)
+	}
+	pf := cmd.Flags().Lookup("port")
+	if pf == nil {
+		t.Fatal("missing --port flag")
+	}
+	if pf.DefValue != "9090" {
+		t.Errorf("port default = %q, want 9090", pf.DefValue)
+	}
+}
+
+func TestServeCmdFlags_WithInvalidPort(t *testing.T) {
+	t.Setenv("LIVEBOARD_PORT", "notaport")
+	cmd := serveCmd()
+	pf := cmd.Flags().Lookup("port")
+	if pf == nil {
+		t.Fatal("missing --port flag")
+	}
+	// Invalid port should fallback to default 7070
+	if pf.DefValue != "7070" {
+		t.Errorf("port default = %q, want 7070", pf.DefValue)
+	}
+}
+
+// --- PersistentPreRunE via rootCmd ---
+
+func TestRootCmd_PersistentPreRunE(t *testing.T) {
+	// Exercise main()'s PersistentPreRunE by building a root command
+	// with --dir flag and running board list through it
+	dir := t.TempDir()
+	content := "---\nname: PreRun Test\n---\n\n## Col\n"
+	os.WriteFile(filepath.Join(dir, "prerun.md"), []byte(content), 0644)
+	suppressStdout(t)
+
+	// Reset global state
+	workDir = ""
+	ws = nil
+	eng = nil
+
+	rootCmd := &cobra.Command{
+		Use:   "liveboard",
+		Short: "Markdown-native, local-first Kanban system",
+		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
+			if workDir == "" {
+				var cloud bool
+				workDir, cloud = defaults.WorkDir()
+				usingCloud = cloud
+			}
+			ws = workspace.Open(workDir)
+			eng = board.New()
+			return nil
+		},
+	}
+	rootCmd.PersistentFlags().StringVarP(&workDir, "dir", "d", "", "workspace directory")
+	rootCmd.AddCommand(boardCmd())
+
+	rootCmd.SetArgs([]string{"--dir", dir, "board", "list"})
+	if err := rootCmd.Execute(); err != nil {
+		t.Fatal(err)
+	}
+}
+
+// --- Error path tests for invalid args ---
+
+func TestCardMoveCmd_InvalidCardIdx(t *testing.T) {
+	suppressStdout(t)
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "myboard")
+
+	cmd := cardMoveCmd()
+	if err := cmd.RunE(cmd, []string{"myboard", "0", "notanum", "Done"}); err == nil {
+		t.Error("expected error for non-numeric card_idx")
+	}
+}
+
+func TestCardCompleteCmd_InvalidArgs(t *testing.T) {
+	suppressStdout(t)
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "myboard")
+
+	cmd := cardCompleteCmd()
+	if err := cmd.RunE(cmd, []string{"myboard", "bad", "0"}); err == nil {
+		t.Error("expected error for non-numeric col_idx")
+	}
+
+	cmd2 := cardCompleteCmd()
+	if err := cmd2.RunE(cmd2, []string{"myboard", "0", "bad"}); err == nil {
+		t.Error("expected error for non-numeric card_idx")
+	}
+}
+
+func TestCardTagCmd_InvalidArgs(t *testing.T) {
+	suppressStdout(t)
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "myboard")
+
+	cmd := cardTagCmd()
+	if err := cmd.RunE(cmd, []string{"myboard", "bad", "0", "tag"}); err == nil {
+		t.Error("expected error for non-numeric col_idx")
+	}
+
+	cmd2 := cardTagCmd()
+	if err := cmd2.RunE(cmd2, []string{"myboard", "0", "bad", "tag"}); err == nil {
+		t.Error("expected error for non-numeric card_idx")
+	}
+}
+
+func TestCardShowCmd_InvalidArgs(t *testing.T) {
+	suppressStdout(t)
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "myboard")
+
+	cmd := cardShowCmd()
+	if err := cmd.RunE(cmd, []string{"myboard", "bad", "0"}); err == nil {
+		t.Error("expected error for non-numeric col_idx")
+	}
+
+	cmd2 := cardShowCmd()
+	if err := cmd2.RunE(cmd2, []string{"myboard", "0", "bad"}); err == nil {
+		t.Error("expected error for non-numeric card_idx")
+	}
+}
+
+func TestCardDeleteCmd_InvalidArgs(t *testing.T) {
+	suppressStdout(t)
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "myboard")
+
+	cmd := cardDeleteCmd()
+	if err := cmd.RunE(cmd, []string{"myboard", "bad", "0"}); err == nil {
+		t.Error("expected error for non-numeric col_idx")
+	}
+
+	cmd2 := cardDeleteCmd()
+	if err := cmd2.RunE(cmd2, []string{"myboard", "0", "bad"}); err == nil {
+		t.Error("expected error for non-numeric card_idx")
+	}
+}
+
+func TestCardMoveCmd_InvalidColIdx(t *testing.T) {
+	suppressStdout(t)
+	dir := setupCLI(t)
+	createCLIBoard(t, dir, "myboard")
+
+	cmd := cardMoveCmd()
+	if err := cmd.RunE(cmd, []string{"myboard", "notanum", "0", "Done"}); err == nil {
+		t.Error("expected error for non-numeric col_idx")
 	}
 }
