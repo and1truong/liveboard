@@ -78,17 +78,25 @@ func Parse(content string) (*models.Board, error) {
 	scanner := bufio.NewScanner(strings.NewReader(body))
 	var currentCol *models.Column
 	var currentCard *models.Card
+	var bodyBuilder strings.Builder
+
+	flushCard := func() {
+		if currentCard != nil && currentCol != nil {
+			if bodyBuilder.Len() > 0 {
+				currentCard.Body = bodyBuilder.String()
+				bodyBuilder.Reset()
+			}
+			currentCol.Cards = append(currentCol.Cards, *currentCard)
+			currentCard = nil
+		}
+	}
 
 	for scanner.Scan() {
 		line := scanner.Text()
 
 		// H2 heading → new column.
 		if strings.HasPrefix(line, "## ") {
-			// Flush current card.
-			if currentCard != nil && currentCol != nil {
-				currentCol.Cards = append(currentCol.Cards, *currentCard)
-				currentCard = nil
-			}
+			flushCard()
 			colName := strings.TrimPrefix(line, "## ")
 			board.Columns = append(board.Columns, models.Column{Name: colName})
 			currentCol = &board.Columns[len(board.Columns)-1]
@@ -97,16 +105,14 @@ func Parse(content string) (*models.Board, error) {
 
 		// Checkbox card line: - [ ] or - [x]
 		if m := cardRe.FindStringSubmatch(line); m != nil {
-			// Flush previous card.
-			if currentCard != nil && currentCol != nil {
-				currentCol.Cards = append(currentCol.Cards, *currentCard)
-			}
+			flushCard()
 			completed := m[1] == "x" || m[1] == "X"
 			title := m[2]
 
 			// Extract inline hash tags from title.
 			var inlineTags []string
 			if matches := hashTagRe.FindAllStringSubmatch(title, -1); matches != nil {
+				inlineTags = make([]string, 0, len(matches))
 				for _, match := range matches {
 					inlineTags = append(inlineTags, match[1])
 				}
@@ -124,14 +130,12 @@ func Parse(content string) (*models.Board, error) {
 
 		// Plain list item: - Title (no checkbox)
 		if m := plainCardRe.FindStringSubmatch(line); m != nil {
-			// Flush previous card.
-			if currentCard != nil && currentCol != nil {
-				currentCol.Cards = append(currentCol.Cards, *currentCard)
-			}
+			flushCard()
 			title := m[1]
 
 			var inlineTags []string
 			if matches := hashTagRe.FindAllStringSubmatch(title, -1); matches != nil {
+				inlineTags = make([]string, 0, len(matches))
 				for _, match := range matches {
 					inlineTags = append(inlineTags, match[1])
 				}
@@ -181,21 +185,17 @@ func Parse(content string) (*models.Board, error) {
 			}
 			// Indented non-metadata lines are body text.
 			if strings.HasPrefix(line, "  ") {
-				bodyLine := line[2:]
-				if currentCard.Body == "" {
-					currentCard.Body = bodyLine
-				} else {
-					currentCard.Body += "\n" + bodyLine
+				if bodyBuilder.Len() > 0 {
+					bodyBuilder.WriteByte('\n')
 				}
+				bodyBuilder.WriteString(line[2:])
 				continue
 			}
 		}
 	}
 
 	// Flush final card.
-	if currentCard != nil && currentCol != nil {
-		currentCol.Cards = append(currentCol.Cards, *currentCard)
-	}
+	flushCard()
 
 	// Populate collapsed state from front-matter.
 	for i := range board.Columns {

@@ -60,11 +60,17 @@ func Render(board *models.Board) (string, error) {
 
 func writeCard(b *strings.Builder, card *models.Card) {
 	// Build title with inline tags restored.
-	title := card.Title
+	var title string
 	if len(card.InlineTags) > 0 {
+		var tb strings.Builder
+		tb.WriteString(card.Title)
 		for _, t := range card.InlineTags {
-			title += " #" + t
+			tb.WriteString(" #")
+			tb.WriteString(t)
 		}
+		title = tb.String()
+	} else {
+		title = card.Title
 	}
 
 	if card.NoCheckbox {
