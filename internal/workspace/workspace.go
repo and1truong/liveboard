@@ -110,7 +110,7 @@ func (w *Workspace) CreateBoard(name string) (*models.Board, error) {
 		return nil, err
 	}
 	if _, statErr := os.Stat(path); statErr == nil {
-		return nil, fmt.Errorf("board %q already exists", name)
+		return nil, fmt.Errorf("board %q: %w", name, ErrAlreadyExists)
 	}
 
 	cols := w.getDefaultColumns()
@@ -140,7 +140,7 @@ func (w *Workspace) DeleteBoard(name string) error {
 		return err
 	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		return fmt.Errorf("board %q not found", name)
+		return fmt.Errorf("board %q: %w", name, board.ErrNotFound)
 	}
 	return os.Remove(path)
 }
@@ -148,8 +148,13 @@ func (w *Workspace) DeleteBoard(name string) error {
 // validBoardName allows alphanumeric, unicode letters, spaces, dashes, underscores, periods.
 var validBoardName = regexp.MustCompile(`^[\p{L}\p{N} ._-]+$`)
 
-// ErrInvalidBoardName is returned when a board name contains unsafe characters.
-var ErrInvalidBoardName = fmt.Errorf("invalid board name")
+// Sentinel errors for workspace operations.
+var (
+	// ErrInvalidBoardName is returned when a board name contains unsafe characters.
+	ErrInvalidBoardName = fmt.Errorf("invalid board name")
+	// ErrAlreadyExists is returned when trying to create a board that already exists.
+	ErrAlreadyExists = fmt.Errorf("already exists")
+)
 
 // ValidateBoardName checks that a board name is safe for use as a filename.
 func ValidateBoardName(name string) error {

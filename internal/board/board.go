@@ -14,8 +14,15 @@ import (
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
-// ErrVersionConflict is returned when a mutation's client version doesn't match the board's current version.
-var ErrVersionConflict = errors.New("board version conflict")
+// Sentinel errors for the board engine.
+var (
+	// ErrVersionConflict is returned when a mutation's client version doesn't match the board's current version.
+	ErrVersionConflict = errors.New("board version conflict")
+	// ErrNotFound is returned when a board, column, or card cannot be found.
+	ErrNotFound = errors.New("not found")
+	// ErrOutOfRange is returned when column or card indices are invalid.
+	ErrOutOfRange = errors.New("out of range")
+)
 
 // Engine provides CRUD operations on boards backed by Markdown files.
 type Engine struct {
@@ -60,7 +67,11 @@ func (e *Engine) MutateBoard(boardPath string, clientVersion int, fn func(*model
 	}
 
 	board.Version++
-	return renderAndWrite(board, boardPath)
+	if err := renderAndWrite(board, boardPath); err != nil {
+		board.Version-- // rollback so in-memory state stays consistent
+		return err
+	}
+	return nil
 }
 
 // LoadBoard reads and parses a board file.
@@ -133,7 +144,7 @@ func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn st
 			return renderAndWrite(board, boardPath)
 		}
 	}
-	return fmt.Errorf("target column %q not found", targetColumn)
+	return fmt.Errorf("target column %q: %w", targetColumn, ErrNotFound)
 }
 
 // ReorderCard moves a card to a specific position within a column.
@@ -160,7 +171,7 @@ func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, t
 		}
 	}
 	if targetIdx < 0 {
-		return fmt.Errorf("target column %q not found", targetColumn)
+		return fmt.Errorf("target column %q: %w", targetColumn, ErrNotFound)
 	}
 
 	cards := board.Columns[targetIdx].Cards
@@ -318,7 +329,7 @@ func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
 		}
 	}
 	if !found {
-		return fmt.Errorf("column %q not found", oldName)
+		return fmt.Errorf("column %q: %w", oldName, ErrNotFound)
 	}
 	return renderAndWrite(board, boardPath)
 }
@@ -358,7 +369,7 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 		}
 	}
 	if movingCol == nil {
-		return fmt.Errorf("column %q not found", colName)
+		return fmt.Errorf("column %q: %w", colName, ErrNotFound)
 	}
 
 	// Insert after the specified column (empty afterCol = prepend).
@@ -392,7 +403,7 @@ func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
 	}
 
 	if colIndex < 0 || colIndex >= len(board.Columns) {
-		return fmt.Errorf("column index %d out of range", colIndex)
+		return fmt.Errorf("column index %d: %w", colIndex, ErrOutOfRange)
 	}
 
 	// Grow ListCollapse to match number of columns if needed.
@@ -441,10 +452,10 @@ func (e *Engine) UpdateBoardIcon(boardPath, icon string) error {
 
 func validateIndices(board *models.Board, colIdx, cardIdx int) error {
 	if colIdx < 0 || colIdx >= len(board.Columns) {
-		return fmt.Errorf("column index %d out of range", colIdx)
+		return fmt.Errorf("column index %d: %w", colIdx, ErrOutOfRange)
 	}
 	if cardIdx < 0 || cardIdx >= len(board.Columns[colIdx].Cards) {
-		return fmt.Errorf("card index %d out of range in column %q", cardIdx, board.Columns[colIdx].Name)
+		return fmt.Errorf("card index %d in column %q: %w", cardIdx, board.Columns[colIdx].Name, ErrOutOfRange)
 	}
 	return nil
 }
@@ -462,7 +473,7 @@ func (e *Engine) SortColumn(boardPath string, colIdx int, sortBy string) error {
 	}
 
 	if colIdx < 0 || colIdx >= len(board.Columns) {
-		return fmt.Errorf("column index %d out of range", colIdx)
+		return fmt.Errorf("column index %d: %w", colIdx, ErrOutOfRange)
 	}
 
 	cards := board.Columns[colIdx].Cards

@@ -2,11 +2,15 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
 	"net/url"
-	"strings"
+	"os"
 
 	"github.com/go-chi/chi/v5"
+
+	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/workspace"
 )
 
 // ErrorResponse is the standard error payload.
@@ -40,16 +44,18 @@ func respondError(w http.ResponseWriter, status int, msg string) {
 
 // handleError classifies an engine/workspace error and writes the appropriate response.
 func handleError(w http.ResponseWriter, err error) {
-	msg := err.Error()
 	status := http.StatusInternalServerError
-	if strings.Contains(msg, "not found") || strings.Contains(msg, "no such file") {
+	switch {
+	case errors.Is(err, board.ErrNotFound) || errors.Is(err, os.ErrNotExist):
 		status = http.StatusNotFound
-	} else if strings.Contains(msg, "already exists") {
+	case errors.Is(err, board.ErrVersionConflict):
 		status = http.StatusConflict
-	} else if strings.Contains(msg, "out of range") {
+	case errors.Is(err, workspace.ErrAlreadyExists):
+		status = http.StatusConflict
+	case errors.Is(err, board.ErrOutOfRange) || errors.Is(err, workspace.ErrInvalidBoardName):
 		status = http.StatusBadRequest
 	}
-	respondError(w, status, msg)
+	respondError(w, status, err.Error())
 }
 
 // decodeJSON reads and decodes JSON from the request body into v.
