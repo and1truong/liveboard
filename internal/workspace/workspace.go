@@ -4,6 +4,7 @@ package workspace
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -52,7 +53,8 @@ func (w *Workspace) ListBoards() ([]models.Board, error) {
 		path := filepath.Join(w.Dir, entry.Name())
 		b, err := w.Engine.LoadBoard(path)
 		if err != nil {
-			continue // Skip unparseable files.
+			log.Printf("workspace: skipping %s: %v", entry.Name(), err)
+			continue
 		}
 		if fi, err := entry.Info(); err == nil {
 			b.UpdatedAt = fi.ModTime()
@@ -78,10 +80,12 @@ func (w *Workspace) ListBoardSummaries() ([]parser.BoardSummaryInfo, error) {
 		path := filepath.Join(w.Dir, entry.Name())
 		data, err := os.ReadFile(path)
 		if err != nil {
+			log.Printf("workspace: skipping %s: %v", entry.Name(), err)
 			continue
 		}
 		info, err := parser.ParseSummary(string(data))
 		if err != nil {
+			log.Printf("workspace: skipping %s: %v", entry.Name(), err)
 			continue
 		}
 		info.Board.FilePath = path
