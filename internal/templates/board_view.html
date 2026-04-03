@@ -1,5 +1,5 @@
 {{define "content"}}
-<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-card-display-mode="{{.Settings.CardDisplayMode}}" data-bs-card-display-mode="{{.BSView.CardDisplayMode}}" data-global-card-display-mode="{{.GlobalSettings.CardDisplayMode}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" data-board-tag-colors="{{.TagColorsJSON}}" data-week-start="{{.Settings.WeekStart}}" data-bs-week-start="{{.BSView.WeekStart}}">
+<div class="board-view" hx-ext="sse" sse-connect="/board/{{.BoardSlug}}/events" x-data :data-hide-completed="$store.ui.hideCompleted" data-newline-trigger="{{.Settings.NewLineTrigger}}" data-expand-columns="{{.Settings.ExpandColumns}}" data-show-checkbox="{{.Settings.ShowCheckbox}}" data-card-position="{{.Settings.CardPosition}}" data-view-mode="{{.Settings.ViewMode}}" data-board-slug="{{.BoardSlug}}" data-bs-show-checkbox="{{.BSView.ShowCheckbox}}" data-bs-card-position="{{.BSView.CardPosition}}" data-bs-expand-columns="{{.BSView.ExpandColumns}}" data-bs-view-mode="{{.BSView.ViewMode}}" data-global-show-checkbox="{{.GlobalSettings.ShowCheckbox}}" data-global-card-position="{{.GlobalSettings.CardPosition}}" data-card-display-mode="{{.Settings.CardDisplayMode}}" data-bs-card-display-mode="{{.BSView.CardDisplayMode}}" data-global-card-display-mode="{{.GlobalSettings.CardDisplayMode}}" data-board-members="{{range $i, $m := .Board.Members}}{{if $i}},{{end}}{{$m}}{{end}}" data-board-name="{{.Board.Name}}" data-board-description="{{.Board.Description}}" data-board-tags="{{range $i, $t := .Board.Tags}}{{if $i}},{{end}}{{$t}}{{end}}" data-board-tag-colors="{{.TagColorsJSON}}" data-week-start="{{.Settings.WeekStart}}" data-bs-week-start="{{.BSView.WeekStart}}">
     <div id="board-content" hx-get="/board/{{.BoardSlug}}/content" hx-trigger="sse:board-update" hx-swap="innerHTML">
     {{template "board-content" .}}
     </div>
@@ -24,6 +24,21 @@
                 {{end}}
             </div>
             {{end}}
+        </div>
+        <div class="board-topbar-actions">
+            <div class="topbar-search" :class="{ active: $store.ui.searchQuery }">
+                <svg class="topbar-search-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.5" cy="6.5" r="5"/><line x1="10" y1="10" x2="14.5" y2="14.5"/></svg>
+                <input class="topbar-search-input" type="text" placeholder="Filter..."
+                    :value="$store.ui.searchQuery"
+                    @input="$store.ui.searchQuery = $event.target.value; LB.applyFilters()"
+                    @keydown.escape="$store.ui.searchQuery = ''; LB.applyFilters(); $event.target.blur()">
+                <button class="topbar-search-clear" x-show="$store.ui.searchQuery" x-cloak
+                    @click="$store.ui.searchQuery = ''; LB.applyFilters()">&times;</button>
+            </div>
+            <button class="topbar-toggle-btn" :class="{ active: $store.ui.hideCompleted }"
+                @click="$store.ui.toggleHideCompleted()" title="Hide completed items">
+                &#10003;
+            </button>
         </div>
         {{if .Board.Description}}
         <span class="board-description">{{.Board.Description}}</span>
@@ -231,7 +246,7 @@
             </div>
             <div class="list-section-body">
             {{range $j, $card := .Cards}}
-            <div class="list-item card {{if .Completed}}completed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
+            <div class="list-item card {{if .Completed}}completed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-id="{{cardID .Metadata}}" data-card-column="{{$column.Name}}">
                 {{if not $.ReadOnly}}{{range $.Board.Columns}}
                 {{if ne .Name $column.Name}}
                 <button class="move-trigger"
@@ -288,6 +303,7 @@
             data-card-priority="{{.Priority}}"
             data-card-due="{{.Due}}"
             data-card-completed="{{.Completed}}"
+            data-card-id="{{cardID .Metadata}}"
             data-card-column="{{.ColumnName}}"></div>
         {{end}}
     </div>
@@ -480,7 +496,7 @@
             {{if not $column.Collapsed}}
             <div class="cards" data-column="{{$column.Name}}" :class="{ 'focus-grid': $store.ui.focusedColumn }">
                 {{range $j, $card := .Cards}}
-                <div class="card {{if .Completed}}completed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-column="{{$column.Name}}">
+                <div class="card {{if .Completed}}completed{{end}}" {{if not $.ReadOnly}}draggable="true"{{end}} data-col-idx="{{$i}}" data-card-idx="{{$j}}" data-card-title="{{.Title}}" data-card-body="{{.Body}}" data-card-tags="{{range $ti, $t := .Tags}}{{if $ti}}, {{end}}{{$t}}{{end}}" data-card-assignee="{{.Assignee}}" data-card-priority="{{.Priority}}" data-card-due="{{.Due}}" data-card-completed="{{.Completed}}" data-card-id="{{cardID .Metadata}}" data-card-column="{{$column.Name}}">
                     {{if not $.ReadOnly}}{{range $.Board.Columns}}
                     {{if ne .Name $column.Name}}
                     <button class="move-trigger"

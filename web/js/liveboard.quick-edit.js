@@ -35,7 +35,7 @@ document.addEventListener('alpine:init', function () {
         this.hide();
         var cardRect = card.getBoundingClientRect();
         var posRect = cardRect;
-        var cardCell = card.querySelector('.table-cell-card');
+        var cardCell = card.querySelector('.list-item-content');
         if (cardCell) posRect = cardCell.getBoundingClientRect();
 
         this.slug = Alpine.store('board').slug || decodeURIComponent(window.location.pathname.replace(/^\/board\//, ''));
@@ -161,6 +161,29 @@ document.addEventListener('alpine:init', function () {
         var btn = this._cardEl.querySelector('[hx-post$="/cards/delete"]');
         this.hide();
         if (btn) btn.click();
+      },
+
+      ctxSetReminder: function (offset) {
+        if (!this._cardEl) return;
+        var due = this._cardEl.dataset.cardDue || '';
+        var cardId = this._cardEl.dataset.cardId || '';
+        if (!due && offset !== '0') {
+          alert('Set a due date first to use relative reminders.');
+          return;
+        }
+        var slug = this.slug;
+        htmx.ajax('POST', '/reminders/set', {
+          values: {
+            board_slug: slug,
+            card_id: cardId,
+            type: 'card',
+            mode: 'relative',
+            offset: offset,
+            due_date: due
+          },
+          swap: 'none'
+        });
+        this.hide();
       },
 
       ctxDelete: function () {

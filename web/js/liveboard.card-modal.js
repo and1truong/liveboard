@@ -11,6 +11,7 @@ document.addEventListener('alpine:init', function () {
       priority: '',
       due: '',
       assignee: '',
+      cardId: '',
       completed: false,
       columnName: '',
       colIdx: '',
@@ -33,6 +34,7 @@ document.addEventListener('alpine:init', function () {
         this.priority = card.dataset.cardPriority || '';
         this.due = card.dataset.cardDue || '';
         this.assignee = card.dataset.cardAssignee || '';
+        this.cardId = card.dataset.cardId || '';
         this.completed = card.dataset.cardCompleted === 'true';
         this.columnName = card.dataset.cardColumn || '';
         this._cardEl = card;
@@ -187,6 +189,34 @@ document.addEventListener('alpine:init', function () {
       onMemberSelect: function (val) {
         this.assignee = val;
         this.showMembersPicker = false;
+      },
+
+      setReminder: function (offset) {
+        if (!this.due && offset !== '0') {
+          alert('Set a due date first to use relative reminders.');
+          return;
+        }
+        var vals = {
+          board_slug: this.slug,
+          card_id: this.cardId,
+          type: 'card',
+          mode: 'relative',
+          offset: offset,
+          due_date: this.due
+        };
+        htmx.ajax('POST', '/reminders/set', { values: vals, swap: 'none' });
+      },
+
+      setReminderAbsolute: function (datetime) {
+        if (!datetime) return;
+        var vals = {
+          board_slug: this.slug,
+          card_id: this.cardId,
+          type: 'card',
+          mode: 'absolute',
+          absolute_time: datetime
+        };
+        htmx.ajax('POST', '/reminders/set', { values: vals, swap: 'none' });
       }
     };
   });

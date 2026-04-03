@@ -68,6 +68,7 @@
     <script src="/static/js/liveboard.drop.js?v={{.Version}}" defer></script>
     <script src="/static/js/liveboard.drag.js?v={{.Version}}" defer></script>
     <script src="/static/js/liveboard.keyboard.js?v={{.Version}}" defer></script>
+    <script src="/static/js/liveboard.reminder.js?v={{.Version}}" defer></script>
 </head>
 <body hx-boost="true">
     <div class="app-shell" x-data="emojiPicker()">
@@ -111,6 +112,10 @@
             </div>
             <div class="sidebar-footer" x-data="{ open: false }" @click.outside="open = false">
                 <div class="sidebar-popup-menu" :class="{ open: open }" id="sidebarPopupMenu">
+                    <a href="/reminders" class="sidebar-menu-item{{if eq $.BoardSlug "__reminders__"}} active{{end}}">
+                        <span class="menu-icon">&#128276;</span>
+                        <span class="menu-label">Reminders</span>
+                    </a>
                     <a href="/settings" class="sidebar-menu-item{{if eq $.BoardSlug "__settings__"}} active{{end}}">
                         <span class="menu-icon">&#9881;</span>
                         <span class="menu-label">Settings</span>
@@ -319,6 +324,28 @@
                         </template>
                     </div>
 
+                    <div class="card-modal-sidebar-sep"></div>
+                    <div class="card-modal-sidebar-label">Reminder</div>
+                    <div class="card-modal-reminder-group" x-data="{ showReminderPicker: false }">
+                        <button class="card-modal-sidebar-btn" @click.stop="showReminderPicker = !showReminderPicker">
+                            <span class="card-modal-action-icon">&#128276;</span> Set Reminder
+                        </button>
+                        <div x-show="showReminderPicker" @click.outside="showReminderPicker = false" class="card-modal-reminder-picker" x-cloak>
+                            <div class="reminder-picker-title">Remind me</div>
+                            <button class="reminder-picker-option" @click="setReminder('0'); showReminderPicker = false">At due time</button>
+                            <button class="reminder-picker-option" @click="setReminder('-15m'); showReminderPicker = false">15 min before</button>
+                            <button class="reminder-picker-option" @click="setReminder('-1h'); showReminderPicker = false">1 hour before</button>
+                            <button class="reminder-picker-option" @click="setReminder('-1d'); showReminderPicker = false">1 day before</button>
+                            <button class="reminder-picker-option" @click="setReminder('-3d'); showReminderPicker = false">3 days before</button>
+                            <button class="reminder-picker-option" @click="setReminder('-7d'); showReminderPicker = false">1 week before</button>
+                            <div class="reminder-picker-sep"></div>
+                            <div class="reminder-picker-custom">
+                                <input type="datetime-local" x-ref="customReminderTime" class="reminder-picker-datetime">
+                                <button class="btn-primary btn-small" @click="setReminderAbsolute($refs.customReminderTime.value); showReminderPicker = false">Set</button>
+                            </div>
+                        </div>
+                    </div>
+
                     <div class="card-modal-meta-list">
                         <div class="card-modal-meta-item" :style="{ opacity: assignee ? '1' : '0.5' }">&#128100; <span x-text="assignee || 'No assignee'"></span></div>
                         <div class="card-modal-meta-item" :style="{ opacity: due ? '1' : '0.5' }">&#128197; <span x-text="due || 'No due date'"></span></div>
@@ -376,6 +403,14 @@
                 <template x-for="opt in options" :key="opt.val">
                     <button class="card-modal-priority-btn" :class="{ 'card-modal-priority-btn--active': opt.val === value, ['card-modal-priority-btn--' + opt.val]: opt.val }" :title="opt.title" x-text="opt.label" @click="select(opt.val)"></button>
                 </template>
+            </div>
+            <div class="ctx-separator"></div>
+            <div class="ctx-submenu-label">Remind me</div>
+            <div class="ctx-submenu">
+                <button class="ctx-item" role="menuitem" @click.stop="ctxSetReminder('0')"><span class="ctx-icon">&#128276;</span> At due time</button>
+                <button class="ctx-item" role="menuitem" @click.stop="ctxSetReminder('-1h')"><span class="ctx-icon">&#128276;</span> 1h before</button>
+                <button class="ctx-item" role="menuitem" @click.stop="ctxSetReminder('-1d')"><span class="ctx-icon">&#128276;</span> 1d before</button>
+                <button class="ctx-item" role="menuitem" @click.stop="ctxSetReminder('-7d')"><span class="ctx-icon">&#128276;</span> 1w before</button>
             </div>
             <template x-if="ctxHasDelete">
                 <div>

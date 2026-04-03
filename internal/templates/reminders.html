@@ -1,0 +1,152 @@
+{{define "content"}}
+<div class="settings-view" x-data="remindersPage()">
+    <div class="workspace-header">
+        <span class="workspace-title">Reminders</span>
+        <div class="workspace-header-actions">
+            <label class="reminder-toggle">
+                <input type="checkbox" {{if .ReminderEnabled}}checked{{end}}
+                    hx-post="/reminders/settings"
+                    hx-vals='{"enabled": "{{if .ReminderEnabled}}false{{else}}true{{end}}", "timezone": "{{.Timezone}}"}'
+                    hx-swap="none">
+                <span>{{if .ReminderEnabled}}Enabled{{else}}Disabled{{end}}</span>
+            </label>
+        </div>
+    </div>
+
+    <div class="settings-body">
+        {{if not .ReminderEnabled}}
+        <div class="reminder-disabled-notice">
+            <p>Reminders are currently disabled. Enable them above to start receiving notifications.</p>
+        </div>
+        {{end}}
+
+        <!-- Fired / Awaiting acknowledgment -->
+        {{if .Fired}}
+        <div class="settings-category-label">
+            Fired
+            <button class="btn-text btn-sm" hx-post="/reminders/clear-fired" hx-swap="none" hx-confirm="Clear all fired reminders?">Clear all</button>
+        </div>
+        <div class="reminder-list">
+            {{range .Fired}}
+            <div class="reminder-item reminder-fired" id="reminder-{{.ID}}">
+                <div class="reminder-info">
+                    <span class="reminder-type-badge reminder-type-{{.Type}}">{{.Type}}</span>
+                    {{if .CardTitle}}
+                        <a href="/board/{{.BoardSlug}}" class="reminder-card-title">{{.CardTitle}}</a>
+                    {{else}}
+                        <a href="/board/{{.BoardSlug}}" class="reminder-board-name">{{.BoardName}}</a>
+                    {{end}}
+                    <span class="reminder-fire-time">{{.FireAtRel}}</span>
+                </div>
+                <div class="reminder-actions">
+                    <button class="btn-text btn-sm" hx-post="/reminders/snooze/{{.ID}}" hx-vals='{"duration":"15m"}' hx-swap="none">15m</button>
+                    <button class="btn-text btn-sm" hx-post="/reminders/snooze/{{.ID}}" hx-vals='{"duration":"1h"}' hx-swap="none">1h</button>
+                    <button class="btn-text btn-sm" hx-post="/reminders/snooze/{{.ID}}" hx-vals='{"duration":"1d"}' hx-swap="none">1d</button>
+                    <button class="btn-text btn-sm reminder-dismiss" hx-post="/reminders/dismiss/{{.ID}}" hx-swap="none">Dismiss</button>
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Pending -->
+        <div class="settings-category-label">Pending</div>
+        {{if .Pending}}
+        <div class="reminder-list">
+            {{range .Pending}}
+            <div class="reminder-item" id="reminder-{{.ID}}">
+                <div class="reminder-info">
+                    <span class="reminder-type-badge reminder-type-{{.Type}}">{{.Type}}</span>
+                    {{if .CardTitle}}
+                        <a href="/board/{{.BoardSlug}}" class="reminder-card-title">{{.CardTitle}}</a>
+                    {{else}}
+                        <a href="/board/{{.BoardSlug}}" class="reminder-board-name">{{.BoardName}}</a>
+                    {{end}}
+                    <span class="reminder-fire-time">{{.FireAt}} ({{.FireAtRel}})</span>
+                    {{if .Recurring}}<span class="reminder-recurrence">{{.Recurrence}}</span>{{end}}
+                    {{if .RelativeOffset}}<span class="reminder-offset">{{.RelativeOffset}} before due</span>{{end}}
+                </div>
+                <div class="reminder-actions">
+                    <button class="btn-text btn-sm reminder-delete" hx-delete="/reminders/{{.ID}}" hx-swap="none" hx-confirm="Delete this reminder?">Delete</button>
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="reminder-empty">No pending reminders</div>
+        {{end}}
+
+        <!-- History -->
+        {{if .History}}
+        <div class="settings-category-label">
+            History
+            <button class="btn-text btn-sm" hx-post="/reminders/clear-history" hx-swap="none" hx-confirm="Clear all history?">Clear all</button>
+        </div>
+        <div class="reminder-list">
+            {{range .History}}
+            <div class="reminder-item reminder-history">
+                <div class="reminder-info">
+                    {{if .CardTitle}}
+                        <span class="reminder-card-title">{{.CardTitle}}</span>
+                    {{end}}
+                    <span class="reminder-board-name">{{.BoardSlug}}</span>
+                    <span class="reminder-fire-time">Fired: {{.FiredAt}}</span>
+                    {{if .AcknowledgedAt}}<span class="reminder-ack-time">Ack: {{.AcknowledgedAt}}</span>{{end}}
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{end}}
+
+        <!-- Settings -->
+        <div class="settings-category-label">Reminder Settings</div>
+        <div class="settings-section">
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">Timezone</div>
+                    <div class="settings-label-hint">All reminder times resolve in this timezone</div>
+                </div>
+                <div class="settings-control">
+                    <input type="text" placeholder="America/Los_Angeles" value="{{.Timezone}}"
+                        hx-post="/reminders/settings"
+                        hx-trigger="change"
+                        hx-vals='{"enabled": "{{if .ReminderEnabled}}true{{else}}false{{end}}"}'
+                        hx-include="this"
+                        hx-swap="none"
+                        name="timezone">
+                </div>
+            </div>
+            <div class="settings-field">
+                <div>
+                    <div class="settings-label">History mode</div>
+                    <div class="settings-label-hint">How long to keep fired reminder history</div>
+                </div>
+                <div class="settings-control">
+                    <select name="history_mode"
+                        hx-post="/reminders/settings"
+                        hx-trigger="change"
+                        hx-vals='{"enabled": "{{if .ReminderEnabled}}true{{else}}false{{end}}", "timezone": "{{.Timezone}}"}'
+                        hx-swap="none">
+                        <option value="keep_all" {{if eq .HistoryMode "keep_all"}}selected{{end}}>Keep all</option>
+                        <option value="purge_on_ack" {{if eq .HistoryMode "purge_on_ack"}}selected{{end}}>Purge on acknowledge</option>
+                        <option value="auto_purge_30d" {{if eq .HistoryMode "auto_purge_30d"}}selected{{end}}>Auto-purge after 30 days</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function remindersPage() {
+    return {
+        init() {
+            // Listen for reminder-updated events to refresh the page
+            document.body.addEventListener('reminder-updated', () => {
+                window.location.reload();
+            });
+        }
+    };
+}
+</script>
+{{end}}
