@@ -1,5 +1,5 @@
 ---
-version: 56
+version: 61
 name: OSS Tracker
 description: liveboard/liveboard — open source project board
 icon: "\U0001F4E6"
@@ -30,13 +30,14 @@ list-collapse:
     - false
 settings:
     expand-columns: false
-    view-mode: board
+    view-mode: list
     card-display-mode: trim
+    week-start: sunday
 ---
 
 ## Triage
 
-- [ ] Bug: SSE connection drops after 30min idle
+- [x] Bug: SSE connection drops after 30min idle
   tags: bug, backend
   priority: medium
   Issue #191. Browser closes the EventSource. Need server-side keepalive pings.

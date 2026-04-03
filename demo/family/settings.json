@@ -1,7 +1,7 @@
 {
   "site_name": "HomeBoard",
   "theme": "light",
-  "color_theme": "gitlab",
+  "color_theme": "aqua",
   "font_family": "system",
   "column_width": 512,
   "sidebar_position": "left",
