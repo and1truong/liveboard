@@ -58,10 +58,10 @@
                 </div>
                 <div class="settings-control">
                     <div class="settings-color-swatches">
-                        <template x-for="t in ['aqua','gitlab','emerald','rose']" :key="t">
+                        <template x-for="t in ['aqua','emerald','rose']" :key="t">
                             <button type="button" class="settings-swatch" :class="{ active: colorTheme === t }" :data-theme="t" @click="colorTheme = t; save()">
                                 <span class="settings-swatch-check" x-show="colorTheme === t" x-cloak>&#10003;</span>
-                                <span class="settings-swatch-label" x-text="({aqua:'Aqua',gitlab:'GitLab',emerald:'Emerald',rose:'Rose'})[t]"></span>
+                                <span class="settings-swatch-label" x-text="({aqua:'Aqua',emerald:'Emerald',rose:'Rose'})[t]"></span>
                             </button>
                         </template>
                     </div>
