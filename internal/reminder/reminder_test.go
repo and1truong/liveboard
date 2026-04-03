@@ -153,7 +153,10 @@ func TestStoreSnooze(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	data, _ := store.Load()
+	data, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if data.Reminders[0].Fired {
 		t.Error("expected fired=false after snooze")
 	}
@@ -171,7 +174,10 @@ func TestStoreRemoveByCardID(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	data, _ := store.Load()
+	data, err := store.Load()
+	if err != nil {
+		t.Fatal(err)
+	}
 	if len(data.Reminders) != 1 {
 		t.Fatalf("expected 1 remaining, got %d", len(data.Reminders))
 	}
