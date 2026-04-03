@@ -2,6 +2,7 @@ package web
 
 import (
 	"fmt"
+	"html/template"
 	"net/http"
 	"path/filepath"
 	"sort"
@@ -11,6 +12,14 @@ import (
 	"github.com/and1truong/liveboard/internal/parser"
 	"github.com/and1truong/liveboard/pkg/models"
 )
+
+// BoardListHandler handles the board list page and board management.
+type BoardListHandler struct {
+	*Base
+	boardListTpl     *template.Template
+	boardGridTpl     *template.Template
+	sidebarBoardsTpl *template.Template
+}
 
 // BoardListModel is the state for the board list page.
 type BoardListModel struct {
@@ -179,37 +188,37 @@ func sortBoardsWithPins(boards []BoardSummary, pinned []string) []BoardSummary {
 }
 
 // boardListModel loads the board list and returns a populated BoardListModel.
-func (h *Handler) boardListModel() (BoardListModel, error) {
-	infos, err := h.ws.ListBoardSummaries()
+func (bl *BoardListHandler) boardListModel() (BoardListModel, error) {
+	infos, err := bl.ws.ListBoardSummaries()
 	if err != nil {
 		return BoardListModel{Error: err.Error()}, nil
 	}
-	settings := h.loadSettings()
+	settings := bl.loadSettings()
 	summaries := toBoardSummariesFast(infos)
 	summaries = sortBoardsWithPins(summaries, settings.PinnedBoards)
-	return BoardListModel{LayoutSettings: h.layoutSettings(settings), Title: settings.SiteName, SiteName: settings.SiteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
+	return BoardListModel{LayoutSettings: bl.layoutSettings(settings), Title: settings.SiteName, SiteName: settings.SiteName, Boards: summaries, AllTags: collectAllTags(summaries)}, nil
 }
 
 // BoardListPage handles GET / — renders the full board list page.
-func (h *Handler) BoardListPage(w http.ResponseWriter, _ *http.Request) {
-	model, _ := h.boardListModel()
-	renderFullPage(w, h.boardListTpl, model)
+func (bl *BoardListHandler) BoardListPage(w http.ResponseWriter, _ *http.Request) {
+	model, _ := bl.boardListModel()
+	renderFullPage(w, bl.boardListTpl, model)
 }
 
 // HandleCreateBoard handles POST /boards/new — creates a board and returns the boards grid partial.
-func (h *Handler) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
+func (bl *BoardListHandler) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	if name == "" {
-		model, _ := h.boardListModel()
+		model, _ := bl.boardListModel()
 		model.Error = "Board name is required"
-		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 		return
 	}
 
-	if _, err := h.ws.CreateBoard(name); err != nil {
-		model, _ := h.boardListModel()
+	if _, err := bl.ws.CreateBoard(name); err != nil {
+		model, _ := bl.boardListModel()
 		model.Error = err.Error()
-		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 		return
 	}
 
@@ -217,64 +226,64 @@ func (h *Handler) HandleCreateBoard(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleDeleteBoard handles POST /boards/{slug}/delete — deletes a board.
-func (h *Handler) HandleDeleteBoard(w http.ResponseWriter, r *http.Request) {
+func (bl *BoardListHandler) HandleDeleteBoard(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	if name == "" {
-		model, _ := h.boardListModel()
+		model, _ := bl.boardListModel()
 		model.Error = "Board name is required"
-		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 		return
 	}
 
-	if err := h.ws.DeleteBoard(name); err != nil {
-		model, _ := h.boardListModel()
+	if err := bl.ws.DeleteBoard(name); err != nil {
+		model, _ := bl.boardListModel()
 		model.Error = err.Error()
-		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 		return
 	}
 
-	model, _ := h.boardListModel()
-	renderPartial(w, h.boardGridTpl, "boards-grid", model)
+	model, _ := bl.boardListModel()
+	renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 }
 
 // HandleSetBoardIconList handles POST /boards/{slug}/icon from the board list page.
-func (h *Handler) HandleSetBoardIconList(w http.ResponseWriter, r *http.Request) {
+func (bl *BoardListHandler) HandleSetBoardIconList(w http.ResponseWriter, r *http.Request) {
 	slug := r.FormValue("name")
 	if slug == "" {
-		model, _ := h.boardListModel()
+		model, _ := bl.boardListModel()
 		model.Error = "Board name is required"
-		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 		return
 	}
 
 	icon := r.FormValue("icon")
 
-	boardPath, err := h.ws.BoardPath(slug)
+	boardPath, err := bl.ws.BoardPath(slug)
 	if err != nil {
-		model, _ := h.boardListModel()
+		model, _ := bl.boardListModel()
 		model.Error = err.Error()
-		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 		return
 	}
-	if err := h.eng.UpdateBoardIcon(boardPath, icon); err != nil {
-		model, _ := h.boardListModel()
+	if err := bl.eng.UpdateBoardIcon(boardPath, icon); err != nil {
+		model, _ := bl.boardListModel()
 		model.Error = err.Error()
-		renderPartial(w, h.boardGridTpl, "boards-grid", model)
+		renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 		return
 	}
-	model, _ := h.boardListModel()
-	renderPartial(w, h.boardGridTpl, "boards-grid", model)
+	model, _ := bl.boardListModel()
+	renderPartial(w, bl.boardGridTpl, "boards-grid", model)
 }
 
 // HandleTogglePin handles POST /api/boards/pin — toggles a board's pinned state.
-func (h *Handler) HandleTogglePin(w http.ResponseWriter, r *http.Request) {
+func (bl *BoardListHandler) HandleTogglePin(w http.ResponseWriter, r *http.Request) {
 	slug := r.FormValue("slug")
 	if slug == "" {
 		http.Error(w, "slug is required", http.StatusBadRequest)
 		return
 	}
 
-	s := h.loadSettings()
+	s := bl.loadSettings()
 	found := false
 	for i, p := range s.PinnedBoards {
 		if p == slug {
@@ -286,20 +295,20 @@ func (h *Handler) HandleTogglePin(w http.ResponseWriter, r *http.Request) {
 	if !found {
 		s.PinnedBoards = append(s.PinnedBoards, slug)
 	}
-	if err := h.saveSettings(s); err != nil {
+	if err := bl.saveSettings(s); err != nil {
 		http.Error(w, "save failed", http.StatusInternalServerError)
 		return
 	}
 
-	model, _ := h.boardListModel()
-	renderPartial(w, h.sidebarBoardsTpl, "sidebar-boards", model)
+	model, _ := bl.boardListModel()
+	renderPartial(w, bl.sidebarBoardsTpl, "sidebar-boards", model)
 }
 
 // HandleSidebarBoards handles GET /api/boards/sidebar — returns the sidebar board list partial.
-func (h *Handler) HandleSidebarBoards(w http.ResponseWriter, r *http.Request) {
-	model, _ := h.boardListModel()
+func (bl *BoardListHandler) HandleSidebarBoards(w http.ResponseWriter, r *http.Request) {
+	model, _ := bl.boardListModel()
 	if slug := r.URL.Query().Get("slug"); slug != "" {
 		model.BoardSlug = slug
 	}
-	renderPartial(w, h.sidebarBoardsTpl, "sidebar-boards", model)
+	renderPartial(w, bl.sidebarBoardsTpl, "sidebar-boards", model)
 }

@@ -25,7 +25,7 @@ type LayoutSettings struct {
 }
 
 // layoutSettings extracts layout-relevant fields from AppSettings and injects the build version.
-func (h *Handler) layoutSettings(s AppSettings) LayoutSettings {
+func (b *Base) layoutSettings(s AppSettings) LayoutSettings {
 	return LayoutSettings{
 		Theme:             s.Theme,
 		ColorTheme:        s.ColorTheme,
@@ -33,8 +33,8 @@ func (h *Handler) layoutSettings(s AppSettings) LayoutSettings {
 		SidebarPosition:   s.SidebarPosition,
 		FontFamily:        s.FontFamily,
 		KeyboardShortcuts: s.KeyboardShortcuts,
-		Version:           h.version,
-		ReadOnly:          h.ReadOnly,
+		Version:           b.version,
+		ReadOnly:          b.ReadOnly,
 	}
 }
 
@@ -85,11 +85,6 @@ func defaultSettings() AppSettings {
 	}
 }
 
-// settingsPath returns the path to settings.json in the workspace dir.
-func (h *Handler) settingsPath() string {
-	return filepath.Join(h.ws.Dir, "settings.json")
-}
-
 // LoadSettingsFromDir reads settings.json from dir, returning defaults if missing.
 func LoadSettingsFromDir(dir string) AppSettings {
 	s := defaultSettings()
@@ -101,18 +96,28 @@ func LoadSettingsFromDir(dir string) AppSettings {
 	return s
 }
 
-// loadSettings reads settings.json, returning defaults if missing.
-func (h *Handler) loadSettings() AppSettings {
-	return LoadSettingsFromDir(h.ws.Dir)
-}
-
-// saveSettings writes settings.json.
-func (h *Handler) saveSettings(s AppSettings) error {
+// saveSettingsToDir writes settings.json to dir.
+func saveSettingsToDir(dir string, s AppSettings) error {
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(h.settingsPath(), data, 0644)
+	return os.WriteFile(filepath.Join(dir, "settings.json"), data, 0644)
+}
+
+// loadSettings reads settings.json, returning defaults if missing.
+func (b *Base) loadSettings() AppSettings {
+	return LoadSettingsFromDir(b.ws.Dir)
+}
+
+// saveSettings writes settings.json.
+func (b *Base) saveSettings(s AppSettings) error {
+	return saveSettingsToDir(b.ws.Dir, s)
+}
+
+// SettingsHandler handles settings page and API.
+type SettingsHandler struct {
+	*Base
 }
 
 // SettingsModel is the template data for the settings page.
@@ -127,21 +132,21 @@ type SettingsModel struct {
 }
 
 // SettingsHandler returns an http.Handler for the settings page.
-func (h *Handler) SettingsHandler() http.Handler {
+func (sh *SettingsHandler) SettingsHandler() http.Handler {
 	tpl := template.Must(template.New("layout.html").Funcs(funcMap()).ParseFS(tmplfs.FS, "layout.html", "settings.html"))
 
 	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		infos, _ := h.ws.ListBoardSummaries()
-		settings := h.loadSettings()
+		infos, _ := sh.ws.ListBoardSummaries()
+		settings := sh.loadSettings()
 		summaries := sortBoardsWithPins(toBoardSummariesFast(infos), settings.PinnedBoards)
 		model := SettingsModel{
-			LayoutSettings: h.layoutSettings(settings),
+			LayoutSettings: sh.layoutSettings(settings),
 			Title:          "Settings — " + settings.SiteName,
 			SiteName:       settings.SiteName,
 			Boards:         summaries,
 			AllTags:        collectAllTags(summaries),
 			BoardSlug:      "__settings__",
-			Version:        h.version,
+			Version:        sh.version,
 		}
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		if err := tpl.Execute(w, model); err != nil {
@@ -189,12 +194,12 @@ func sanitizeSettings(s *AppSettings) {
 }
 
 // SettingsAPIHandler returns an http.Handler for GET/POST /api/settings.
-func (h *Handler) SettingsAPIHandler() http.Handler {
+func (sh *SettingsHandler) SettingsAPIHandler() http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		switch r.Method {
 		case http.MethodGet:
-			s := h.loadSettings()
+			s := sh.loadSettings()
 			_ = json.NewEncoder(w).Encode(s)
 		case http.MethodPost:
 			var s AppSettings
@@ -203,7 +208,7 @@ func (h *Handler) SettingsAPIHandler() http.Handler {
 				return
 			}
 			sanitizeSettings(&s)
-			if err := h.saveSettings(s); err != nil {
+			if err := sh.saveSettings(s); err != nil {
 				http.Error(w, `{"error":"save failed"}`, http.StatusInternalServerError)
 				return
 			}

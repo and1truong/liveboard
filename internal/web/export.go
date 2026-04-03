@@ -6,10 +6,10 @@ import (
 	"github.com/and1truong/liveboard/internal/export"
 )
 
-// ExportHandler returns an HTTP handler that exports the workspace as a ZIP of static HTML files.
-func (h *Handler) ExportHandler() http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
-		settings := h.loadSettings()
+// exportHandler returns an HTTP handler function that exports the workspace as a ZIP of static HTML files.
+func exportHandler(b *Base) http.HandlerFunc {
+	return func(w http.ResponseWriter, _ *http.Request) {
+		settings := b.loadSettings()
 		opts := export.Options{
 			Theme:      settings.Theme,
 			ColorTheme: settings.ColorTheme,
@@ -17,8 +17,8 @@ func (h *Handler) ExportHandler() http.Handler {
 		}
 		w.Header().Set("Content-Type", "application/zip")
 		w.Header().Set("Content-Disposition", `attachment; filename="liveboard-export.zip"`)
-		if err := export.WriteZipTo(w, h.ws, opts); err != nil {
+		if err := export.WriteZipTo(w, b.ws, opts); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
-	})
+	}
 }

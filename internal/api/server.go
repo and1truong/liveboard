@@ -51,14 +51,14 @@ func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, is
 	// Initialize reminder scheduler if enabled
 	settings := web.LoadSettingsFromDir(ws.Dir)
 	if settings.ReminderEnabled {
-		s.startReminderScheduler(ws, h, isDesktop, settings)
+		s.startReminderScheduler(ws, h.ReminderStore(), isDesktop, settings)
 	}
 
 	s.router = s.buildRouter()
 	return s
 }
 
-func makeReminderNotifyFn(h *web.Handler, isDesktop bool) reminder.NotifyFunc {
+func makeReminderNotifyFn(sse *web.SSEBroker, isDesktop bool) reminder.NotifyFunc {
 	return func(r reminder.Reminder, cardTitle string, stats *reminder.BoardStats) {
 		payload := map[string]any{
 			"id":         r.ID,
@@ -71,7 +71,7 @@ func makeReminderNotifyFn(h *web.Handler, isDesktop bool) reminder.NotifyFunc {
 			payload["message"] = fmt.Sprintf("%d open, %d overdue, %d due this week", stats.TotalOpen, stats.Overdue, stats.DueThisWeek)
 		}
 		data, _ := json.Marshal(payload)
-		h.SSE.PublishGlobal(web.SSEEvent{Type: "reminder-fire", Payload: string(data)})
+		sse.PublishGlobal(web.SSEEvent{Type: "reminder-fire", Payload: string(data)})
 
 		if isDesktop {
 			sendDesktopReminderNotification(r, cardTitle, stats)
@@ -126,10 +126,10 @@ func makeBoardStatsFn(ws *workspace.Workspace) reminder.BoardStatsFunc {
 	}
 }
 
-func (s *Server) startReminderScheduler(ws *workspace.Workspace, h *web.Handler, isDesktop bool, _ web.AppSettings) {
+func (s *Server) startReminderScheduler(ws *workspace.Workspace, store *reminder.Store, isDesktop bool, _ web.AppSettings) {
 	s.reminderScheduler = reminder.NewScheduler(
-		h.ReminderStore, time.Minute,
-		makeReminderNotifyFn(h, isDesktop),
+		store, time.Minute,
+		makeReminderNotifyFn(s.webHandler.SSE, isDesktop),
 		makeBoardStatsFn(ws),
 	)
 	s.reminderScheduler.Start()
@@ -206,50 +206,55 @@ func (s *Server) buildRouter() chi.Router {
 		staticHandler.ServeHTTP(w, req)
 	})
 
-	// Web UI routes (HTMX)
-	r.Get("/", s.webHandler.BoardListPage)
-	r.Post("/boards/new", s.webHandler.HandleCreateBoard)
-	r.Post("/boards/{slug}/delete", s.webHandler.HandleDeleteBoard)
-	r.Post("/boards/{slug}/icon", s.webHandler.HandleSetBoardIconList)
+	h := s.webHandler
 
-	r.Get("/board/{slug}", s.webHandler.BoardViewPage)
-	r.Get("/board/{slug}/content", s.webHandler.BoardContent)
-	r.Get("/board/{slug}/events", s.webHandler.SSE.ServeHTTP)
-	r.Post("/board/{slug}/cards", s.webHandler.HandleCreateCard)
-	r.Post("/board/{slug}/cards/move", s.webHandler.HandleMoveCard)
-	r.Post("/board/{slug}/cards/reorder", s.webHandler.HandleReorderCard)
-	r.Post("/board/{slug}/cards/delete", s.webHandler.HandleDeleteCard)
-	r.Post("/board/{slug}/cards/complete", s.webHandler.HandleToggleComplete)
-	r.Post("/board/{slug}/cards/edit", s.webHandler.HandleEditCard)
-	r.Post("/board/{slug}/columns", s.webHandler.HandleCreateColumn)
-	r.Post("/board/{slug}/columns/rename", s.webHandler.HandleRenameColumn)
-	r.Post("/board/{slug}/columns/delete", s.webHandler.HandleDeleteColumn)
-	r.Post("/board/{slug}/columns/collapse", s.webHandler.HandleToggleColumnCollapse)
-	r.Post("/board/{slug}/columns/sort", s.webHandler.HandleSortColumn)
-	r.Post("/board/{slug}/columns/move", s.webHandler.HandleMoveColumn)
-	r.Post("/board/{slug}/meta", s.webHandler.HandleUpdateBoardMeta)
-	r.Post("/board/{slug}/settings", s.webHandler.HandleUpdateBoardSettings)
-	r.Post("/board/{slug}/icon", s.webHandler.HandleSetBoardIcon)
+	// Board list routes
+	r.Get("/", h.BoardList.BoardListPage)
+	r.Post("/boards/new", h.BoardList.HandleCreateBoard)
+	r.Post("/boards/{slug}/delete", h.BoardList.HandleDeleteBoard)
+	r.Post("/boards/{slug}/icon", h.BoardList.HandleSetBoardIconList)
 
-	r.Post("/api/boards/pin", s.webHandler.HandleTogglePin)
-	r.Get("/api/boards/sidebar", s.webHandler.HandleSidebarBoards)
+	// Board view + mutation routes
+	r.Get("/board/{slug}", h.BoardView.BoardViewPage)
+	r.Get("/board/{slug}/content", h.BoardView.BoardContent)
+	r.Get("/board/{slug}/events", h.SSE.ServeHTTP)
+	r.Post("/board/{slug}/cards", h.BoardView.HandleCreateCard)
+	r.Post("/board/{slug}/cards/move", h.BoardView.HandleMoveCard)
+	r.Post("/board/{slug}/cards/reorder", h.BoardView.HandleReorderCard)
+	r.Post("/board/{slug}/cards/delete", h.BoardView.HandleDeleteCard)
+	r.Post("/board/{slug}/cards/complete", h.BoardView.HandleToggleComplete)
+	r.Post("/board/{slug}/cards/edit", h.BoardView.HandleEditCard)
+	r.Post("/board/{slug}/columns", h.BoardView.HandleCreateColumn)
+	r.Post("/board/{slug}/columns/rename", h.BoardView.HandleRenameColumn)
+	r.Post("/board/{slug}/columns/delete", h.BoardView.HandleDeleteColumn)
+	r.Post("/board/{slug}/columns/collapse", h.BoardView.HandleToggleColumnCollapse)
+	r.Post("/board/{slug}/columns/sort", h.BoardView.HandleSortColumn)
+	r.Post("/board/{slug}/columns/move", h.BoardView.HandleMoveColumn)
+	r.Post("/board/{slug}/meta", h.BoardView.HandleUpdateBoardMeta)
+	r.Post("/board/{slug}/settings", h.BoardView.HandleUpdateBoardSettings)
+	r.Post("/board/{slug}/icon", h.BoardView.HandleSetBoardIcon)
 
-	r.Handle("/settings", s.webHandler.SettingsHandler())
-	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())
-	r.Get("/api/export", s.webHandler.ExportHandler().ServeHTTP)
+	// Board API routes
+	r.Post("/api/boards/pin", h.BoardList.HandleTogglePin)
+	r.Get("/api/boards/sidebar", h.BoardList.HandleSidebarBoards)
+
+	// Settings routes
+	r.Handle("/settings", h.Settings.SettingsHandler())
+	r.Handle("/api/settings", h.Settings.SettingsAPIHandler())
+	r.Get("/api/export", h.ExportHandler().ServeHTTP)
 
 	// Global SSE events (reminders, notifications)
-	r.Get("/events/global", s.webHandler.SSE.ServeGlobalSSE)
+	r.Get("/events/global", h.SSE.ServeGlobalSSE)
 
 	// Reminder routes
-	r.Get("/reminders", s.webHandler.RemindersPage)
-	r.Post("/reminders/set", s.webHandler.HandleSetReminder)
-	r.Post("/reminders/dismiss/{id}", s.webHandler.HandleDismissReminder)
-	r.Post("/reminders/snooze/{id}", s.webHandler.HandleSnoozeReminder)
-	r.Delete("/reminders/{id}", s.webHandler.HandleDeleteReminder)
-	r.Post("/reminders/clear-fired", s.webHandler.HandleClearFired)
-	r.Post("/reminders/clear-history", s.webHandler.HandleClearHistory)
-	r.Post("/reminders/settings", s.webHandler.HandleUpdateReminderSettings)
+	r.Get("/reminders", h.Reminders.RemindersPage)
+	r.Post("/reminders/set", h.Reminders.HandleSetReminder)
+	r.Post("/reminders/dismiss/{id}", h.Reminders.HandleDismissReminder)
+	r.Post("/reminders/snooze/{id}", h.Reminders.HandleSnoozeReminder)
+	r.Delete("/reminders/{id}", h.Reminders.HandleDeleteReminder)
+	r.Post("/reminders/clear-fired", h.Reminders.HandleClearFired)
+	r.Post("/reminders/clear-history", h.Reminders.HandleClearHistory)
+	r.Post("/reminders/settings", h.Reminders.HandleUpdateReminderSettings)
 
 	s.mountAPIRoutes(r)
 

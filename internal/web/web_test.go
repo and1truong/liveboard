@@ -28,11 +28,7 @@ func setupHandlerWithBoard(t *testing.T) (*Handler, string) {
 	ws := workspace.Open(dir)
 	eng := board.New()
 
-	h := &Handler{
-		ws:  ws,
-		eng: eng,
-		SSE: NewSSEBroker(),
-	}
+	h := NewHandler(ws, eng, "", false, false)
 
 	if _, err := ws.CreateBoard("test-board"); err != nil {
 		t.Fatal(err)
@@ -223,9 +219,8 @@ func TestDefaultSettings(t *testing.T) {
 
 func TestSettingsAPIHandler(t *testing.T) {
 	dir := t.TempDir()
-	h := &Handler{
-		ws: &workspace.Workspace{Dir: dir},
-	}
+	b := &Base{ws: &workspace.Workspace{Dir: dir}}
+	h := &Handler{Base: b, Settings: &SettingsHandler{Base: b}}
 
 	handler := h.SettingsAPIHandler()
 
@@ -300,9 +295,8 @@ func TestSettingsAPIHandler(t *testing.T) {
 
 func TestSettingsValidation(t *testing.T) {
 	dir := t.TempDir()
-	h := &Handler{
-		ws: &workspace.Workspace{Dir: dir},
-	}
+	b := &Base{ws: &workspace.Workspace{Dir: dir}}
+	h := &Handler{Base: b, Settings: &SettingsHandler{Base: b}}
 
 	handler := h.SettingsAPIHandler()
 
@@ -346,9 +340,9 @@ func TestSettingsValidation(t *testing.T) {
 
 func TestLoadSaveSettingsRoundTrip(t *testing.T) {
 	dir := t.TempDir()
-	h := &Handler{
+	h := &Handler{Base: &Base{
 		ws: &workspace.Workspace{Dir: dir},
-	}
+	}}
 
 	s := h.loadSettings()
 	if s.Theme != "system" {
@@ -433,7 +427,8 @@ func TestSanitizeSettingsSiteName(t *testing.T) {
 }
 
 func TestSettingsAPISiteName(t *testing.T) {
-	h := &Handler{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	b := &Base{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	h := &Handler{Base: b, Settings: &SettingsHandler{Base: b}}
 	handler := h.SettingsAPIHandler()
 
 	// Default GET returns "LiveBoard"
@@ -491,7 +486,8 @@ func TestSettingsAPISiteName(t *testing.T) {
 }
 
 func TestSettingsAPIEmptyColumns(t *testing.T) {
-	h := &Handler{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	b := &Base{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	h := &Handler{Base: b, Settings: &SettingsHandler{Base: b}}
 	handler := h.SettingsAPIHandler()
 
 	body := `{"theme":"dark","color_theme":"aqua","column_width":280,"sidebar_position":"left","default_columns":[],"newline_trigger":"shift-enter","card_position":"append"}`
@@ -509,7 +505,8 @@ func TestSettingsAPIEmptyColumns(t *testing.T) {
 }
 
 func TestSettingsAPIHighColumnWidth(t *testing.T) {
-	h := &Handler{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	b := &Base{ws: &workspace.Workspace{Dir: t.TempDir()}}
+	h := &Handler{Base: b, Settings: &SettingsHandler{Base: b}}
 	handler := h.SettingsAPIHandler()
 
 	body := `{"theme":"light","color_theme":"aqua","column_width":999,"sidebar_position":"left","newline_trigger":"shift-enter","card_position":"append"}`
@@ -2110,7 +2107,7 @@ func TestRenderFullPageAndPartial(t *testing.T) {
 
 	// renderFullPage
 	w := httptest.NewRecorder()
-	renderFullPage(w, h.boardListTpl, model)
+	renderFullPage(w, h.BoardList.boardListTpl, model)
 	if w.Code != 200 {
 		t.Fatalf("status = %d", w.Code)
 	}

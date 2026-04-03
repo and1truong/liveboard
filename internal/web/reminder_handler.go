@@ -3,6 +3,7 @@ package web
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"net/http"
 	"sort"
 	"time"
@@ -11,6 +12,13 @@ import (
 
 	"github.com/and1truong/liveboard/internal/reminder"
 )
+
+// ReminderHandler handles reminder CRUD and the reminders page.
+type ReminderHandler struct {
+	*Base
+	Store           *reminder.Store
+	reminderPageTpl *template.Template
+}
 
 // ReminderPageModel is the template data for the /reminders page.
 type ReminderPageModel struct {
@@ -74,12 +82,12 @@ func buildHistoryViews(entries []reminder.HistoryEntry) []HistoryView {
 }
 
 // RemindersPage handles GET /reminders.
-func (h *Handler) RemindersPage(w http.ResponseWriter, _ *http.Request) {
-	settings := h.loadSettings()
-	infos, _ := h.ws.ListBoardSummaries()
+func (rh *ReminderHandler) RemindersPage(w http.ResponseWriter, _ *http.Request) {
+	settings := rh.loadSettings()
+	infos, _ := rh.ws.ListBoardSummaries()
 	summaries := sortBoardsWithPins(toBoardSummariesFast(infos), settings.PinnedBoards)
 
-	data, err := h.ReminderStore.Load()
+	data, err := rh.Store.Load()
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -95,7 +103,7 @@ func (h *Handler) RemindersPage(w http.ResponseWriter, _ *http.Request) {
 	cardTitles := make(map[string]string)
 	for _, r := range data.Reminders {
 		if r.Type == reminder.ReminderTypeCard && r.CardID != "" {
-			if title := h.findCardTitle(r.BoardSlug, r.CardID); title != "" {
+			if title := rh.findCardTitle(r.BoardSlug, r.CardID); title != "" {
 				cardTitles[r.CardID] = title
 			}
 		}
@@ -131,7 +139,7 @@ func (h *Handler) RemindersPage(w http.ResponseWriter, _ *http.Request) {
 	sort.Slice(pending, func(i, j int) bool { return pending[i].FireAt < pending[j].FireAt })
 
 	model := ReminderPageModel{
-		LayoutSettings:  h.layoutSettings(settings),
+		LayoutSettings:  rh.layoutSettings(settings),
 		Title:           "Reminders — " + settings.SiteName,
 		SiteName:        settings.SiteName,
 		Boards:          summaries,
@@ -145,11 +153,11 @@ func (h *Handler) RemindersPage(w http.ResponseWriter, _ *http.Request) {
 		HistoryMode:     string(data.HistoryMode),
 	}
 
-	renderFullPage(w, h.reminderPageTpl, model)
+	renderFullPage(w, rh.reminderPageTpl, model)
 }
 
 // HandleSetReminder handles POST /reminders/set.
-func (h *Handler) HandleSetReminder(w http.ResponseWriter, r *http.Request) {
+func (rh *ReminderHandler) HandleSetReminder(w http.ResponseWriter, r *http.Request) {
 	boardSlug := r.FormValue("board_slug")
 	cardID := r.FormValue("card_id")
 	reminderType := r.FormValue("type") // "card" or "board"
@@ -158,7 +166,7 @@ func (h *Handler) HandleSetReminder(w http.ResponseWriter, r *http.Request) {
 	absoluteTime := r.FormValue("absolute_time")
 	dueDate := r.FormValue("due_date")
 
-	settings := h.loadSettings()
+	settings := rh.loadSettings()
 	tz := settings.ReminderTimezone
 	if tz == "" {
 		tz = "Local"
@@ -211,7 +219,7 @@ func (h *Handler) HandleSetReminder(w http.ResponseWriter, r *http.Request) {
 		rem.FireAt = next
 	}
 
-	if err := h.ReminderStore.AddReminder(rem); err != nil {
+	if err := rh.Store.AddReminder(rem); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -222,9 +230,9 @@ func (h *Handler) HandleSetReminder(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleDismissReminder handles POST /reminders/dismiss/{id}.
-func (h *Handler) HandleDismissReminder(w http.ResponseWriter, r *http.Request) {
+func (rh *ReminderHandler) HandleDismissReminder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := h.ReminderStore.AcknowledgeReminder(id); err != nil {
+	if err := rh.Store.AcknowledgeReminder(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -233,7 +241,7 @@ func (h *Handler) HandleDismissReminder(w http.ResponseWriter, r *http.Request) 
 }
 
 // HandleSnoozeReminder handles POST /reminders/snooze/{id}.
-func (h *Handler) HandleSnoozeReminder(w http.ResponseWriter, r *http.Request) {
+func (rh *ReminderHandler) HandleSnoozeReminder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	durationStr := r.FormValue("duration") // "15m", "1h", "1d", "tomorrow"
 
@@ -254,7 +262,7 @@ func (h *Handler) HandleSnoozeReminder(w http.ResponseWriter, r *http.Request) {
 		d = dur
 	}
 
-	if err := h.ReminderStore.SnoozeReminder(id, d); err != nil {
+	if err := rh.Store.SnoozeReminder(id, d); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -263,9 +271,9 @@ func (h *Handler) HandleSnoozeReminder(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleDeleteReminder handles DELETE /reminders/{id}.
-func (h *Handler) HandleDeleteReminder(w http.ResponseWriter, r *http.Request) {
+func (rh *ReminderHandler) HandleDeleteReminder(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
-	if err := h.ReminderStore.RemoveReminder(id); err != nil {
+	if err := rh.Store.RemoveReminder(id); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -274,8 +282,8 @@ func (h *Handler) HandleDeleteReminder(w http.ResponseWriter, r *http.Request) {
 }
 
 // HandleClearFired handles POST /reminders/clear-fired.
-func (h *Handler) HandleClearFired(w http.ResponseWriter, _ *http.Request) {
-	if err := h.ReminderStore.ClearFired(); err != nil {
+func (rh *ReminderHandler) HandleClearFired(w http.ResponseWriter, _ *http.Request) {
+	if err := rh.Store.ClearFired(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -284,8 +292,8 @@ func (h *Handler) HandleClearFired(w http.ResponseWriter, _ *http.Request) {
 }
 
 // HandleClearHistory handles POST /reminders/clear-history.
-func (h *Handler) HandleClearHistory(w http.ResponseWriter, _ *http.Request) {
-	if err := h.ReminderStore.ClearHistory(); err != nil {
+func (rh *ReminderHandler) HandleClearHistory(w http.ResponseWriter, _ *http.Request) {
+	if err := rh.Store.ClearHistory(); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
@@ -294,25 +302,25 @@ func (h *Handler) HandleClearHistory(w http.ResponseWriter, _ *http.Request) {
 }
 
 // HandleUpdateReminderSettings handles POST /reminders/settings.
-func (h *Handler) HandleUpdateReminderSettings(w http.ResponseWriter, r *http.Request) {
+func (rh *ReminderHandler) HandleUpdateReminderSettings(w http.ResponseWriter, r *http.Request) {
 	enabled := r.FormValue("enabled") == "true"
 	tz := r.FormValue("timezone")
 	historyMode := r.FormValue("history_mode")
 
 	// Update app settings
-	settings := h.loadSettings()
+	settings := rh.loadSettings()
 	settings.ReminderEnabled = enabled
 	if tz != "" {
 		settings.ReminderTimezone = tz
 	}
-	if err := h.saveSettings(settings); err != nil {
+	if err := rh.saveSettings(settings); err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
 	// Update reminder store settings
 	if historyMode != "" {
-		_ = h.ReminderStore.Mutate(func(d *reminder.StoreData) error {
+		_ = rh.Store.Mutate(func(d *reminder.StoreData) error {
 			d.Enabled = enabled
 			d.Timezone = tz
 			d.HistoryMode = reminder.HistoryMode(historyMode)
@@ -325,8 +333,8 @@ func (h *Handler) HandleUpdateReminderSettings(w http.ResponseWriter, r *http.Re
 }
 
 // findCardTitle looks up a card title by board slug and card ID.
-func (h *Handler) findCardTitle(boardSlug, cardID string) string {
-	b, err := h.ws.LoadBoard(boardSlug)
+func (rh *ReminderHandler) findCardTitle(boardSlug, cardID string) string {
+	b, err := rh.ws.LoadBoard(boardSlug)
 	if err != nil {
 		return ""
 	}

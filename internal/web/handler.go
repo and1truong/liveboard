@@ -4,7 +4,6 @@ package web
 import (
 	"bytes"
 	"html/template"
-	"log"
 	"net/http"
 	"strings"
 	"sync"
@@ -17,23 +16,16 @@ import (
 	"github.com/and1truong/liveboard/internal/reminder"
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 	"github.com/and1truong/liveboard/internal/workspace"
+	"github.com/and1truong/liveboard/pkg/models"
 )
 
-// Handler manages web handlers and shared dependencies.
+// Handler is the coordinator that owns all sub-handlers and shared dependencies.
 type Handler struct {
-	ws               *workspace.Workspace
-	eng              *board.Engine
-	version          string
-	ReadOnly         bool
-	IsDesktop        bool
-	SSE              *SSEBroker
-	ReminderStore    *reminder.Store
-	boardListTpl     *template.Template
-	boardViewTpl     *template.Template
-	boardGridTpl     *template.Template // partial: boards grid only
-	boardContentTpl  *template.Template // partial: board content only
-	sidebarBoardsTpl *template.Template // partial: sidebar board list
-	reminderPageTpl  *template.Template // full: reminders page
+	*Base
+	BoardList *BoardListHandler
+	BoardView *BoardViewHandler
+	Reminders *ReminderHandler
+	Settings  *SettingsHandler
 }
 
 // mdBufPool reuses buffers for markdown rendering to avoid per-call allocation.
@@ -70,50 +62,96 @@ func funcMap() template.FuncMap {
 	}
 }
 
-// NewHandler creates a new web Handler.
+// NewHandler creates a new web Handler with all sub-handlers wired together.
 func NewHandler(ws *workspace.Workspace, eng *board.Engine, version string, readOnly, isDesktop bool) *Handler {
-	h := &Handler{
-		ws:            ws,
-		eng:           eng,
-		version:       version,
-		ReadOnly:      readOnly,
-		IsDesktop:     isDesktop,
-		SSE:           NewSSEBroker(),
-		ReminderStore: reminder.NewStore(ws.Dir),
+	base := &Base{
+		ws:        ws,
+		eng:       eng,
+		version:   version,
+		ReadOnly:  readOnly,
+		IsDesktop: isDesktop,
+		SSE:       NewSSEBroker(),
 	}
 
 	fm := funcMap()
-	h.boardListTpl = template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "board_list.html"))
-	h.boardViewTpl = template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "board_view.html"))
-	h.reminderPageTpl = template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "reminders.html"))
 
-	// Partial templates for HTMX responses
-	h.boardGridTpl = template.Must(template.New("boards-grid").Funcs(fm).ParseFS(tmplfs.FS, "board_list.html"))
-	h.boardContentTpl = template.Must(template.New("board-content").Funcs(fm).ParseFS(tmplfs.FS, "board_view.html"))
-	h.sidebarBoardsTpl = template.Must(template.New("sidebar-boards").Funcs(fm).ParseFS(tmplfs.FS, "layout.html"))
+	reminderStore := reminder.NewStore(ws.Dir)
 
-	return h
-}
+	bl := &BoardListHandler{
+		Base:             base,
+		boardListTpl:     template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "board_list.html")),
+		boardGridTpl:     template.Must(template.New("boards-grid").Funcs(fm).ParseFS(tmplfs.FS, "board_list.html")),
+		sidebarBoardsTpl: template.Must(template.New("sidebar-boards").Funcs(fm).ParseFS(tmplfs.FS, "layout.html")),
+	}
 
-// renderFullPage renders a full page (layout + content) to the response writer.
-func renderFullPage(w http.ResponseWriter, tpl *template.Template, model interface{}) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := tpl.Execute(w, model); err != nil {
-		log.Printf("template render error: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
+	bv := &BoardViewHandler{
+		Base:            base,
+		boardViewTpl:    template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "board_view.html")),
+		boardContentTpl: template.Must(template.New("board-content").Funcs(fm).ParseFS(tmplfs.FS, "board_view.html")),
+	}
+
+	rem := &ReminderHandler{
+		Base:            base,
+		Store:           reminderStore,
+		reminderPageTpl: template.Must(template.New("layout.html").Funcs(fm).ParseFS(tmplfs.FS, "layout.html", "reminders.html")),
+	}
+
+	settings := &SettingsHandler{Base: base}
+
+	// Wire reminder callbacks so board handlers don't import reminder package for side-effects.
+	bv.onCardCompleted = func(slug, cardID string) {
+		_ = reminderStore.RemoveByCardID(slug, cardID)
+	}
+	bv.onDueDateChanged = func(slug, cardID, due string) {
+		s := LoadSettingsFromDir(ws.Dir)
+		tz := s.ReminderTimezone
+		if tz == "" {
+			tz = "Local"
+		}
+		_ = reminderStore.RecalculateRelativeReminder(slug, cardID, due, tz)
+	}
+
+	return &Handler{
+		Base:      base,
+		BoardList: bl,
+		BoardView: bv,
+		Reminders: rem,
+		Settings:  settings,
 	}
 }
 
-// renderPartial renders a named template block to the response writer.
-func renderPartial(w http.ResponseWriter, tpl *template.Template, name string, model interface{}) {
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	if err := tpl.ExecuteTemplate(w, name, model); err != nil {
-		log.Printf("partial render error: %v", err)
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-	}
+// ReminderStore returns the reminder store for external access (e.g. scheduler).
+func (h *Handler) ReminderStore() *reminder.Store {
+	return h.Reminders.Store
 }
 
-// publishBoardEvent broadcasts a board update via SSE.
-func (h *Handler) publishBoardEvent(slug string) {
-	h.SSE.Publish(slug)
+// ExportHandler returns an HTTP handler that exports the workspace as a static ZIP.
+func (h *Handler) ExportHandler() http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		exportHandler(h.Base)(w, r)
+	})
+}
+
+// --- Forwarding helpers for tests that call internal methods ---
+
+func (h *Handler) boardListModel() (BoardListModel, error) {
+	return h.BoardList.boardListModel()
+}
+func (h *Handler) boardViewModel(slug string) (BoardViewModel, error) {
+	return h.BoardView.boardViewModel(slug)
+}
+func (h *Handler) mutateBoard(slug string, clientVersion int, op func(*models.Board) error) (BoardViewModel, error) {
+	return h.BoardView.mutateBoard(slug, clientVersion, op)
+}
+func (h *Handler) loadSettings() AppSettings {
+	return LoadSettingsFromDir(h.ws.Dir)
+}
+func (h *Handler) saveSettings(s AppSettings) error {
+	return saveSettingsToDir(h.ws.Dir, s)
+}
+func (h *Handler) layoutSettings(s AppSettings) LayoutSettings {
+	return h.Base.layoutSettings(s)
+}
+func (h *Handler) handleConflict(w http.ResponseWriter, slug string) {
+	h.BoardView.handleConflict(w, slug)
 }
