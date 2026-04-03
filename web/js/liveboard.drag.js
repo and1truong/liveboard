@@ -7,107 +7,94 @@
 
   var isReadOnly = document.documentElement.hasAttribute('data-readonly');
 
-  function attach() {
-    // Card click → open Alpine card modal
-    document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
-      if (card.dataset.modalWired) return;
-      card.dataset.modalWired = "1";
+  // ── Delegated event listeners (attached once, survive HTMX swaps) ──
 
-      card.addEventListener("mousedown", function () {
-        LB.isDragging = false;
-      });
+  // Card mousedown — reset drag flag
+  document.addEventListener("mousedown", function (e) {
+    if (e.target.closest(".card[data-card-idx]")) LB.isDragging = false;
+  });
 
-      card.addEventListener("click", function (e) {
-        if (LB.isDragging) return;
-        if (e.target.closest("button, a, input, textarea, select")) return;
-        // Open Alpine card modal
-        var modalComp = document.querySelector('[x-data^="cardModal"]');
-        if (modalComp && modalComp._x_dataStack) {
-          Alpine.$data(modalComp).show(card);
-        }
-      });
-    });
+  // Card click → open Alpine card modal
+  document.addEventListener("click", function (e) {
+    var card = e.target.closest(".card[data-card-idx]");
+    if (!card || LB.isDragging) return;
+    if (e.target.closest("button, a, input, textarea, select")) return;
+    var modalComp = document.querySelector('[x-data^="cardModal"]');
+    if (modalComp && modalComp._x_dataStack) {
+      Alpine.$data(modalComp).show(card);
+    }
+  });
 
-    if (!isReadOnly) {
+  if (!isReadOnly) {
     // Card right-click → open Alpine quick edit
-    document.querySelectorAll(".card[data-card-idx]").forEach(function (card) {
-      if (card.dataset.ctxWired) return;
-      card.dataset.ctxWired = "1";
-      card.addEventListener("contextmenu", function (e) {
-        e.preventDefault();
-        var qeComp = document.querySelector('[x-data^="quickEdit"]');
-        if (qeComp && qeComp._x_dataStack) {
-          Alpine.$data(qeComp).show(card);
-        }
-      });
+    document.addEventListener("contextmenu", function (e) {
+      var card = e.target.closest(".card[data-card-idx]");
+      if (!card) return;
+      e.preventDefault();
+      var qeComp = document.querySelector('[x-data^="quickEdit"]');
+      if (qeComp && qeComp._x_dataStack) {
+        Alpine.$data(qeComp).show(card);
+      }
     });
 
     // Column menu buttons → open Alpine column menu
-    document.querySelectorAll(".column-menu-btn").forEach(function (btn) {
-      if (btn.dataset.colMenuWired) return;
-      btn.dataset.colMenuWired = "1";
-      btn.addEventListener("click", function (e) {
-        e.stopPropagation();
-        var menuComp = document.querySelector('[x-data^="columnMenu"]');
-        if (menuComp && menuComp._x_dataStack) {
-          Alpine.$data(menuComp).show(btn);
-        }
-      });
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest(".column-menu-btn");
+      if (!btn) return;
+      e.stopPropagation();
+      var menuComp = document.querySelector('[x-data^="columnMenu"]');
+      if (menuComp && menuComp._x_dataStack) {
+        Alpine.$data(menuComp).show(btn);
+      }
     });
 
     // Column header double-click → rename
-    document.querySelectorAll(".column-header h3").forEach(function (h3) {
-      if (h3.dataset.dblWired) return;
-      h3.dataset.dblWired = "1";
-      h3.addEventListener("dblclick", function (e) {
-        e.stopPropagation();
-        var btn = h3.closest(".column-header").querySelector(".column-menu-btn");
-        if (!btn) return;
-        var menuComp = document.querySelector('[x-data^="columnMenu"]');
-        if (menuComp && menuComp._x_dataStack) {
-          var data = Alpine.$data(menuComp);
-          data.columnName = btn.dataset.columnName;
-          data.slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
-          data.editColumn();
-        }
-      });
+    document.addEventListener("dblclick", function (e) {
+      var h3 = e.target.closest(".column-header h3");
+      if (!h3) return;
+      e.stopPropagation();
+      var btn = h3.closest(".column-header").querySelector(".column-menu-btn");
+      if (!btn) return;
+      var menuComp = document.querySelector('[x-data^="columnMenu"]');
+      if (menuComp && menuComp._x_dataStack) {
+        var data = Alpine.$data(menuComp);
+        data.columnName = btn.dataset.columnName;
+        data.slug = decodeURIComponent(window.location.pathname.replace(/^\/board\//, ""));
+        data.editColumn();
+      }
     });
 
     // Board title double-click → open settings
-    var titleEl = document.querySelector(".board-title");
-    if (titleEl && !titleEl.dataset.dblWired) {
-      titleEl.dataset.dblWired = "1";
-      titleEl.addEventListener("dblclick", function (e) {
-        e.stopPropagation();
-        var bsComp = document.querySelector('[x-data^="boardSettings"]');
-        if (bsComp && bsComp._x_dataStack) {
-          Alpine.$data(bsComp).toggle();
-        }
-      });
-    }
+    document.addEventListener("dblclick", function (e) {
+      if (!e.target.closest(".board-title")) return;
+      e.stopPropagation();
+      var bsComp = document.querySelector('[x-data^="boardSettings"]');
+      if (bsComp && bsComp._x_dataStack) {
+        Alpine.$data(bsComp).toggle();
+      }
+    });
 
     // Board settings gear button
-    document.querySelectorAll(".board-settings-btn").forEach(function (btn) {
-      if (btn.dataset.bsWired) return;
-      btn.dataset.bsWired = "1";
-      btn.addEventListener("click", function () {
-        var bsComp = document.querySelector('[x-data^="boardSettings"]');
-        if (bsComp && bsComp._x_dataStack) {
-          Alpine.$data(bsComp).toggle();
-        }
-      });
-    });
-    } // end !isReadOnly
-
-    // Collapsed column click → expand
     document.addEventListener("click", function (e) {
-      var header = e.target.closest(".column-header");
-      if (!header) return;
-      var col = header.closest(".column");
-      if (!col || !col.classList.contains("collapsed")) return;
-      var btn = header.querySelector(".column-collapse-btn");
-      if (btn && e.target !== btn) btn.click();
+      if (!e.target.closest(".board-settings-btn")) return;
+      var bsComp = document.querySelector('[x-data^="boardSettings"]');
+      if (bsComp && bsComp._x_dataStack) {
+        Alpine.$data(bsComp).toggle();
+      }
     });
+  } // end !isReadOnly
+
+  // Collapsed column click → expand
+  document.addEventListener("click", function (e) {
+    var header = e.target.closest(".column-header");
+    if (!header) return;
+    var col = header.closest(".column");
+    if (!col || !col.classList.contains("collapsed")) return;
+    var btn = header.querySelector(".column-collapse-btn");
+    if (btn && e.target !== btn) btn.click();
+  });
+
+  function attach() {
 
     // Cards: draggable
     document.querySelectorAll(".card[draggable]:not(.calendar-card-chip)").forEach(function (card) {
