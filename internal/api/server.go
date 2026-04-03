@@ -2,15 +2,19 @@ package api
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
 	"github.com/and1truong/liveboard/internal/board"
 	livemcp "github.com/and1truong/liveboard/internal/mcp"
+	"github.com/and1truong/liveboard/internal/reminder"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 	staticweb "github.com/and1truong/liveboard/web"
@@ -18,28 +22,103 @@ import (
 
 // Server is the REST API server for LiveBoard.
 type Server struct {
-	ws         *workspace.Workspace
-	eng        *board.Engine
-	webHandler *web.Handler
-	mcpServer  *livemcp.Server
-	router     chi.Router
-	httpServer *http.Server
-	noCache    bool
-	readOnly   bool
+	ws                *workspace.Workspace
+	eng               *board.Engine
+	webHandler        *web.Handler
+	mcpServer         *livemcp.Server
+	reminderScheduler *reminder.Scheduler
+	router            chi.Router
+	httpServer        *http.Server
+	noCache           bool
+	readOnly          bool
 }
 
 // NewServer creates a Server with all routes registered.
 func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, isDesktop bool, version string) *Server {
+	h := web.NewHandler(ws, eng, version, readOnly, isDesktop)
 	s := &Server{
 		ws:         ws,
 		eng:        eng,
-		webHandler: web.NewHandler(ws, eng, version, readOnly, isDesktop),
+		webHandler: h,
 		mcpServer:  livemcp.New(ws, eng, version),
 		noCache:    noCache,
 		readOnly:   readOnly,
 	}
+
+	// Initialize reminder scheduler if enabled
+	settings := web.LoadSettingsFromDir(ws.Dir)
+	if settings.ReminderEnabled {
+		s.startReminderScheduler(ws, h, isDesktop, settings)
+	}
+
 	s.router = s.buildRouter()
 	return s
+}
+
+func (s *Server) startReminderScheduler(ws *workspace.Workspace, h *web.Handler, isDesktop bool, settings web.AppSettings) {
+	store := h.ReminderStore
+
+	notifyFn := func(r reminder.Reminder, cardTitle string, stats *reminder.BoardStats) {
+		// Build SSE payload
+		payload := map[string]any{
+			"id":         r.ID,
+			"type":       r.Type,
+			"board_slug": r.BoardSlug,
+			"card_id":    r.CardID,
+			"card_title": cardTitle,
+		}
+		if stats != nil {
+			payload["message"] = fmt.Sprintf("%d open, %d overdue, %d due this week", stats.TotalOpen, stats.Overdue, stats.DueThisWeek)
+		}
+		data, _ := json.Marshal(payload)
+		h.SSE.PublishGlobal(web.SSEEvent{Type: "reminder-fire", Payload: string(data)})
+
+		// Desktop system notification
+		if isDesktop {
+			title := "Reminder"
+			body := cardTitle
+			if r.Type == reminder.ReminderTypeBoard {
+				title = "Board Reminder"
+				body = r.BoardSlug
+				if stats != nil {
+					body = fmt.Sprintf("%s: %d open, %d overdue", r.BoardSlug, stats.TotalOpen, stats.Overdue)
+				}
+			}
+			_ = reminder.SendSystemNotification(title, body, "")
+		}
+	}
+
+	statsFn := func(slug string) reminder.BoardStats {
+		b, err := ws.LoadBoard(slug)
+		if err != nil {
+			return reminder.BoardStats{}
+		}
+		var bs reminder.BoardStats
+		today := time.Now().Format("2006-01-02")
+		// Compute end of this week (Sunday)
+		now := time.Now()
+		weekEnd := now.AddDate(0, 0, 7-int(now.Weekday()))
+		weekEndStr := weekEnd.Format("2006-01-02")
+
+		for _, col := range b.Columns {
+			for _, card := range col.Cards {
+				if !card.Completed {
+					bs.TotalOpen++
+					if card.Due != "" && card.Due < today {
+						bs.Overdue++
+					}
+					if card.Due != "" && card.Due >= today && card.Due <= weekEndStr {
+						bs.DueThisWeek++
+					}
+				}
+			}
+		}
+		return bs
+	}
+
+	s.reminderScheduler = reminder.NewScheduler(store, time.Minute, notifyFn, statsFn)
+	s.reminderScheduler.Start()
+	log.Println("reminder scheduler started")
 }
 
 // Router returns the http.Handler for use with httptest.
@@ -73,6 +152,9 @@ func (s *Server) ListenAndServe(addr string) (net.Addr, error) {
 // It first closes all SSE connections so long-lived streams don't block the
 // HTTP server's graceful drain.
 func (s *Server) Shutdown(ctx context.Context) error {
+	if s.reminderScheduler != nil {
+		s.reminderScheduler.Stop()
+	}
 	s.webHandler.SSE.Shutdown()
 	if s.httpServer != nil {
 		return s.httpServer.Shutdown(ctx)
@@ -139,6 +221,19 @@ func (s *Server) buildRouter() chi.Router {
 	r.Handle("/settings", s.webHandler.SettingsHandler())
 	r.Handle("/api/settings", s.webHandler.SettingsAPIHandler())
 	r.Get("/api/export", s.webHandler.ExportHandler().ServeHTTP)
+
+	// Global SSE events (reminders, notifications)
+	r.Get("/events/global", s.webHandler.SSE.ServeGlobalSSE)
+
+	// Reminder routes
+	r.Get("/reminders", s.webHandler.RemindersPage)
+	r.Post("/reminders/set", s.webHandler.HandleSetReminder)
+	r.Post("/reminders/dismiss/{id}", s.webHandler.HandleDismissReminder)
+	r.Post("/reminders/snooze/{id}", s.webHandler.HandleSnoozeReminder)
+	r.Delete("/reminders/{id}", s.webHandler.HandleDeleteReminder)
+	r.Post("/reminders/clear-fired", s.webHandler.HandleClearFired)
+	r.Post("/reminders/clear-history", s.webHandler.HandleClearHistory)
+	r.Post("/reminders/settings", s.webHandler.HandleUpdateReminderSettings)
 
 	s.mountAPIRoutes(r)
 

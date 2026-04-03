@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/reminder"
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
@@ -86,6 +87,9 @@ func resolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettin
 	}
 	if bs.ViewMode != nil {
 		rs.ViewMode = *bs.ViewMode
+	}
+	if rs.ViewMode == "table" {
+		rs.ViewMode = "list"
 	}
 	rs.CardDisplayMode = global.CardDisplayMode
 	if rs.CardDisplayMode == "" {
@@ -300,7 +304,10 @@ func (h *Handler) HandleCreateCard(w http.ResponseWriter, r *http.Request) {
 
 	version := formVersion(r)
 	model, err := h.mutateBoard(slug, version, func(b *models.Board) error {
-		card := models.Card{Title: title}
+		card := models.Card{
+			Title:    title,
+			Metadata: map[string]string{"id": reminder.GenerateID()},
+		}
 		for i := range b.Columns {
 			if b.Columns[i].Name == column {
 				if prepend {
@@ -518,7 +525,14 @@ func (h *Handler) HandleToggleComplete(w http.ResponseWriter, r *http.Request) {
 		if err := validateIndices(b, colIdx, cardIdx); err != nil {
 			return err
 		}
-		b.Columns[colIdx].Cards[cardIdx].Completed = !b.Columns[colIdx].Cards[cardIdx].Completed
+		card := &b.Columns[colIdx].Cards[cardIdx]
+		card.Completed = !card.Completed
+		// Auto-dismiss reminder when card is completed
+		if card.Completed {
+			if cardID := reminder.GetCardID(card); cardID != "" {
+				_ = h.ReminderStore.RemoveByCardID(slug, cardID)
+			}
+		}
 		return nil
 	})
 	if errors.Is(mutErr, board.ErrVersionConflict) {
@@ -588,6 +602,17 @@ func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
 			return err
 		}
 		card := &b.Columns[colIdx].Cards[cardIdx]
+
+		// Ensure card has an ID
+		if card.Metadata == nil {
+			card.Metadata = map[string]string{}
+		}
+		if card.Metadata["id"] == "" {
+			card.Metadata["id"] = reminder.GenerateID()
+		}
+
+		oldDue := card.Due
+
 		if title != "" {
 			card.Title = title
 		}
@@ -599,6 +624,18 @@ func (h *Handler) HandleEditCard(w http.ResponseWriter, r *http.Request) {
 		if assignee != "" {
 			ensureMember(b, assignee)
 		}
+
+		// Auto-recalculate relative reminder if due date changed
+		if oldDue != due && due != "" {
+			cardID := card.Metadata["id"]
+			settings := h.loadSettings()
+			tz := settings.ReminderTimezone
+			if tz == "" {
+				tz = "Local"
+			}
+			_ = h.ReminderStore.RecalculateRelativeReminder(slug, cardID, due, tz)
+		}
+
 		return nil
 	})
 	if errors.Is(mutErr, board.ErrVersionConflict) {
@@ -964,7 +1001,7 @@ func (h *Handler) HandleUpdateBoardSettings(w http.ResponseWriter, r *http.Reque
 		b := v == "true"
 		settings.ExpandColumns = &b
 	}
-	if v := r.FormValue("view_mode"); v == "board" || v == "table" || v == "calendar" {
+	if v := r.FormValue("view_mode"); v == "board" || v == "list" || v == "table" || v == "calendar" {
 		settings.ViewMode = &v
 	}
 	if v := r.FormValue("week_start"); v == "sunday" || v == "monday" {

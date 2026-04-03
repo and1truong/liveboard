@@ -12,12 +12,20 @@ import (
 type SSEBroker struct {
 	mu      sync.RWMutex
 	clients map[string]map[chan string]struct{} // boardSlug -> set of channels
+	global  map[chan SSEEvent]struct{}          // global subscribers (for reminders)
+}
+
+// SSEEvent carries an event type and JSON payload for global SSE.
+type SSEEvent struct {
+	Type    string
+	Payload string
 }
 
 // NewSSEBroker creates a new SSE broker.
 func NewSSEBroker() *SSEBroker {
 	return &SSEBroker{
 		clients: make(map[string]map[chan string]struct{}),
+		global:  make(map[chan SSEEvent]struct{}),
 	}
 }
 
@@ -47,6 +55,34 @@ func (b *SSEBroker) Unsubscribe(slug string, ch chan string) {
 	}
 }
 
+// SubscribeGlobal registers a channel to receive global events (e.g. reminders).
+func (b *SSEBroker) SubscribeGlobal() chan SSEEvent {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	ch := make(chan SSEEvent, 4)
+	b.global[ch] = struct{}{}
+	return ch
+}
+
+// UnsubscribeGlobal removes a global subscriber.
+func (b *SSEBroker) UnsubscribeGlobal(ch chan SSEEvent) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	delete(b.global, ch)
+}
+
+// PublishGlobal sends an event to all global subscribers.
+func (b *SSEBroker) PublishGlobal(event SSEEvent) {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	for ch := range b.global {
+		select {
+		case ch <- event:
+		default:
+		}
+	}
+}
+
 // Shutdown closes all subscriber channels so SSE handlers exit promptly.
 // Must be called before http.Server.Shutdown to unblock long-lived connections.
 func (b *SSEBroker) Shutdown() {
@@ -58,6 +94,10 @@ func (b *SSEBroker) Shutdown() {
 			close(ch)
 		}
 		delete(b.clients, slug)
+	}
+	for ch := range b.global {
+		close(ch)
+		delete(b.global, ch)
 	}
 }
 
@@ -73,6 +113,39 @@ func (b *SSEBroker) Publish(slug string) {
 			default:
 				// Drop if channel is full (non-blocking)
 			}
+		}
+	}
+}
+
+// ServeGlobalSSE handles SSE connections for global events (reminders).
+func (b *SSEBroker) ServeGlobalSSE(w http.ResponseWriter, r *http.Request) {
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "streaming not supported", http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+	w.Header().Set("X-Accel-Buffering", "no")
+
+	ch := b.SubscribeGlobal()
+	defer b.UnsubscribeGlobal(ch)
+
+	_, _ = fmt.Fprintf(w, "event: connected\ndata: ok\n\n")
+	flusher.Flush()
+
+	for {
+		select {
+		case <-r.Context().Done():
+			return
+		case evt, ok := <-ch:
+			if !ok {
+				return
+			}
+			_, _ = fmt.Fprintf(w, "event: %s\ndata: %s\n\n", evt.Type, evt.Payload)
+			flusher.Flush()
 		}
 	}
 }

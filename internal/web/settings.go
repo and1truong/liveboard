@@ -55,10 +55,11 @@ type AppSettings struct {
 	KeyboardShortcuts bool     `json:"keyboard_shortcuts"`
 	WeekStart         string   `json:"week_start,omitempty"`
 	LastBoard         string   `json:"last_board,omitempty"`
+	ReminderEnabled   bool     `json:"reminder_enabled,omitempty"`
+	ReminderTimezone  string   `json:"reminder_timezone,omitempty"`
 }
 
 var validColorThemes = map[string]bool{
-	"gitlab":  true,
 	"emerald": true, "rose": true, "aqua": true,
 }
 
