@@ -8,8 +8,8 @@ import (
 
 // BoardStats holds summary stats for a board-level reminder notification.
 type BoardStats struct {
-	TotalOpen  int
-	Overdue    int
+	TotalOpen   int
+	Overdue     int
 	DueThisWeek int
 }
 
@@ -22,11 +22,11 @@ type NotifyFunc func(r Reminder, cardTitle string, stats *BoardStats)
 
 // Scheduler checks pending reminders on a tick interval and fires them.
 type Scheduler struct {
-	store      *Store
-	interval   time.Duration
-	notifyFn   NotifyFunc
-	statsFn    BoardStatsFunc
-	cancel     context.CancelFunc
+	store    *Store
+	interval time.Duration
+	notifyFn NotifyFunc
+	statsFn  BoardStatsFunc
+	cancel   context.CancelFunc
 }
 
 // NewScheduler creates a scheduler that ticks at the given interval.
@@ -70,57 +70,58 @@ func (s *Scheduler) run(ctx context.Context) {
 	}
 }
 
+// purgeOldEntries removes history entries older than 30 days.
+func purgeOldEntries(d *StoreData, now time.Time) {
+	if d.HistoryMode != HistoryAutoPurge {
+		return
+	}
+	cutoff := now.Add(-30 * 24 * time.Hour)
+	var kept []HistoryEntry
+	for _, h := range d.History {
+		if h.FiredAt.After(cutoff) {
+			kept = append(kept, h)
+		}
+	}
+	d.History = kept
+}
+
+// shouldFire checks whether a reminder is ready to fire at the given time.
+func shouldFire(r *Reminder, now time.Time) bool {
+	if r.Fired {
+		return false
+	}
+	if r.SnoozedUntil != nil && now.Before(*r.SnoozedUntil) {
+		return false
+	}
+	return !now.Before(r.FireAt)
+}
+
 func (s *Scheduler) tick() {
 	now := time.Now()
 
 	err := s.store.Mutate(func(d *StoreData) error {
-		// Auto-purge old history if configured
-		if d.HistoryMode == HistoryAutoPurge {
-			cutoff := now.Add(-30 * 24 * time.Hour)
-			var kept []HistoryEntry
-			for _, h := range d.History {
-				if h.FiredAt.After(cutoff) {
-					kept = append(kept, h)
-				}
-			}
-			d.History = kept
-		}
+		purgeOldEntries(d, now)
 
 		for i := range d.Reminders {
 			r := &d.Reminders[i]
-
-			// Skip already fired (waiting for ack) or acknowledged
-			if r.Fired {
+			if !shouldFire(r, now) {
 				continue
 			}
 
-			// Check snooze
-			if r.SnoozedUntil != nil && now.Before(*r.SnoozedUntil) {
-				continue
-			}
-
-			// Check if it's time to fire
-			if now.Before(r.FireAt) {
-				continue
-			}
-
-			// Fire the reminder
 			r.Fired = true
 			fireTime := now
 			r.LastFired = &fireTime
 
-			// For recurring reminders, compute next fire time
 			if r.Mode == ModeRecurring && r.Recurrence != nil {
-				next, err := NextRecurrence(r.Recurrence, now, d.Timezone)
-				if err != nil {
-					log.Printf("reminder: failed to compute next recurrence for %s: %v", r.ID, err)
+				next, recErr := NextRecurrence(r.Recurrence, now, d.Timezone)
+				if recErr != nil {
+					log.Printf("reminder: failed to compute next recurrence for %s: %v", r.ID, recErr)
 				} else {
 					r.FireAt = next
-					r.Fired = false // Will fire again at next time
+					r.Fired = false
 				}
 			}
 
-			// Notify asynchronously to avoid holding the lock too long
 			go s.fireReminder(*r)
 		}
 

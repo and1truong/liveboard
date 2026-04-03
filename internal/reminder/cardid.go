@@ -1,3 +1,4 @@
+// Package reminder provides scheduled reminder support for boards and cards.
 package reminder
 
 import "github.com/and1truong/liveboard/pkg/models"

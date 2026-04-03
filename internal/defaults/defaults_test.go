@@ -19,11 +19,11 @@ func backupConfig(t *testing.T) func() {
 	if err != nil {
 		// no existing file — cleanup means removing whatever the test wrote
 		return func() {
-			os.Remove(path)
+			_ = os.Remove(path)
 		}
 	}
 	return func() {
-		os.WriteFile(path, orig, 0o644)
+		_ = os.WriteFile(path, orig, 0o644)
 	}
 }
 
@@ -157,7 +157,7 @@ func TestDesktopConfig_MissingFile(t *testing.T) {
 	}
 
 	// Remove the file so LoadDesktopConfig hits the read-error branch
-	os.Remove(path)
+	_ = os.Remove(path)
 
 	cfg := LoadDesktopConfig()
 	if cfg.LastWorkspace != "" {
@@ -168,8 +168,8 @@ func TestDesktopConfig_MissingFile(t *testing.T) {
 	}
 
 	// Also test invalid JSON
-	os.MkdirAll(filepath.Dir(path), 0o755)
-	os.WriteFile(path, []byte("{invalid json}"), 0o644)
+	_ = os.MkdirAll(filepath.Dir(path), 0o755)
+	_ = os.WriteFile(path, []byte("{invalid json}"), 0o644)
 	cfg2 := LoadDesktopConfig()
 	if cfg2.LastWorkspace != "" {
 		t.Errorf("invalid JSON: LastWorkspace = %q, want empty", cfg2.LastWorkspace)
@@ -258,7 +258,7 @@ func TestDesktopWorkDir(t *testing.T) {
 	// Clear any saved config so it falls through to WorkDir logic
 	path := desktopConfigPath()
 	if path != "" {
-		os.Remove(path)
+		_ = os.Remove(path)
 	}
 
 	dir, _ := DesktopWorkDir()
@@ -338,7 +338,7 @@ func TestDesktopWorkDir_RootCwd(t *testing.T) {
 	// Clear saved config
 	path := desktopConfigPath()
 	if path != "" {
-		os.Remove(path)
+		_ = os.Remove(path)
 	}
 
 	// Check if iCloud dir exists — if it does, DesktopWorkDir won't reach
@@ -348,19 +348,19 @@ func TestDesktopWorkDir_RootCwd(t *testing.T) {
 		t.Skip("no home dir")
 	}
 	icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
-	if _, err := os.Stat(icloud); err == nil {
+	if _, statErr := os.Stat(icloud); statErr == nil {
 		t.Skip("iCloud dir exists, can't test root fallback")
 	}
 
 	// Save cwd and change to /
-	origDir, err := os.Getwd()
-	if err != nil {
-		t.Fatal(err)
+	origDir, getErr := os.Getwd()
+	if getErr != nil {
+		t.Fatal(getErr)
 	}
-	defer os.Chdir(origDir)
+	defer os.Chdir(origDir) //nolint:errcheck // best-effort restore
 
-	if err := os.Chdir("/"); err != nil {
-		t.Fatal(err)
+	if chdirErr := os.Chdir("/"); chdirErr != nil {
+		t.Fatal(chdirErr)
 	}
 
 	dir, isCloud := DesktopWorkDir()
@@ -385,8 +385,8 @@ func TestDesktopWorkDir_RootCwd(t *testing.T) {
 func TestDesktopConfig_EmptyHome(t *testing.T) {
 	// Unset HOME to trigger desktopConfigPath() returning ""
 	origHome := os.Getenv("HOME")
-	os.Unsetenv("HOME")
-	defer os.Setenv("HOME", origHome)
+	_ = os.Unsetenv("HOME")
+	t.Cleanup(func() { _ = os.Setenv("HOME", origHome) })
 
 	// desktopConfigPath should return ""
 	p := desktopConfigPath()
@@ -409,8 +409,8 @@ func TestDesktopConfig_EmptyHome(t *testing.T) {
 
 func TestWorkDir_NoHome(t *testing.T) {
 	origHome := os.Getenv("HOME")
-	os.Unsetenv("HOME")
-	defer os.Setenv("HOME", origHome)
+	_ = os.Unsetenv("HOME")
+	t.Cleanup(func() { _ = os.Setenv("HOME", origHome) })
 
 	dir, isCloud := WorkDir()
 	if isCloud {
@@ -425,8 +425,8 @@ func TestWorkDir_NoHome(t *testing.T) {
 
 func TestDesktopWorkDir_NoHome(t *testing.T) {
 	origHome := os.Getenv("HOME")
-	os.Unsetenv("HOME")
-	defer os.Setenv("HOME", origHome)
+	_ = os.Unsetenv("HOME")
+	t.Cleanup(func() { _ = os.Setenv("HOME", origHome) })
 
 	dir, isCloud := DesktopWorkDir()
 	if isCloud {
@@ -442,7 +442,7 @@ func TestDesktopWorkDir_NoHome(t *testing.T) {
 func TestDesktopConfig_CleanStale_FileNotDir(t *testing.T) {
 	// A file (not directory) in RecentWorkspaces should be cleaned
 	tmpFile := filepath.Join(t.TempDir(), "afile")
-	os.WriteFile(tmpFile, []byte("hi"), 0o644)
+	_ = os.WriteFile(tmpFile, []byte("hi"), 0o644)
 
 	c := &DesktopConfig{
 		LastWorkspace:    tmpFile,

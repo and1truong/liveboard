@@ -405,8 +405,8 @@ func TestExportCmd_DefaultOutput(t *testing.T) {
 	suppressStdout(t)
 
 	old, _ := os.Getwd()
-	os.Chdir(t.TempDir())
-	t.Cleanup(func() { os.Chdir(old) })
+	_ = os.Chdir(t.TempDir())
+	t.Cleanup(func() { _ = os.Chdir(old) })
 
 	cmd := exportCmd()
 	if err := cmd.Execute(); err != nil {
@@ -450,7 +450,7 @@ func TestMcpCmdFlags(t *testing.T) {
 func TestBoardListCmd_WithDescription(t *testing.T) {
 	dir := setupCLI(t)
 	content := "---\nname: Test\ndescription: A test board\n---\n\n## Col\n"
-	os.WriteFile(filepath.Join(dir, "test.md"), []byte(content), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "test.md"), []byte(content), 0644)
 	suppressStdout(t)
 
 	cmd := boardListCmd()
@@ -476,7 +476,7 @@ name: Meta Board
   due: 2026-03-25
   Body text here.
 `
-	os.WriteFile(filepath.Join(dir, "metaboard.md"), []byte(content), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "metaboard.md"), []byte(content), 0644)
 	suppressStdout(t)
 
 	cmd := cardShowCmd()
@@ -540,7 +540,7 @@ func TestColumnCmd_Subcommands(t *testing.T) {
 func TestCardShowCmd_Completed(t *testing.T) {
 	dir := setupCLI(t)
 	content := "---\nname: Done Board\n---\n\n## Done\n\n- [x] Finished task\n"
-	os.WriteFile(filepath.Join(dir, "doneboard.md"), []byte(content), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "doneboard.md"), []byte(content), 0644)
 	suppressStdout(t)
 
 	cmd := cardShowCmd()
@@ -591,7 +591,7 @@ func TestRootCmd_PersistentPreRunE(t *testing.T) {
 	// with --dir flag and running board list through it
 	dir := t.TempDir()
 	content := "---\nname: PreRun Test\n---\n\n## Col\n"
-	os.WriteFile(filepath.Join(dir, "prerun.md"), []byte(content), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "prerun.md"), []byte(content), 0644)
 	suppressStdout(t)
 
 	// Reset global state

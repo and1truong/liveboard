@@ -40,7 +40,7 @@ func setup(t *testing.T) (*Server, string) {
 	ws := workspace.Open(dir)
 	eng := board.New()
 	srv := New(ws, eng, "test")
-	os.WriteFile(filepath.Join(dir, "test-board.md"), []byte(testBoardMD), 0644)
+	_ = os.WriteFile(filepath.Join(dir, "test-board.md"), []byte(testBoardMD), 0644)
 	return srv, dir
 }
 
@@ -60,7 +60,7 @@ func clientSession(t *testing.T, srv *Server) *mcpsdk.ClientSession {
 	if err != nil {
 		t.Fatalf("client connect: %v", err)
 	}
-	t.Cleanup(func() { cs.Close() })
+	t.Cleanup(func() { _ = cs.Close() })
 	return cs
 }
 
@@ -310,7 +310,7 @@ func TestMoveCard(t *testing.T) {
 	// Verify card is in Done
 	r2 := callTool(t, srv, "get_board", map[string]any{"board": "test-board"})
 	var board indexedBoard
-	json.Unmarshal([]byte(resultText(t, r2)), &board)
+	_ = json.Unmarshal([]byte(resultText(t, r2)), &board)
 	for _, col := range board.Columns {
 		if col.Name == "Done" {
 			found := false
@@ -365,7 +365,7 @@ func TestDeleteCard(t *testing.T) {
 	// Verify card count reduced
 	r2 := callTool(t, srv, "get_board", map[string]any{"board": "test-board"})
 	var b indexedBoard
-	json.Unmarshal([]byte(resultText(t, r2)), &b)
+	_ = json.Unmarshal([]byte(resultText(t, r2)), &b)
 	if len(b.Columns[0].Cards) != 1 {
 		t.Errorf("expected 1 card in Todo, got %d", len(b.Columns[0].Cards))
 	}
@@ -439,7 +439,7 @@ func TestMoveColumn(t *testing.T) {
 
 	r2 := callTool(t, srv, "get_board", map[string]any{"board": "test-board"})
 	var b indexedBoard
-	json.Unmarshal([]byte(resultText(t, r2)), &b)
+	_ = json.Unmarshal([]byte(resultText(t, r2)), &b)
 	if len(b.Columns) < 2 {
 		t.Fatal("not enough columns")
 	}

@@ -2129,7 +2129,7 @@ func TestLoadSettingsFromDir(t *testing.T) {
 	// Valid dir with settings
 	dir := t.TempDir()
 	data := []byte(`{"theme":"dark","site_name":"Test"}`)
-	os.WriteFile(filepath.Join(dir, "settings.json"), data, 0644)
+	_ = os.WriteFile(filepath.Join(dir, "settings.json"), data, 0644)
 	s = LoadSettingsFromDir(dir)
 	if s.Theme != "dark" {
 		t.Errorf("theme = %q", s.Theme)
@@ -2236,7 +2236,10 @@ func TestFuncMap(t *testing.T) {
 	if !ok {
 		t.Fatal("md function not found")
 	}
-	fn := mdFunc.(func(string) template.HTML)
+	fn, ok2 := mdFunc.(func(string) template.HTML)
+	if !ok2 {
+		t.Fatal("md function has wrong type")
+	}
 	result := fn("**bold**")
 	if !strings.Contains(string(result), "<strong>") {
 		t.Errorf("md output = %q", result)

@@ -15,17 +15,17 @@ import (
 // ReminderPageModel is the template data for the /reminders page.
 type ReminderPageModel struct {
 	LayoutSettings
-	Title          string
-	SiteName       string
-	Boards         []BoardSummary
-	AllTags        []string
-	BoardSlug      string
-	Pending        []ReminderView
-	Fired          []ReminderView
-	History        []HistoryView
+	Title           string
+	SiteName        string
+	Boards          []BoardSummary
+	AllTags         []string
+	BoardSlug       string
+	Pending         []ReminderView
+	Fired           []ReminderView
+	History         []HistoryView
 	ReminderEnabled bool
-	Timezone       string
-	HistoryMode    string
+	Timezone        string
+	HistoryMode     string
 }
 
 // ReminderView is a template-friendly representation of a reminder.
@@ -53,6 +53,24 @@ type HistoryView struct {
 	Message        string
 	FiredAt        string
 	AcknowledgedAt string
+}
+
+func buildHistoryViews(entries []reminder.HistoryEntry) []HistoryView {
+	var views []HistoryView
+	for _, h := range entries {
+		hv := HistoryView{
+			ID:        h.ID,
+			BoardSlug: h.BoardSlug,
+			CardTitle: h.CardTitle,
+			Message:   h.Message,
+			FiredAt:   h.FiredAt.Format("2006-01-02 15:04"),
+		}
+		if h.AcknowledgedAt != nil {
+			hv.AcknowledgedAt = h.AcknowledgedAt.Format("2006-01-02 15:04")
+		}
+		views = append(views, hv)
+	}
+	return views
 }
 
 // RemindersPage handles GET /reminders.
@@ -110,25 +128,7 @@ func (h *Handler) RemindersPage(w http.ResponseWriter, _ *http.Request) {
 		}
 	}
 
-	// Sort pending by fire time ascending
-	sort.Slice(pending, func(i, j int) bool {
-		return pending[i].FireAt < pending[j].FireAt
-	})
-
-	var history []HistoryView
-	for _, h := range data.History {
-		hv := HistoryView{
-			ID:        h.ID,
-			BoardSlug: h.BoardSlug,
-			CardTitle: h.CardTitle,
-			Message:   h.Message,
-			FiredAt:   h.FiredAt.Format("2006-01-02 15:04"),
-		}
-		if h.AcknowledgedAt != nil {
-			hv.AcknowledgedAt = h.AcknowledgedAt.Format("2006-01-02 15:04")
-		}
-		history = append(history, hv)
-	}
+	sort.Slice(pending, func(i, j int) bool { return pending[i].FireAt < pending[j].FireAt })
 
 	model := ReminderPageModel{
 		LayoutSettings:  h.layoutSettings(settings),
@@ -139,7 +139,7 @@ func (h *Handler) RemindersPage(w http.ResponseWriter, _ *http.Request) {
 		BoardSlug:       "__reminders__",
 		Pending:         pending,
 		Fired:           fired,
-		History:         history,
+		History:         buildHistoryViews(data.History),
 		ReminderEnabled: settings.ReminderEnabled,
 		Timezone:        settings.ReminderTimezone,
 		HistoryMode:     string(data.HistoryMode),
@@ -340,7 +340,7 @@ func (h *Handler) findCardTitle(boardSlug, cardID string) string {
 	return ""
 }
 
-func reminderRelTime(t time.Time, now time.Time) string {
+func reminderRelTime(t time.Time, _ time.Time) string {
 	diff := time.Until(t)
 	if diff < 0 {
 		diff = -diff

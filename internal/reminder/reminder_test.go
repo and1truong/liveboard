@@ -94,17 +94,17 @@ func TestStoreRoundtrip(t *testing.T) {
 
 	// Add a reminder
 	r := Reminder{
-		ID:        GenerateID(),
-		Type:      ReminderTypeCard,
-		BoardSlug: "test-board",
-		CardID:    "card123",
-		Mode:      ModeRelative,
+		ID:             GenerateID(),
+		Type:           ReminderTypeCard,
+		BoardSlug:      "test-board",
+		CardID:         "card123",
+		Mode:           ModeRelative,
 		RelativeOffset: "-1d",
-		CreatedAt: time.Now(),
-		FireAt:    time.Now().Add(24 * time.Hour),
+		CreatedAt:      time.Now(),
+		FireAt:         time.Now().Add(24 * time.Hour),
 	}
-	if err := store.AddReminder(r); err != nil {
-		t.Fatal(err)
+	if addErr := store.AddReminder(r); addErr != nil {
+		t.Fatal(addErr)
 	}
 
 	// Reload and verify
@@ -120,13 +120,13 @@ func TestStoreRoundtrip(t *testing.T) {
 	}
 
 	// File should exist
-	if _, err := os.Stat(filepath.Join(dir, "settings.reminder.json")); err != nil {
-		t.Fatalf("settings.reminder.json not created: %v", err)
+	if _, statErr := os.Stat(filepath.Join(dir, "settings.reminder.json")); statErr != nil {
+		t.Fatalf("settings.reminder.json not created: %v", statErr)
 	}
 
 	// Remove
-	if err := store.RemoveReminder(r.ID); err != nil {
-		t.Fatal(err)
+	if rmErr := store.RemoveReminder(r.ID); rmErr != nil {
+		t.Fatal(rmErr)
 	}
 	data, err = store.Load()
 	if err != nil {

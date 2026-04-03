@@ -95,7 +95,7 @@ func readZipFiles(t *testing.T, data []byte) map[string]string {
 		if _, err := buf.ReadFrom(rc); err != nil {
 			t.Fatal(err)
 		}
-		rc.Close()
+		_ = rc.Close()
 		files[f.Name] = buf.String()
 	}
 	return files

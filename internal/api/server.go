@@ -17,6 +17,7 @@ import (
 	"github.com/and1truong/liveboard/internal/reminder"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
+	"github.com/and1truong/liveboard/pkg/models"
 	staticweb "github.com/and1truong/liveboard/web"
 )
 
@@ -55,11 +56,8 @@ func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, is
 	return s
 }
 
-func (s *Server) startReminderScheduler(ws *workspace.Workspace, h *web.Handler, isDesktop bool, settings web.AppSettings) {
-	store := h.ReminderStore
-
-	notifyFn := func(r reminder.Reminder, cardTitle string, stats *reminder.BoardStats) {
-		// Build SSE payload
+func makeReminderNotifyFn(h *web.Handler, isDesktop bool) reminder.NotifyFunc {
+	return func(r reminder.Reminder, cardTitle string, stats *reminder.BoardStats) {
 		payload := map[string]any{
 			"id":         r.ID,
 			"type":       r.Type,
@@ -73,50 +71,65 @@ func (s *Server) startReminderScheduler(ws *workspace.Workspace, h *web.Handler,
 		data, _ := json.Marshal(payload)
 		h.SSE.PublishGlobal(web.SSEEvent{Type: "reminder-fire", Payload: string(data)})
 
-		// Desktop system notification
 		if isDesktop {
-			title := "Reminder"
-			body := cardTitle
-			if r.Type == reminder.ReminderTypeBoard {
-				title = "Board Reminder"
-				body = r.BoardSlug
-				if stats != nil {
-					body = fmt.Sprintf("%s: %d open, %d overdue", r.BoardSlug, stats.TotalOpen, stats.Overdue)
-				}
-			}
-			_ = reminder.SendSystemNotification(title, body, "")
+			sendDesktopReminderNotification(r, cardTitle, stats)
 		}
 	}
+}
 
-	statsFn := func(slug string) reminder.BoardStats {
+func sendDesktopReminderNotification(r reminder.Reminder, cardTitle string, stats *reminder.BoardStats) {
+	title := "Reminder"
+	body := cardTitle
+	if r.Type == reminder.ReminderTypeBoard {
+		title = "Board Reminder"
+		body = r.BoardSlug
+		if stats != nil {
+			body = fmt.Sprintf("%s: %d open, %d overdue", r.BoardSlug, stats.TotalOpen, stats.Overdue)
+		}
+	}
+	_ = reminder.SendSystemNotification(title, body, "")
+}
+
+func computeBoardStats(b *models.Board) reminder.BoardStats {
+	var bs reminder.BoardStats
+	now := time.Now()
+	today := now.Format("2006-01-02")
+	weekEnd := now.AddDate(0, 0, 7-int(now.Weekday()))
+	weekEndStr := weekEnd.Format("2006-01-02")
+
+	for _, col := range b.Columns {
+		for _, card := range col.Cards {
+			if card.Completed {
+				continue
+			}
+			bs.TotalOpen++
+			if card.Due != "" && card.Due < today {
+				bs.Overdue++
+			}
+			if card.Due != "" && card.Due >= today && card.Due <= weekEndStr {
+				bs.DueThisWeek++
+			}
+		}
+	}
+	return bs
+}
+
+func makeBoardStatsFn(ws *workspace.Workspace) reminder.BoardStatsFunc {
+	return func(slug string) reminder.BoardStats {
 		b, err := ws.LoadBoard(slug)
 		if err != nil {
 			return reminder.BoardStats{}
 		}
-		var bs reminder.BoardStats
-		today := time.Now().Format("2006-01-02")
-		// Compute end of this week (Sunday)
-		now := time.Now()
-		weekEnd := now.AddDate(0, 0, 7-int(now.Weekday()))
-		weekEndStr := weekEnd.Format("2006-01-02")
-
-		for _, col := range b.Columns {
-			for _, card := range col.Cards {
-				if !card.Completed {
-					bs.TotalOpen++
-					if card.Due != "" && card.Due < today {
-						bs.Overdue++
-					}
-					if card.Due != "" && card.Due >= today && card.Due <= weekEndStr {
-						bs.DueThisWeek++
-					}
-				}
-			}
-		}
-		return bs
+		return computeBoardStats(b)
 	}
+}
 
-	s.reminderScheduler = reminder.NewScheduler(store, time.Minute, notifyFn, statsFn)
+func (s *Server) startReminderScheduler(ws *workspace.Workspace, h *web.Handler, isDesktop bool, _ web.AppSettings) {
+	s.reminderScheduler = reminder.NewScheduler(
+		h.ReminderStore, time.Minute,
+		makeReminderNotifyFn(h, isDesktop),
+		makeBoardStatsFn(ws),
+	)
 	s.reminderScheduler.Start()
 	log.Println("reminder scheduler started")
 }

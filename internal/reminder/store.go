@@ -12,23 +12,26 @@ import (
 // HistoryMode controls how fired reminders are retained.
 type HistoryMode string
 
+// HistoryMode values control how fired reminders are retained.
 const (
-	HistoryKeepAll     HistoryMode = "keep_all"
-	HistoryPurgeOnAck  HistoryMode = "purge_on_ack"
-	HistoryAutoPurge   HistoryMode = "auto_purge_30d"
+	HistoryKeepAll    HistoryMode = "keep_all"
+	HistoryPurgeOnAck HistoryMode = "purge_on_ack"
+	HistoryAutoPurge  HistoryMode = "auto_purge_30d"
 )
 
 // ReminderType distinguishes card-level from board-level reminders.
-type ReminderType string
+type ReminderType string //nolint:revive // stutter is acceptable for clarity
 
+// ReminderType values.
 const (
 	ReminderTypeCard  ReminderType = "card"
 	ReminderTypeBoard ReminderType = "board"
 )
 
 // ReminderMode distinguishes how the fire time is determined.
-type ReminderMode string
+type ReminderMode string //nolint:revive // stutter is acceptable for clarity
 
+// ReminderMode values.
 const (
 	ModeRelative  ReminderMode = "relative"
 	ModeAbsolute  ReminderMode = "absolute"
@@ -37,10 +40,10 @@ const (
 
 // Recurrence describes a simple repeating schedule.
 type Recurrence struct {
-	Frequency string `json:"frequency"`          // "daily", "weekly", "monthly"
-	Day       string `json:"day,omitempty"`       // e.g. "monday" (for weekly)
-	DayOfMonth int   `json:"day_of_month,omitempty"` // e.g. 1 (for monthly)
-	Time      string `json:"time"`               // "09:00" (HH:MM)
+	Frequency  string `json:"frequency"`              // "daily", "weekly", "monthly"
+	Day        string `json:"day,omitempty"`          // e.g. "monday" (for weekly)
+	DayOfMonth int    `json:"day_of_month,omitempty"` // e.g. 1 (for monthly)
+	Time       string `json:"time"`                   // "09:00" (HH:MM)
 }
 
 // Reminder is a single scheduled reminder.
@@ -63,12 +66,12 @@ type Reminder struct {
 
 // HistoryEntry records a fired reminder for the history log.
 type HistoryEntry struct {
-	ID             string    `json:"id"`
-	BoardSlug      string    `json:"board_slug"`
-	CardID         string    `json:"card_id,omitempty"`
-	CardTitle      string    `json:"card_title,omitempty"`
-	Message        string    `json:"message,omitempty"`
-	FiredAt        time.Time `json:"fired_at"`
+	ID             string     `json:"id"`
+	BoardSlug      string     `json:"board_slug"`
+	CardID         string     `json:"card_id,omitempty"`
+	CardTitle      string     `json:"card_title,omitempty"`
+	Message        string     `json:"message,omitempty"`
+	FiredAt        time.Time  `json:"fired_at"`
 	AcknowledgedAt *time.Time `json:"acknowledged_at,omitempty"`
 }
 
@@ -83,8 +86,8 @@ type StoreData struct {
 
 // Store manages reminder persistence with file-level locking.
 type Store struct {
-	mu   sync.Mutex
-	dir  string // workspace directory
+	mu  sync.Mutex
+	dir string // workspace directory
 }
 
 // NewStore creates a Store for the given workspace directory.
@@ -185,7 +188,7 @@ func (s *Store) RemoveByCardID(boardSlug, cardID string) error {
 	return s.Mutate(func(d *StoreData) error {
 		var kept []Reminder
 		for _, r := range d.Reminders {
-			if !(r.Type == ReminderTypeCard && r.CardID == cardID && r.BoardSlug == boardSlug) {
+			if r.Type != ReminderTypeCard || r.CardID != cardID || r.BoardSlug != boardSlug {
 				kept = append(kept, r)
 			}
 		}
