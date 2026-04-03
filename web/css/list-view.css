@@ -1,0 +1,343 @@
+/* === LIST VIEW (Apple Reminders-inspired grouped inset) === */
+.list-container {
+    @apply flex-1 overflow-y-auto flex flex-col;
+    max-width: 680px;
+    padding: 8px 16px 24px;
+    gap: 20px;
+    font-family: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+
+    .drop-indicator {
+        @apply bg-accent m-0;
+        height: 2px;
+        border-radius: 1px;
+    }
+}
+
+/* Sections — grouped inset cards (iOS UITableView.InsetGrouped) */
+.list-section {
+    flex-shrink: 0;
+
+    &.drag-over .list-section-body {
+        box-shadow: 0 0 0 2px var(--color-accent);
+    }
+}
+
+.list-section.collapsed .list-section-body {
+    display: none;
+}
+
+/* Section header — bold colored label above the card group */
+.list-section-header {
+    @apply flex items-center gap-1.5;
+    padding: 0 6px 6px;
+    cursor: pointer;
+    user-select: none;
+    border-bottom: none;
+
+    .section-chevron {
+        font-size: 10px;
+        color: var(--color-text-muted);
+        width: 16px;
+        text-align: center;
+        transition: color 0.18s ease;
+    }
+
+    &:hover .section-chevron {
+        color: var(--color-accent);
+    }
+
+    .section-name {
+        font-size: 1.15rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+        color: var(--color-accent);
+    }
+
+    .section-count {
+        @apply text-xs text-text-muted text-center;
+        margin-left: auto;
+        padding: 1px 8px;
+        border-radius: 12px;
+        min-width: 22px;
+        line-height: 1.7;
+        background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+        color: var(--color-accent);
+        font-weight: 600;
+        font-variant-numeric: tabular-nums;
+    }
+}
+
+/* Grouped card body — the rounded inset container */
+.list-section-body {
+    background: var(--color-surface);
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 0.5px 1px rgba(0,0,0,0.04), 0 1px 3px rgba(0,0,0,0.06);
+    transition: box-shadow 0.2s ease;
+}
+
+/* List items — inset rows; reset .card board-view styles */
+.list-item.card {
+    @apply flex items-start cursor-pointer relative;
+    padding: 12px 16px;
+    border: none;
+    border-bottom: 0.5px solid color-mix(in srgb, var(--color-border) 60%, transparent);
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    transition: background 0.15s ease;
+    gap: 12px;
+    z-index: 0;
+
+    &:last-of-type {
+        border-bottom: none;
+    }
+
+    &:hover {
+        background: color-mix(in srgb, var(--color-accent) 4%, transparent);
+        box-shadow: none;
+        border-color: color-mix(in srgb, var(--color-border) 60%, transparent);
+    }
+
+    &:active {
+        background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    }
+
+    &.dragging { @apply opacity-30; }
+
+    &.completed {
+        @apply opacity-50;
+
+        .list-item-title {
+            @apply line-through;
+            color: var(--color-text-muted);
+        }
+    }
+
+    /* Focus ring for keyboard nav */
+    &.card-focused {
+        background: color-mix(in srgb, var(--color-accent) 6%, transparent);
+    }
+}
+
+/* Circle checkbox — Apple Reminders style with fill animation */
+.list-checkbox {
+    @apply shrink-0 bg-transparent cursor-pointer;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: 2px solid color-mix(in srgb, var(--color-text-muted) 60%, transparent);
+    margin-top: 0px;
+    padding: 0;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+
+    &:hover {
+        border-color: var(--color-accent);
+        background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+        transform: scale(1.08);
+    }
+
+    &:active {
+        transform: scale(0.92);
+    }
+
+    &.checked {
+        @apply bg-accent border-accent;
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='white'%3E%3Cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2.5-2.5a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3E%3C/svg%3E");
+        background-size: 14px;
+        background-position: center;
+        background-repeat: no-repeat;
+        animation: checkPop 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+}
+
+@keyframes checkPop {
+    0% { transform: scale(0.85); }
+    50% { transform: scale(1.12); }
+    100% { transform: scale(1); }
+}
+
+/* Content area */
+.list-item-content {
+    @apply flex-1 min-w-0;
+    padding-top: 1px;
+}
+
+.list-item-title {
+    font-size: 0.9375rem;
+    font-weight: 500;
+    color: var(--color-text-primary);
+    line-height: 1.4;
+    letter-spacing: -0.005em;
+}
+
+.list-item-subtitle {
+    font-size: 0.8125rem;
+    color: var(--color-text-muted);
+    margin-top: 2px;
+    line-height: 1.4;
+    display: -webkit-box !important;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Metadata row */
+.list-item-meta {
+    @apply flex flex-wrap items-center;
+    margin-top: 6px;
+    gap: 5px;
+
+    .tag {
+        font-size: 0.625rem;
+        padding: 2px 8px;
+        border-radius: 10px;
+    }
+}
+
+.list-meta-chip {
+    @apply inline-flex items-center capitalize;
+    padding: 2px 9px;
+    border-radius: 10px;
+    background: var(--color-column-bg);
+    color: var(--color-text-secondary);
+    gap: 4px;
+    font-size: 0.6875rem;
+    font-weight: 500;
+
+    &.priority-critical { @apply text-priority-critical; background: color-mix(in srgb, var(--color-priority-critical) 10%, transparent); }
+    &.priority-high { @apply text-priority-high; background: color-mix(in srgb, var(--color-priority-high) 10%, transparent); }
+    &.priority-medium { color: #d97706; background: color-mix(in srgb, var(--color-priority-medium) 10%, transparent); }
+    &.priority-low { @apply text-priority-low; background: color-mix(in srgb, var(--color-priority-low) 10%, transparent); }
+}
+
+.list-meta-due {
+    font-variant-numeric: tabular-nums;
+}
+
+/* Quick add — inline at section bottom */
+.list-row-add {
+    @apply relative;
+    z-index: 1;
+    padding: 8px 16px;
+    background: color-mix(in srgb, var(--color-surface) 80%, var(--color-bg));
+    border-top: 0.5px solid color-mix(in srgb, var(--color-border) 40%, transparent);
+}
+
+.list-quick-add {
+    @apply flex items-center;
+    gap: 12px;
+}
+
+.list-quick-add-icon {
+    @apply flex items-center justify-center shrink-0 text-accent font-bold;
+    width: 24px;
+    height: 24px;
+    font-size: 18px;
+    line-height: 1;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.list-row-add:focus-within .list-quick-add-icon {
+    opacity: 1;
+}
+
+.list-quick-add-input {
+    @apply flex-1 text-text-primary;
+    font-size: 0.9375rem;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+    outline: none !important;
+    box-shadow: none !important;
+
+    &::placeholder {
+        color: var(--color-text-muted);
+        font-weight: 400;
+    }
+
+    &:focus {
+        background: transparent !important;
+        border: none !important;
+        box-shadow: none !important;
+    }
+}
+
+/* Add list link */
+.list-add-link {
+    @apply text-text-muted no-underline;
+    font-size: 0.875rem;
+    padding: 4px 6px;
+    border-radius: 8px;
+    transition: all 0.15s;
+
+    &:hover {
+        color: var(--color-accent);
+        background: color-mix(in srgb, var(--color-accent) 8%, transparent);
+    }
+}
+
+.list-add-section {
+    padding-left: 0;
+}
+
+/* Priority indicators (reused in other views) */
+.priority-indicator {
+    @apply inline-flex items-center text-xs font-medium capitalize;
+    gap: 5px;
+
+    &::before {
+        @apply inline-block rounded-full shrink-0;
+        content: '';
+        width: 7px;
+        height: 7px;
+    }
+
+    &.priority-critical {
+        @apply text-priority-critical;
+        &::before { @apply bg-priority-critical; }
+    }
+    &.priority-high {
+        @apply text-priority-high;
+        &::before { @apply bg-priority-high; }
+    }
+    &.priority-medium {
+        color: #d97706;
+        &::before { @apply bg-priority-medium; }
+    }
+    &.priority-low {
+        @apply text-priority-low;
+        &::before { @apply bg-priority-low; }
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .list-container {
+        padding: 6px 10px 20px;
+        gap: 16px;
+    }
+
+    .list-item {
+        padding: 10px 14px;
+    }
+
+    .list-item-subtitle {
+        -webkit-line-clamp: 1;
+    }
+
+    .list-meta-chip {
+        font-size: 0.625rem;
+        padding: 1px 7px;
+    }
+
+    .list-section-body {
+        border-radius: 10px;
+    }
+
+    .list-section-header .section-name {
+        font-size: 1.05rem;
+    }
+}

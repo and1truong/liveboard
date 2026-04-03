@@ -28,15 +28,20 @@
     clearDropIndicators();
     var indicator = document.createElement("div");
     indicator.className = "drop-indicator";
+    // Use beforeCard's parent for insertion — cards may be nested inside
+    // a wrapper (e.g. .list-section-body) rather than direct children of zone.
+    var insertParent = beforeCard ? beforeCard.parentNode : zone;
     if (beforeCard) {
-      zone.insertBefore(indicator, beforeCard);
+      insertParent.insertBefore(indicator, beforeCard);
     } else {
       // Append before the hidden end-trigger button
       var endTrigger2 = zone.querySelector(".reorder-end-trigger");
       if (endTrigger2) {
-        zone.insertBefore(indicator, endTrigger2);
+        endTrigger2.parentNode.insertBefore(indicator, endTrigger2);
       } else {
-        zone.appendChild(indicator);
+        // In list view, append inside .list-section-body if present
+        var body = zone.querySelector(".list-section-body");
+        (body || zone).appendChild(indicator);
       }
     }
   }
