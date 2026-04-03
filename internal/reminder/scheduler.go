@@ -3,6 +3,7 @@ package reminder
 import (
 	"context"
 	"log"
+	"sync"
 	"time"
 )
 
@@ -26,7 +27,10 @@ type Scheduler struct {
 	interval time.Duration
 	notifyFn NotifyFunc
 	statsFn  BoardStatsFunc
-	cancel   context.CancelFunc
+
+	mu     sync.Mutex             // protects cancel
+	cancel context.CancelFunc
+	wg     sync.WaitGroup         // tracks in-flight fireReminder goroutines
 }
 
 // NewScheduler creates a scheduler that ticks at the given interval.
@@ -41,16 +45,22 @@ func NewScheduler(store *Store, interval time.Duration, notifyFn NotifyFunc, sta
 
 // Start begins the scheduler loop in a goroutine. Call Stop to halt.
 func (s *Scheduler) Start() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	ctx, cancel := context.WithCancel(context.Background())
 	s.cancel = cancel
 	go s.run(ctx)
 }
 
-// Stop halts the scheduler.
+// Stop halts the scheduler and waits for in-flight notifications to finish.
 func (s *Scheduler) Stop() {
+	s.mu.Lock()
 	if s.cancel != nil {
 		s.cancel()
+		s.cancel = nil
 	}
+	s.mu.Unlock()
+	s.wg.Wait()
 }
 
 func (s *Scheduler) run(ctx context.Context) {
@@ -122,7 +132,11 @@ func (s *Scheduler) tick() {
 				}
 			}
 
-			go s.fireReminder(*r)
+			s.wg.Add(1)
+			go func(r Reminder) {
+				defer s.wg.Done()
+				s.fireReminder(r)
+			}(*r)
 		}
 
 		return nil

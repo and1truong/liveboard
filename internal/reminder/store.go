@@ -86,7 +86,7 @@ type StoreData struct {
 
 // Store manages reminder persistence with file-level locking.
 type Store struct {
-	mu  sync.Mutex
+	mu  sync.RWMutex
 	dir string // workspace directory
 }
 
@@ -101,8 +101,8 @@ func (s *Store) filePath() string {
 
 // Load reads the reminder data from disk. Returns empty data if file doesn't exist.
 func (s *Store) Load() (*StoreData, error) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	s.mu.RLock()
+	defer s.mu.RUnlock()
 	return s.loadUnlocked()
 }
 
