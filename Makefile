@@ -17,7 +17,7 @@ build: css
 # Compile desktop binary only (fast recompile for dev — assumes bundle structure already exists)
 build-desktop:
 	@rm -f LiveBoard.app/Contents/MacOS/liveboard-desktop
-	CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -tags production -ldflags '$(LDFLAGS)' -o LiveBoard.app/Contents/MacOS/liveboard-desktop ./cmd/liveboard-desktop
+	CGO_ENABLED=1 CGO_CFLAGS="-Wno-deprecated-declarations" CGO_LDFLAGS="-framework UniformTypeIdentifiers" go build -tags production -ldflags '$(LDFLAGS)' -o LiveBoard.app/Contents/MacOS/liveboard-desktop ./cmd/liveboard-desktop
 
 # Regenerate icon.icns from SVG source (requires rsvg-convert and iconutil)
 generate-icon:
@@ -46,9 +46,9 @@ bundle-desktop: build-desktop
 # Build universal (arm64 + amd64) binary via lipo
 build-desktop-universal:
 	@mkdir -p dist
-	CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
+	CGO_ENABLED=1 CGO_CFLAGS="-Wno-deprecated-declarations" CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
 		GOARCH=arm64 go build -tags production -ldflags '$(LDFLAGS)' -o dist/liveboard-desktop-arm64 ./cmd/liveboard-desktop
-	CGO_ENABLED=1 CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
+	CGO_ENABLED=1 CGO_CFLAGS="-Wno-deprecated-declarations" CGO_LDFLAGS="-framework UniformTypeIdentifiers" \
 		GOARCH=amd64 go build -tags production -ldflags '$(LDFLAGS)' -o dist/liveboard-desktop-amd64 ./cmd/liveboard-desktop
 	lipo -create -output dist/liveboard-desktop dist/liveboard-desktop-arm64 dist/liveboard-desktop-amd64
 	@rm -f dist/liveboard-desktop-arm64 dist/liveboard-desktop-amd64
