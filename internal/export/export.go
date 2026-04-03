@@ -10,6 +10,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -19,6 +20,8 @@ import (
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 )
+
+var mdBufPool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
 
 var mdRenderer = goldmark.New(
 	goldmark.WithExtensions(extension.Linkify),
@@ -102,8 +105,10 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 
 	fm := template.FuncMap{
 		"md": func(s string) template.HTML {
-			var buf bytes.Buffer
-			if mdErr := mdRenderer.Convert([]byte(s), &buf); mdErr != nil {
+			buf := mdBufPool.Get().(*bytes.Buffer)
+			buf.Reset()
+			defer mdBufPool.Put(buf)
+			if mdErr := mdRenderer.Convert([]byte(s), buf); mdErr != nil {
 				return template.HTML(template.HTMLEscapeString(s))
 			}
 			return template.HTML(buf.String()) //nolint:gosec
@@ -129,8 +134,9 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 	}
 
 	// Render each board
+	var buf bytes.Buffer
 	for i, b := range boards {
-		var buf bytes.Buffer
+		buf.Reset()
 		if err := boardTpl.Execute(&buf, boardModel{
 			Board:      b,
 			Slug:       summaries[i].Slug,
@@ -147,7 +153,7 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 	}
 
 	// Render index
-	var buf bytes.Buffer
+	buf.Reset()
 	if err := indexTpl.Execute(&buf, indexModel{
 		SiteName:   opts.SiteName,
 		Theme:      themeAttr,

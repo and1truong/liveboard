@@ -7,6 +7,7 @@ import (
 	"log"
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/yuin/goldmark"
 	"github.com/yuin/goldmark/extension"
@@ -35,6 +36,9 @@ type Handler struct {
 	reminderPageTpl  *template.Template // full: reminders page
 }
 
+// mdBufPool reuses buffers for markdown rendering to avoid per-call allocation.
+var mdBufPool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
+
 // mdRenderer is a goldmark instance configured for safe HTML output.
 var mdRenderer = goldmark.New(
 	goldmark.WithExtensions(extension.Linkify),
@@ -54,8 +58,10 @@ func funcMap() template.FuncMap {
 			return m["id"]
 		},
 		"md": func(s string) template.HTML {
-			var buf bytes.Buffer
-			if err := mdRenderer.Convert([]byte(s), &buf); err != nil {
+			buf := mdBufPool.Get().(*bytes.Buffer)
+			buf.Reset()
+			defer mdBufPool.Put(buf)
+			if err := mdRenderer.Convert([]byte(s), buf); err != nil {
 				return template.HTML(template.HTMLEscapeString(s))
 			}
 			out := strings.ReplaceAll(buf.String(), "<a href=", `<a target="_blank" rel="noopener" href=`)

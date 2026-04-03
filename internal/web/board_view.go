@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
 	"sort"
 	"strconv"
 	"strings"
@@ -443,7 +444,7 @@ func (h *Handler) HandleReorderCard(w http.ResponseWriter, r *http.Request) {
 		if beforeIdx < 0 || beforeIdx >= len(cards) {
 			cards = append(cards, card)
 		} else {
-			cards = append(cards[:beforeIdx], append([]models.Card{card}, cards[beforeIdx:]...)...)
+			cards = slices.Insert(cards, beforeIdx, card)
 		}
 		b.Columns[targetIdx].Cards = cards
 		return nil
@@ -777,8 +778,9 @@ func (h *Handler) HandleUpdateBoardMeta(w http.ResponseWriter, r *http.Request) 
 	tagsRaw := r.FormValue("tags")
 	tagColorsRaw := r.FormValue("tag_colors")
 
-	var tags []string
-	for _, t := range strings.Split(tagsRaw, ",") {
+	parts := strings.Split(tagsRaw, ",")
+	tags := make([]string, 0, len(parts))
+	for _, t := range parts {
 		t = strings.TrimSpace(t)
 		if t != "" {
 			tags = append(tags, t)
@@ -1099,7 +1101,11 @@ func sortCardsByDue(cards []models.Card) {
 
 // flattenCards collects all cards from all columns with their position indices.
 func flattenCards(b *models.Board) []CardWithPosition {
-	var all []CardWithPosition
+	n := 0
+	for _, col := range b.Columns {
+		n += len(col.Cards)
+	}
+	all := make([]CardWithPosition, 0, n)
 	for ci, col := range b.Columns {
 		for ci2, card := range col.Cards {
 			all = append(all, CardWithPosition{
