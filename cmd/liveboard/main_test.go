@@ -604,9 +604,12 @@ func TestRootCmd_PersistentPreRunE(t *testing.T) {
 		Short: "Markdown-native, local-first Kanban system",
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if workDir == "" {
-				var cloud bool
-				workDir, cloud = defaults.WorkDir()
-				usingCloud = cloud
+				cfg := defaults.LoadCLIConfig()
+				if cfg.Workspace != "" {
+					workDir = cfg.Workspace
+				} else {
+					workDir, _ = defaults.WorkDir()
+				}
 			}
 			ws = workspace.Open(workDir)
 			eng = board.New()

@@ -208,34 +208,16 @@ func TestDesktopConfig_JSON_Roundtrip(t *testing.T) {
 }
 
 func TestWorkDir(t *testing.T) {
-	// WorkDir should return a non-empty string. If iCloud dir doesn't exist,
-	// it falls back to cwd.
 	dir, isCloud := WorkDir()
 	if dir == "" {
 		t.Error("WorkDir returned empty string")
 	}
-
-	// On most test machines, iCloud dir won't exist, so we get cwd
+	if isCloud {
+		t.Error("isCloud should always be false")
+	}
 	cwd, _ := os.Getwd()
-
-	home, _ := os.UserHomeDir()
-	icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
-	if _, err := os.Stat(icloud); err != nil {
-		// iCloud doesn't exist — should fall back to cwd
-		if isCloud {
-			t.Error("isCloud=true but iCloud dir doesn't exist")
-		}
-		if dir != cwd {
-			t.Errorf("WorkDir = %q, want cwd %q", dir, cwd)
-		}
-	} else {
-		// iCloud exists — should use it
-		if !isCloud {
-			t.Error("isCloud=false but iCloud dir exists")
-		}
-		if dir != icloud {
-			t.Errorf("WorkDir = %q, want %q", dir, icloud)
-		}
+	if dir != cwd {
+		t.Errorf("WorkDir = %q, want cwd %q", dir, cwd)
 	}
 }
 
@@ -341,17 +323,6 @@ func TestDesktopWorkDir_RootCwd(t *testing.T) {
 		_ = os.Remove(path)
 	}
 
-	// Check if iCloud dir exists — if it does, DesktopWorkDir won't reach
-	// the "/" fallback regardless of cwd, so skip.
-	home, err := os.UserHomeDir()
-	if err != nil {
-		t.Skip("no home dir")
-	}
-	icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
-	if _, statErr := os.Stat(icloud); statErr == nil {
-		t.Skip("iCloud dir exists, can't test root fallback")
-	}
-
 	// Save cwd and change to /
 	origDir, getErr := os.Getwd()
 	if getErr != nil {
@@ -368,6 +339,10 @@ func TestDesktopWorkDir_RootCwd(t *testing.T) {
 		t.Error("expected isCloud=false")
 	}
 	// Should fall back to ~/LiveBoard (created if needed)
+	home, err := os.UserHomeDir()
+	if err != nil {
+		t.Fatal(err)
+	}
 	expected := filepath.Join(home, "LiveBoard")
 	if dir != expected {
 		t.Errorf("DesktopWorkDir from / = %q, want %q", dir, expected)
@@ -436,6 +411,72 @@ func TestDesktopWorkDir_NoHome(t *testing.T) {
 	cwd, _ := os.Getwd()
 	if dir != cwd {
 		t.Errorf("DesktopWorkDir = %q, want cwd %q", dir, cwd)
+	}
+}
+
+// --- CLIConfig tests ---
+
+func backupCLIConfig(t *testing.T) func() {
+	t.Helper()
+	path := cliConfigPath()
+	if path == "" {
+		return func() {}
+	}
+	orig, err := os.ReadFile(path)
+	if err != nil {
+		return func() { _ = os.Remove(path) }
+	}
+	return func() { _ = os.WriteFile(path, orig, 0o644) }
+}
+
+func TestLoadCLIConfig_Missing(t *testing.T) {
+	restore := backupCLIConfig(t)
+	defer restore()
+
+	path := cliConfigPath()
+	_ = os.Remove(path)
+
+	cfg := LoadCLIConfig()
+	if cfg.Workspace != "" || cfg.Host != "" || cfg.Port != 0 || cfg.ReadOnly {
+		t.Errorf("expected zero-value config, got %+v", cfg)
+	}
+}
+
+func TestLoadCLIConfig_Valid(t *testing.T) {
+	restore := backupCLIConfig(t)
+	defer restore()
+
+	path := cliConfigPath()
+	_ = os.MkdirAll(filepath.Dir(path), 0o755)
+	data := []byte(`{"workspace":"/tmp/boards","host":"0.0.0.0","port":8080,"readonly":true}`)
+	_ = os.WriteFile(path, data, 0o644)
+
+	cfg := LoadCLIConfig()
+	if cfg.Workspace != "/tmp/boards" {
+		t.Errorf("Workspace = %q, want /tmp/boards", cfg.Workspace)
+	}
+	if cfg.Host != "0.0.0.0" {
+		t.Errorf("Host = %q, want 0.0.0.0", cfg.Host)
+	}
+	if cfg.Port != 8080 {
+		t.Errorf("Port = %d, want 8080", cfg.Port)
+	}
+	if !cfg.ReadOnly {
+		t.Error("ReadOnly = false, want true")
+	}
+}
+
+func TestLoadCLIConfig_InvalidJSON(t *testing.T) {
+	restore := backupCLIConfig(t)
+	defer restore()
+
+	path := cliConfigPath()
+	_ = os.MkdirAll(filepath.Dir(path), 0o755)
+	_ = os.WriteFile(path, []byte(`{bad json`), 0o644)
+
+	cfg := LoadCLIConfig()
+	if cfg.Workspace != "" {
+		t.Errorf("expected zero-value on invalid JSON, got %+v", cfg)
 	}
 }
 

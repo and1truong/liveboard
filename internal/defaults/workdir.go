@@ -5,25 +5,16 @@ import (
 	"path/filepath"
 )
 
-// WorkDir returns the default workspace directory, preferring the iCloud
-// liveboard folder if it exists, otherwise falling back to cwd.
-// The second return value is true when the iCloud path was selected.
+// WorkDir returns the default workspace directory (current working directory).
+// The second return value is always false (retained for signature compatibility).
 func WorkDir() (string, bool) {
-	home, err := os.UserHomeDir()
-	if err == nil {
-		icloud := filepath.Join(home, "Library", "Mobile Documents", "com~apple~CloudDocs", "liveboard")
-		if info, err := os.Stat(icloud); err == nil && info.IsDir() {
-			return icloud, true
-		}
-	}
 	dir, _ := os.Getwd()
 	return dir, false
 }
 
-// DesktopWorkDir is like WorkDir but checks saved desktop config first,
+// DesktopWorkDir checks saved desktop config first,
 // then falls back to ~/LiveBoard instead of cwd when launched from Finder.
 func DesktopWorkDir() (string, bool) {
-	// Check saved last workspace first
 	cfg := LoadDesktopConfig()
 	if cfg.LastWorkspace != "" {
 		if info, err := os.Stat(cfg.LastWorkspace); err == nil && info.IsDir() {
@@ -31,10 +22,7 @@ func DesktopWorkDir() (string, bool) {
 		}
 	}
 
-	dir, cloud := WorkDir()
-	if cloud {
-		return dir, true
-	}
+	dir, _ := WorkDir()
 	// When launched from Finder, cwd is "/" — use ~/LiveBoard instead
 	if dir == "/" {
 		home, err := os.UserHomeDir()

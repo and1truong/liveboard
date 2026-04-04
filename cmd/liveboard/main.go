@@ -21,10 +21,9 @@ var (
 )
 
 var (
-	workDir    string
-	usingCloud bool
-	ws         *workspace.Workspace
-	eng        *board.Engine
+	workDir string
+	ws      *workspace.Workspace
+	eng     *board.Engine
 )
 
 func main() {
@@ -33,9 +32,12 @@ func main() {
 		Short: "Markdown-native, local-first Kanban system",
 		PersistentPreRunE: func(_ *cobra.Command, _ []string) error {
 			if workDir == "" {
-				var cloud bool
-				workDir, cloud = defaults.WorkDir()
-				usingCloud = cloud
+				cfg := defaults.LoadCLIConfig()
+				if cfg.Workspace != "" {
+					workDir = cfg.Workspace
+				} else {
+					workDir, _ = defaults.WorkDir()
+				}
 			}
 			ws = workspace.Open(workDir)
 			eng = board.New()
