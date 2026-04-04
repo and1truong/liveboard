@@ -8,10 +8,12 @@ import (
 
 // CLIConfig stores persistent configuration for the CLI.
 type CLIConfig struct {
-	Workspace string `json:"workspace,omitempty"`
-	Host      string `json:"host,omitempty"`
-	Port      int    `json:"port,omitempty"`
-	ReadOnly  bool   `json:"readonly,omitempty"`
+	Workspace     string `json:"workspace,omitempty"`
+	Host          string `json:"host,omitempty"`
+	Port          int    `json:"port,omitempty"`
+	ReadOnly      bool   `json:"readonly,omitempty"`
+	BasicAuthUser string `json:"basic_auth_user,omitempty"`
+	BasicAuthPass string `json:"basic_auth_pass,omitempty"`
 }
 
 func cliConfigPath() string {

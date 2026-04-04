@@ -77,7 +77,7 @@ func (a *App) startServer(dir string) error {
 	ws := workspace.Open(dir)
 	eng := board.New()
 
-	a.srv = api.NewServer(ws, eng, false, false, true, a.version)
+	a.srv = api.NewServer(ws, eng, false, false, true, a.version, "", "")
 
 	addr, err := a.srv.ListenAndServe("127.0.0.1:0")
 	if err != nil {

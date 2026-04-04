@@ -18,12 +18,14 @@ func serveCmd() *cobra.Command {
 		readOnly bool
 	)
 
+	cfg := defaults.LoadCLIConfig()
+
 	cmd := &cobra.Command{
 		Use:   "serve",
 		Short: "Start the REST API and Web UI server",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			noCache := os.Getenv("NO_CACHE") != ""
-			srv := api.NewServer(ws, ws.Engine, noCache, readOnly, false, version)
+			srv := api.NewServer(ws, ws.Engine, noCache, readOnly, false, version, cfg.BasicAuthUser, cfg.BasicAuthPass)
 			addr := fmt.Sprintf("%s:%d", host, port)
 			fmt.Printf("LiveBoard Web UI: http://%s:%d\n", host, port)
 			fmt.Printf("REST API: http://%s:%d/boards\n", host, port)
@@ -31,8 +33,6 @@ func serveCmd() *cobra.Command {
 			return srv.Start(addr)
 		},
 	}
-
-	cfg := defaults.LoadCLIConfig()
 
 	// Priority: flags > env vars > config file > hardcoded defaults
 	defaultHost := "127.0.0.1"

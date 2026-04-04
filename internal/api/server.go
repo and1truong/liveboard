@@ -34,18 +34,22 @@ type Server struct {
 	httpServer        *http.Server
 	noCache           bool
 	readOnly          bool
+	basicAuthUser     string
+	basicAuthPass     string
 }
 
 // NewServer creates a Server with all routes registered.
-func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, isDesktop bool, version string) *Server {
+func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, isDesktop bool, version string, basicAuthUser, basicAuthPass string) *Server {
 	h := web.NewHandler(ws, eng, version, readOnly, isDesktop)
 	s := &Server{
-		ws:         ws,
-		eng:        eng,
-		webHandler: h,
-		mcpServer:  livemcp.New(ws, eng, version),
-		noCache:    noCache,
-		readOnly:   readOnly,
+		ws:            ws,
+		eng:           eng,
+		webHandler:    h,
+		mcpServer:     livemcp.New(ws, eng, version),
+		noCache:       noCache,
+		readOnly:      readOnly,
+		basicAuthUser: basicAuthUser,
+		basicAuthPass: basicAuthPass,
 	}
 
 	// Initialize reminder scheduler if enabled
@@ -182,6 +186,12 @@ func (s *Server) buildRouter() chi.Router {
 	r.Use(middleware.RealIP)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+
+	if s.basicAuthUser != "" && s.basicAuthPass != "" {
+		r.Use(middleware.BasicAuth("LiveBoard", map[string]string{
+			s.basicAuthUser: s.basicAuthPass,
+		}))
+	}
 
 	if s.readOnly {
 		r.Use(func(next http.Handler) http.Handler {

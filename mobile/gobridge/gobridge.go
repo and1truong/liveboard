@@ -34,7 +34,7 @@ func Start(workspaceDir, version string) (string, error) {
 	ws := workspace.Open(workspaceDir)
 	eng := board.New()
 
-	srv = api.NewServer(ws, eng, false, false, true, version)
+	srv = api.NewServer(ws, eng, false, false, true, version, "", "")
 
 	addr, err := srv.ListenAndServe("127.0.0.1:0")
 	if err != nil {
