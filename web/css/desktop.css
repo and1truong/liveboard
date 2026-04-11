@@ -43,14 +43,13 @@
     @apply pt-[38px];
 }
 
-.desktop-app .app-sidebar.collapsed + .app-main .workspace-header,
-.desktop-app .app-sidebar.collapsed + .app-main .board-topbar {
-    @apply pt-[38px];
-    height: calc(var(--topbar-height) + 38px);
+.desktop-app .app-sidebar.collapsed + .app-workspace .workspace-header,
+.desktop-app .app-sidebar.collapsed + .app-workspace .board-topbar {
+    padding-left: 120px;
 }
 
-.desktop-app .app-sidebar.collapsed + .app-main .sidebar-toggle {
-    @apply top-[38px];
+.desktop-app .app-sidebar.collapsed + .app-workspace .sidebar-toggle {
+    left: 80px;
 }
 
 /* Sidebar on right — traffic lights overlap the main content instead */
@@ -60,10 +59,9 @@
 
 .desktop-app[data-sidebar-position="right"] .workspace-header,
 .desktop-app[data-sidebar-position="right"] .board-topbar {
-    @apply pt-[38px];
-    height: calc(var(--topbar-height) + 38px);
+    padding-left: 120px;
 }
 
 .desktop-app[data-sidebar-position="right"] .sidebar-toggle {
-    @apply top-[38px];
+    left: 80px;
 }
