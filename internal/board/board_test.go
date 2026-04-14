@@ -1,8 +1,10 @@
 package board
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"testing"
 
@@ -945,5 +947,79 @@ func TestMoveCardToBoard_HappyPath(t *testing.T) {
 	}
 	if dst.Version != 8 {
 		t.Errorf("dst version = %d, want 8", dst.Version)
+	}
+}
+
+func TestMoveCardToBoard_MergesTagsAndMembers(t *testing.T) {
+	dir := t.TempDir()
+	srcPath := filepath.Join(dir, "src.md")
+	dstPath := filepath.Join(dir, "dst.md")
+	srcMD := "---\nversion: 1\nname: Src\ntags: [urgent, legal]\nmembers: [carol]\n---\n\n## Todo\n\n- [ ] Task\n  tags: urgent, legal\n  assignee: carol\n"
+	dstMD := "---\nversion: 1\nname: Dst\ntags: [urgent]\nmembers: []\n---\n\n## Inbox\n"
+	_ = os.WriteFile(srcPath, []byte(srcMD), 0644)
+	_ = os.WriteFile(dstPath, []byte(dstMD), 0644)
+	e := New()
+	if err := e.MoveCardToBoard(srcPath, 1, 0, 0, dstPath, "Inbox"); err != nil {
+		t.Fatal(err)
+	}
+	dst, err := e.LoadBoard(dstPath)
+	if err != nil || dst == nil {
+		t.Fatalf("LoadBoard: %v", err)
+	}
+	if !slices.Contains(dst.Tags, "legal") {
+		t.Errorf("dst.Tags = %v, want contains legal", dst.Tags)
+	}
+	if !slices.Contains(dst.Members, "carol") {
+		t.Errorf("dst.Members = %v, want contains carol", dst.Members)
+	}
+}
+
+func TestMoveCardToBoard_TargetColumnNotFound(t *testing.T) {
+	dir := t.TempDir()
+	srcPath := filepath.Join(dir, "src.md")
+	dstPath := filepath.Join(dir, "dst.md")
+	_ = os.WriteFile(srcPath, []byte("---\nversion: 1\nname: S\n---\n\n## Todo\n\n- [ ] T\n"), 0644)
+	_ = os.WriteFile(dstPath, []byte("---\nversion: 1\nname: D\n---\n\n## Inbox\n"), 0644)
+	e := New()
+	err := e.MoveCardToBoard(srcPath, 1, 0, 0, dstPath, "Nope")
+	if !errors.Is(err, ErrNotFound) {
+		t.Fatalf("err = %v, want ErrNotFound", err)
+	}
+	src, err := e.LoadBoard(srcPath)
+	if err != nil || src == nil {
+		t.Fatalf("LoadBoard: %v", err)
+	}
+	if len(src.Columns[0].Cards) != 1 {
+		t.Error("source should be unchanged after failed target lookup")
+	}
+}
+
+func TestMoveCardToBoard_SourceVersionConflict(t *testing.T) {
+	dir := t.TempDir()
+	srcPath := filepath.Join(dir, "src.md")
+	dstPath := filepath.Join(dir, "dst.md")
+	_ = os.WriteFile(srcPath, []byte("---\nversion: 5\nname: S\n---\n\n## Todo\n\n- [ ] T\n"), 0644)
+	_ = os.WriteFile(dstPath, []byte("---\nversion: 1\nname: D\n---\n\n## Inbox\n"), 0644)
+	e := New()
+	err := e.MoveCardToBoard(srcPath, 2, 0, 0, dstPath, "Inbox")
+	if !errors.Is(err, ErrVersionConflict) {
+		t.Fatalf("err = %v, want ErrVersionConflict", err)
+	}
+	dst, err := e.LoadBoard(dstPath)
+	if err != nil || dst == nil {
+		t.Fatalf("LoadBoard: %v", err)
+	}
+	if len(dst.Columns[0].Cards) != 1 {
+		t.Error("target should have the card even though source removal failed")
+	}
+}
+
+func TestMoveCardToBoard_SameBoardRejected(t *testing.T) {
+	dir := t.TempDir()
+	p := filepath.Join(dir, "b.md")
+	_ = os.WriteFile(p, []byte("---\nversion: 1\nname: B\n---\n\n## A\n\n- [ ] T\n\n## B\n"), 0644)
+	e := New()
+	if err := e.MoveCardToBoard(p, 1, 0, 0, p, "B"); err == nil {
+		t.Fatal("expected error for same-board move")
 	}
 }
