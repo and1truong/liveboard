@@ -3,7 +3,9 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
+	"time"
 )
 
 func (d Deps) getEvents(w http.ResponseWriter, r *http.Request) {
@@ -30,16 +32,24 @@ func (d Deps) getEvents(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "event: connected\ndata: {}\n\n")
 	flusher.Flush()
 
+	ticker := time.NewTicker(15 * time.Second)
+	defer ticker.Stop()
+
 	for {
 		select {
 		case <-r.Context().Done():
 			return
+		case <-ticker.C:
+			_, _ = fmt.Fprintf(w, ": ping\n\n")
+			flusher.Flush()
 		case _, ok := <-ch:
 			if !ok {
 				return
 			}
 			version := 0
-			if board, err := d.Workspace.LoadBoard(slug); err == nil {
+			if board, err := d.Workspace.LoadBoard(slug); err != nil {
+				log.Printf("api/v1/events: load %q failed: %v", slug, err)
+			} else {
 				version = board.Version
 			}
 			payload, _ := json.Marshal(struct {

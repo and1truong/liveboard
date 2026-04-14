@@ -39,10 +39,22 @@ func TestSSEReceivesBoardUpdated(t *testing.T) {
 		t.Errorf("want Content-Type=text/event-stream, got %q", ct)
 	}
 
-	// Trigger an update in a goroutine so the test handler is already subscribed.
+	done := make(chan struct{})
+	defer close(done)
+
+	// Publish repeatedly every 20ms until the test succeeds or context expires,
+	// eliminating race between subscribe and first publish.
 	go func() {
-		time.Sleep(50 * time.Millisecond)
-		deps.SSE.Publish("demo")
+		ticker := time.NewTicker(20 * time.Millisecond)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-done:
+				return
+			case <-ticker.C:
+				deps.SSE.Publish("demo")
+			}
+		}
 	}()
 
 	scanner := bufio.NewScanner(resp.Body)
