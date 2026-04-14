@@ -22,6 +22,10 @@ func (d Deps) getBoardSettings(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resolved)
 }
 
+// putBoardSettings replaces the board's per-board settings overrides with the
+// supplied payload (true replace, not a merge). Fields absent from the payload
+// will be nil in BoardSettings, which clears any existing per-board override for
+// that field so it falls back to the global default at resolve time.
 func (d Deps) putBoardSettings(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 

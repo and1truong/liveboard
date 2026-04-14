@@ -25,9 +25,14 @@ func TestGetBoardSettings(t *testing.T) {
 		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
-	// Body should contain resolved fields — exact contents depend on defaults.
-	if rec.Body.Len() < 3 {
-		t.Errorf("body too small: %q", rec.Body.String())
+	var resolved struct {
+		ViewMode string `json:"view_mode"`
+	}
+	if err := json.NewDecoder(rec.Body).Decode(&resolved); err != nil {
+		t.Fatalf("failed to decode response: %v", err)
+	}
+	if resolved.ViewMode == "" {
+		t.Errorf("want non-empty view_mode in resolved settings, got empty string")
 	}
 }
 
@@ -43,8 +48,8 @@ func TestPutBoardSettings(t *testing.T) {
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK && rec.Code != http.StatusNoContent {
-		t.Fatalf("want 200/204, got %d: %s", rec.Code, rec.Body.String())
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("want 204, got %d: %s", rec.Code, rec.Body.String())
 	}
 
 	// Verify persistence: GET the board and check settings.
