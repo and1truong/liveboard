@@ -26,6 +26,7 @@ func Router(d Deps) chi.Router {
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
 		r.Get("/{slug}", d.getBoard)
+		r.Post("/{slug}/mutations", d.postMutation)
 	})
 	return r
 }

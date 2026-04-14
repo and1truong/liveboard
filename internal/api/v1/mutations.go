@@ -3,10 +3,50 @@ package v1
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
 
 	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/pkg/models"
 )
+
+type mutationRequest struct {
+	ClientVersion int        `json:"client_version"`
+	Op            MutationOp `json:"op"`
+}
+
+func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+
+	boardPath, pathErr := d.Workspace.BoardPath(slug)
+	if pathErr != nil {
+		writeError(w, pathErr)
+		return
+	}
+
+	var req mutationRequest
+	if decodeErr := decodeJSON(r, &req); decodeErr != nil {
+		writeError(w, fmt.Errorf("%w: %v", errInvalid, decodeErr))
+		return
+	}
+
+	if dispatchErr := Dispatch(d.Engine, boardPath, req.ClientVersion, req.Op); dispatchErr != nil {
+		writeError(w, dispatchErr)
+		return
+	}
+
+	if d.SSE != nil {
+		d.SSE.Publish(slug)
+	}
+
+	updated, loadErr := d.Workspace.LoadBoard(slug)
+	if loadErr != nil {
+		writeError(w, loadErr)
+		return
+	}
+	_ = json.NewEncoder(w).Encode(updated)
+}
 
 // MutationOp is the tagged union of all board mutations.
 // Exactly one of the pointer fields is populated based on Type.
