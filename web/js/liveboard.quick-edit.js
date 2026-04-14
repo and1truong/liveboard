@@ -48,11 +48,12 @@ document.addEventListener('alpine:init', function () {
         this.priority = card.dataset.cardPriority || '';
         this._cardEl = card;
 
+        var self = this;
+
         // Tags
         var rawTags = card.dataset.cardTags || '';
         this.tags = [];
         if (rawTags) {
-          var self = this;
           rawTags.split(',').forEach(function (s) { s = s.trim(); if (s && self.tags.indexOf(s) === -1) self.tags.push(s); });
         }
         this.tagSuggestions = Alpine.store('board').tags.slice();
