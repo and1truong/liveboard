@@ -78,6 +78,31 @@ jobs:
       - name: Run nilaway
         run: nilaway ./...
 
+  ts-parity:
+    name: TS Parity Vectors
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: "1.3.10"
+
+      - name: Install dependencies
+        working-directory: web/shared
+        run: bun install --frozen-lockfile
+
+      - name: Typecheck
+        working-directory: web/shared
+        run: bun run typecheck
+
+      - name: Run parity tests
+        working-directory: web/shared
+        run: bun test
+
   goreleaser-check:
     name: GoReleaser Check
     runs-on: ubuntu-latest
