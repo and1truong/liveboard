@@ -53,17 +53,17 @@ func runVector(t *testing.T, path string) {
 	}
 
 	var vec vector
-	if err := json.Unmarshal(raw, &vec); err != nil {
+	if err = json.Unmarshal(raw, &vec); err != nil {
 		t.Fatalf("parse vector: %v", err)
 	}
 
 	var b models.Board
-	if err := json.Unmarshal(vec.BoardBefore, &b); err != nil {
+	if err = json.Unmarshal(vec.BoardBefore, &b); err != nil {
 		t.Fatalf("parse board_before: %v", err)
 	}
 
 	var op v1.MutationOp
-	if err := json.Unmarshal(vec.Op, &op); err != nil {
+	if err = json.Unmarshal(vec.Op, &op); err != nil {
 		t.Fatalf("parse op: %v", err)
 	}
 
@@ -86,7 +86,7 @@ func runVector(t *testing.T, path string) {
 	// Normalize by round-tripping both sides through models.Board so that
 	// zero-valued struct fields appear on both sides uniformly.
 	var wantBoard models.Board
-	if err := json.Unmarshal(vec.BoardAfter, &wantBoard); err != nil {
+	if err = json.Unmarshal(vec.BoardAfter, &wantBoard); err != nil {
 		t.Fatalf("parse board_after: %v", err)
 	}
 	wantJSON, err := json.Marshal(&wantBoard)
