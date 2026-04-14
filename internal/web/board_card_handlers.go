@@ -164,6 +164,15 @@ func (bv *BoardViewHandler) HandleMoveCardToBoard(w http.ResponseWriter, r *http
 	}
 
 	version := formVersion(r)
+	if version == -1 {
+		// A real client version is required to guarantee the move is safe
+		// against concurrent mutations on the source board. Refuse the move
+		// rather than silently bypassing the optimistic-lock check.
+		model, _ := bv.boardViewModel(slug)
+		model.Error = "version is required"
+		bv.renderBoardContent(w, model)
+		return
+	}
 	moveErr := bv.eng.MoveCardToBoard(srcPath, version, colIdx, cardIdx, dstPath, dstColumn)
 	if errors.Is(moveErr, board.ErrVersionConflict) {
 		bv.handleConflict(w, slug)
@@ -172,6 +181,11 @@ func (bv *BoardViewHandler) HandleMoveCardToBoard(w http.ResponseWriter, r *http
 
 	model, _ := bv.boardViewModel(slug)
 	if moveErr != nil {
+		// On partial failure (destination written but source not cleaned up)
+		// the destination board is now live — publish so any viewers see it.
+		if errors.Is(moveErr, board.ErrPartialSourceCleanup) {
+			bv.publishBoardEvent(dstBoardSlug)
+		}
 		model.Error = moveErr.Error()
 	} else {
 		// Engine call bypasses mutateBoard, so manually publish SSE for both boards.

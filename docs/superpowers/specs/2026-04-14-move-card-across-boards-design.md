@@ -53,12 +53,12 @@ Sequence:
 
 ### Web
 
-`POST /boards/{slug}/columns/{colIdx}/cards/{cardIdx}/move-to-board` in `internal/web/board_card_handlers.go`. Form fields: `dst_board` (slug), `dst_column` (name). On success, returns the standard `#board-content` partial for the **source** board (user stays on source). SSE handles the target board for anyone viewing it.
+`POST /board/{slug}/cards/move-to-board` in `internal/web/board_card_handlers.go`. Form fields: `col_idx` (source column index), `card_idx` (card index within that column), `dst_board` (slug), `dst_column` (name). On success, returns the standard `#board-content` partial for the **source** board (user stays on source). SSE handles the target board for anyone viewing it.
 
 ### REST API
 
-`POST /api/boards/{slug}/cards/move-to-board` in `internal/api/cards.go`. JSON body: `{src_col_idx, card_idx, dst_board, dst_column}`. Returns updated source board JSON. Status codes via existing `handleError`:
-- 200 on success
+`POST /api/boards/{slug}/cards/move-to-board` in `internal/api/cards.go`. JSON body: `{src_col_idx, card_idx, dst_board, dst_column}`. Returns `204 No Content` on success (no board JSON body). Status codes via existing `handleError`:
+- 204 on success
 - 404 on missing target board or column
 - 409 on source version conflict
 - 400 on malformed input

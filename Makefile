@@ -93,6 +93,7 @@ lint:
 
 # Start dev server with live reload (uses air if available) + Tailwind watcher
 dev: release-port
+	@tailwindcss -i web/css/input.css -o web/css/liveboard.css --minify
 	@tailwindcss -i web/css/input.css -o web/css/liveboard.css --watch & \
 	CSS_PID=$$!; \
 	trap "kill $$CSS_PID 2>/dev/null" EXIT; \

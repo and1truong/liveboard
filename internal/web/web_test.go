@@ -9,6 +9,7 @@ import (
 	neturl "net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1199,8 +1200,8 @@ func TestHandleMoveCardToBoard(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Create dst board with an Inbox column
-	if _, err := h.ws.CreateBoard("dst"); err != nil {
-		t.Fatal(err)
+	if _, cerr := h.ws.CreateBoard("dst"); cerr != nil {
+		t.Fatal(cerr)
 	}
 	_, err = h.mutateBoard("dst", -1, func(b *models.Board) error {
 		b.Columns = []models.Column{{Name: "Inbox"}}
@@ -1210,9 +1211,17 @@ func TestHandleMoveCardToBoard(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Load the real source version for the optimistic-lock check; -1 is
+	// rejected by HandleMoveCardToBoard.
+	srcPre, err := h.ws.LoadBoard(srcSlug)
+	if err != nil {
+		t.Fatal(err)
+	}
+
 	w := httptest.NewRecorder()
 	r := postForm("/board/"+srcSlug+"/cards/move-to-board", map[string]string{
-		"col_idx": "0", "card_idx": "0", "dst_board": "dst", "dst_column": "Inbox", "version": "-1",
+		"col_idx": "0", "card_idx": "0", "dst_board": "dst", "dst_column": "Inbox",
+		"version": strconv.Itoa(srcPre.Version),
 	})
 	r = withSlug(r, srcSlug)
 	h.HandleMoveCardToBoard(w, r)
@@ -1231,6 +1240,16 @@ func TestHandleMoveCardToBoard(t *testing.T) {
 	}
 	if !found {
 		t.Error("Task A was not moved to dst Inbox")
+	}
+	// Verify the card was moved (not copied): source Todo must no longer contain it.
+	src, err := h.ws.LoadBoard(srcSlug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range src.Columns[0].Cards {
+		if c.Title == "Task A" {
+			t.Error("Task A still present in source after move")
+		}
 	}
 }
 

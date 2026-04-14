@@ -23,6 +23,14 @@ var (
 	ErrNotFound = errors.New("not found")
 	// ErrOutOfRange is returned when column or card indices are invalid.
 	ErrOutOfRange = errors.New("out of range")
+	// ErrInvalidInput is returned when a mutation receives semantically invalid input
+	// (e.g. source and destination are the same board in MoveCardToBoard).
+	ErrInvalidInput = errors.New("invalid input")
+	// ErrPartialSourceCleanup is returned by MoveCardToBoard when the destination
+	// write succeeded but source removal failed. Callers should distinguish this
+	// from ErrVersionConflict because the destination board has already been
+	// mutated and the card now exists on both boards.
+	ErrPartialSourceCleanup = errors.New("destination written but source removal failed")
 )
 
 // Engine provides CRUD operations on boards backed by Markdown files.
@@ -165,7 +173,7 @@ func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn st
 // receives a wrapped error.
 func (e *Engine) MoveCardToBoard(srcPath string, srcVersion, srcColIdx, cardIdx int, dstPath, dstColumn string) error {
 	if srcPath == dstPath {
-		return fmt.Errorf("source and destination boards must differ: %w", ErrNotFound)
+		return fmt.Errorf("%w: source and destination boards must differ", ErrInvalidInput)
 	}
 
 	srcSnapshot, err := e.LoadBoard(srcPath)
@@ -174,6 +182,12 @@ func (e *Engine) MoveCardToBoard(srcPath string, srcVersion, srcColIdx, cardIdx 
 	}
 	if err := validateIndices(srcSnapshot, srcColIdx, cardIdx); err != nil {
 		return err
+	}
+	// Optimistic-lock check before any mutation: if the caller's version does
+	// not match what's on disk, bail out before writing to the destination so
+	// we don't leave a duplicate card behind.
+	if srcVersion >= 0 && srcSnapshot.Version != srcVersion {
+		return ErrVersionConflict
 	}
 	cardCopy := srcSnapshot.Columns[srcColIdx].Cards[cardIdx]
 
@@ -200,7 +214,7 @@ func (e *Engine) MoveCardToBoard(srcPath string, srcVersion, srcColIdx, cardIdx 
 		b.Columns[srcColIdx].Cards = removeCardAt(b.Columns[srcColIdx].Cards, cardIdx)
 		return nil
 	}); err != nil {
-		return fmt.Errorf("card added to %s but source removal failed: %w", dstPath, err)
+		return fmt.Errorf("%w: card added to %s: %w", ErrPartialSourceCleanup, dstPath, err)
 	}
 	return nil
 }

@@ -190,10 +190,11 @@ func (s *Server) tagCard(w http.ResponseWriter, r *http.Request) {
 func (s *Server) moveCardToBoard(w http.ResponseWriter, r *http.Request) {
 	boardName := pathParam(r, "board")
 	var body struct {
-		SrcColIdx int    `json:"src_col_idx"`
-		CardIdx   int    `json:"card_idx"`
-		DstBoard  string `json:"dst_board"`
-		DstColumn string `json:"dst_column"`
+		SrcColIdx  *int   `json:"src_col_idx"`
+		CardIdx    *int   `json:"card_idx"`
+		SrcVersion *int   `json:"src_version"`
+		DstBoard   string `json:"dst_board"`
+		DstColumn  string `json:"dst_column"`
 	}
 	if err := decodeJSON(r, &body); err != nil {
 		respondError(w, http.StatusBadRequest, "invalid JSON: "+err.Error())
@@ -201,6 +202,18 @@ func (s *Server) moveCardToBoard(w http.ResponseWriter, r *http.Request) {
 	}
 	if body.DstBoard == "" || body.DstColumn == "" {
 		respondError(w, http.StatusBadRequest, "dst_board and dst_column are required")
+		return
+	}
+	if body.SrcColIdx == nil {
+		respondError(w, http.StatusBadRequest, "src_col_idx is required")
+		return
+	}
+	if body.CardIdx == nil {
+		respondError(w, http.StatusBadRequest, "card_idx is required")
+		return
+	}
+	if body.SrcVersion == nil {
+		respondError(w, http.StatusBadRequest, "src_version is required")
 		return
 	}
 	srcPath, err := s.ws.BoardPath(boardName)
@@ -213,7 +226,7 @@ func (s *Server) moveCardToBoard(w http.ResponseWriter, r *http.Request) {
 		respondError(w, http.StatusBadRequest, err.Error())
 		return
 	}
-	if err := s.ws.Engine.MoveCardToBoard(srcPath, -1, body.SrcColIdx, body.CardIdx, dstPath, body.DstColumn); err != nil {
+	if err := s.ws.Engine.MoveCardToBoard(srcPath, *body.SrcVersion, *body.SrcColIdx, *body.CardIdx, dstPath, body.DstColumn); err != nil {
 		handleError(w, err)
 		return
 	}
