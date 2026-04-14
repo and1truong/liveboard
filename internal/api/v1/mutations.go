@@ -123,6 +123,115 @@ type UpdateBoardSettingsOp struct {
 	Settings models.BoardSettings `json:"settings"`
 }
 
+// MarshalJSON encodes the active variant merged with the "type" discriminator.
+func (m MutationOp) MarshalJSON() ([]byte, error) {
+	var variant any
+	switch m.Type {
+	case "add_card":
+		if m.AddCard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but AddCard is nil", m.Type)
+		}
+		variant = m.AddCard
+	case "move_card":
+		if m.MoveCard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but MoveCard is nil", m.Type)
+		}
+		variant = m.MoveCard
+	case "reorder_card":
+		if m.ReorderCard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but ReorderCard is nil", m.Type)
+		}
+		variant = m.ReorderCard
+	case "edit_card":
+		if m.EditCard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but EditCard is nil", m.Type)
+		}
+		variant = m.EditCard
+	case "delete_card":
+		if m.DeleteCard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but DeleteCard is nil", m.Type)
+		}
+		variant = m.DeleteCard
+	case "complete_card":
+		if m.CompleteCard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but CompleteCard is nil", m.Type)
+		}
+		variant = m.CompleteCard
+	case "tag_card":
+		if m.TagCard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but TagCard is nil", m.Type)
+		}
+		variant = m.TagCard
+	case "add_column":
+		if m.AddColumn == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but AddColumn is nil", m.Type)
+		}
+		variant = m.AddColumn
+	case "rename_column":
+		if m.RenameColumn == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but RenameColumn is nil", m.Type)
+		}
+		variant = m.RenameColumn
+	case "delete_column":
+		if m.DeleteColumn == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but DeleteColumn is nil", m.Type)
+		}
+		variant = m.DeleteColumn
+	case "move_column":
+		if m.MoveColumn == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but MoveColumn is nil", m.Type)
+		}
+		variant = m.MoveColumn
+	case "sort_column":
+		if m.SortColumn == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but SortColumn is nil", m.Type)
+		}
+		variant = m.SortColumn
+	case "toggle_column_collapse":
+		if m.ToggleColumnCollapse == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but ToggleColumnCollapse is nil", m.Type)
+		}
+		variant = m.ToggleColumnCollapse
+	case "update_board_meta":
+		if m.UpdateBoardMeta == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but UpdateBoardMeta is nil", m.Type)
+		}
+		variant = m.UpdateBoardMeta
+	case "update_board_members":
+		if m.UpdateBoardMembers == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but UpdateBoardMembers is nil", m.Type)
+		}
+		variant = m.UpdateBoardMembers
+	case "update_board_icon":
+		if m.UpdateBoardIcon == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but UpdateBoardIcon is nil", m.Type)
+		}
+		variant = m.UpdateBoardIcon
+	case "update_board_settings":
+		if m.UpdateBoardSettings == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but UpdateBoardSettings is nil", m.Type)
+		}
+		variant = m.UpdateBoardSettings
+	default:
+		return nil, fmt.Errorf("unknown mutation op type: %q", m.Type)
+	}
+
+	variantBytes, err := json.Marshal(variant)
+	if err != nil {
+		return nil, err
+	}
+	var fields map[string]json.RawMessage
+	if err := json.Unmarshal(variantBytes, &fields); err != nil {
+		return nil, err
+	}
+	if fields == nil {
+		fields = make(map[string]json.RawMessage)
+	}
+	typeBytes, _ := json.Marshal(m.Type)
+	fields["type"] = json.RawMessage(typeBytes)
+	return json.Marshal(fields)
+}
+
 // UnmarshalJSON decodes based on the `type` discriminator.
 func (m *MutationOp) UnmarshalJSON(data []byte) error {
 	var head struct {
