@@ -307,25 +307,27 @@
                         </div>
                     </template>
 
-                    <div class="card-modal-sidebar-sep"></div>
-                    <div class="card-modal-sidebar-sublabel">Move to board</div>
-                    <div class="card-modal-move-to-board">
-                        <select class="card-modal-sidebar-select" x-model="moveToBoardSlug" @change="moveToBoardColumn = ''">
-                            <option value="">&mdash; select board &mdash;</option>
-                            <template x-for="b in boardsLite.filter(function(b){ return b.slug !== slug; })" :key="b.slug">
-                                <option :value="b.slug" x-text="b.name"></option>
-                            </template>
-                        </select>
-                        <select class="card-modal-sidebar-select" x-model="moveToBoardColumn" :disabled="!moveToBoardSlug">
-                            <option value="">&mdash; select column &mdash;</option>
-                            <template x-for="c in ((boardsLite.find(function(b){ return b.slug === moveToBoardSlug; }) || {}).columns || [])" :key="c">
-                                <option :value="c" x-text="c"></option>
-                            </template>
-                        </select>
-                        <button class="card-modal-sidebar-btn card-modal-sidebar-btn-move" type="button" :disabled="!moveToBoardSlug || !moveToBoardColumn" @click="submitMoveToBoard()">
-                            <span class="card-modal-action-icon">&rarr;</span> Move to board
-                        </button>
-                    </div>
+                    <template x-if="boardsLite.filter(function(b){ return b.slug !== slug; }).length > 0">
+                        <div>
+                            <div class="card-modal-sidebar-sep"></div>
+                            <div class="card-modal-sidebar-sublabel">Move to board</div>
+                            <select class="move-select" x-model="moveToBoardSlug" @change="moveToBoardColumn = ''">
+                                <option value="">&mdash; select board &mdash;</option>
+                                <template x-for="b in boardsLite.filter(function(b){ return b.slug !== slug; })" :key="b.slug">
+                                    <option :value="b.slug" x-text="b.name"></option>
+                                </template>
+                            </select>
+                            <select class="move-select" x-model="moveToBoardColumn" :disabled="!moveToBoardSlug">
+                                <option value="">&mdash; select column &mdash;</option>
+                                <template x-for="c in ((boardsLite.find(function(b){ return b.slug === moveToBoardSlug; }) || {}).columns || [])" :key="c">
+                                    <option :value="c" x-text="c"></option>
+                                </template>
+                            </select>
+                            <button class="card-modal-sidebar-btn card-modal-sidebar-btn-move" type="button" :disabled="!moveToBoardSlug || !moveToBoardColumn" @click="submitMoveToBoard()">
+                                <span class="card-modal-action-icon">&rarr;</span> <span>Move to board</span>
+                            </button>
+                        </div>
+                    </template>
 
                     <template x-if="hasDeleteBtn">
                         <div>
@@ -429,12 +431,9 @@
                                     <span x-text="b.name || b.slug"></span>
                                 </button>
                                 <template x-if="ctxMoveBoardSlug === b.slug">
-                                    <div class="ctx-submenu" style="padding-left: 1.25em;">
+                                    <div class="ctx-submenu">
                                         <template x-for="col in (b.columns || [])" :key="col">
                                             <button class="ctx-item" role="menuitem" @click.stop="ctxMoveCardToBoard(b.slug, col)"><span class="ctx-icon">&rarr;</span> <span x-text="col"></span></button>
-                                        </template>
-                                        <template x-if="!(b.columns && b.columns.length)">
-                                            <div class="ctx-item" style="opacity:0.6;">(no columns)</div>
                                         </template>
                                     </div>
                                 </template>
