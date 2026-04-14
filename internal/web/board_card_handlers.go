@@ -121,6 +121,80 @@ func (bv *BoardViewHandler) HandleMoveCard(w http.ResponseWriter, r *http.Reques
 	bv.renderBoardContent(w, model)
 }
 
+// HandleMoveCardToBoard handles POST /board/{slug}/cards/move-to-board.
+func (bv *BoardViewHandler) HandleMoveCardToBoard(w http.ResponseWriter, r *http.Request) {
+	slug := slugFromRequest(r)
+	colIdx, err := formInt(r, "col_idx")
+	if err != nil {
+		model, _ := bv.boardViewModel(slug)
+		model.Error = err.Error()
+		bv.renderBoardContent(w, model)
+		return
+	}
+	cardIdx, err := formInt(r, "card_idx")
+	if err != nil {
+		model, _ := bv.boardViewModel(slug)
+		model.Error = err.Error()
+		bv.renderBoardContent(w, model)
+		return
+	}
+
+	dstBoardSlug := r.FormValue("dst_board")
+	dstColumn := r.FormValue("dst_column")
+	if slug == "" || dstBoardSlug == "" || dstColumn == "" {
+		model, _ := bv.boardViewModel(slug)
+		model.Error = "source slug, destination board, and destination column are required"
+		bv.renderBoardContent(w, model)
+		return
+	}
+
+	srcPath, err := bv.ws.BoardPath(slug)
+	if err != nil {
+		model, _ := bv.boardViewModel(slug)
+		model.Error = err.Error()
+		bv.renderBoardContent(w, model)
+		return
+	}
+	dstPath, err := bv.ws.BoardPath(dstBoardSlug)
+	if err != nil {
+		model, _ := bv.boardViewModel(slug)
+		model.Error = err.Error()
+		bv.renderBoardContent(w, model)
+		return
+	}
+
+	version := formVersion(r)
+	if version == -1 {
+		// A real client version is required to guarantee the move is safe
+		// against concurrent mutations on the source board. Refuse the move
+		// rather than silently bypassing the optimistic-lock check.
+		model, _ := bv.boardViewModel(slug)
+		model.Error = "version is required"
+		bv.renderBoardContent(w, model)
+		return
+	}
+	moveErr := bv.eng.MoveCardToBoard(srcPath, version, colIdx, cardIdx, dstPath, dstColumn)
+	if errors.Is(moveErr, board.ErrVersionConflict) {
+		bv.handleConflict(w, slug)
+		return
+	}
+
+	model, _ := bv.boardViewModel(slug)
+	if moveErr != nil {
+		// On partial failure (destination written but source not cleaned up)
+		// the destination board is now live — publish so any viewers see it.
+		if errors.Is(moveErr, board.ErrPartialSourceCleanup) {
+			bv.publishBoardEvent(dstBoardSlug)
+		}
+		model.Error = moveErr.Error()
+	} else {
+		// Engine call bypasses mutateBoard, so manually publish SSE for both boards.
+		bv.publishBoardEvent(slug)
+		bv.publishBoardEvent(dstBoardSlug)
+	}
+	bv.renderBoardContent(w, model)
+}
+
 // HandleReorderCard handles POST /board/{slug}/cards/reorder.
 func (bv *BoardViewHandler) HandleReorderCard(w http.ResponseWriter, r *http.Request) {
 	slug := slugFromRequest(r)

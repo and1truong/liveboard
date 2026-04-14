@@ -9,6 +9,7 @@ import (
 	neturl "net/url"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -1025,6 +1026,80 @@ func TestHandleSidebarBoards(t *testing.T) {
 	}
 }
 
+func TestHandleBoardsListLite(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	// Create a second board with its own columns.
+	const slug2 = "second-board"
+	if _, err := h.ws.CreateBoard(slug2); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.mutateBoard(slug2, -1, func(b *models.Board) error {
+		b.Name = "Second Board"
+		b.Columns = []models.Column{
+			{Name: "Backlog"},
+			{Name: "In Progress"},
+			{Name: "Shipped"},
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/api/boards/list-lite", nil)
+	h.HandleBoardsListLite(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	var entries []BoardListLiteEntry
+	if err := json.NewDecoder(w.Body).Decode(&entries); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("len = %d, want 2: %+v", len(entries), entries)
+	}
+
+	byslug := map[string]BoardListLiteEntry{}
+	for _, e := range entries {
+		byslug[e.Slug] = e
+	}
+
+	e1, ok := byslug[slug]
+	if !ok {
+		t.Fatalf("missing %q in %+v", slug, entries)
+	}
+	if want := []string{"Todo", "Done"}; !equalStrings(e1.Columns, want) {
+		t.Errorf("first board columns = %v, want %v", e1.Columns, want)
+	}
+	if e1.Name == "" {
+		t.Errorf("first board name empty")
+	}
+
+	e2, ok := byslug[slug2]
+	if !ok {
+		t.Fatalf("missing %q in %+v", slug2, entries)
+	}
+	if e2.Name != "Second Board" {
+		t.Errorf("second board name = %q, want Second Board", e2.Name)
+	}
+	if want := []string{"Backlog", "In Progress", "Shipped"}; !equalStrings(e2.Columns, want) {
+		t.Errorf("second board columns = %v, want %v", e2.Columns, want)
+	}
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // --- Card handler tests ---
 
 func TestHandleCreateCard(t *testing.T) {
@@ -1109,6 +1184,72 @@ func TestHandleMoveCard(t *testing.T) {
 	}
 	if !found {
 		t.Error("card not moved to Done")
+	}
+}
+
+func TestHandleMoveCardToBoard(t *testing.T) {
+	h, srcSlug := setupTestHandler(t)
+	// Seed src with a Todo column + Task A
+	_, err := h.mutateBoard(srcSlug, -1, func(b *models.Board) error {
+		b.Columns = []models.Column{
+			{Name: "Todo", Cards: []models.Card{{Title: "Task A"}}},
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Create dst board with an Inbox column
+	if _, cerr := h.ws.CreateBoard("dst"); cerr != nil {
+		t.Fatal(cerr)
+	}
+	_, err = h.mutateBoard("dst", -1, func(b *models.Board) error {
+		b.Columns = []models.Column{{Name: "Inbox"}}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Load the real source version for the optimistic-lock check; -1 is
+	// rejected by HandleMoveCardToBoard.
+	srcPre, err := h.ws.LoadBoard(srcSlug)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+srcSlug+"/cards/move-to-board", map[string]string{
+		"col_idx": "0", "card_idx": "0", "dst_board": "dst", "dst_column": "Inbox",
+		"version": strconv.Itoa(srcPre.Version),
+	})
+	r = withSlug(r, srcSlug)
+	h.HandleMoveCardToBoard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d, body=%s", w.Code, w.Body.String())
+	}
+	dst, err := h.ws.LoadBoard("dst")
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, c := range dst.Columns[0].Cards {
+		if c.Title == "Task A" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("Task A was not moved to dst Inbox")
+	}
+	// Verify the card was moved (not copied): source Todo must no longer contain it.
+	src, err := h.ws.LoadBoard(srcSlug)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range src.Columns[0].Cards {
+		if c.Title == "Task A" {
+			t.Error("Task A still present in source after move")
+		}
 	}
 }
 

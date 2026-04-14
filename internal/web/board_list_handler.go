@@ -1,6 +1,7 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -311,4 +312,41 @@ func (bl *BoardListHandler) HandleSidebarBoards(w http.ResponseWriter, r *http.R
 		model.BoardSlug = slug
 	}
 	renderPartial(w, bl.sidebarBoardsTpl, "sidebar-boards", model)
+}
+
+// BoardListLiteEntry is a lightweight board descriptor for cascading selects.
+type BoardListLiteEntry struct {
+	Slug    string   `json:"slug"`
+	Name    string   `json:"name"`
+	Columns []string `json:"columns"`
+}
+
+// HandleBoardsListLite handles GET /api/boards/list-lite — returns JSON listing of
+// boards with their column names, for populating cascading selects.
+func (bl *BoardListHandler) HandleBoardsListLite(w http.ResponseWriter, _ *http.Request) {
+	infos, err := bl.ws.ListBoardSummaries()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+	entries := make([]BoardListLiteEntry, 0, len(infos))
+	for _, info := range infos {
+		slug := boardSlug(info.Board)
+		full, err := bl.ws.LoadBoard(slug)
+		if err != nil {
+			// Skip unloadable boards, matching existing behavior.
+			continue
+		}
+		cols := make([]string, 0, len(full.Columns))
+		for _, c := range full.Columns {
+			cols = append(cols, c.Name)
+		}
+		name := full.Name
+		if name == "" {
+			name = slug
+		}
+		entries = append(entries, BoardListLiteEntry{Slug: slug, Name: name, Columns: cols})
+	}
+	w.Header().Set("Content-Type", "application/json")
+	_ = json.NewEncoder(w).Encode(entries)
 }

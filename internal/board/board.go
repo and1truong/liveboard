@@ -23,6 +23,14 @@ var (
 	ErrNotFound = errors.New("not found")
 	// ErrOutOfRange is returned when column or card indices are invalid.
 	ErrOutOfRange = errors.New("out of range")
+	// ErrInvalidInput is returned when a mutation receives semantically invalid input
+	// (e.g. source and destination are the same board in MoveCardToBoard).
+	ErrInvalidInput = errors.New("invalid input")
+	// ErrPartialSourceCleanup is returned by MoveCardToBoard when the destination
+	// write succeeded but source removal failed. Callers should distinguish this
+	// from ErrVersionConflict because the destination board has already been
+	// mutated and the card now exists on both boards.
+	ErrPartialSourceCleanup = errors.New("destination written but source removal failed")
 )
 
 // Engine provides CRUD operations on boards backed by Markdown files.
@@ -153,6 +161,73 @@ func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn st
 		}
 	}
 	return fmt.Errorf("target column %q: %w", targetColumn, ErrNotFound)
+}
+
+// MoveCardToBoard moves a card from srcPath to dstColumn on dstPath.
+// The card is inserted at the top of the target column. Missing tags and
+// members on the target board's frontmatter are auto-added.
+//
+// Not atomic across boards: target is written first (version bypass), then
+// source (version-checked against srcVersion). If the source write fails
+// after the target write succeeded, the card is duplicated and the caller
+// receives a wrapped error.
+func (e *Engine) MoveCardToBoard(srcPath string, srcVersion, srcColIdx, cardIdx int, dstPath, dstColumn string) error {
+	if srcPath == dstPath {
+		return fmt.Errorf("%w: source and destination boards must differ", ErrInvalidInput)
+	}
+
+	srcSnapshot, err := e.LoadBoard(srcPath)
+	if err != nil {
+		return err
+	}
+	if err := validateIndices(srcSnapshot, srcColIdx, cardIdx); err != nil {
+		return err
+	}
+	// Optimistic-lock check before any mutation: if the caller's version does
+	// not match what's on disk, bail out before writing to the destination so
+	// we don't leave a duplicate card behind.
+	if srcVersion >= 0 && srcSnapshot.Version != srcVersion {
+		return ErrVersionConflict
+	}
+	cardCopy := srcSnapshot.Columns[srcColIdx].Cards[cardIdx]
+
+	if err := e.MutateBoard(dstPath, -1, func(b *models.Board) error {
+		for i := range b.Columns {
+			if b.Columns[i].Name == dstColumn {
+				b.Columns[i].Cards = append([]models.Card{cardCopy}, b.Columns[i].Cards...)
+				mergeMissing(&b.Tags, cardCopy.Tags)
+				if cardCopy.Assignee != "" {
+					mergeMissing(&b.Members, []string{cardCopy.Assignee})
+				}
+				return nil
+			}
+		}
+		return fmt.Errorf("target column %q: %w", dstColumn, ErrNotFound)
+	}); err != nil {
+		return err
+	}
+
+	if err := e.MutateBoard(srcPath, srcVersion, func(b *models.Board) error {
+		if err := validateIndices(b, srcColIdx, cardIdx); err != nil {
+			return err
+		}
+		b.Columns[srcColIdx].Cards = removeCardAt(b.Columns[srcColIdx].Cards, cardIdx)
+		return nil
+	}); err != nil {
+		return fmt.Errorf("%w: card added to %s: %w", ErrPartialSourceCleanup, dstPath, err)
+	}
+	return nil
+}
+
+func mergeMissing(existing *[]string, incoming []string) {
+	for _, v := range incoming {
+		if v == "" {
+			continue
+		}
+		if !slices.Contains(*existing, v) {
+			*existing = append(*existing, v)
+		}
+	}
 }
 
 // ReorderCard moves a card to a specific position within a column.

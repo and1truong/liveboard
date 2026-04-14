@@ -36,6 +36,11 @@ func (h *Handler) HandleSidebarBoards(w http.ResponseWriter, r *http.Request) {
 	h.BoardList.HandleSidebarBoards(w, r)
 }
 
+// HandleBoardsListLite forwards to BoardList.
+func (h *Handler) HandleBoardsListLite(w http.ResponseWriter, r *http.Request) {
+	h.BoardList.HandleBoardsListLite(w, r)
+}
+
 // BoardViewPage forwards to BoardView.
 func (h *Handler) BoardViewPage(w http.ResponseWriter, r *http.Request) {
 	h.BoardView.BoardViewPage(w, r)
@@ -54,6 +59,11 @@ func (h *Handler) HandleCreateCard(w http.ResponseWriter, r *http.Request) {
 // HandleMoveCard forwards to BoardView.
 func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	h.BoardView.HandleMoveCard(w, r)
+}
+
+// HandleMoveCardToBoard forwards to BoardView.
+func (h *Handler) HandleMoveCardToBoard(w http.ResponseWriter, r *http.Request) {
+	h.BoardView.HandleMoveCardToBoard(w, r)
 }
 
 // HandleReorderCard forwards to BoardView.

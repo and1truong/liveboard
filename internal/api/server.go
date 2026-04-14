@@ -247,6 +247,7 @@ func (s *Server) mountWebRoutes(r chi.Router) {
 	r.Get("/board/{slug}/events", h.SSE.ServeHTTP)
 	r.Post("/board/{slug}/cards", h.BoardView.HandleCreateCard)
 	r.Post("/board/{slug}/cards/move", h.BoardView.HandleMoveCard)
+	r.Post("/board/{slug}/cards/move-to-board", h.BoardView.HandleMoveCardToBoard)
 	r.Post("/board/{slug}/cards/reorder", h.BoardView.HandleReorderCard)
 	r.Post("/board/{slug}/cards/delete", h.BoardView.HandleDeleteCard)
 	r.Post("/board/{slug}/cards/complete", h.BoardView.HandleToggleComplete)
@@ -264,6 +265,7 @@ func (s *Server) mountWebRoutes(r chi.Router) {
 	// Board API routes
 	r.Post("/api/boards/pin", h.BoardList.HandleTogglePin)
 	r.Get("/api/boards/sidebar", h.BoardList.HandleSidebarBoards)
+	r.Get("/api/boards/list-lite", h.BoardList.HandleBoardsListLite)
 
 	// Settings routes
 	r.Handle("/settings", h.Settings.SettingsHandler())
@@ -312,6 +314,12 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 		r.Post("/move", s.moveCard)
 		r.Post("/complete", s.completeCard)
 		r.Post("/tag", s.tagCard)
+	})
+
+	// Board-level card operations (non-indexed):
+	r.Route("/boards/{board}/cards", func(r chi.Router) {
+		r.Use(jsonContentType)
+		r.Post("/move-to-board", s.moveCardToBoard)
 	})
 
 	// MCP server (Streamable HTTP transport)
