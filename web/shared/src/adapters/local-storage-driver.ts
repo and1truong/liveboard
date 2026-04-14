@@ -30,8 +30,16 @@ export class MemoryStorage implements StorageDriver {
   }
 }
 
+interface WebStorage {
+  getItem(key: string): string | null
+  setItem(key: string, value: string): void
+  removeItem(key: string): void
+  key(index: number): string | null
+  readonly length: number
+}
+
 export class BrowserStorage implements StorageDriver {
-  constructor(private readonly storage: Storage = globalThis.localStorage) {}
+  constructor(private readonly storage: WebStorage = globalThis.localStorage as WebStorage) {}
 
   get(key: string): string | null {
     return this.storage.getItem(key)
