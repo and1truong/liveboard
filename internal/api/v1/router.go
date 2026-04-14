@@ -1,0 +1,33 @@
+// Package v1 implements the /api/v1 REST API for LiveBoard.
+package v1
+
+import (
+	"net/http"
+
+	"github.com/go-chi/chi/v5"
+
+	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/web"
+	"github.com/and1truong/liveboard/internal/workspace"
+)
+
+// Deps is the set of dependencies the v1 handlers need.
+type Deps struct {
+	Workspace *workspace.Workspace
+	Engine    *board.Engine
+	SSE       *web.SSEBroker
+}
+
+// Router returns a chi subrouter with all /api/v1 routes registered.
+func Router(_ Deps) chi.Router {
+	r := chi.NewRouter()
+	r.Use(jsonContentType)
+	return r
+}
+
+func jsonContentType(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		next.ServeHTTP(w, r)
+	})
+}

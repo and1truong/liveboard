@@ -14,6 +14,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
+	apiv1 "github.com/and1truong/liveboard/internal/api/v1"
 	"github.com/and1truong/liveboard/internal/board"
 	livemcp "github.com/and1truong/liveboard/internal/mcp"
 	"github.com/and1truong/liveboard/internal/reminder"
@@ -287,6 +288,12 @@ func (s *Server) mountWebRoutes(r chi.Router) {
 }
 
 func (s *Server) mountAPIRoutes(r chi.Router) {
+	r.Mount("/api/v1", apiv1.Router(apiv1.Deps{
+		Workspace: s.ws,
+		Engine:    s.eng,
+		SSE:       s.webHandler.SSE,
+	}))
+
 	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {
 		r.Use(jsonContentType)
