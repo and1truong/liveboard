@@ -55,14 +55,32 @@ func TestAddCard(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+	if card == nil {
+		t.Fatal("AddCard returned nil card")
+	}
 	if card.Title != "New task" {
-		t.Errorf("title = %q", card.Title)
+		t.Errorf("returned card title = %q, want %q", card.Title, "New task")
 	}
 
 	// Verify it's in the file.
 	data, _ := os.ReadFile(path)
 	if !strings.Contains(string(data), "New task") {
 		t.Error("card not found in file")
+	}
+
+	// Verify the returned card matches what was persisted (not a stale partial copy).
+	board, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	// "Task one" was already there; "New task" should be appended.
+	cards := board.Columns[0].Cards
+	if len(cards) < 2 {
+		t.Fatalf("expected 2 cards in Backlog, got %d", len(cards))
+	}
+	last := cards[len(cards)-1]
+	if last.Title != card.Title {
+		t.Errorf("persisted card title = %q, returned card title = %q", last.Title, card.Title)
 	}
 }
 

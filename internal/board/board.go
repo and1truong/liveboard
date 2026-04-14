@@ -106,17 +106,16 @@ func renderAndWrite(board *models.Board, path string) error {
 }
 
 // ApplyAddCard adds a new card to the specified column of b.
-// Returns the new card on success.
+// Returns a pointer to the card as stored in the board slice.
 func ApplyAddCard(b *models.Board, columnName, title string, prepend bool) (*models.Card, error) {
-	card := &models.Card{Title: title}
 	for i := range b.Columns {
 		if b.Columns[i].Name == columnName {
 			if prepend {
-				b.Columns[i].Cards = append([]models.Card{*card}, b.Columns[i].Cards...)
-			} else {
-				b.Columns[i].Cards = append(b.Columns[i].Cards, *card)
+				b.Columns[i].Cards = append([]models.Card{{Title: title}}, b.Columns[i].Cards...)
+				return &b.Columns[i].Cards[0], nil
 			}
-			return card, nil
+			b.Columns[i].Cards = append(b.Columns[i].Cards, models.Card{Title: title})
+			return &b.Columns[i].Cards[len(b.Columns[i].Cards)-1], nil
 		}
 	}
 	return nil, fmt.Errorf("column %q: %w", columnName, ErrNotFound)
@@ -125,15 +124,16 @@ func ApplyAddCard(b *models.Board, columnName, title string, prepend bool) (*mod
 // AddCard adds a new card to the specified column.
 // If prepend is true, the card is inserted at the beginning; otherwise appended.
 func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*models.Card, error) {
-	card := &models.Card{Title: title}
+	var out *models.Card
 	err := e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		_, err := ApplyAddCard(b, columnName, title, prepend)
+		c, err := ApplyAddCard(b, columnName, title, prepend)
+		out = c
 		return err
 	})
 	if err != nil {
 		return nil, err
 	}
-	return card, nil
+	return out, nil
 }
 
 // ApplyMoveCard moves a card to a different column within b.
