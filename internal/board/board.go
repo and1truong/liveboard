@@ -155,6 +155,67 @@ func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn st
 	return fmt.Errorf("target column %q: %w", targetColumn, ErrNotFound)
 }
 
+// MoveCardToBoard moves a card from srcPath to dstColumn on dstPath.
+// The card is inserted at the top of the target column. Missing tags and
+// members on the target board's frontmatter are auto-added.
+//
+// Not atomic across boards: target is written first (version bypass), then
+// source (version-checked against srcVersion). If the source write fails
+// after the target write succeeded, the card is duplicated and the caller
+// receives a wrapped error.
+func (e *Engine) MoveCardToBoard(srcPath string, srcVersion, srcColIdx, cardIdx int, dstPath, dstColumn string) error {
+	if srcPath == dstPath {
+		return fmt.Errorf("source and destination boards must differ: %w", ErrNotFound)
+	}
+
+	srcSnapshot, err := e.LoadBoard(srcPath)
+	if err != nil {
+		return err
+	}
+	if err := validateIndices(srcSnapshot, srcColIdx, cardIdx); err != nil {
+		return err
+	}
+	cardCopy := srcSnapshot.Columns[srcColIdx].Cards[cardIdx]
+
+	if err := e.MutateBoard(dstPath, -1, func(b *models.Board) error {
+		for i := range b.Columns {
+			if b.Columns[i].Name == dstColumn {
+				b.Columns[i].Cards = append([]models.Card{cardCopy}, b.Columns[i].Cards...)
+				mergeMissing(&b.Tags, cardCopy.Tags)
+				if cardCopy.Assignee != "" {
+					mergeMissing(&b.Members, []string{cardCopy.Assignee})
+				}
+				return nil
+			}
+		}
+		return fmt.Errorf("target column %q: %w", dstColumn, ErrNotFound)
+	}); err != nil {
+		return err
+	}
+
+	if err := e.MutateBoard(srcPath, srcVersion, func(b *models.Board) error {
+		if err := validateIndices(b, srcColIdx, cardIdx); err != nil {
+			return err
+		}
+		b.Columns[srcColIdx].Cards = removeCardAt(b.Columns[srcColIdx].Cards, cardIdx)
+		return nil
+	}); err != nil {
+		return fmt.Errorf("card added to %s but source removal failed: %w", dstPath, err)
+	}
+	return nil
+}
+
+func mergeMissing(existing *[]string, incoming []string) {
+	for _, v := range incoming {
+		if v == "" {
+			continue
+		}
+		if !slices.Contains(*existing, v) {
+			*existing = append(*existing, v)
+		}
+	}
+}
+
 // ReorderCard moves a card to a specific position within a column.
 // beforeIdx is the index to insert before; -1 means append to end.
 func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, targetColumn string) error {

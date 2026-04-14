@@ -904,3 +904,46 @@ name: Versioned Board
 		t.Fatalf("expected ErrVersionConflict, got %v", err)
 	}
 }
+
+func TestMoveCardToBoard_HappyPath(t *testing.T) {
+	dir := t.TempDir()
+	srcPath := filepath.Join(dir, "src.md")
+	dstPath := filepath.Join(dir, "dst.md")
+
+	srcMD := "---\nversion: 3\nname: Src\ntags: [alpha]\nmembers: [alice]\n---\n\n## Todo\n\n- [ ] Task A\n  tags: alpha\n  assignee: alice\n\n## Done\n"
+	dstMD := "---\nversion: 7\nname: Dst\ntags: [beta]\nmembers: [bob]\n---\n\n## Inbox\n\n- [ ] Existing\n"
+
+	if err := os.WriteFile(srcPath, []byte(srcMD), 0644); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(dstPath, []byte(dstMD), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	e := New()
+	if err := e.MoveCardToBoard(srcPath, 3, 0, 0, dstPath, "Inbox"); err != nil {
+		t.Fatalf("MoveCardToBoard: %v", err)
+	}
+
+	src, err := e.LoadBoard(srcPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+	dst, err := e.LoadBoard(dstPath)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if len(src.Columns[0].Cards) != 0 {
+		t.Errorf("source Todo should be empty, got %d cards", len(src.Columns[0].Cards))
+	}
+	if src.Version != 4 {
+		t.Errorf("source version = %d, want 4", src.Version)
+	}
+	if len(dst.Columns[0].Cards) != 2 || dst.Columns[0].Cards[0].Title != "Task A" {
+		t.Errorf("dst Inbox = %#v, want [Task A, Existing]", dst.Columns[0].Cards)
+	}
+	if dst.Version != 8 {
+		t.Errorf("dst version = %d, want 8", dst.Version)
+	}
+}
