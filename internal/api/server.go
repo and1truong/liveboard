@@ -11,6 +11,8 @@ import (
 	"os"
 	"time"
 
+	"io/fs"
+
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 
@@ -22,6 +24,7 @@ import (
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 	staticweb "github.com/and1truong/liveboard/web"
+	shell "github.com/and1truong/liveboard/web/shell"
 )
 
 // Server is the REST API server for LiveBoard.
@@ -217,6 +220,11 @@ func (s *Server) buildRouter() chi.Router {
 		staticHandler.ServeHTTP(w, req)
 	})
 
+	if os.Getenv("LIVEBOARD_APP_SHELL") == "1" {
+		s.mountShellRoutes(r)
+		log.Println("shell mounted at /app/")
+	}
+
 	s.mountWebRoutes(r)
 	s.mountAPIRoutes(r)
 
@@ -336,6 +344,24 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 	r.Get("/search", s.stubHandler)
 	r.Get("/events", s.stubHandler)
 	r.Get("/events/ws", s.stubHandler)
+}
+
+func (s *Server) mountShellRoutes(r chi.Router) {
+	sub, err := fs.Sub(shell.FS, "dist")
+	if err != nil {
+		log.Printf("shell embed: %v", err)
+		return
+	}
+	handler := http.StripPrefix("/app/", http.FileServer(http.FS(sub)))
+	r.Get("/app", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/app/", http.StatusMovedPermanently)
+	})
+	r.Get("/app/*", func(w http.ResponseWriter, req *http.Request) {
+		if s.noCache {
+			w.Header().Set("Cache-Control", "no-cache, no-store")
+		}
+		handler.ServeHTTP(w, req)
+	})
 }
 
 func jsonContentType(next http.Handler) http.Handler {
