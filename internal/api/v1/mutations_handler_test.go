@@ -41,8 +41,8 @@ func TestPostMutationAddCard(t *testing.T) {
 	if err := json.NewDecoder(rec.Body).Decode(&resp); err != nil {
 		t.Fatalf("decode: %v", err)
 	}
-	if resp.Version < 2 {
-		t.Errorf("want version >= 2, got %d", resp.Version)
+	if resp.Version != 2 {
+		t.Errorf("want version == 2, got %d", resp.Version)
 	}
 }
 

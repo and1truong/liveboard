@@ -17,6 +17,8 @@ type mutationRequest struct {
 }
 
 func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
+	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
+
 	slug := chi.URLParam(r, "slug")
 
 	boardPath, pathErr := d.Workspace.BoardPath(slug)
@@ -31,7 +33,8 @@ func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if dispatchErr := Dispatch(d.Engine, boardPath, req.ClientVersion, req.Op); dispatchErr != nil {
+	updated, dispatchErr := Dispatch(d.Engine, boardPath, req.ClientVersion, req.Op)
+	if dispatchErr != nil {
 		writeError(w, dispatchErr)
 		return
 	}
@@ -40,11 +43,6 @@ func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
 		d.SSE.Publish(slug)
 	}
 
-	updated, loadErr := d.Workspace.LoadBoard(slug)
-	if loadErr != nil {
-		writeError(w, loadErr)
-		return
-	}
 	_ = json.NewEncoder(w).Encode(updated)
 }
 
@@ -342,10 +340,18 @@ func (m *MutationOp) UnmarshalJSON(data []byte) error {
 
 // Dispatch executes a MutationOp against the engine using a single MutateBoard
 // call so clientVersion is checked atomically with the mutation.
-func Dispatch(eng *board.Engine, boardPath string, clientVersion int, op MutationOp) error {
-	return eng.MutateBoard(boardPath, clientVersion, func(b *models.Board) error {
-		return applyOp(b, op)
+// It returns the mutated board (with version already incremented in-place) so
+// callers can encode it directly without a second LoadBoard.
+func Dispatch(eng *board.Engine, boardPath string, clientVersion int, op MutationOp) (*models.Board, error) {
+	var out *models.Board
+	err := eng.MutateBoard(boardPath, clientVersion, func(b *models.Board) error {
+		if e := applyOp(b, op); e != nil {
+			return e
+		}
+		out = b
+		return nil
 	})
+	return out, err
 }
 
 // applyOp mutates the in-memory board according to op.

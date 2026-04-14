@@ -332,7 +332,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			deps, path := tc.deps(t)
 			op := tc.op(path)
-			err := v1.Dispatch(deps.Engine, path, -1, op)
+			_, err := v1.Dispatch(deps.Engine, path, -1, op)
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("wanted error (%s) but got nil", tc.errNote)
@@ -382,7 +382,7 @@ func TestDispatchRespectsClientVersion(t *testing.T) {
 		Type:    "add_card",
 		AddCard: &v1.AddCardOp{Column: "Todo", Title: "v-fail"},
 	}
-	err := v1.Dispatch(deps.Engine, path, 0, op)
+	_, err := v1.Dispatch(deps.Engine, path, 0, op)
 	if err == nil {
 		t.Fatal("want ErrVersionConflict, got nil")
 	}
