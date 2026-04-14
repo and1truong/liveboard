@@ -417,6 +417,32 @@
                     </div>
                 </div>
             </template>
+            <template x-if="ctxBoardsLiteFiltered().length > 0">
+                <div>
+                    <div class="ctx-separator"></div>
+                    <div class="ctx-submenu-label">Move to board</div>
+                    <div class="ctx-submenu">
+                        <template x-for="b in ctxBoardsLiteFiltered()" :key="b.slug">
+                            <div>
+                                <button class="ctx-item" role="menuitem" @click.stop="ctxSelectMoveBoard(b.slug)">
+                                    <span class="ctx-icon" x-text="ctxMoveBoardSlug === b.slug ? '&#9662;' : '&#9656;'"></span>
+                                    <span x-text="b.name || b.slug"></span>
+                                </button>
+                                <template x-if="ctxMoveBoardSlug === b.slug">
+                                    <div class="ctx-submenu" style="padding-left: 1.25em;">
+                                        <template x-for="col in (b.columns || [])" :key="col">
+                                            <button class="ctx-item" role="menuitem" @click.stop="ctxMoveCardToBoard(b.slug, col)"><span class="ctx-icon">&rarr;</span> <span x-text="col"></span></button>
+                                        </template>
+                                        <template x-if="!(b.columns && b.columns.length)">
+                                            <div class="ctx-item" style="opacity:0.6;">(no columns)</div>
+                                        </template>
+                                    </div>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </template>
             <div class="ctx-separator"></div>
             <div class="ctx-submenu-label">Priority</div>
             <div class="card-modal-priority-group ctx-priority-group" x-data="prioritySelector(priority)" x-effect="$data.value; priority = $data.value">

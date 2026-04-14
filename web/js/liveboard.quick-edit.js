@@ -23,6 +23,8 @@ document.addEventListener('alpine:init', function () {
       ctxTop: 0,
       ctxCompleted: false,
       ctxMoveTriggers: [],
+      ctxBoardsLite: [],
+      ctxMoveBoardSlug: '',
       ctxHasComplete: false,
       ctxHasDelete: false,
       ctxDeleteArmed: false,
@@ -76,6 +78,8 @@ document.addEventListener('alpine:init', function () {
         Array.from(card.querySelectorAll('.move-trigger[data-target]')).forEach(function (t) {
           self.ctxMoveTriggers.push({ name: t.dataset.target, el: t });
         });
+        this.ctxMoveBoardSlug = '';
+        this.loadBoardsLite();
 
         // Position context menu to right of card
         var vw = window.innerWidth;
@@ -144,6 +148,55 @@ document.addEventListener('alpine:init', function () {
       ctxMoveTo: function (trigger) {
         this.hide();
         trigger.el.click();
+      },
+
+      loadBoardsLite: function () {
+        if (this.ctxBoardsLite.length) return;
+        var self = this;
+        fetch('/api/boards/list-lite').then(function (res) {
+          if (!res.ok) throw new Error('status ' + res.status);
+          return res.json();
+        }).then(function (data) {
+          self.ctxBoardsLite = Array.isArray(data) ? data : [];
+        }).catch(function (e) {
+          console.error('boards-lite fetch failed', e);
+        });
+      },
+
+      ctxBoardsLiteFiltered: function () {
+        var cur = this.slug;
+        return (this.ctxBoardsLite || []).filter(function (b) { return b.slug !== cur; });
+      },
+
+      ctxSelectMoveBoard: function (slug) {
+        this.ctxMoveBoardSlug = (this.ctxMoveBoardSlug === slug) ? '' : slug;
+      },
+
+      ctxCurrentMoveBoard: function () {
+        var slug = this.ctxMoveBoardSlug;
+        if (!slug) return null;
+        var list = this.ctxBoardsLite || [];
+        for (var i = 0; i < list.length; i++) { if (list[i].slug === slug) return list[i]; }
+        return null;
+      },
+
+      ctxMoveCardToBoard: function (dstSlug, dstColumn) {
+        var currentSlug = this.slug;
+        var colIdx = this.colIdx;
+        var cardIdx = this.cardIdx;
+        this.hide();
+        htmx.ajax('POST', '/board/' + encodeURIComponent(currentSlug) + '/cards/move-to-board', {
+          values: {
+            col_idx: colIdx,
+            card_idx: cardIdx,
+            dst_board: dstSlug,
+            dst_column: dstColumn,
+            name: currentSlug,
+            version: window.LB.getBoardVersion()
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        });
       },
 
       qeDelete: function () {
