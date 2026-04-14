@@ -75,3 +75,43 @@ describe('LocalAdapter mutateBoard', () => {
     await expect(a.mutateBoard('welcome', 1, op)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
 })
+
+describe('LocalAdapter subscribe', () => {
+  it('fires handler on mutateBoard', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    const seen: Array<{ boardId: string; version: number }> = []
+    a.subscribe('welcome', (p) => seen.push(p))
+    await a.mutateBoard('welcome', 1, { type: 'add_card', column: 'Todo', title: 'x' })
+    expect(seen).toEqual([{ boardId: 'welcome', version: 2 }])
+  })
+
+  it('close() stops delivery', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    const seen: number[] = []
+    const sub = a.subscribe('welcome', (p) => seen.push(p.version))
+    sub.close()
+    await a.mutateBoard('welcome', 1, { type: 'add_card', column: 'Todo', title: 'x' })
+    expect(seen).toHaveLength(0)
+  })
+})
+
+describe('LocalAdapter settings', () => {
+  it('getSettings returns defaults for an existing board', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    const s = await a.getSettings('welcome')
+    expect(s.view_mode).toBe('board')
+  })
+
+  it('getSettings on missing board throws NOT_FOUND', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    await expect(a.getSettings('nope')).rejects.toMatchObject({ code: 'NOT_FOUND' })
+  })
+
+  it('putBoardSettings merges patch and bumps version', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    await a.putBoardSettings('welcome', { card_display_mode: 'compact' })
+    const b = await a.getBoard('welcome')
+    expect(b.version).toBe(2)
+    expect(b.settings?.card_display_mode).toBe('compact')
+  })
+})

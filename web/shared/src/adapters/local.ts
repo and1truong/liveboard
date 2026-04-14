@@ -23,8 +23,21 @@ interface StoredWorkspace {
 }
 
 export class LocalAdapter implements BackendAdapter {
-  constructor(private readonly storage: StorageDriver) {
+  private readonly channel: BroadcastChannel | null
+  private readonly handlers = new Map<string, Set<BoardUpdateHandler>>()
+
+  constructor(private readonly storage: StorageDriver, channelName = 'liveboard') {
     this.seedIfEmpty()
+    this.channel =
+      typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel(channelName) : null
+    if (this.channel) {
+      this.channel.onmessage = (ev: MessageEvent) => {
+        const data = ev.data as { type?: string; boardId?: string; version?: number }
+        if (data?.type === 'board.updated' && data.boardId) {
+          this.fanOut(data.boardId, data.version ?? 0)
+        }
+      }
+    }
   }
 
   private seedIfEmpty(): void {
@@ -86,19 +99,48 @@ export class LocalAdapter implements BackendAdapter {
     }
   }
 
-  private publishUpdate(_boardId: string, _version: number): void {
-    // BroadcastChannel wiring lands in Task 6.
+  subscribe(boardId: string, onUpdate: BoardUpdateHandler): Subscription {
+    let set = this.handlers.get(boardId)
+    if (!set) {
+      set = new Set()
+      this.handlers.set(boardId, set)
+    }
+    set.add(onUpdate)
+    return {
+      close: () => {
+        this.handlers.get(boardId)?.delete(onUpdate)
+      },
+    }
   }
 
-  async getSettings(_boardId: string): Promise<ResolvedSettings> {
-    throw new ProtocolError('INTERNAL', 'getSettings not yet implemented')
+  private fanOut(boardId: string, version: number): void {
+    const set = this.handlers.get(boardId)
+    if (!set) return
+    for (const h of set) h({ boardId, version })
   }
 
-  async putBoardSettings(_boardId: string, _patch: Partial<BoardSettings>): Promise<void> {
-    throw new ProtocolError('INTERNAL', 'putBoardSettings not yet implemented')
+  private publishUpdate(boardId: string, version: number): void {
+    this.fanOut(boardId, version)
+    this.channel?.postMessage({ type: 'board.updated', boardId, version })
   }
 
-  subscribe(_boardId: string, _onUpdate: BoardUpdateHandler): Subscription {
-    return { close: () => {} }
+  async getSettings(boardId: string): Promise<ResolvedSettings> {
+    this.loadBoard(boardId) // 404 check
+    return {
+      show_checkbox: true,
+      card_position: 'bottom',
+      expand_columns: false,
+      view_mode: 'board',
+      card_display_mode: 'normal',
+      week_start: 'monday',
+    }
+  }
+
+  async putBoardSettings(boardId: string, patch: Partial<BoardSettings>): Promise<void> {
+    const board = this.loadBoard(boardId)
+    board.settings = { ...(board.settings ?? {}), ...patch }
+    board.version = (board.version ?? 0) + 1
+    this.storage.set(boardKey(boardId), JSON.stringify(board))
+    this.publishUpdate(boardId, board.version)
   }
 }
