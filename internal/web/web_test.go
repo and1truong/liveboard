@@ -1112,6 +1112,54 @@ func TestHandleMoveCard(t *testing.T) {
 	}
 }
 
+func TestHandleMoveCardToBoard(t *testing.T) {
+	h, srcSlug := setupTestHandler(t)
+	// Seed src with a Todo column + Task A
+	_, err := h.mutateBoard(srcSlug, -1, func(b *models.Board) error {
+		b.Columns = []models.Column{
+			{Name: "Todo", Cards: []models.Card{{Title: "Task A"}}},
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// Create dst board with an Inbox column
+	if _, err := h.ws.CreateBoard("dst"); err != nil {
+		t.Fatal(err)
+	}
+	_, err = h.mutateBoard("dst", -1, func(b *models.Board) error {
+		b.Columns = []models.Column{{Name: "Inbox"}}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	r := postForm("/board/"+srcSlug+"/cards/move-to-board", map[string]string{
+		"col_idx": "0", "card_idx": "0", "dst_board": "dst", "dst_column": "Inbox", "version": "-1",
+	})
+	r = withSlug(r, srcSlug)
+	h.HandleMoveCardToBoard(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d, body=%s", w.Code, w.Body.String())
+	}
+	dst, err := h.ws.LoadBoard("dst")
+	if err != nil {
+		t.Fatal(err)
+	}
+	found := false
+	for _, c := range dst.Columns[0].Cards {
+		if c.Title == "Task A" {
+			found = true
+		}
+	}
+	if !found {
+		t.Error("Task A was not moved to dst Inbox")
+	}
+}
+
 func TestHandleReorderCard(t *testing.T) {
 	h, slug := setupBoardWithColumn(t)
 	w := httptest.NewRecorder()

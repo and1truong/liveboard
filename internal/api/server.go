@@ -247,6 +247,7 @@ func (s *Server) mountWebRoutes(r chi.Router) {
 	r.Get("/board/{slug}/events", h.SSE.ServeHTTP)
 	r.Post("/board/{slug}/cards", h.BoardView.HandleCreateCard)
 	r.Post("/board/{slug}/cards/move", h.BoardView.HandleMoveCard)
+	r.Post("/board/{slug}/cards/move-to-board", h.BoardView.HandleMoveCardToBoard)
 	r.Post("/board/{slug}/cards/reorder", h.BoardView.HandleReorderCard)
 	r.Post("/board/{slug}/cards/delete", h.BoardView.HandleDeleteCard)
 	r.Post("/board/{slug}/cards/complete", h.BoardView.HandleToggleComplete)

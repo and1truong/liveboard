@@ -56,6 +56,11 @@ func (h *Handler) HandleMoveCard(w http.ResponseWriter, r *http.Request) {
 	h.BoardView.HandleMoveCard(w, r)
 }
 
+// HandleMoveCardToBoard forwards to BoardView.
+func (h *Handler) HandleMoveCardToBoard(w http.ResponseWriter, r *http.Request) {
+	h.BoardView.HandleMoveCardToBoard(w, r)
+}
+
 // HandleReorderCard forwards to BoardView.
 func (h *Handler) HandleReorderCard(w http.ResponseWriter, r *http.Request) {
 	h.BoardView.HandleReorderCard(w, r)
