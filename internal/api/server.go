@@ -265,6 +265,7 @@ func (s *Server) mountWebRoutes(r chi.Router) {
 	// Board API routes
 	r.Post("/api/boards/pin", h.BoardList.HandleTogglePin)
 	r.Get("/api/boards/sidebar", h.BoardList.HandleSidebarBoards)
+	r.Get("/api/boards/list-lite", h.BoardList.HandleBoardsListLite)
 
 	// Settings routes
 	r.Handle("/settings", h.Settings.SettingsHandler())

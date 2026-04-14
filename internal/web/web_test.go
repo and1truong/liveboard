@@ -1025,6 +1025,80 @@ func TestHandleSidebarBoards(t *testing.T) {
 	}
 }
 
+func TestHandleBoardsListLite(t *testing.T) {
+	h, slug := setupBoardWithColumn(t)
+	// Create a second board with its own columns.
+	const slug2 = "second-board"
+	if _, err := h.ws.CreateBoard(slug2); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := h.mutateBoard(slug2, -1, func(b *models.Board) error {
+		b.Name = "Second Board"
+		b.Columns = []models.Column{
+			{Name: "Backlog"},
+			{Name: "In Progress"},
+			{Name: "Shipped"},
+		}
+		return nil
+	}); err != nil {
+		t.Fatal(err)
+	}
+
+	w := httptest.NewRecorder()
+	r := httptest.NewRequest("GET", "/api/boards/list-lite", nil)
+	h.HandleBoardsListLite(w, r)
+	if w.Code != 200 {
+		t.Fatalf("status = %d", w.Code)
+	}
+
+	var entries []BoardListLiteEntry
+	if err := json.NewDecoder(w.Body).Decode(&entries); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(entries) != 2 {
+		t.Fatalf("len = %d, want 2: %+v", len(entries), entries)
+	}
+
+	byslug := map[string]BoardListLiteEntry{}
+	for _, e := range entries {
+		byslug[e.Slug] = e
+	}
+
+	e1, ok := byslug[slug]
+	if !ok {
+		t.Fatalf("missing %q in %+v", slug, entries)
+	}
+	if want := []string{"Todo", "Done"}; !equalStrings(e1.Columns, want) {
+		t.Errorf("first board columns = %v, want %v", e1.Columns, want)
+	}
+	if e1.Name == "" {
+		t.Errorf("first board name empty")
+	}
+
+	e2, ok := byslug[slug2]
+	if !ok {
+		t.Fatalf("missing %q in %+v", slug2, entries)
+	}
+	if e2.Name != "Second Board" {
+		t.Errorf("second board name = %q, want Second Board", e2.Name)
+	}
+	if want := []string{"Backlog", "In Progress", "Shipped"}; !equalStrings(e2.Columns, want) {
+		t.Errorf("second board columns = %v, want %v", e2.Columns, want)
+	}
+}
+
+func equalStrings(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
+}
+
 // --- Card handler tests ---
 
 func TestHandleCreateCard(t *testing.T) {
