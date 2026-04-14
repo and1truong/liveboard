@@ -7,7 +7,9 @@ import type {
   WorkspaceInfo,
 } from '../adapter.js'
 import type { Board, BoardSettings, MutationOp } from '../types.js'
+import { OpError } from '../types.js'
 import { ProtocolError } from '../protocol.js'
+import { applyOp } from '../boardOps.js'
 import type { StorageDriver } from './local-storage-driver.js'
 import { WELCOME_BOARD, WORKSPACE_NAME } from './local-seed.js'
 
@@ -66,8 +68,26 @@ export class LocalAdapter implements BackendAdapter {
     return this.loadBoard(boardId)
   }
 
-  async mutateBoard(_boardId: string, _clientVersion: number, _op: MutationOp): Promise<Board> {
-    throw new ProtocolError('INTERNAL', 'mutateBoard not yet implemented')
+  async mutateBoard(boardId: string, clientVersion: number, op: MutationOp): Promise<Board> {
+    const board = this.loadBoard(boardId)
+    const currentVersion = board.version ?? 0
+    if (clientVersion >= 0 && clientVersion !== currentVersion) {
+      throw new ProtocolError('VERSION_CONFLICT', `expected version ${clientVersion}, have ${currentVersion}`)
+    }
+    try {
+      const next = applyOp(board, op)
+      next.version = currentVersion + 1
+      this.storage.set(boardKey(boardId), JSON.stringify(next))
+      this.publishUpdate(boardId, next.version)
+      return next
+    } catch (e) {
+      if (e instanceof OpError) throw new ProtocolError(e.code, e.message)
+      throw e
+    }
+  }
+
+  private publishUpdate(_boardId: string, _version: number): void {
+    // BroadcastChannel wiring lands in Task 6.
   }
 
   async getSettings(_boardId: string): Promise<ResolvedSettings> {
