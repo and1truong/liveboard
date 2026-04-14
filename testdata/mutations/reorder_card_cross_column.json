@@ -1,0 +1,25 @@
+{
+  "name": "reorder_card_cross_column",
+  "description": "Reorder across columns with before_idx=-1 appends at end of target.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a" }, { "title": "b" }] },
+      { "name": "Done", "cards": [{ "title": "x" }] }
+    ]
+  },
+  "op": {
+    "type": "reorder_card",
+    "col_idx": 0,
+    "card_idx": 1,
+    "before_idx": -1,
+    "target_column": "Done"
+  },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a" }] },
+      { "name": "Done", "cards": [{ "title": "x" }, { "title": "b" }] }
+    ]
+  }
+}

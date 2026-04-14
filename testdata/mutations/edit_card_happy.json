@@ -1,0 +1,44 @@
+{
+  "name": "edit_card_happy",
+  "description": "Edit overwrites body/tags/priority/due/assignee; empty title is preserved, non-empty replaces.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          { "title": "old", "body": "oldbody", "priority": "low" }
+        ]
+      }
+    ]
+  },
+  "op": {
+    "type": "edit_card",
+    "col_idx": 0,
+    "card_idx": 0,
+    "title": "new",
+    "body": "newbody",
+    "tags": ["t1"],
+    "priority": "high",
+    "due": "2026-05-01",
+    "assignee": "alice"
+  },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "new",
+            "body": "newbody",
+            "tags": ["t1"],
+            "priority": "high",
+            "due": "2026-05-01",
+            "assignee": "alice"
+          }
+        ]
+      }
+    ]
+  }
+}

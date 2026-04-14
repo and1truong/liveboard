@@ -1,0 +1,19 @@
+{
+  "name": "move_card_happy",
+  "description": "Move first card from column 0 to 'Done' — appends there, removes here.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a" }, { "title": "b" }] },
+      { "name": "Done", "cards": [] }
+    ]
+  },
+  "op": { "type": "move_card", "col_idx": 0, "card_idx": 0, "target_column": "Done" },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "b" }] },
+      { "name": "Done", "cards": [{ "title": "a" }] }
+    ]
+  }
+}

@@ -1,0 +1,17 @@
+{
+  "name": "delete_card_happy",
+  "description": "Delete card at col 0 idx 1; other cards shift up.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a" }, { "title": "b" }, { "title": "c" }] }
+    ]
+  },
+  "op": { "type": "delete_card", "col_idx": 0, "card_idx": 1 },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a" }, { "title": "c" }] }
+    ]
+  }
+}

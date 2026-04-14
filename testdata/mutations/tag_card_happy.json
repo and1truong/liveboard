@@ -1,0 +1,17 @@
+{
+  "name": "tag_card_happy",
+  "description": "Tag merge is dedup'd and preserves existing order.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a", "tags": ["x", "y"] }] }
+    ]
+  },
+  "op": { "type": "tag_card", "col_idx": 0, "card_idx": 0, "tags": ["y", "z"] },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a", "tags": ["x", "y", "z"] }] }
+    ]
+  }
+}

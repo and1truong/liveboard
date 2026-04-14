@@ -1,0 +1,17 @@
+{
+  "name": "complete_card_happy",
+  "description": "Toggle completed on an uncompleted card → true.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a" }] }
+    ]
+  },
+  "op": { "type": "complete_card", "col_idx": 0, "card_idx": 0 },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a", "completed": true }] }
+    ]
+  }
+}
