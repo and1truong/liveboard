@@ -1,0 +1,10 @@
+{
+  "name": "move_card_card_out_of_range",
+  "description": "move_card with valid col_idx but invalid card_idx returns OUT_OF_RANGE.",
+  "board_before": {
+    "version": 1,
+    "columns": [{ "name": "Todo", "cards": [{ "title": "a" }] }]
+  },
+  "op": { "type": "move_card", "col_idx": 0, "card_idx": 5, "target_column": "Todo" },
+  "expected_error": "OUT_OF_RANGE"
+}

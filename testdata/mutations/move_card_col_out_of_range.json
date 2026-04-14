@@ -1,0 +1,10 @@
+{
+  "name": "move_card_col_out_of_range",
+  "description": "move_card with col_idx past end returns OUT_OF_RANGE.",
+  "board_before": {
+    "version": 1,
+    "columns": [{ "name": "Todo", "cards": [{ "title": "a" }] }]
+  },
+  "op": { "type": "move_card", "col_idx": 99, "card_idx": 0, "target_column": "Todo" },
+  "expected_error": "OUT_OF_RANGE"
+}

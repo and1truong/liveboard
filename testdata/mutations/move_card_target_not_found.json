@@ -1,0 +1,10 @@
+{
+  "name": "move_card_target_not_found",
+  "description": "move_card to a non-existent target column returns NOT_FOUND.",
+  "board_before": {
+    "version": 1,
+    "columns": [{ "name": "Todo", "cards": [{ "title": "a" }] }]
+  },
+  "op": { "type": "move_card", "col_idx": 0, "card_idx": 0, "target_column": "Missing" },
+  "expected_error": "NOT_FOUND"
+}

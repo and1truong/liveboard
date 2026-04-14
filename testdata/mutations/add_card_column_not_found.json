@@ -1,0 +1,10 @@
+{
+  "name": "add_card_column_not_found",
+  "description": "add_card to a non-existent column returns NOT_FOUND.",
+  "board_before": {
+    "version": 1,
+    "columns": [{ "name": "Todo", "cards": [] }]
+  },
+  "op": { "type": "add_card", "column": "Missing", "title": "x", "prepend": false },
+  "expected_error": "NOT_FOUND"
+}

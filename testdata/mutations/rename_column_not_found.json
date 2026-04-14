@@ -1,0 +1,10 @@
+{
+  "name": "rename_column_not_found",
+  "description": "rename_column on a missing name returns NOT_FOUND.",
+  "board_before": {
+    "version": 1,
+    "columns": [{ "name": "Todo", "cards": [] }]
+  },
+  "op": { "type": "rename_column", "old_name": "Nope", "new_name": "x" },
+  "expected_error": "NOT_FOUND"
+}

@@ -1,0 +1,10 @@
+{
+  "name": "toggle_column_collapse_out_of_range",
+  "description": "toggle_column_collapse with out-of-bounds col_idx returns OUT_OF_RANGE.",
+  "board_before": {
+    "version": 1,
+    "columns": [{ "name": "Todo", "cards": [] }]
+  },
+  "op": { "type": "toggle_column_collapse", "col_idx": 5 },
+  "expected_error": "OUT_OF_RANGE"
+}
