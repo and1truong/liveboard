@@ -1062,3 +1062,57 @@ func TestBasicAuth(t *testing.T) {
 		}
 	})
 }
+
+func TestAPIMoveCardToBoard(t *testing.T) {
+	ts := setupTest(t)
+	defer ts.Close()
+
+	// Create source and destination boards (each gets default columns:
+	// "not now", "maybe?", "done").
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "src"})
+	doJSON(t, ts, "POST", "/boards", map[string]string{"name": "dst"})
+
+	// Add "Task A" to src col 0 ("not now").
+	doJSON(t, ts, "POST", "/boards/src/columns/not now/cards", map[string]string{"title": "Task A"})
+
+	// Move the card from src col 0, card 0 to dst "done".
+	resp := doJSON(t, ts, "POST", "/boards/src/cards/move-to-board", map[string]any{
+		"src_col_idx": 0,
+		"card_idx":    0,
+		"dst_board":   "dst",
+		"dst_column":  "done",
+	})
+	if resp.StatusCode != http.StatusNoContent {
+		t.Fatalf("expected 204, got %d", resp.StatusCode)
+	}
+
+	// Verify src "not now" is empty.
+	resp = doJSON(t, ts, "GET", "/boards/src", nil)
+	var srcBoard models.Board
+	decodeResp(t, resp, &srcBoard)
+	if len(srcBoard.Columns[0].Cards) != 0 {
+		t.Fatalf("expected 0 cards in src col 0, got %d", len(srcBoard.Columns[0].Cards))
+	}
+
+	// Verify card landed in dst "done" (col index 2 by default).
+	resp = doJSON(t, ts, "GET", "/boards/dst", nil)
+	var dstBoard models.Board
+	decodeResp(t, resp, &dstBoard)
+	doneIdx := -1
+	for i := range dstBoard.Columns {
+		if dstBoard.Columns[i].Name == "done" {
+			doneIdx = i
+			break
+		}
+	}
+	if doneIdx == -1 {
+		t.Fatal("expected 'done' column in dst board")
+	}
+	doneCol := dstBoard.Columns[doneIdx]
+	if len(doneCol.Cards) != 1 {
+		t.Fatalf("expected 1 card in dst 'done', got %d", len(doneCol.Cards))
+	}
+	if doneCol.Cards[0].Title != "Task A" {
+		t.Fatalf("expected card title 'Task A', got %q", doneCol.Cards[0].Title)
+	}
+}

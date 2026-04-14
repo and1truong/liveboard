@@ -316,6 +316,12 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 		r.Post("/tag", s.tagCard)
 	})
 
+	// Board-level card operations (non-indexed):
+	r.Route("/boards/{board}/cards", func(r chi.Router) {
+		r.Use(jsonContentType)
+		r.Post("/move-to-board", s.moveCardToBoard)
+	})
+
 	// MCP server (Streamable HTTP transport)
 	r.Mount("/mcp", s.mcpServer.StreamableHTTPHandler())
 
