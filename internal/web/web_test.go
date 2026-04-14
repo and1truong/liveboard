@@ -1199,8 +1199,8 @@ func TestHandleMoveCardToBoard(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Create dst board with an Inbox column
-	if _, err := h.ws.CreateBoard("dst"); err != nil {
-		t.Fatal(err)
+	if _, cerr := h.ws.CreateBoard("dst"); cerr != nil {
+		t.Fatal(cerr)
 	}
 	_, err = h.mutateBoard("dst", -1, func(b *models.Board) error {
 		b.Columns = []models.Column{{Name: "Inbox"}}

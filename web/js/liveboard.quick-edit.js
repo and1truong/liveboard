@@ -82,11 +82,11 @@ document.addEventListener('alpine:init', function () {
         this.ctxMoveBoardSlug = '';
         this.loadBoardsLite();
 
-        // Position context menu to right of card
+        // Position context menu flush against the quick-edit form's right edge
         var vw = window.innerWidth;
         var menuWidth = 180;
-        var ctxLeft = cardRect.right + 8;
-        if (ctxLeft + menuWidth > vw) ctxLeft = cardRect.left - menuWidth - 8;
+        var ctxLeft = posRect.right + 8;
+        if (ctxLeft + menuWidth > vw) ctxLeft = posRect.left - menuWidth - 8;
         this.ctxLeft = Math.max(0, ctxLeft);
         this.ctxTop = Math.max(0, cardRect.top);
         this.ctxOpen = true;
