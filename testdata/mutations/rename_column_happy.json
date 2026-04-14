@@ -1,0 +1,19 @@
+{
+  "name": "rename_column_happy",
+  "description": "rename_column replaces column name in place.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "a" }] },
+      { "name": "Done", "cards": [] }
+    ]
+  },
+  "op": { "type": "rename_column", "old_name": "Todo", "new_name": "Doing" },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      { "name": "Doing", "cards": [{ "title": "a" }] },
+      { "name": "Done", "cards": [] }
+    ]
+  }
+}

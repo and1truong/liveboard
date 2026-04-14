@@ -1,0 +1,16 @@
+{
+  "name": "add_column_happy",
+  "description": "add_column appends a new empty column.",
+  "board_before": {
+    "version": 1,
+    "columns": [{ "name": "Todo", "cards": [] }]
+  },
+  "op": { "type": "add_column", "name": "Doing" },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [] },
+      { "name": "Doing", "cards": [] }
+    ]
+  }
+}

@@ -79,9 +79,122 @@ export function applyOp(board: Board, op: MutationOp): Board {
       card.tags = merged
       return b
     }
+    case 'add_column': {
+      b.columns = [...(b.columns ?? []), { name: op.name, cards: [] }]
+      return b
+    }
+    case 'delete_column': {
+      const cols = b.columns ?? []
+      const idx = cols.findIndex((c) => c.name === op.name)
+      if (idx < 0) return b // idempotent
+      b.columns = cols.filter((_, i) => i !== idx)
+      if (b.list_collapse && idx < b.list_collapse.length) {
+        b.list_collapse = [
+          ...b.list_collapse.slice(0, idx),
+          ...b.list_collapse.slice(idx + 1),
+        ]
+      }
+      return b
+    }
+    case 'rename_column': {
+      const cols = b.columns ?? []
+      let found = false
+      for (const c of cols) {
+        if (c.name === op.old_name) {
+          c.name = op.new_name
+          found = true
+        }
+      }
+      if (!found) throw new OpError('NOT_FOUND', `column ${op.old_name}`)
+      return b
+    }
+    case 'move_column': {
+      const cols = b.columns ?? []
+      // Align list_collapse length.
+      const collapse = b.list_collapse ?? []
+      while (collapse.length < cols.length) collapse.push(false)
+      // Collapse map keyed by column name.
+      const collapseByName = new Map<string, boolean>()
+      for (let i = 0; i < cols.length; i++) {
+        collapseByName.set(cols[i]!.name, collapse[i] ?? false)
+      }
+      const movingIdx = cols.findIndex((c) => c.name === op.name)
+      if (movingIdx < 0) throw new OpError('NOT_FOUND', `column ${op.name}`)
+      const moving = cols[movingIdx]!
+      const remaining = cols.filter((_, i) => i !== movingIdx)
+      let reordered: Column[]
+      if (op.after_col === '') {
+        reordered = [moving, ...remaining]
+      } else {
+        reordered = []
+        for (const c of remaining) {
+          reordered.push(c)
+          if (c.name === op.after_col) reordered.push(moving)
+        }
+      }
+      b.columns = reordered
+      b.list_collapse = reordered.map((c) => collapseByName.get(c.name) ?? false)
+      return b
+    }
+    case 'sort_column': {
+      const col = colAt(b, op.col_idx)
+      const cards = [...(col.cards ?? [])]
+      switch (op.sort_by) {
+        case 'name':
+          cards.sort((a, c) => stableCompare(a.title.toLowerCase(), c.title.toLowerCase()))
+          break
+        case 'priority':
+          cards.sort((a, c) => priorityRank(c.priority) - priorityRank(a.priority))
+          break
+        case 'due':
+          cards.sort((a, c) => dueCompare(a.due ?? '', c.due ?? ''))
+          break
+        default:
+          throw new OpError('INTERNAL', `unknown sort key ${op.sort_by}`)
+      }
+      col.cards = cards
+      return b
+    }
+    case 'toggle_column_collapse': {
+      const cols = b.columns ?? []
+      if (op.col_idx < 0 || op.col_idx >= cols.length) {
+        throw new OpError('OUT_OF_RANGE', `column index ${op.col_idx}`)
+      }
+      const lc = b.list_collapse ?? []
+      while (lc.length < cols.length) lc.push(false)
+      lc[op.col_idx] = !lc[op.col_idx]
+      b.list_collapse = lc
+      return b
+    }
     default:
       throw new OpError('INTERNAL', `unimplemented op: ${(op as MutationOp).type}`)
   }
+}
+
+function priorityRank(p: string | undefined): number {
+  switch ((p ?? '').toLowerCase()) {
+    case 'critical':
+      return 4
+    case 'high':
+      return 3
+    case 'medium':
+      return 2
+    case 'low':
+      return 1
+    default:
+      return 0
+  }
+}
+
+function stableCompare(a: string, b: string): number {
+  return a < b ? -1 : a > b ? 1 : 0
+}
+
+function dueCompare(a: string, b: string): number {
+  if (a === '' && b === '') return 0
+  if (a === '') return 1
+  if (b === '') return -1
+  return stableCompare(a, b)
 }
 
 function colByName(b: Board, name: string): Column | undefined {

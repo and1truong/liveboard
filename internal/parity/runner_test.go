@@ -105,6 +105,8 @@ func runVector(t *testing.T, path string) {
 	if err := json.Unmarshal(gotJSON, &got); err != nil {
 		t.Fatalf("re-parse got: %v", err)
 	}
+	want = stripNulls(want)
+	got = stripNulls(got)
 
 	if diff := jsonDiff(want, got); diff != "" {
 		t.Errorf("board mismatch:\n%s", diff)
@@ -121,6 +123,38 @@ func sentinelCode(err error) string {
 		return "INVALID"
 	default:
 		return "INTERNAL"
+	}
+}
+
+// stripNulls recursively removes keys whose value is nil and drops nil elements
+// from slices, so "null" / missing / "[]" compare equal across runners.
+func stripNulls(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		out := map[string]any{}
+		for k, val := range x {
+			if val == nil {
+				continue
+			}
+			stripped := stripNulls(val)
+			// Treat empty slices the same as nil/missing.
+			if arr, ok := stripped.([]any); ok && len(arr) == 0 {
+				continue
+			}
+			out[k] = stripped
+		}
+		return out
+	case []any:
+		out := make([]any, 0, len(x))
+		for _, el := range x {
+			if el == nil {
+				continue
+			}
+			out = append(out, stripNulls(el))
+		}
+		return out
+	default:
+		return v
 	}
 }
 

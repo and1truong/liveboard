@@ -1,0 +1,21 @@
+{
+  "name": "toggle_column_collapse_happy",
+  "description": "toggle_column_collapse flips list_collapse[idx]; grows array if short.",
+  "board_before": {
+    "version": 1,
+    "list_collapse": [false],
+    "columns": [
+      { "name": "Todo", "cards": [] },
+      { "name": "Done", "cards": [] }
+    ]
+  },
+  "op": { "type": "toggle_column_collapse", "col_idx": 1 },
+  "board_after": {
+    "version": 1,
+    "list_collapse": [false, true],
+    "columns": [
+      { "name": "Todo", "cards": [] },
+      { "name": "Done", "cards": [] }
+    ]
+  }
+}

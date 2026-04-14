@@ -16,6 +16,26 @@ interface Vector {
 
 // Vectors live at repo root /testdata/mutations. Tests run from web/shared/.
 const vectorDir = resolve(process.cwd(), '..', '..', 'testdata', 'mutations')
+
+// Recursively drop null map values and null array elements so that null /
+// missing / [] normalize to the same shape across runners.
+function stripNulls(v: unknown): unknown {
+  if (v === null || v === undefined) return undefined
+  if (Array.isArray(v)) {
+    return v.filter((x) => x !== null && x !== undefined).map(stripNulls)
+  }
+  if (typeof v === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [k, val] of Object.entries(v as Record<string, unknown>)) {
+      if (val === null || val === undefined) continue
+      const stripped = stripNulls(val)
+      if (Array.isArray(stripped) && stripped.length === 0) continue
+      out[k] = stripped
+    }
+    return out
+  }
+  return v
+}
 const vectorFiles = readdirSync(vectorDir).filter((f) => f.endsWith('.json'))
 
 describe('mutation vectors', () => {
@@ -44,8 +64,8 @@ describe('mutation vectors', () => {
       }
 
       const got = applyOp(vec.board_before, vec.op)
-      expect(JSON.parse(JSON.stringify(got))).toEqual(
-        JSON.parse(JSON.stringify(vec.board_after)),
+      expect(stripNulls(JSON.parse(JSON.stringify(got)))).toEqual(
+        stripNulls(JSON.parse(JSON.stringify(vec.board_after))),
       )
     })
   }

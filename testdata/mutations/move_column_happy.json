@@ -1,0 +1,23 @@
+{
+  "name": "move_column_happy",
+  "description": "move_column places 'Todo' after 'Doing'; list_collapse is rebuilt to match.",
+  "board_before": {
+    "version": 1,
+    "list_collapse": [false, true, false],
+    "columns": [
+      { "name": "Todo", "cards": [] },
+      { "name": "Doing", "cards": [] },
+      { "name": "Done", "cards": [] }
+    ]
+  },
+  "op": { "type": "move_column", "name": "Todo", "after_col": "Doing" },
+  "board_after": {
+    "version": 1,
+    "list_collapse": [true, false, false],
+    "columns": [
+      { "name": "Doing", "cards": [] },
+      { "name": "Todo", "cards": [] },
+      { "name": "Done", "cards": [] }
+    ]
+  }
+}

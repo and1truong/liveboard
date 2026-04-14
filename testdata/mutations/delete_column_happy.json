@@ -1,0 +1,22 @@
+{
+  "name": "delete_column_happy",
+  "description": "delete_column removes the column and trims list_collapse at the same index.",
+  "board_before": {
+    "version": 1,
+    "list_collapse": [false, true, false],
+    "columns": [
+      { "name": "Todo", "cards": [] },
+      { "name": "Doing", "cards": [{ "title": "a" }] },
+      { "name": "Done", "cards": [] }
+    ]
+  },
+  "op": { "type": "delete_column", "name": "Doing" },
+  "board_after": {
+    "version": 1,
+    "list_collapse": [false, false],
+    "columns": [
+      { "name": "Todo", "cards": [] },
+      { "name": "Done", "cards": [] }
+    ]
+  }
+}

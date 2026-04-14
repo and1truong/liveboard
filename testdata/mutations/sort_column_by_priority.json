@@ -1,0 +1,33 @@
+{
+  "name": "sort_column_by_priority",
+  "description": "sort_column by priority orders cards high→low; stable for equal/empty.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          { "title": "a", "priority": "low" },
+          { "title": "b", "priority": "critical" },
+          { "title": "c" },
+          { "title": "d", "priority": "high" }
+        ]
+      }
+    ]
+  },
+  "op": { "type": "sort_column", "col_idx": 0, "sort_by": "priority" },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          { "title": "b", "priority": "critical" },
+          { "title": "d", "priority": "high" },
+          { "title": "a", "priority": "low" },
+          { "title": "c" }
+        ]
+      }
+    ]
+  }
+}
