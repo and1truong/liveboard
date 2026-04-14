@@ -571,6 +571,17 @@ input.card-modal-tags-input {
     margin-bottom: 6px;
 }
 
+.card-modal-sidebar-nested {
+    margin-left: 14px;
+    padding-left: 6px;
+    border-left: 1px dashed var(--color-border);
+    margin-bottom: 4px;
+}
+
+.card-modal-sidebar-btn-nested {
+    margin-bottom: 4px;
+}
+
 .card-modal-sidebar-btn-danger {
     color: var(--color-danger);
     border-color: var(--color-danger-bg);

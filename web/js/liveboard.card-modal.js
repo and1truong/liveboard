@@ -204,15 +204,15 @@ document.addEventListener('alpine:init', function () {
         });
       },
 
-      submitMoveToBoard: function () {
-        if (!this.moveToBoardSlug || !this.moveToBoardColumn) return;
+      submitMoveToBoard: function (dstSlug, dstColumn) {
+        if (!dstSlug || !dstColumn) return;
         var self = this;
         htmx.ajax('POST', '/board/' + encodeURIComponent(this.slug) + '/cards/move-to-board', {
           values: {
             col_idx: this.colIdx,
             card_idx: this.cardIdx,
-            dst_board: this.moveToBoardSlug,
-            dst_column: this.moveToBoardColumn,
+            dst_board: dstSlug,
+            dst_column: dstColumn,
             name: this.slug,
             version: window.LB.getBoardVersion()
           },
@@ -220,7 +220,6 @@ document.addEventListener('alpine:init', function () {
           swap: 'innerHTML'
         }).then(function () {
           self.moveToBoardSlug = '';
-          self.moveToBoardColumn = '';
         });
         this.close();
       },

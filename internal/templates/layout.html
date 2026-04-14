@@ -311,21 +311,24 @@
                         <div>
                             <div class="card-modal-sidebar-sep"></div>
                             <div class="card-modal-sidebar-sublabel">Move to board</div>
-                            <select class="move-select" x-model="moveToBoardSlug" @change="moveToBoardColumn = ''">
-                                <option value="">&mdash; select board &mdash;</option>
-                                <template x-for="b in boardsLite.filter(function(b){ return b.slug !== slug; })" :key="b.slug">
-                                    <option :value="b.slug" x-text="b.name"></option>
-                                </template>
-                            </select>
-                            <select class="move-select" x-model="moveToBoardColumn" :disabled="!moveToBoardSlug">
-                                <option value="">&mdash; select column &mdash;</option>
-                                <template x-for="c in ((boardsLite.find(function(b){ return b.slug === moveToBoardSlug; }) || {}).columns || [])" :key="c">
-                                    <option :value="c" x-text="c"></option>
-                                </template>
-                            </select>
-                            <button class="card-modal-sidebar-btn card-modal-sidebar-btn-move" type="button" :disabled="!moveToBoardSlug || !moveToBoardColumn" @click="submitMoveToBoard()">
-                                <span class="card-modal-action-icon">&rarr;</span> <span>Move to board</span>
-                            </button>
+                            <template x-for="b in boardsLite.filter(function(b){ return b.slug !== slug; })" :key="b.slug">
+                                <div>
+                                    <button class="card-modal-sidebar-btn card-modal-sidebar-btn-move" type="button" @click="moveToBoardSlug = (moveToBoardSlug === b.slug ? '' : b.slug)">
+                                        <span class="card-modal-action-icon" x-text="moveToBoardSlug === b.slug ? '\u25BE' : '\u25B8'"></span>
+                                        <span x-text="b.name"></span>
+                                    </button>
+                                    <template x-if="moveToBoardSlug === b.slug">
+                                        <div class="card-modal-sidebar-nested">
+                                            <template x-for="c in (b.columns || [])" :key="c">
+                                                <button class="card-modal-sidebar-btn card-modal-sidebar-btn-move card-modal-sidebar-btn-nested" type="button" @click="submitMoveToBoard(b.slug, c)">
+                                                    <span class="card-modal-action-icon">&rarr;</span>
+                                                    <span x-text="c"></span>
+                                                </button>
+                                            </template>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
                         </div>
                     </template>
 
