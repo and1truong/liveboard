@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
@@ -296,5 +297,103 @@ func (m *MutationOp) UnmarshalJSON(data []byte) error {
 		return json.Unmarshal(data, m.UpdateBoardSettings)
 	default:
 		return fmt.Errorf("unknown mutation op type: %q", head.Type)
+	}
+}
+
+// Dispatch executes a MutationOp against the engine.
+// clientVersion is accepted but not threaded through yet — Task 8 handles that.
+// Pass -1 to bypass the version check (engine uses MutateBoard internally).
+func Dispatch(eng *board.Engine, boardPath string, clientVersion int, op MutationOp) error {
+	switch op.Type {
+	case "add_card":
+		if op.AddCard == nil {
+			return fmt.Errorf("add_card: missing params")
+		}
+		_, err := eng.AddCard(boardPath, op.AddCard.Column, op.AddCard.Title, op.AddCard.Prepend)
+		return err
+	case "move_card":
+		if op.MoveCard == nil {
+			return fmt.Errorf("move_card: missing params")
+		}
+		return eng.MoveCard(boardPath, op.MoveCard.ColIdx, op.MoveCard.CardIdx, op.MoveCard.TargetColumn)
+	case "reorder_card":
+		if op.ReorderCard == nil {
+			return fmt.Errorf("reorder_card: missing params")
+		}
+		return eng.ReorderCard(boardPath, op.ReorderCard.ColIdx, op.ReorderCard.CardIdx, op.ReorderCard.BeforeIdx, op.ReorderCard.TargetColumn)
+	case "edit_card":
+		if op.EditCard == nil {
+			return fmt.Errorf("edit_card: missing params")
+		}
+		p := op.EditCard
+		return eng.EditCard(boardPath, p.ColIdx, p.CardIdx, p.Title, p.Body, p.Tags, p.Priority, p.Due, p.Assignee)
+	case "delete_card":
+		if op.DeleteCard == nil {
+			return fmt.Errorf("delete_card: missing params")
+		}
+		return eng.DeleteCard(boardPath, op.DeleteCard.ColIdx, op.DeleteCard.CardIdx)
+	case "complete_card":
+		if op.CompleteCard == nil {
+			return fmt.Errorf("complete_card: missing params")
+		}
+		return eng.CompleteCard(boardPath, op.CompleteCard.ColIdx, op.CompleteCard.CardIdx)
+	case "tag_card":
+		if op.TagCard == nil {
+			return fmt.Errorf("tag_card: missing params")
+		}
+		return eng.TagCard(boardPath, op.TagCard.ColIdx, op.TagCard.CardIdx, op.TagCard.Tags)
+	case "add_column":
+		if op.AddColumn == nil {
+			return fmt.Errorf("add_column: missing params")
+		}
+		return eng.AddColumn(boardPath, op.AddColumn.Name)
+	case "rename_column":
+		if op.RenameColumn == nil {
+			return fmt.Errorf("rename_column: missing params")
+		}
+		return eng.RenameColumn(boardPath, op.RenameColumn.OldName, op.RenameColumn.NewName)
+	case "delete_column":
+		if op.DeleteColumn == nil {
+			return fmt.Errorf("delete_column: missing params")
+		}
+		return eng.DeleteColumn(boardPath, op.DeleteColumn.Name)
+	case "move_column":
+		if op.MoveColumn == nil {
+			return fmt.Errorf("move_column: missing params")
+		}
+		return eng.MoveColumn(boardPath, op.MoveColumn.Name, op.MoveColumn.AfterCol)
+	case "sort_column":
+		if op.SortColumn == nil {
+			return fmt.Errorf("sort_column: missing params")
+		}
+		return eng.SortColumn(boardPath, op.SortColumn.ColIdx, op.SortColumn.SortBy)
+	case "toggle_column_collapse":
+		if op.ToggleColumnCollapse == nil {
+			return fmt.Errorf("toggle_column_collapse: missing params")
+		}
+		return eng.ToggleColumnCollapse(boardPath, op.ToggleColumnCollapse.ColIdx)
+	case "update_board_meta":
+		if op.UpdateBoardMeta == nil {
+			return fmt.Errorf("update_board_meta: missing params")
+		}
+		p := op.UpdateBoardMeta
+		return eng.UpdateBoardMeta(boardPath, p.Name, p.Description, p.Tags)
+	case "update_board_members":
+		if op.UpdateBoardMembers == nil {
+			return fmt.Errorf("update_board_members: missing params")
+		}
+		return eng.UpdateBoardMembers(boardPath, op.UpdateBoardMembers.Members)
+	case "update_board_icon":
+		if op.UpdateBoardIcon == nil {
+			return fmt.Errorf("update_board_icon: missing params")
+		}
+		return eng.UpdateBoardIcon(boardPath, op.UpdateBoardIcon.Icon)
+	case "update_board_settings":
+		if op.UpdateBoardSettings == nil {
+			return fmt.Errorf("update_board_settings: missing params")
+		}
+		return eng.UpdateBoardSettings(boardPath, op.UpdateBoardSettings.Settings)
+	default:
+		return fmt.Errorf("unknown mutation op type: %q", op.Type)
 	}
 }
