@@ -74,6 +74,12 @@ type BoardViewModel struct {
 	AllCards       []CardWithPosition `json:"all_cards,omitempty"`
 }
 
+// ResolveSettings merges global defaults with per-board overrides.
+// Exported so the API layer can use it without duplicating logic.
+func ResolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettings {
+	return resolveSettings(global, bs)
+}
+
 // resolveSettings merges global defaults with per-board overrides.
 func resolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettings {
 	rs := ResolvedSettings{
