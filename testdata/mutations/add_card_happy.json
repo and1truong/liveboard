@@ -1,0 +1,43 @@
+{
+  "name": "add_card_happy",
+  "description": "Appending a card to an existing column increments length and preserves other columns.",
+  "board_before": {
+    "version": 1,
+    "name": "Demo",
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          { "title": "existing" }
+        ]
+      },
+      {
+        "name": "Done",
+        "cards": []
+      }
+    ]
+  },
+  "op": {
+    "type": "add_card",
+    "column": "Todo",
+    "title": "added",
+    "prepend": false
+  },
+  "board_after": {
+    "version": 1,
+    "name": "Demo",
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          { "title": "existing" },
+          { "title": "added" }
+        ]
+      },
+      {
+        "name": "Done",
+        "cards": []
+      }
+    ]
+  }
+}
