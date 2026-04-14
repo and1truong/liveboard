@@ -27,7 +27,7 @@
 - `internal/api/server_test.go` — API tests
 - `internal/templates/layout.html` — add "Move to board" UI block inside the card modal
 - `web/js/liveboard.card-modal.js` — cascading selects + submit
-- `web/js/liveboard.drag.js` — "Move to board ▸" submenu in quick-edit
+- `web/js/liveboard.quick-edit.js` — "Move to board ▸" submenu in quick-edit
 
 ---
 
@@ -756,11 +756,11 @@ git commit -m "feat(ui): add Move to board cascading selects in card modal"
 ## Task 7: Quick-edit submenu
 
 **Files:**
-- Modify: `web/js/liveboard.drag.js`
+- Modify: `web/js/liveboard.quick-edit.js`
 
 - [ ] **Step 1: Locate the existing move-to-column entry**
 
-Run: `grep -n "move-to\|target_column\|Move to" web/js/liveboard.drag.js`
+Run: `grep -n "move-to\|target_column\|Move to" web/js/liveboard.quick-edit.js`
 
 Expected: identifies the quick-edit context menu's move-to-column handler. Read ±40 lines.
 
@@ -794,7 +794,7 @@ async function moveCardToBoard(currentSlug, colIdx, cardIdx, dstSlug, dstColumn)
 }
 ```
 
-Add this function at module scope near the top of `liveboard.drag.js` and call it from the submenu click handler.
+Add this function at module scope near the top of `liveboard.quick-edit.js` and call it from the submenu click handler.
 
 - [ ] **Step 3: Manual smoke test**
 
@@ -805,7 +805,7 @@ Expected: the card disappears from source; destination board (opened in another 
 - [ ] **Step 4: Commit**
 
 ```bash
-git add web/js/liveboard.drag.js
+git add web/js/liveboard.quick-edit.js
 git commit -m "feat(ui): add Move to board submenu in quick-edit"
 ```
 

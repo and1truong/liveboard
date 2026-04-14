@@ -1075,10 +1075,16 @@ func TestAPIMoveCardToBoard(t *testing.T) {
 	// Add "Task A" to src col 0 ("not now").
 	doJSON(t, ts, "POST", "/boards/src/columns/not now/cards", map[string]string{"title": "Task A"})
 
+	// Fetch current src version for the optimistic lock.
+	resp := doJSON(t, ts, "GET", "/boards/src", nil)
+	var srcPre models.Board
+	decodeResp(t, resp, &srcPre)
+
 	// Move the card from src col 0, card 0 to dst "done".
-	resp := doJSON(t, ts, "POST", "/boards/src/cards/move-to-board", map[string]any{
+	resp = doJSON(t, ts, "POST", "/boards/src/cards/move-to-board", map[string]any{
 		"src_col_idx": 0,
 		"card_idx":    0,
+		"src_version": srcPre.Version,
 		"dst_board":   "dst",
 		"dst_column":  "done",
 	})

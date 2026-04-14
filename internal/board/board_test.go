@@ -1005,12 +1005,22 @@ func TestMoveCardToBoard_SourceVersionConflict(t *testing.T) {
 	if !errors.Is(err, ErrVersionConflict) {
 		t.Fatalf("err = %v, want ErrVersionConflict", err)
 	}
+	// Destination must not have been written — the pre-check on srcVersion
+	// catches the conflict before we touch dst, so no duplicate is created.
 	dst, err := e.LoadBoard(dstPath)
 	if err != nil || dst == nil {
 		t.Fatalf("LoadBoard: %v", err)
 	}
-	if len(dst.Columns[0].Cards) != 1 {
-		t.Error("target should have the card even though source removal failed")
+	if len(dst.Columns[0].Cards) != 0 {
+		t.Errorf("dst should be untouched on source version conflict, got %d cards", len(dst.Columns[0].Cards))
+	}
+	// Source must still contain its original card (removal must not occur).
+	src, err := e.LoadBoard(srcPath)
+	if err != nil || src == nil {
+		t.Fatalf("LoadBoard src: %v", err)
+	}
+	if len(src.Columns) == 0 || len(src.Columns[0].Cards) != 1 {
+		t.Errorf("source Todo should still contain its original card after ErrVersionConflict, got columns=%#v", src.Columns)
 	}
 }
 
