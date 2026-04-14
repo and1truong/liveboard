@@ -51,6 +51,10 @@ func TestGetWorkspace(t *testing.T) {
 		t.Fatalf("want 200, got %d: %s", rec.Code, rec.Body.String())
 	}
 
+	if ct := rec.Header().Get("Content-Type"); ct != "application/json" {
+		t.Errorf("want Content-Type=application/json, got %q", ct)
+	}
+
 	var body struct {
 		Dir        string `json:"dir"`
 		BoardCount int    `json:"board_count"`

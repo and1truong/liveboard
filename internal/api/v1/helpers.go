@@ -37,6 +37,7 @@ func writeError(w http.ResponseWriter, err error) {
 	case errors.Is(err, workspace.ErrInvalidBoardName), errors.Is(err, board.ErrInvalidInput), errors.Is(err, errInvalid):
 		status, code = http.StatusBadRequest, "INVALID"
 	}
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(errorResponse{Error: err.Error(), Code: code, Status: status})
 }
