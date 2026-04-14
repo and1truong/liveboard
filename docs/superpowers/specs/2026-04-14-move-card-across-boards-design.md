@@ -12,8 +12,7 @@ Allow a user to move a card from one board into a column of another board, from 
 
 ## Behavior
 
-- The card lands at the **top** of the destination column by default.
-- If the destination column has a sort setting configured, the sort setting takes precedence over "top".
+- The card lands at the **top** of the destination column. (Columns in LiveBoard have no persistent sort setting — sorting is an explicit user action via `SortColumn` — so there is nothing to defer to.)
 - Tags and members on the moved card that are **not** present on the destination board's frontmatter lists are auto-added to those lists.
 - All other card metadata (body, priority, due, assignee, custom keys, completed state) is preserved verbatim.
 
@@ -80,7 +79,6 @@ Sequence:
 ### Engine (`internal/board/board_test.go`)
 
 - Happy path: card removed from source, inserted at top of target; both versions bumped.
-- Target column sort setting present → sort is applied after insertion.
 - Missing tags/members on target → auto-merged into target frontmatter.
 - Target column not found → `ErrNotFound`, neither board mutated.
 - Source version conflict → `ErrVersionConflict` after target already written; test documents the duplicate state.
