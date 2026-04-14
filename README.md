@@ -148,6 +148,8 @@ liveboard column delete <board> "<name>"
 ## REST API
 
 > Full reference: [docs/api/v1.md](docs/api/v1.md)
+>
+> Go ↔ TS mutation parity: [docs/parity.md](docs/parity.md)
 
 The server runs locally on `http://localhost:7070`.
 
