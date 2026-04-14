@@ -147,6 +147,8 @@ liveboard column delete <board> "<name>"
 
 ## REST API
 
+> Full reference: [docs/api/v1.md](docs/api/v1.md)
+
 The server runs locally on `http://localhost:7070`.
 
 ```
