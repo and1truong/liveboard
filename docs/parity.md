@@ -61,3 +61,7 @@ Canonical error strings: `NOT_FOUND`, `OUT_OF_RANGE`, `INVALID`, `ALREADY_EXISTS
 - Version-conflict scenarios (checked by `MutateBoard`, not `Apply`).
 - SSE or disk side effects (handled by the engine wrapper, not the pure dispatcher).
 - Multi-board ops (`move_card_to_board` — out of scope; not in `MutationOp`).
+
+## Adapters
+
+The `LocalAdapter` at `web/shared/src/adapters/local.ts` consumes `applyOp` from the parity module. Its tests (`local.test.ts`) verify adapter-specific behavior (version conflicts, seed, BroadcastChannel); the underlying mutation correctness is covered by the vector suite above.

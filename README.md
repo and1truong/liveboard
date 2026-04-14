@@ -172,6 +172,16 @@ POST   /boards/{slug}/cards/{index}/complete  Toggle completion
 
 -----
 
+## Shell (preview)
+
+Experimental postMessage shell + stub renderer. Enable with:
+
+    LIVEBOARD_APP_SHELL=1 liveboard serve
+
+Then open <http://localhost:7070/app/> — the stub iframe exercises every protocol method and logs results.
+
+-----
+
 ## Architecture
 
 ```
