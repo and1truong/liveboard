@@ -429,14 +429,14 @@
                     <div class="ctx-submenu">
                         <template x-for="b in ctxBoardsLiteFiltered()" :key="b.slug">
                             <div>
-                                <button class="ctx-item" role="menuitem" @click.stop="ctxSelectMoveBoard(b.slug)">
-                                    <span class="ctx-icon" x-text="ctxMoveBoardSlug === b.slug ? '&#9662;' : '&#9656;'"></span>
+                                <button type="button" class="ctx-item" role="menuitem" @click.stop="ctxSelectMoveBoard(b.slug)">
+                                    <span class="ctx-icon" x-text="ctxMoveBoardSlug === b.slug ? '\u25BE' : '\u25B8'"></span>
                                     <span x-text="b.name || b.slug"></span>
                                 </button>
                                 <template x-if="ctxMoveBoardSlug === b.slug">
                                     <div class="ctx-submenu">
                                         <template x-for="col in (b.columns || [])" :key="col">
-                                            <button class="ctx-item" role="menuitem" @click.stop="ctxMoveCardToBoard(b.slug, col)"><span class="ctx-icon">&rarr;</span> <span x-text="col"></span></button>
+                                            <button type="button" class="ctx-item" role="menuitem" @click.stop="ctxMoveCardToBoard(b.slug, col)"><span class="ctx-icon">&rarr;</span> <span x-text="col"></span></button>
                                         </template>
                                     </div>
                                 </template>
