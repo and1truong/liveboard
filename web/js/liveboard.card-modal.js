@@ -23,6 +23,9 @@ document.addEventListener('alpine:init', function () {
       showDatePicker: false,
       showMembersPicker: false,
       boardMembers: [],
+      boardsLite: [],
+      moveToBoardSlug: '',
+      moveToBoardColumn: '',
       _cardEl: null,
 
       show: function (card) {
@@ -66,6 +69,9 @@ document.addEventListener('alpine:init', function () {
         this.showDatePicker = false;
         this.showMembersPicker = false;
         this.showBodyPreview = false;
+        this.moveToBoardSlug = '';
+        this.moveToBoardColumn = '';
+        this.loadBoardsLite();
         Alpine.store('ui').openModal('cardModal');
         this.open = true;
 
@@ -183,6 +189,40 @@ document.addEventListener('alpine:init', function () {
       moveTo: function (trigger) {
         this.close();
         trigger.el.click();
+      },
+
+      loadBoardsLite: function () {
+        if (this.boardsLite.length) return;
+        var self = this;
+        fetch('/api/boards/list-lite').then(function (res) {
+          if (!res.ok) throw new Error('status ' + res.status);
+          return res.json();
+        }).then(function (data) {
+          self.boardsLite = Array.isArray(data) ? data : [];
+        }).catch(function (e) {
+          console.error('boards-lite fetch failed', e);
+        });
+      },
+
+      submitMoveToBoard: function () {
+        if (!this.moveToBoardSlug || !this.moveToBoardColumn) return;
+        var self = this;
+        htmx.ajax('POST', '/board/' + encodeURIComponent(this.slug) + '/cards/move-to-board', {
+          values: {
+            col_idx: this.colIdx,
+            card_idx: this.cardIdx,
+            dst_board: this.moveToBoardSlug,
+            dst_column: this.moveToBoardColumn,
+            name: this.slug,
+            version: window.LB.getBoardVersion()
+          },
+          target: '#board-content',
+          swap: 'innerHTML'
+        }).then(function () {
+          self.moveToBoardSlug = '';
+          self.moveToBoardColumn = '';
+        });
+        this.close();
       },
 
       deleteCard: function () {
