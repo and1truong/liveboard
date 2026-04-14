@@ -12,6 +12,7 @@ import (
 
 	v1 "github.com/and1truong/liveboard/internal/api/v1"
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
 
@@ -29,6 +30,13 @@ func newTestDeps(t *testing.T) v1.Deps {
 		Workspace: ws,
 		Engine:    board.New(),
 	}
+}
+
+func newTestDepsWithSSE(t *testing.T) v1.Deps {
+	t.Helper()
+	d := newTestDeps(t)
+	d.SSE = web.NewSSEBroker()
+	return d
 }
 
 func newTestDepsEmpty(t *testing.T) v1.Deps { //nolint:unused

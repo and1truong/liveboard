@@ -23,6 +23,7 @@ func Router(d Deps) chi.Router {
 	r := chi.NewRouter()
 	r.Use(jsonContentType)
 	r.Get("/workspace", d.getWorkspace)
+	r.Get("/events", d.getEvents)
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
 		r.Get("/{slug}", d.getBoard)
