@@ -105,29 +105,16 @@ func renderAndWrite(board *models.Board, path string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
 
-// AddCard adds a new card to the specified column.
-// If prepend is true, the card is inserted at the beginning; otherwise appended.
-func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*models.Card, error) {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return nil, err
-	}
-
+// ApplyAddCard adds a new card to the specified column of b.
+// Returns the new card on success.
+func ApplyAddCard(b *models.Board, columnName, title string, prepend bool) (*models.Card, error) {
 	card := &models.Card{Title: title}
-
-	for i := range board.Columns {
-		if board.Columns[i].Name == columnName {
+	for i := range b.Columns {
+		if b.Columns[i].Name == columnName {
 			if prepend {
-				board.Columns[i].Cards = append([]models.Card{*card}, board.Columns[i].Cards...)
+				b.Columns[i].Cards = append([]models.Card{*card}, b.Columns[i].Cards...)
 			} else {
-				board.Columns[i].Cards = append(board.Columns[i].Cards, *card)
-			}
-			if err := renderAndWrite(board, boardPath); err != nil {
-				return nil, err
+				b.Columns[i].Cards = append(b.Columns[i].Cards, *card)
 			}
 			return card, nil
 		}
@@ -135,32 +122,41 @@ func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*mo
 	return nil, fmt.Errorf("column %q: %w", columnName, ErrNotFound)
 }
 
-// MoveCard moves a card to a different column.
-func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
+// AddCard adds a new card to the specified column.
+// If prepend is true, the card is inserted at the beginning; otherwise appended.
+func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*models.Card, error) {
+	card := &models.Card{Title: title}
+	err := e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		_, err := ApplyAddCard(b, columnName, title, prepend)
+		return err
+	})
 	if err != nil {
+		return nil, err
+	}
+	return card, nil
+}
+
+// ApplyMoveCard moves a card to a different column within b.
+func ApplyMoveCard(b *models.Board, colIdx, cardIdx int, targetColumn string) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
-
-	if err := validateIndices(board, colIdx, cardIdx); err != nil {
-		return err
-	}
-
-	card := board.Columns[colIdx].Cards[cardIdx]
-	board.Columns[colIdx].Cards = removeCardAt(board.Columns[colIdx].Cards, cardIdx)
-
-	// Find target column and append.
-	for i := range board.Columns {
-		if board.Columns[i].Name == targetColumn {
-			board.Columns[i].Cards = append(board.Columns[i].Cards, card)
-			return renderAndWrite(board, boardPath)
+	card := b.Columns[colIdx].Cards[cardIdx]
+	b.Columns[colIdx].Cards = removeCardAt(b.Columns[colIdx].Cards, cardIdx)
+	for i := range b.Columns {
+		if b.Columns[i].Name == targetColumn {
+			b.Columns[i].Cards = append(b.Columns[i].Cards, card)
+			return nil
 		}
 	}
 	return fmt.Errorf("target column %q: %w", targetColumn, ErrNotFound)
+}
+
+// MoveCard moves a card to a different column.
+func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyMoveCard(b, colIdx, cardIdx, targetColumn)
+	})
 }
 
 // MoveCardToBoard moves a card from srcPath to dstColumn on dstPath.
@@ -230,29 +226,18 @@ func mergeMissing(existing *[]string, incoming []string) {
 	}
 }
 
-// ReorderCard moves a card to a specific position within a column.
+// ApplyReorderCard moves a card to a specific position within b.
 // beforeIdx is the index to insert before; -1 means append to end.
-func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
+func ApplyReorderCard(b *models.Board, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
+	card := b.Columns[colIdx].Cards[cardIdx]
+	b.Columns[colIdx].Cards = removeCardAt(b.Columns[colIdx].Cards, cardIdx)
 
-	if err := validateIndices(board, colIdx, cardIdx); err != nil {
-		return err
-	}
-
-	card := board.Columns[colIdx].Cards[cardIdx]
-	board.Columns[colIdx].Cards = removeCardAt(board.Columns[colIdx].Cards, cardIdx)
-
-	// Find target column.
 	targetIdx := -1
-	for i := range board.Columns {
-		if board.Columns[i].Name == targetColumn {
+	for i := range b.Columns {
+		if b.Columns[i].Name == targetColumn {
 			targetIdx = i
 			break
 		}
@@ -261,52 +246,46 @@ func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, t
 		return fmt.Errorf("target column %q: %w", targetColumn, ErrNotFound)
 	}
 
-	cards := board.Columns[targetIdx].Cards
+	cards := b.Columns[targetIdx].Cards
 	if beforeIdx < 0 || beforeIdx >= len(cards) {
 		cards = append(cards, card)
 	} else {
 		cards = slices.Insert(cards, beforeIdx, card)
 	}
-	board.Columns[targetIdx].Cards = cards
+	b.Columns[targetIdx].Cards = cards
+	return nil
+}
 
-	return renderAndWrite(board, boardPath)
+// ReorderCard moves a card to a specific position within a column.
+// beforeIdx is the index to insert before; -1 means append to end.
+func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyReorderCard(b, colIdx, cardIdx, beforeIdx, targetColumn)
+	})
+}
+
+// ApplyCompleteCard toggles the completed state of a card within b.
+func ApplyCompleteCard(b *models.Board, colIdx, cardIdx int) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
+		return err
+	}
+	b.Columns[colIdx].Cards[cardIdx].Completed = !b.Columns[colIdx].Cards[cardIdx].Completed
+	return nil
 }
 
 // CompleteCard toggles the completed state of a card.
 func (e *Engine) CompleteCard(boardPath string, colIdx, cardIdx int) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-
-	if err := validateIndices(board, colIdx, cardIdx); err != nil {
-		return err
-	}
-
-	board.Columns[colIdx].Cards[cardIdx].Completed = !board.Columns[colIdx].Cards[cardIdx].Completed
-	return renderAndWrite(board, boardPath)
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyCompleteCard(b, colIdx, cardIdx)
+	})
 }
 
-// TagCard adds tags to a card.
-func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
+// ApplyTagCard adds tags to a card within b.
+func ApplyTagCard(b *models.Board, colIdx, cardIdx int, tags []string) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
-
-	if err := validateIndices(board, colIdx, cardIdx); err != nil {
-		return err
-	}
-
-	card := &board.Columns[colIdx].Cards[cardIdx]
+	card := &b.Columns[colIdx].Cards[cardIdx]
 	existing := make(map[string]bool)
 	for _, t := range card.Tags {
 		existing[t] = true
@@ -316,26 +295,22 @@ func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) e
 			card.Tags = append(card.Tags, t)
 		}
 	}
-
-	return renderAndWrite(board, boardPath)
+	return nil
 }
 
-// EditCard updates a card's title, body, tags, priority, due, and assignee in-place.
-func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority, due, assignee string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
+// TagCard adds tags to a card.
+func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyTagCard(b, colIdx, cardIdx, tags)
+	})
+}
 
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
+// ApplyEditCard updates a card's fields within b.
+func ApplyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tags []string, priority, due, assignee string) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
-
-	if err := validateIndices(board, colIdx, cardIdx); err != nil {
-		return err
-	}
-
-	card := &board.Columns[colIdx].Cards[cardIdx]
+	card := &b.Columns[colIdx].Cards[cardIdx]
 	if title != "" {
 		card.Title = title
 	}
@@ -344,27 +319,30 @@ func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body str
 	card.Priority = priority
 	card.Due = due
 	card.Assignee = assignee
+	return nil
+}
 
-	return renderAndWrite(board, boardPath)
+// EditCard updates a card's title, body, tags, priority, due, and assignee in-place.
+func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority, due, assignee string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyEditCard(b, colIdx, cardIdx, title, body, tags, priority, due, assignee)
+	})
+}
+
+// ApplyDeleteCard removes a card from b by column and card index.
+func ApplyDeleteCard(b *models.Board, colIdx, cardIdx int) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
+		return err
+	}
+	b.Columns[colIdx].Cards = removeCardAt(b.Columns[colIdx].Cards, cardIdx)
+	return nil
 }
 
 // DeleteCard removes a card by column and card index.
 func (e *Engine) DeleteCard(boardPath string, colIdx, cardIdx int) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-
-	if err := validateIndices(board, colIdx, cardIdx); err != nil {
-		return err
-	}
-
-	board.Columns[colIdx].Cards = removeCardAt(board.Columns[colIdx].Cards, cardIdx)
-	return renderAndWrite(board, boardPath)
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyDeleteCard(b, colIdx, cardIdx)
+	})
 }
 
 // ShowCard returns a card by column and card index.
@@ -386,38 +364,29 @@ func (e *Engine) ShowCard(boardPath string, colIdx, cardIdx int) (*models.Card, 
 	return &card, board.Columns[colIdx].Name, nil
 }
 
-// AddColumn adds a new column to the board.
-func (e *Engine) AddColumn(boardPath, colName string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-	board.Columns = append(board.Columns, models.Column{Name: colName})
-	return renderAndWrite(board, boardPath)
+// ApplyAddColumn adds a new column to b.
+func ApplyAddColumn(b *models.Board, colName string) error {
+	b.Columns = append(b.Columns, models.Column{Name: colName})
+	return nil
 }
 
-// DeleteColumn removes a column and all its cards.
-func (e *Engine) DeleteColumn(boardPath, colName string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
+// AddColumn adds a new column to the board.
+func (e *Engine) AddColumn(boardPath, colName string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyAddColumn(b, colName)
+	})
+}
 
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
+// ApplyDeleteColumn removes a column and all its cards from b.
+func ApplyDeleteColumn(b *models.Board, colName string) error {
 	found := false
 	var cols []models.Column
-	for i, col := range board.Columns {
+	for i, col := range b.Columns {
 		if col.Name == colName {
 			found = true
 			// Remove corresponding collapse state if present.
-			if i < len(board.ListCollapse) {
-				board.ListCollapse = append(board.ListCollapse[:i], board.ListCollapse[i+1:]...)
+			if i < len(b.ListCollapse) {
+				b.ListCollapse = append(b.ListCollapse[:i], b.ListCollapse[i+1:]...)
 			}
 			continue
 		}
@@ -426,64 +395,57 @@ func (e *Engine) DeleteColumn(boardPath, colName string) error {
 	if !found {
 		return nil // idempotent: no-op if column doesn't exist
 	}
-	board.Columns = cols
-	return renderAndWrite(board, boardPath)
+	b.Columns = cols
+	return nil
 }
 
-// RenameColumn renames a column in-place.
-func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
+// DeleteColumn removes a column and all its cards.
+func (e *Engine) DeleteColumn(boardPath, colName string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyDeleteColumn(b, colName)
+	})
+}
 
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
+// ApplyRenameColumn renames a column within b.
+func ApplyRenameColumn(b *models.Board, oldName, newName string) error {
 	found := false
-	for i := range board.Columns {
-		if board.Columns[i].Name == oldName {
-			board.Columns[i].Name = newName
+	for i := range b.Columns {
+		if b.Columns[i].Name == oldName {
+			b.Columns[i].Name = newName
 			found = true
 		}
 	}
 	if !found {
 		return fmt.Errorf("column %q: %w", oldName, ErrNotFound)
 	}
-	return renderAndWrite(board, boardPath)
+	return nil
 }
 
-// MoveColumn reorders a column to be after another column.
-func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
+// RenameColumn renames a column in-place.
+func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyRenameColumn(b, oldName, newName)
+	})
+}
 
-	content, err := os.ReadFile(boardPath)
-	if err != nil {
-		return err
-	}
-
-	board, err := parser.Parse(string(content))
-	if err != nil {
-		return err
-	}
-
+// ApplyMoveColumn reorders a column within b to be after afterCol.
+// Empty afterCol means prepend to front.
+func ApplyMoveColumn(b *models.Board, colName, afterCol string) error {
 	// Ensure ListCollapse is aligned with columns.
-	for len(board.ListCollapse) < len(board.Columns) {
-		board.ListCollapse = append(board.ListCollapse, false)
+	for len(b.ListCollapse) < len(b.Columns) {
+		b.ListCollapse = append(b.ListCollapse, false)
 	}
 
 	// Build index map for collapse state.
-	collapseByName := make(map[string]bool, len(board.Columns))
-	for i, col := range board.Columns {
-		collapseByName[col.Name] = board.ListCollapse[i]
+	collapseByName := make(map[string]bool, len(b.Columns))
+	for i, col := range b.Columns {
+		collapseByName[col.Name] = b.ListCollapse[i]
 	}
 
 	// Find and remove the target column.
 	var movingCol *models.Column
 	var remaining []models.Column
-	for _, col := range board.Columns {
+	for _, col := range b.Columns {
 		if col.Name == colName {
 			c := col
 			movingCol = &c
@@ -508,85 +470,84 @@ func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 		}
 	}
 
-	board.Columns = reordered
+	b.Columns = reordered
 
 	// Rebuild ListCollapse to match new column order.
-	board.ListCollapse = make([]bool, len(board.Columns))
-	for i, col := range board.Columns {
-		board.ListCollapse[i] = collapseByName[col.Name]
+	b.ListCollapse = make([]bool, len(b.Columns))
+	for i, col := range b.Columns {
+		b.ListCollapse[i] = collapseByName[col.Name]
 	}
-	return renderAndWrite(board, boardPath)
+	return nil
+}
+
+// MoveColumn reorders a column to be after another column.
+func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyMoveColumn(b, colName, afterCol)
+	})
+}
+
+// ApplyToggleColumnCollapse toggles the collapsed state of a column within b.
+func ApplyToggleColumnCollapse(b *models.Board, colIndex int) error {
+	if colIndex < 0 || colIndex >= len(b.Columns) {
+		return fmt.Errorf("column index %d: %w", colIndex, ErrOutOfRange)
+	}
+	// Grow ListCollapse to match number of columns if needed.
+	for len(b.ListCollapse) < len(b.Columns) {
+		b.ListCollapse = append(b.ListCollapse, false)
+	}
+	b.ListCollapse[colIndex] = !b.ListCollapse[colIndex]
+	return nil
 }
 
 // ToggleColumnCollapse toggles the collapsed state of a column by index.
 func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyToggleColumnCollapse(b, colIndex)
+	})
+}
 
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
+// ApplyUpdateBoardMeta updates a board's name, description, and tags within b.
+func ApplyUpdateBoardMeta(b *models.Board, name, description string, tags []string) error {
+	if name != "" {
+		b.Name = name
 	}
-
-	if colIndex < 0 || colIndex >= len(board.Columns) {
-		return fmt.Errorf("column index %d: %w", colIndex, ErrOutOfRange)
-	}
-
-	// Grow ListCollapse to match number of columns if needed.
-	for len(board.ListCollapse) < len(board.Columns) {
-		board.ListCollapse = append(board.ListCollapse, false)
-	}
-
-	board.ListCollapse[colIndex] = !board.ListCollapse[colIndex]
-
-	return renderAndWrite(board, boardPath)
+	b.Description = description
+	b.Tags = tags
+	return nil
 }
 
 // UpdateBoardMeta updates a board's name, description, and tags.
 func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyUpdateBoardMeta(b, name, description, tags)
+	})
+}
 
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-	if name != "" {
-		board.Name = name
-	}
-	board.Description = description
-	board.Tags = tags
-	return renderAndWrite(board, boardPath)
+// ApplyUpdateBoardMembers sets the member list within b.
+func ApplyUpdateBoardMembers(b *models.Board, members []string) error {
+	b.Members = members
+	return nil
 }
 
 // UpdateBoardMembers sets the member list for a board.
 func (e *Engine) UpdateBoardMembers(boardPath string, members []string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyUpdateBoardMembers(b, members)
+	})
+}
 
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-	board.Members = members
-	return renderAndWrite(board, boardPath)
+// ApplyUpdateBoardIcon sets the emoji icon within b.
+func ApplyUpdateBoardIcon(b *models.Board, icon string) error {
+	b.Icon = icon
+	return nil
 }
 
 // UpdateBoardIcon sets the emoji icon for a board.
 func (e *Engine) UpdateBoardIcon(boardPath, icon string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-	board.Icon = icon
-	return renderAndWrite(board, boardPath)
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyUpdateBoardIcon(b, icon)
+	})
 }
 
 func validateIndices(board *models.Board, colIdx, cardIdx int) error {
@@ -603,24 +564,13 @@ func removeCardAt(cards []models.Card, idx int) []models.Card {
 	return append(cards[:idx], cards[idx+1:]...)
 }
 
-// SortColumn sorts the cards in a column by the given key.
+// ApplySortColumn sorts the cards in a column of b by the given key.
 // Supported keys: "name", "priority", "due".
-func (e *Engine) SortColumn(boardPath string, colIdx int, sortBy string) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-
-	if colIdx < 0 || colIdx >= len(board.Columns) {
+func ApplySortColumn(b *models.Board, colIdx int, sortBy string) error {
+	if colIdx < 0 || colIdx >= len(b.Columns) {
 		return fmt.Errorf("column index %d: %w", colIdx, ErrOutOfRange)
 	}
-
-	cards := board.Columns[colIdx].Cards
-
+	cards := b.Columns[colIdx].Cards
 	switch sortBy {
 	case "name":
 		sort.SliceStable(cards, func(i, j int) bool {
@@ -632,24 +582,31 @@ func (e *Engine) SortColumn(boardPath string, colIdx int, sortBy string) error {
 		})
 	case "due":
 		sort.SliceStable(cards, func(i, j int) bool {
-			a, b := cards[i].Due, cards[j].Due
-			if a == "" && b == "" {
+			a, bv := cards[i].Due, cards[j].Due
+			if a == "" && bv == "" {
 				return false
 			}
 			if a == "" {
 				return false
 			}
-			if b == "" {
+			if bv == "" {
 				return true
 			}
-			return a < b
+			return a < bv
 		})
 	default:
 		return fmt.Errorf("unknown sort key %q", sortBy)
 	}
+	b.Columns[colIdx].Cards = cards
+	return nil
+}
 
-	board.Columns[colIdx].Cards = cards
-	return renderAndWrite(board, boardPath)
+// SortColumn sorts the cards in a column by the given key.
+// Supported keys: "name", "priority", "due".
+func (e *Engine) SortColumn(boardPath string, colIdx int, sortBy string) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplySortColumn(b, colIdx, sortBy)
+	})
 }
 
 func priorityRank(p string) int {
@@ -667,16 +624,15 @@ func priorityRank(p string) int {
 	}
 }
 
+// ApplyUpdateBoardSettings replaces the per-board settings overrides within b.
+func ApplyUpdateBoardSettings(b *models.Board, settings models.BoardSettings) error {
+	b.Settings = settings
+	return nil
+}
+
 // UpdateBoardSettings replaces a board's per-board settings overrides.
 func (e *Engine) UpdateBoardSettings(boardPath string, settings models.BoardSettings) error {
-	lock := e.boardLock(boardPath)
-	lock.Lock()
-	defer lock.Unlock()
-
-	board, err := e.LoadBoard(boardPath)
-	if err != nil {
-		return err
-	}
-	board.Settings = settings
-	return renderAndWrite(board, boardPath)
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return ApplyUpdateBoardSettings(b, settings)
+	})
 }

@@ -1,12 +1,14 @@
 package v1_test
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
 
 	v1 "github.com/and1truong/liveboard/internal/api/v1"
+	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
@@ -367,5 +369,24 @@ func TestDispatchAllVariants(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+func TestDispatchRespectsClientVersion(t *testing.T) {
+	deps := newTestDeps(t)
+	path := filepath.Join(deps.Workspace.Dir, "demo.md")
+
+	// Stale version should fail with ErrVersionConflict.
+	// Seed board is at version 1; passing version 0 must be rejected.
+	op := v1.MutationOp{
+		Type:    "add_card",
+		AddCard: &v1.AddCardOp{Column: "Todo", Title: "v-fail"},
+	}
+	err := v1.Dispatch(deps.Engine, path, 0, op)
+	if err == nil {
+		t.Fatal("want ErrVersionConflict, got nil")
+	}
+	if !errors.Is(err, board.ErrVersionConflict) {
+		t.Errorf("want ErrVersionConflict, got %v", err)
 	}
 }
