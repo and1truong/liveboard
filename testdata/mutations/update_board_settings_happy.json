@@ -1,0 +1,18 @@
+{
+  "name": "update_board_settings_happy",
+  "description": "update_board_settings replaces per-board settings wholesale.",
+  "board_before": {
+    "version": 1,
+    "settings": { "show_checkbox": true, "view_mode": "board" },
+    "columns": []
+  },
+  "op": {
+    "type": "update_board_settings",
+    "settings": { "card_display_mode": "compact" }
+  },
+  "board_after": {
+    "version": 1,
+    "settings": { "card_display_mode": "compact" },
+    "columns": []
+  }
+}

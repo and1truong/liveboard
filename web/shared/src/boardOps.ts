@@ -166,6 +166,24 @@ export function applyOp(board: Board, op: MutationOp): Board {
       b.list_collapse = lc
       return b
     }
+    case 'update_board_meta': {
+      if (op.name !== '') b.name = op.name
+      b.description = op.description
+      b.tags = op.tags
+      return b
+    }
+    case 'update_board_members': {
+      b.members = op.members
+      return b
+    }
+    case 'update_board_icon': {
+      b.icon = op.icon
+      return b
+    }
+    case 'update_board_settings': {
+      b.settings = op.settings
+      return b
+    }
     default:
       throw new OpError('INTERNAL', `unimplemented op: ${(op as MutationOp).type}`)
   }

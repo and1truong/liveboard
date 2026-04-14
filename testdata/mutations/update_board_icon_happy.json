@@ -1,0 +1,15 @@
+{
+  "name": "update_board_icon_happy",
+  "description": "update_board_icon replaces the icon string.",
+  "board_before": {
+    "version": 1,
+    "icon": "📝",
+    "columns": []
+  },
+  "op": { "type": "update_board_icon", "icon": "🚀" },
+  "board_after": {
+    "version": 1,
+    "icon": "🚀",
+    "columns": []
+  }
+}
