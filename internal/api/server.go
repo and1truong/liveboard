@@ -293,6 +293,7 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 		Engine:    s.eng,
 		SSE:       s.webHandler.SSE,
 	}))
+	r.Method(http.MethodGet, "/api/versions", apiv1.VersionsHandler())
 
 	// REST API routes (with JSON content type)
 	r.Route("/boards", func(r chi.Router) {

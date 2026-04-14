@@ -10,6 +10,20 @@ import (
 	v1 "github.com/and1truong/liveboard/internal/api/v1"
 )
 
+func TestVersionsMountedAtApiVersions(t *testing.T) {
+	r := chi.NewRouter()
+	r.Mount("/api/v1", v1.Router(v1.Deps{}))
+	r.Method(http.MethodGet, "/api/versions", v1.VersionsHandler())
+
+	req := httptest.NewRequest(http.MethodGet, "/api/versions", nil)
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", rec.Code)
+	}
+}
+
 func TestRouterMountsV1Prefix(t *testing.T) {
 	r := chi.NewRouter()
 	deps := v1.Deps{}
