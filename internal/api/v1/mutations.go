@@ -366,7 +366,7 @@ func (m *MutationOp) UnmarshalJSON(data []byte) error {
 func Dispatch(eng *board.Engine, boardPath string, clientVersion int, op MutationOp) (*models.Board, error) {
 	var out *models.Board
 	err := eng.MutateBoard(boardPath, clientVersion, func(b *models.Board) error {
-		if e := applyOp(b, op); e != nil {
+		if e := Apply(b, op); e != nil {
 			return e
 		}
 		out = b
@@ -375,11 +375,13 @@ func Dispatch(eng *board.Engine, boardPath string, clientVersion int, op Mutatio
 	return out, err
 }
 
-// applyOp mutates the in-memory board according to op.
-// It calls the exported board.Apply* functions so logic is never duplicated.
+// Apply mutates the board in-place according to op.
+// This is the pure in-memory dispatcher — no disk IO, no locking, no version bump.
+// The HTTP handler wraps this inside Engine.MutateBoard to add those concerns.
+// Shared with the parity vector runner in internal/parity.
 //
 //nolint:cyclop,gocognit,funlen // switch over 17 mutation variants — inherently large
-func applyOp(b *models.Board, op MutationOp) error {
+func Apply(b *models.Board, op MutationOp) error {
 	switch op.Type {
 	case "add_card":
 		if op.AddCard == nil {
