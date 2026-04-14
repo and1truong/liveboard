@@ -33,7 +33,7 @@ func newTwoColumnDeps(t *testing.T) (v1.Deps, string) {
 func TestDispatchAllVariants(t *testing.T) {
 	cases := []struct {
 		name    string
-		op      func(path string) v1.MutationOp
+		op      func(string) v1.MutationOp
 		deps    func(t *testing.T) (v1.Deps, string)
 		wantErr bool
 		errNote string // why we expect an error
@@ -41,7 +41,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		// ── card ops ──────────────────────────────────────────────────────────
 		{
 			name: "add_card",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:    "add_card",
 					AddCard: &v1.AddCardOp{Column: "Todo", Title: "new card"},
@@ -54,7 +54,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "add_card_prepend",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:    "add_card",
 					AddCard: &v1.AddCardOp{Column: "Todo", Title: "prepended", Prepend: true},
@@ -67,7 +67,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "move_card",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				// Move card 0 from column 0 (Todo) to column 1 (Done).
 				return v1.MutationOp{
 					Type:     "move_card",
@@ -81,7 +81,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "reorder_card",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				// Two cards in Todo (indices 0,1); move card 1 before index 0.
 				return v1.MutationOp{
 					Type: "reorder_card",
@@ -100,7 +100,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "edit_card",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type: "edit_card",
 					EditCard: &v1.EditCardOp{
@@ -122,7 +122,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "delete_card",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:       "delete_card",
 					DeleteCard: &v1.DeleteCardOp{ColIdx: 0, CardIdx: 0},
@@ -135,7 +135,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "complete_card",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:         "complete_card",
 					CompleteCard: &v1.CompleteCardOp{ColIdx: 0, CardIdx: 0},
@@ -148,7 +148,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "tag_card",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:    "tag_card",
 					TagCard: &v1.TagCardOp{ColIdx: 0, CardIdx: 0, Tags: []string{"urgent"}},
@@ -163,7 +163,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		// ── column ops ────────────────────────────────────────────────────────
 		{
 			name: "add_column",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:      "add_column",
 					AddColumn: &v1.AddColumnOp{Name: "Backlog"},
@@ -176,7 +176,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "rename_column",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:         "rename_column",
 					RenameColumn: &v1.RenameColumnOp{OldName: "Todo", NewName: "Doing"},
@@ -191,7 +191,7 @@ func TestDispatchAllVariants(t *testing.T) {
 			// delete_column: seed has only "Todo"; after adding "Done" we delete
 			// "Done" so the board still has at least one column afterwards.
 			name: "delete_column",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:         "delete_column",
 					DeleteColumn: &v1.DeleteColumnOp{Name: "Done"},
@@ -206,7 +206,7 @@ func TestDispatchAllVariants(t *testing.T) {
 			// move_column: board has Todo(0) and Done(1); move Done after "" (i.e.
 			// to front) to make it Done(0), Todo(1).
 			name: "move_column",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:       "move_column",
 					MoveColumn: &v1.MoveColumnOp{Name: "Done", AfterCol: ""},
@@ -219,7 +219,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "sort_column",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:       "sort_column",
 					SortColumn: &v1.SortColumnOp{ColIdx: 0, SortBy: "priority"},
@@ -232,7 +232,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "toggle_column_collapse",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:                 "toggle_column_collapse",
 					ToggleColumnCollapse: &v1.ToggleColumnCollapseOp{ColIdx: 0},
@@ -247,7 +247,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		// ── board meta ops ────────────────────────────────────────────────────
 		{
 			name: "update_board_meta",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type: "update_board_meta",
 					UpdateBoardMeta: &v1.UpdateBoardMetaOp{
@@ -264,7 +264,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "update_board_members",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:               "update_board_members",
 					UpdateBoardMembers: &v1.UpdateBoardMembersOp{Members: []string{"alice", "bob"}},
@@ -277,7 +277,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "update_board_icon",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:            "update_board_icon",
 					UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: "🚀"},
@@ -290,7 +290,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "update_board_settings",
-			op: func(path string) v1.MutationOp {
+			op: func(_ string) v1.MutationOp {
 				show := true
 				return v1.MutationOp{
 					Type: "update_board_settings",
@@ -308,7 +308,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		// ── error cases ───────────────────────────────────────────────────────
 		{
 			name:    "unknown_op_errors",
-			op:      func(path string) v1.MutationOp { return v1.MutationOp{Type: "bogus"} },
+			op:      func(_ string) v1.MutationOp { return v1.MutationOp{Type: "bogus"} },
 			wantErr: true,
 			errNote: "Dispatch must reject unknown op types",
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -318,7 +318,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name:    "add_card_nil_params_errors",
-			op:      func(path string) v1.MutationOp { return v1.MutationOp{Type: "add_card"} },
+			op:      func(_ string) v1.MutationOp { return v1.MutationOp{Type: "add_card"} },
 			wantErr: true,
 			errNote: "nil params should be caught before engine call",
 			deps: func(t *testing.T) (v1.Deps, string) {

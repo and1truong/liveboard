@@ -71,18 +71,21 @@ type MutationOp struct {
 	UpdateBoardSettings  *UpdateBoardSettingsOp  `json:"-"`
 }
 
+// AddCardOp are the params for an "add_card" mutation.
 type AddCardOp struct {
 	Column  string `json:"column"`
 	Title   string `json:"title"`
 	Prepend bool   `json:"prepend,omitempty"`
 }
 
+// MoveCardOp are the params for a "move_card" mutation.
 type MoveCardOp struct {
 	ColIdx       int    `json:"col_idx"`
 	CardIdx      int    `json:"card_idx"`
 	TargetColumn string `json:"target_column"`
 }
 
+// ReorderCardOp are the params for a "reorder_card" mutation.
 type ReorderCardOp struct {
 	ColIdx       int    `json:"col_idx"`
 	CardIdx      int    `json:"card_idx"`
@@ -90,6 +93,7 @@ type ReorderCardOp struct {
 	TargetColumn string `json:"target_column"`
 }
 
+// EditCardOp are the params for an "edit_card" mutation.
 type EditCardOp struct {
 	ColIdx   int      `json:"col_idx"`
 	CardIdx  int      `json:"card_idx"`
@@ -101,68 +105,83 @@ type EditCardOp struct {
 	Assignee string   `json:"assignee"`
 }
 
+// DeleteCardOp are the params for a "delete_card" mutation.
 type DeleteCardOp struct {
 	ColIdx  int `json:"col_idx"`
 	CardIdx int `json:"card_idx"`
 }
 
+// CompleteCardOp are the params for a "complete_card" mutation.
 type CompleteCardOp struct {
 	ColIdx  int `json:"col_idx"`
 	CardIdx int `json:"card_idx"`
 }
 
+// TagCardOp are the params for a "tag_card" mutation.
 type TagCardOp struct {
 	ColIdx  int      `json:"col_idx"`
 	CardIdx int      `json:"card_idx"`
 	Tags    []string `json:"tags"`
 }
 
+// AddColumnOp are the params for an "add_column" mutation.
 type AddColumnOp struct {
 	Name string `json:"name"`
 }
 
+// RenameColumnOp are the params for a "rename_column" mutation.
 type RenameColumnOp struct {
 	OldName string `json:"old_name"`
 	NewName string `json:"new_name"`
 }
 
+// DeleteColumnOp are the params for a "delete_column" mutation.
 type DeleteColumnOp struct {
 	Name string `json:"name"`
 }
 
+// MoveColumnOp are the params for a "move_column" mutation.
 type MoveColumnOp struct {
 	Name     string `json:"name"`
 	AfterCol string `json:"after_col"`
 }
 
+// SortColumnOp are the params for a "sort_column" mutation.
 type SortColumnOp struct {
 	ColIdx int    `json:"col_idx"`
 	SortBy string `json:"sort_by"`
 }
 
+// ToggleColumnCollapseOp are the params for a "toggle_column_collapse" mutation.
 type ToggleColumnCollapseOp struct {
 	ColIdx int `json:"col_idx"`
 }
 
+// UpdateBoardMetaOp are the params for an "update_board_meta" mutation.
 type UpdateBoardMetaOp struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description"`
 	Tags        []string `json:"tags"`
 }
 
+// UpdateBoardMembersOp are the params for an "update_board_members" mutation.
 type UpdateBoardMembersOp struct {
 	Members []string `json:"members"`
 }
 
+// UpdateBoardIconOp are the params for an "update_board_icon" mutation.
 type UpdateBoardIconOp struct {
 	Icon string `json:"icon"`
 }
 
+// UpdateBoardSettingsOp are the params for an "update_board_settings" mutation.
 type UpdateBoardSettingsOp struct {
 	Settings models.BoardSettings `json:"settings"`
 }
 
 // MarshalJSON encodes the active variant merged with the "type" discriminator.
+//
+//nolint:cyclop,gocognit,funlen // switch over 17 mutation variants — inherently large
 func (m MutationOp) MarshalJSON() ([]byte, error) {
 	var variant any
 	switch m.Type {
@@ -272,6 +291,8 @@ func (m MutationOp) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON decodes based on the `type` discriminator.
+//
+//nolint:cyclop,funlen // switch over 17 mutation variants — inherently large
 func (m *MutationOp) UnmarshalJSON(data []byte) error {
 	var head struct {
 		Type string `json:"type"`
@@ -356,6 +377,8 @@ func Dispatch(eng *board.Engine, boardPath string, clientVersion int, op Mutatio
 
 // applyOp mutates the in-memory board according to op.
 // It calls the exported board.Apply* functions so logic is never duplicated.
+//
+//nolint:cyclop,gocognit,funlen // switch over 17 mutation variants — inherently large
 func applyOp(b *models.Board, op MutationOp) error {
 	switch op.Type {
 	case "add_card":

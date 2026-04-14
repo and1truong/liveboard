@@ -225,8 +225,8 @@ func TestMutationOpRoundTrip(t *testing.T) {
 			}
 			// unmarshal back
 			var got v1.MutationOp
-			if err := json.Unmarshal(data, &got); err != nil {
-				t.Fatalf("unmarshal: %v", err)
+			if jerr := json.Unmarshal(data, &got); jerr != nil {
+				t.Fatalf("unmarshal: %v", jerr)
 			}
 			if got.Type != tc.op.Type {
 				t.Errorf("type mismatch: want %q got %q", tc.op.Type, got.Type)

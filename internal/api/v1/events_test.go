@@ -30,7 +30,7 @@ func TestSSEReceivesBoardUpdated(t *testing.T) {
 		t.Fatalf("new request: %v", err)
 	}
 	resp, err := srv.Client().Do(req)
-	if resp == nil || err != nil {
+	if err != nil || resp == nil {
 		t.Fatalf("connect: %v", err)
 	}
 	defer resp.Body.Close() //nolint:errcheck
