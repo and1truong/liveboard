@@ -19,9 +19,10 @@ type Deps struct {
 }
 
 // Router returns a chi subrouter with all /api/v1 routes registered.
-func Router(_ Deps) chi.Router {
+func Router(d Deps) chi.Router {
 	r := chi.NewRouter()
 	r.Use(jsonContentType)
+	r.Get("/workspace", d.getWorkspace)
 	return r
 }
 
