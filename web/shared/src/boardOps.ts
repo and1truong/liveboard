@@ -1,5 +1,10 @@
 import type { Board, Column, Card, MutationOp } from './types.js'
 import { OpError } from './types.js'
+import { newCardId } from './util/cardid.js'
+
+function ensureCardId(c: Card): void {
+  if (!c.id) c.id = newCardId()
+}
 
 // applyOp returns a new board with op applied. Input is not mutated.
 // Mirrors internal/api/v1.Apply semantics. Shared parity vectors guard drift.
@@ -11,6 +16,7 @@ export function applyOp(board: Board, op: MutationOp): Board {
       const col = colByName(b, op.column)
       if (!col) throw new OpError('NOT_FOUND', `column ${op.column}`)
       const card: Card = { title: op.title }
+      ensureCardId(card)
       col.cards = op.prepend ? [card, ...(col.cards ?? [])] : [...(col.cards ?? []), card]
       return b
     }
@@ -18,6 +24,7 @@ export function applyOp(board: Board, op: MutationOp): Board {
       const src = colAt(b, op.col_idx)
       cardAt(src, op.card_idx, op.col_idx)
       const card = src.cards[op.card_idx]!
+      ensureCardId(card)
       src.cards = src.cards.filter((_, i) => i !== op.card_idx)
       const dst = colByName(b, op.target_column)
       if (!dst) throw new OpError('NOT_FOUND', `target column ${op.target_column}`)
@@ -28,6 +35,7 @@ export function applyOp(board: Board, op: MutationOp): Board {
       const src = colAt(b, op.col_idx)
       cardAt(src, op.card_idx, op.col_idx)
       const card = src.cards[op.card_idx]!
+      ensureCardId(card)
       src.cards = src.cards.filter((_, i) => i !== op.card_idx)
       const dst = colByName(b, op.target_column)
       if (!dst) throw new OpError('NOT_FOUND', `target column ${op.target_column}`)
@@ -43,6 +51,7 @@ export function applyOp(board: Board, op: MutationOp): Board {
       const col = colAt(b, op.col_idx)
       cardAt(col, op.card_idx, op.col_idx)
       const card = col.cards[op.card_idx]!
+      ensureCardId(card)
       if (op.title !== '') card.title = op.title
       card.body = op.body
       card.tags = op.tags
@@ -61,6 +70,7 @@ export function applyOp(board: Board, op: MutationOp): Board {
       const col = colAt(b, op.col_idx)
       cardAt(col, op.card_idx, op.col_idx)
       const card = col.cards[op.card_idx]!
+      ensureCardId(card)
       card.completed = !card.completed
       return b
     }
@@ -68,6 +78,7 @@ export function applyOp(board: Board, op: MutationOp): Board {
       const col = colAt(b, op.col_idx)
       cardAt(col, op.card_idx, op.col_idx)
       const card = col.cards[op.card_idx]!
+      ensureCardId(card)
       const existing = new Set(card.tags ?? [])
       const merged = [...(card.tags ?? [])]
       for (const t of op.tags) {
