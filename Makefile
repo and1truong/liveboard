@@ -92,6 +92,10 @@ renderer:
 .PHONY: frontend
 frontend: shell renderer
 
+.PHONY: adapter-test
+adapter-test: shell renderer
+	LIVEBOARD_APP_SHELL=1 go run ./cmd/liveboard serve --dir ./demo --port 7070
+
 # Build LiveBoard Online (browser-only SPA with localStorage)
 online: check-tailwind
 	bash online/build.sh
