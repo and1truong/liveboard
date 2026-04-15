@@ -44,8 +44,17 @@ export function BoardFocusProvider({
   columns: Column[]
   children: ReactNode
 }): JSX.Element {
-  const [focused, setFocused] = useState<FocusedCard | null>(null)
+  const [focused, _setFocused] = useState<FocusedCard | null>(null)
   const refs = useRef(new Map<string, HTMLElement>())
+  const pendingFocusRef = useRef(false)
+
+  const setFocused = useCallback((next: FocusedCard | null) => {
+    _setFocused((prev) => {
+      if (prev === next) return prev
+      if (prev && next && prev.colIdx === next.colIdx && prev.cardIdx === next.cardIdx) return prev
+      return next
+    })
+  }, [])
 
   const registerCard = useCallback((colIdx: number, cardIdx: number, el: HTMLElement | null) => {
     const key = `${colIdx}:${cardIdx}`
@@ -53,8 +62,11 @@ export function BoardFocusProvider({
     else refs.current.delete(key)
   }, [])
 
-  // Programmatic focus on every focused change.
+  // Programmatic focus only when requested (move/arrow-key), not on passive
+  // onFocus sync — otherwise we fight focus traps like Radix Dialog.
   useEffect(() => {
+    if (!pendingFocusRef.current) return
+    pendingFocusRef.current = false
     if (!focused) return
     const el = refs.current.get(`${focused.colIdx}:${focused.cardIdx}`)
     if (el && document.activeElement !== el) el.focus()
