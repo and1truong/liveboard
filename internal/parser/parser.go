@@ -175,6 +175,8 @@ func Parse(content string) (*models.Board, error) {
 					currentCard.Priority = val
 				case "due":
 					currentCard.Due = val
+				case "id":
+					currentCard.ID = val
 				default:
 					if currentCard.Metadata == nil {
 						currentCard.Metadata = make(map[string]string)

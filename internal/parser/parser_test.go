@@ -671,3 +671,28 @@ func TestParseHTMLCommentIndented(t *testing.T) {
 		t.Errorf("priority = %q, want high", card.Priority)
 	}
 }
+
+func TestParseCardID(t *testing.T) {
+	md := "---\nversion: 1\nname: B\n---\n\n## Todo\n\n- [ ] Card\n  id: aBc1234XyZ\n"
+	b, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(b.Columns) != 1 || len(b.Columns[0].Cards) != 1 {
+		t.Fatalf("unexpected structure: %+v", b)
+	}
+	if got := b.Columns[0].Cards[0].ID; got != "aBc1234XyZ" {
+		t.Fatalf("want id %q, got %q", "aBc1234XyZ", got)
+	}
+}
+
+func TestParseCardIDAbsent(t *testing.T) {
+	md := "---\nversion: 1\nname: B\n---\n\n## Todo\n\n- [ ] Card\n"
+	b, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got := b.Columns[0].Cards[0].ID; got != "" {
+		t.Fatalf("want empty id, got %q", got)
+	}
+}
