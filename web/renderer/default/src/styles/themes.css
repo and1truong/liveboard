@@ -1,0 +1,11 @@
+/* Accent color variables per theme. Used as bg-[color:var(--accent-600)] etc. */
+:root {
+  --accent-500: #6366f1;
+  --accent-600: #4f46e5;
+}
+:root.theme-indigo  { --accent-500: #6366f1; --accent-600: #4f46e5; }
+:root.theme-github  { --accent-500: #2da44e; --accent-600: #1a7f37; }
+:root.theme-gitlab  { --accent-500: #fc6d26; --accent-600: #e24329; }
+:root.theme-emerald { --accent-500: #10b981; --accent-600: #059669; }
+:root.theme-rose    { --accent-500: #f43f5e; --accent-600: #e11d48; }
+:root.theme-sunset  { --accent-500: #f97316; --accent-600: #ea580c; }
