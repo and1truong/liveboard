@@ -16,14 +16,17 @@ export function CardEditable({
   colIdx,
   cardIdx,
   boardId,
+  modalOpen,
+  onModalOpenChange,
 }: {
   card: CardModel
   colIdx: number
   cardIdx: number
   boardId: string
+  modalOpen: boolean
+  onModalOpenChange: (next: boolean) => void
 }): JSX.Element {
   const [mode, setMode] = useState<'view' | 'edit'>('view')
-  const [modalOpen, setModalOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const mutation = useBoardMutation(boardId)
   const committedRef = useRef(false)
@@ -117,7 +120,7 @@ export function CardEditable({
             <button
               type="button"
               aria-label="open card details"
-              onClick={() => setModalOpen(true)}
+              onClick={() => onModalOpenChange(true)}
               className="mt-2 flex min-h-6 w-full items-center justify-between gap-2 rounded text-left hover:bg-slate-50"
             >
               {card.tags && card.tags.length > 0 ? (
@@ -156,7 +159,7 @@ export function CardEditable({
         cardIdx={cardIdx}
         boardId={boardId}
         open={modalOpen}
-        onOpenChange={setModalOpen}
+        onOpenChange={onModalOpenChange}
       />
     </>
   )

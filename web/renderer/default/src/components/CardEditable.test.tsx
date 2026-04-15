@@ -1,4 +1,6 @@
 import { describe, expect, it } from 'bun:test'
+import { useState } from 'react'
+import type { Card as CardModel } from '@shared/types.js'
 import { fireEvent, waitFor } from '@testing-library/react'
 import { Broker } from '@shared/broker.js'
 import { Client } from '@shared/client.js'
@@ -9,6 +11,20 @@ import { QueryClient } from '@tanstack/react-query'
 import { ClientProvider } from '../queries.js'
 import { renderWithQuery } from '../test-utils.js'
 import { CardEditable } from './CardEditable.js'
+
+function Wrap({ card }: { card: CardModel }): JSX.Element {
+  const [open, setOpen] = useState(false)
+  return (
+    <CardEditable
+      card={card}
+      colIdx={0}
+      cardIdx={0}
+      boardId="welcome"
+      modalOpen={open}
+      onModalOpenChange={setOpen}
+    />
+  )
+}
 
 async function setup(): Promise<{ client: Client; qc: QueryClient }> {
   const [iframeT, shellT] = createMemoryPair()
@@ -25,7 +41,7 @@ describe('CardEditable', () => {
     const { client, qc } = await setup()
     const { getByText, getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
-        <CardEditable card={{ title: 'hello' }} colIdx={0} cardIdx={0} boardId="welcome" />
+        <Wrap card={{ title: 'hello' }} />
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -37,7 +53,7 @@ describe('CardEditable', () => {
     const { client, qc } = await setup()
     const { getByText, getByLabelText, queryByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
-        <CardEditable card={{ title: 'hello' }} colIdx={0} cardIdx={0} boardId="welcome" />
+        <Wrap card={{ title: 'hello' }} />
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -56,7 +72,7 @@ describe('CardEditable', () => {
     const firstTitle = seed.columns[0].cards[0].title
     const { getByText, getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
-        <CardEditable card={{ title: firstTitle }} colIdx={0} cardIdx={0} boardId="welcome" />
+        <Wrap card={{ title: firstTitle }} />
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -77,7 +93,7 @@ describe('CardEditable', () => {
     const firstTitle = seed.columns[0].cards[0].title
     const { getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
-        <CardEditable card={{ title: firstTitle }} colIdx={0} cardIdx={0} boardId="welcome" />
+        <Wrap card={{ title: firstTitle }} />
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -92,7 +108,7 @@ describe('CardEditable', () => {
     const { client, qc } = await setup()
     const { getByLabelText, getByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <CardEditable card={{ title: 'hello' }} colIdx={0} cardIdx={0} boardId="welcome" />
+        <Wrap card={{ title: 'hello' }} />
       </ClientProvider>,
       { queryClient: qc },
     )
