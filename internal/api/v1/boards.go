@@ -109,10 +109,9 @@ func (d Deps) listBoards(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, err)
 		return
 	}
-	if boards == nil {
-		// Ensure we always emit `[]` rather than `null` for empty workspaces.
-		_, _ = w.Write([]byte("[]\n"))
-		return
+	summaries := make([]boardSummary, 0, len(boards))
+	for i := range boards {
+		summaries = append(summaries, toBoardSummary(&boards[i]))
 	}
-	_ = json.NewEncoder(w).Encode(boards)
+	_ = json.NewEncoder(w).Encode(summaries)
 }
