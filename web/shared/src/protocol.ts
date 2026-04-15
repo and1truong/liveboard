@@ -1,7 +1,7 @@
 // Wire format for iframe ↔ shell postMessage communication.
 // Tagged unions — discriminator `kind`. Requests and responses correlate by `id`.
 
-import type { MutationOp, Board, BoardSettings } from './types.js'
+import type { MutationOp, BoardSettings } from './types.js'
 
 export const PROTOCOL_VERSION = 1 as const
 
