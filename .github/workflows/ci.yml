@@ -38,6 +38,16 @@ jobs:
       - name: Build shell bundle
         run: make shell
 
+      - name: Build renderer bundle
+        run: make renderer
+
+      - name: Report renderer bundle size
+        run: |
+          echo "Renderer JS:"
+          ls -la web/renderer/default/dist/assets/*.js
+          echo "Renderer JS (gzipped):"
+          gzip -c web/renderer/default/dist/assets/*.js | wc -c
+
       - name: Install Tailwind CSS
         run: |
           curl -sLO https://github.com/tailwindlabs/tailwindcss/releases/download/v4.2.2/tailwindcss-linux-x64
@@ -76,6 +86,9 @@ jobs:
       - name: Build shell bundle
         run: make shell
 
+      - name: Build renderer bundle
+        run: make renderer
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
@@ -107,6 +120,9 @@ jobs:
 
       - name: Build shell bundle
         run: make shell
+
+      - name: Build renderer bundle
+        run: make renderer
 
       - name: Install nilaway
         run: go install go.uber.org/nilaway/cmd/nilaway@v0.0.0-20250820155553-16860cac3899
