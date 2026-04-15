@@ -10,6 +10,7 @@ export interface BrokerOptions {
 
 export class Broker {
   private readonly subs = new Map<string, Subscription>()
+  private readonly boardListSub: Subscription
 
   constructor(
     private readonly transport: Transport,
@@ -18,6 +19,9 @@ export class Broker {
   ) {
     this.transport.onMessage((m) => {
       void this.route(m)
+    })
+    this.boardListSub = this.adapter.onBoardListUpdate(() => {
+      this.transport.send({ kind: 'event', type: 'board.list.updated', data: null })
     })
   }
 
@@ -99,10 +103,18 @@ export class Broker {
         this.subs.get(req.params.boardId)?.close()
         this.subs.delete(req.params.boardId)
         return null
+      case 'board.create':
+        return this.adapter.createBoard(req.params.name)
+      case 'board.rename':
+        return this.adapter.renameBoard(req.params.boardId, req.params.newName)
+      case 'board.delete':
+        await this.adapter.deleteBoard(req.params.boardId)
+        return null
     }
   }
 
   close(): void {
+    this.boardListSub.close()
     for (const s of this.subs.values()) s.close()
     this.subs.clear()
     this.transport.close()
