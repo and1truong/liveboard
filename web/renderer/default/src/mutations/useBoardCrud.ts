@@ -19,11 +19,7 @@ export function useCreateBoard(): UseMutationResult<BoardSummary, Error, string>
       void qc.invalidateQueries({ queryKey: ['boards'] })
       setActive(summary.id)
     },
-    onError: (err) => {
-      // eslint-disable-next-line no-console
-      console.error('[useBoardCrud] mutation failed:', err)
-      errorToast(code(err))
-    },
+    onError: (err) => errorToast(code(err)),
   })
 }
 
@@ -42,11 +38,7 @@ export function useRenameBoard(): UseMutationResult<BoardSummary, Error, RenameV
       void qc.invalidateQueries({ queryKey: ['boards'] })
       if (active === boardId) setActive(summary.id)
     },
-    onError: (err) => {
-      // eslint-disable-next-line no-console
-      console.error('[useBoardCrud] mutation failed:', err)
-      errorToast(code(err))
-    },
+    onError: (err) => errorToast(code(err)),
   })
 }
 
@@ -69,10 +61,6 @@ export function useDeleteBoard(): UseMutationResult<void, Error, string, DeleteC
       void qc.invalidateQueries({ queryKey: ['boards'] })
       if (active === boardId) setActive(ctx?.fallbackActive ?? null)
     },
-    onError: (err) => {
-      // eslint-disable-next-line no-console
-      console.error('[useBoardCrud] mutation failed:', err)
-      errorToast(code(err))
-    },
+    onError: (err) => errorToast(code(err)),
   })
 }
