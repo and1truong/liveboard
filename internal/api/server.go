@@ -1,6 +1,7 @@
 package api
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -348,6 +349,13 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 	r.Get("/events/ws", s.stubHandler)
 }
 
+const liveboardConfigMarker = `/*__LIVEBOARD_CONFIG__*/ { adapter: 'local' }`
+const liveboardConfigServer = `{ adapter: 'server', baseUrl: '/api/v1' }`
+
+func injectLiveboardConfig(html []byte) []byte {
+	return bytes.Replace(html, []byte(liveboardConfigMarker), []byte(liveboardConfigServer), 1)
+}
+
 func (s *Server) mountShellRoutes(r chi.Router) {
 	shellSub, err := fs.Sub(shell.FS, "dist")
 	if err != nil {
@@ -359,8 +367,25 @@ func (s *Server) mountShellRoutes(r chi.Router) {
 		log.Printf("renderer embed: %v", err)
 		return
 	}
+
+	// Pre-load and patch the shell index once at startup.
+	indexBytes, err := fs.ReadFile(shellSub, "index.html")
+	if err != nil {
+		log.Printf("shell index: %v", err)
+		return
+	}
+	indexPatched := injectLiveboardConfig(indexBytes)
+
 	shellHandler := http.StripPrefix("/app/", http.FileServer(http.FS(shellSub)))
 	rendererHandler := http.StripPrefix("/app/renderer/default/", http.FileServer(http.FS(rendererSub)))
+
+	serveIndex := func(w http.ResponseWriter, _ *http.Request) {
+		if s.noCache {
+			w.Header().Set("Cache-Control", "no-cache, no-store")
+		}
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		_, _ = w.Write(indexPatched)
+	}
 
 	r.Get("/app", func(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/app/", http.StatusMovedPermanently)
@@ -369,8 +394,14 @@ func (s *Server) mountShellRoutes(r chi.Router) {
 		if s.noCache {
 			w.Header().Set("Cache-Control", "no-cache, no-store")
 		}
-		if strings.HasPrefix(req.URL.Path, "/app/renderer/default/") {
+		path := req.URL.Path
+		if strings.HasPrefix(path, "/app/renderer/default/") {
 			rendererHandler.ServeHTTP(w, req)
+			return
+		}
+		// Intercept the index for adapter-config injection.
+		if path == "/app/" || path == "/app/index.html" {
+			serveIndex(w, req)
 			return
 		}
 		shellHandler.ServeHTTP(w, req)

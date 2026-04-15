@@ -41,6 +41,35 @@ func TestShellRoute_Enabled(t *testing.T) {
 	}
 }
 
+func TestShellIndex_InjectsServerConfig(t *testing.T) {
+	t.Setenv("LIVEBOARD_APP_SHELL", "1")
+	s := setupShellTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/app/", nil)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", rec.Code)
+	}
+	body := rec.Body.String()
+	if !strings.Contains(body, "adapter: 'server'") {
+		t.Errorf("expected injected server config in body; got: %s", body)
+	}
+	if strings.Contains(body, "/*__LIVEBOARD_CONFIG__*/") {
+		t.Errorf("placeholder marker should be replaced but is still present")
+	}
+}
+
+func TestShellIndex_ExplicitIndexPath(t *testing.T) {
+	t.Setenv("LIVEBOARD_APP_SHELL", "1")
+	s := setupShellTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/app/index.html", nil)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if !strings.Contains(rec.Body.String(), "adapter: 'server'") {
+		t.Errorf("expected injection on /app/index.html; got: %s", rec.Body.String())
+	}
+}
+
 func TestShellRoute_Renderer(t *testing.T) {
 	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	s := setupShellTest(t)
