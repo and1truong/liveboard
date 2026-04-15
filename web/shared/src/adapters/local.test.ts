@@ -74,6 +74,16 @@ describe('LocalAdapter mutateBoard', () => {
     const op: MutationOp = { type: 'add_card', column: 'Missing', title: 'x' }
     await expect(a.mutateBoard('welcome', 1, op)).rejects.toMatchObject({ code: 'NOT_FOUND' })
   })
+
+  it('mutateBoard add_card → getBoard returns card with non-empty id', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    await a.mutateBoard('welcome', -1, { type: 'add_card', column: 'Todo', title: 'x' })
+    const b = await a.getBoard('welcome')
+    const card = b.columns?.[0]?.cards.find((c) => c.title === 'x')
+    expect(card).toBeDefined()
+    expect(card?.id).toBeDefined()
+    expect(card?.id?.length).toBe(10)
+  })
 })
 
 describe('LocalAdapter subscribe', () => {
