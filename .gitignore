@@ -1,4 +1,6 @@
 .claude/settings.local.json
+.superpowers/
+.DS_Store
 /liveboard
 LiveBoard.app/
 /tmp/
