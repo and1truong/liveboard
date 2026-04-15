@@ -129,14 +129,16 @@ export class LocalAdapter implements BackendAdapter {
   }
 
   async getSettings(boardId: string): Promise<ResolvedSettings> {
-    this.loadBoard(boardId) // 404 check
+    const board = this.loadBoard(boardId)
     return {
-      show_checkbox: true,
-      card_position: 'bottom',
-      expand_columns: false,
-      view_mode: 'board',
-      card_display_mode: 'normal',
-      week_start: 'monday',
+      show_checkbox: board.settings?.show_checkbox ?? true,
+      card_position:
+        (board.settings?.card_position as ResolvedSettings['card_position']) ?? 'bottom',
+      expand_columns: board.settings?.expand_columns ?? false,
+      view_mode: (board.settings?.view_mode as ResolvedSettings['view_mode']) ?? 'board',
+      card_display_mode:
+        (board.settings?.card_display_mode as ResolvedSettings['card_display_mode']) ?? 'normal',
+      week_start: (board.settings?.week_start as ResolvedSettings['week_start']) ?? 'monday',
     }
   }
 
