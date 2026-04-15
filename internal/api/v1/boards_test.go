@@ -4,12 +4,34 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 
 	v1 "github.com/and1truong/liveboard/internal/api/v1"
 )
+
+// doReq is a small helper for test-driving the v1 router.
+func doReq(t *testing.T, deps v1.Deps, method, path, body string) (*httptest.ResponseRecorder, string) {
+	t.Helper()
+	r := chi.NewRouter()
+	r.Mount("/api/v1", v1.Router(deps))
+	var reader *strings.Reader
+	if body != "" {
+		reader = strings.NewReader(body)
+	}
+	var req *http.Request
+	if reader != nil {
+		req = httptest.NewRequest(method, path, reader)
+		req.Header.Set("Content-Type", "application/json")
+	} else {
+		req = httptest.NewRequest(method, path, nil)
+	}
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	return rec, rec.Body.String()
+}
 
 func TestListBoards(t *testing.T) {
 	deps := newTestDeps(t)
@@ -110,5 +132,54 @@ func TestListBoardsEmptyReturnsArray(t *testing.T) {
 	// Trim trailing newline from json.Encoder.
 	if body != "[]\n" && body != "[]" {
 		t.Errorf("want empty JSON array, got %q", body)
+	}
+}
+
+func TestCreateBoard(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("status = %d, body = %s", rec.Code, body)
+	}
+	var s struct {
+		ID      string `json:"id"`
+		Name    string `json:"name"`
+		Version int    `json:"version"`
+	}
+	if err := json.Unmarshal([]byte(body), &s); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if s.ID != "Foo" || s.Name != "Foo" {
+		t.Errorf("summary = %+v", s)
+	}
+}
+
+func TestCreateBoard_collision(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	if rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("setup: %d %s", rec.Code, body)
+	}
+	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`)
+	if rec.Code != http.StatusConflict {
+		t.Fatalf("status = %d, body = %s", rec.Code, body)
+	}
+	if !strings.Contains(body, "ALREADY_EXISTS") {
+		t.Errorf("want ALREADY_EXISTS, body = %s", body)
+	}
+}
+
+func TestCreateBoard_invalid(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	rec, _ := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"   "}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d", rec.Code)
+	}
+}
+
+func TestCreateBoard_malformedJSON(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	rec, _ := doReq(t, deps, http.MethodPost, "/api/v1/boards", `not json`)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d", rec.Code)
 	}
 }

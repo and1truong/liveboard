@@ -26,7 +26,10 @@ func Router(d Deps) chi.Router {
 	r.Get("/events", d.getEvents)
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
+		r.Post("/", d.createBoard)
 		r.Get("/{slug}", d.getBoard)
+		r.Patch("/{slug}", d.renameBoard)
+		r.Delete("/{slug}", d.deleteBoard)
 		r.Post("/{slug}/mutations", d.postMutation)
 		r.Get("/{slug}/settings", d.getBoardSettings)
 		r.Put("/{slug}/settings", d.putBoardSettings)
