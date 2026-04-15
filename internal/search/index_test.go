@@ -102,6 +102,7 @@ func TestSearch_Backlinks(t *testing.T) {
 
 	// source board: card links to target
 	srcCard := models.Card{
+		ID:    "SRC0000001",
 		Title: "Source card",
 		Body:  "",
 		Links: []string{"target:" + tgtID},
@@ -130,5 +131,8 @@ func TestSearch_Backlinks(t *testing.T) {
 	}
 	if hits[0].CardTitle != "Source card" {
 		t.Errorf("backlink title = %q", hits[0].CardTitle)
+	}
+	if hits[0].CardID != "SRC0000001" {
+		t.Errorf("backlink card_id = %q, want %q", hits[0].CardID, "SRC0000001")
 	}
 }
