@@ -4,10 +4,12 @@ import type { BoardSummary } from '@shared/adapter.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useRenameBoard, useDeleteBoard } from '../mutations/useBoardCrud.js'
 import { stageDelete } from '../mutations/undoable.js'
+import { BoardSettingsModal } from './BoardSettingsModal.js'
 
 export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
   const { active, setActive } = useActiveBoard()
   const [mode, setMode] = useState<'view' | 'edit'>('view')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const renameMut = useRenameBoard()
   const deleteMut = useDeleteBoard()
@@ -57,6 +59,7 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
   }
 
   return (
+    <>
     <li className="group flex items-center gap-1">
       <button
         type="button"
@@ -86,6 +89,12 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
             >
               Rename
             </DropdownMenu.Item>
+            <DropdownMenu.Item
+              onSelect={() => setSettingsOpen(true)}
+              className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100"
+            >
+              Settings
+            </DropdownMenu.Item>
             <DropdownMenu.Separator className="my-1 h-px bg-slate-200" />
             <DropdownMenu.Item
               onSelect={() =>
@@ -99,5 +108,12 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
     </li>
+    <BoardSettingsModal
+      boardId={board.id}
+      boardName={board.name}
+      open={settingsOpen}
+      onOpenChange={setSettingsOpen}
+    />
+    </>
   )
 }
