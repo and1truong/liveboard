@@ -79,10 +79,11 @@ css: check-tailwind
 css-watch:
 	tailwindcss -i web/css/input.css -o web/css/liveboard.css --watch
 
-# Build shell and stub renderer JS bundles via bun
+# Build shell + stub bundles via Vite (multi-page build)
 shell:
 	cd web/shared && bun install --frozen-lockfile
-	bun run web/shell/build.ts
+	cd web/shell && bun install --frozen-lockfile
+	cd web/shell && bunx --bun vite build
 
 .PHONY: renderer
 renderer:
@@ -92,8 +93,35 @@ renderer:
 .PHONY: frontend
 frontend: shell renderer
 
+.PHONY: renderer-dev
+renderer-dev:
+	cd web/renderer/default && bun install --frozen-lockfile
+	cd web/renderer/default && bunx --bun vite build --mode development --minify=false
+
+# Dev server for /app/ (shell + renderer) — HMR, unminified, dev React.
+# Shell Vite serves http://localhost:7070/app/ and proxies
+# /app/renderer/default/* to renderer Vite at :5173.
+# No Go involved — /app/ is browser-only (LocalAdapter + localStorage).
+.PHONY: dev-app
+dev-app:
+	cd web/shell && bun install --frozen-lockfile
+	cd web/renderer/default && bun install --frozen-lockfile
+	@echo "Shell:    http://localhost:7070/app/"
+	@echo "Stub:     http://localhost:7070/app/renderer-stub/"
+	@echo "Renderer: proxied from :5173"
+	@( cd web/renderer/default && bunx --bun vite --port 5173 --strictPort ) & \
+	RENDERER_PID=$$!; \
+	trap "kill $$RENDERER_PID 2>/dev/null" EXIT; \
+	cd web/shell && bunx --bun vite
+
 .PHONY: adapter-test
-adapter-test: shell renderer
+adapter-test: shell renderer release-port
+	LIVEBOARD_APP_SHELL=1 go run ./cmd/liveboard serve --dir ./demo --port 7070
+
+# Same as adapter-test but with unminified renderer + React dev bundle
+# (readable stack traces, full React error messages).
+.PHONY: adapter-test-dev
+adapter-test-dev: shell renderer-dev release-port
 	LIVEBOARD_APP_SHELL=1 go run ./cmd/liveboard serve --dir ./demo --port 7070
 
 # Build LiveBoard Online (browser-only SPA with localStorage)

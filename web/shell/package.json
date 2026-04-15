@@ -1,0 +1,15 @@
+{
+  "name": "@liveboard/shell",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bunx --bun vite",
+    "build": "bunx --bun vite build",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
