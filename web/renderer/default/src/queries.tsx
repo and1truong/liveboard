@@ -16,7 +16,7 @@ export function ClientProvider({
   return <ClientContext.Provider value={client}>{children}</ClientContext.Provider>
 }
 
-function useClient(): Client {
+export function useClient(): Client {
   const c = useContext(ClientContext)
   if (!c) throw new Error('ClientProvider missing')
   return c
