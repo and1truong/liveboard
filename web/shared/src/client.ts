@@ -139,4 +139,17 @@ export class Client {
   unsubscribe(boardId: string): Promise<void> {
     return this.request({ kind: 'request', method: 'unsubscribe', params: { boardId } })
   }
+  createBoard(name: string): Promise<BoardSummary> {
+    return this.request({ kind: 'request', method: 'board.create', params: { name } })
+  }
+  renameBoard(boardId: string, newName: string): Promise<BoardSummary> {
+    return this.request({
+      kind: 'request',
+      method: 'board.rename',
+      params: { boardId, newName },
+    })
+  }
+  deleteBoard(boardId: string): Promise<void> {
+    return this.request({ kind: 'request', method: 'board.delete', params: { boardId } })
+  }
 }
