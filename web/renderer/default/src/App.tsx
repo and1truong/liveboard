@@ -1,6 +1,7 @@
 import type { Client } from '@shared/client.js'
 import { BoardSidebar } from './components/BoardSidebar.js'
 import { BoardView } from './components/BoardView.js'
+import { CommandPalette } from './components/CommandPalette.js'
 import { Toaster } from './toast.js'
 import { ActiveBoardProvider } from './contexts/ActiveBoardContext.js'
 import { useBoardListEvents } from './mutations/useBoardListEvents.js'
@@ -19,6 +20,7 @@ export function App({ client }: { client: Client }): JSX.Element {
         <main className="flex-1 overflow-hidden">
           <BoardView client={client} />
         </main>
+        <CommandPalette />
         <Toaster position="bottom-right" richColors closeButton />
       </div>
     </ActiveBoardProvider>
