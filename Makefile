@@ -89,6 +89,11 @@ shell:
 renderer:
 	cd web/renderer/default && bun install --frozen-lockfile
 	cd web/renderer/default && bunx --bun vite build
+	@$(MAKE) bundle-check
+
+.PHONY: bundle-check
+bundle-check:
+	bash scripts/check-bundle-size.sh
 
 .PHONY: frontend
 frontend: shell renderer
