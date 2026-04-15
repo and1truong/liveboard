@@ -46,7 +46,7 @@ export type Event =
   | { kind: 'event'; type: 'board.updated'; data: { boardId: string; version: number } }
   | { kind: 'event'; type: 'settings.updated'; data: { boardId: string } }
   | { kind: 'event'; type: 'connection.status'; data: { online: boolean } }
-  | { kind: 'event'; type: 'board.list.updated' }
+  | { kind: 'event'; type: 'board.list.updated'; data: null }
 
 export interface Hello {
   kind: 'hello'
