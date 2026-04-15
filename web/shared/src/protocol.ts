@@ -25,6 +25,9 @@ export type Request =
     }
   | { id: string; kind: 'request'; method: 'subscribe'; params: { boardId: string } }
   | { id: string; kind: 'request'; method: 'unsubscribe'; params: { boardId: string } }
+  | { id: string; kind: 'request'; method: 'board.create'; params: { name: string } }
+  | { id: string; kind: 'request'; method: 'board.rename'; params: { boardId: string; newName: string } }
+  | { id: string; kind: 'request'; method: 'board.delete'; params: { boardId: string } }
 
 export type ErrorCode =
   | 'NOT_FOUND'
@@ -43,6 +46,7 @@ export type Event =
   | { kind: 'event'; type: 'board.updated'; data: { boardId: string; version: number } }
   | { kind: 'event'; type: 'settings.updated'; data: { boardId: string } }
   | { kind: 'event'; type: 'connection.status'; data: { online: boolean } }
+  | { kind: 'event'; type: 'board.list.updated' }
 
 export interface Hello {
   kind: 'hello'
