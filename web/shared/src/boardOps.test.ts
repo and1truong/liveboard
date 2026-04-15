@@ -102,4 +102,18 @@ describe('applyOp card id assignment', () => {
     })
     expect(out.columns![0]!.cards[0]!.id).toBe('KEEPME1234')
   })
+
+  it('edit_card writes links', () => {
+    const board: Board = {
+      name: 'b', version: 1,
+      columns: [{ name: 'Todo', cards: [{ title: 'x', id: 'XXXXXXXXXX' }] }],
+    }
+    const next = applyOp(board, {
+      type: 'edit_card',
+      col_idx: 0, card_idx: 0,
+      title: 'x', body: '', tags: [], links: ['foo:abcdefghij'],
+      priority: '', due: '', assignee: '',
+    })
+    expect(next.columns![0]!.cards[0]!.links).toEqual(['foo:abcdefghij'])
+  })
 })

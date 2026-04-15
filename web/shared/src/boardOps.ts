@@ -55,6 +55,7 @@ export function applyOp(board: Board, op: MutationOp): Board {
       if (op.title !== '') card.title = op.title
       card.body = op.body
       card.tags = op.tags
+      card.links = op.links
       card.priority = op.priority
       card.due = op.due
       card.assignee = op.assignee
