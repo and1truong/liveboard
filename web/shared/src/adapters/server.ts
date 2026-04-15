@@ -114,6 +114,59 @@ export class ServerAdapter implements BackendAdapter {
     const raw = await this.getJSON<{ name: string; board_count: number }>('/workspace')
     return { name: raw.name, boardCount: raw.board_count }
   }
-  subscribe(_boardId: string, _onUpdate: BoardUpdateHandler): Subscription { throw new Error('not implemented') }
-  onBoardListUpdate(_handler: () => void): Subscription { throw new Error('not implemented') }
+  subscribe(boardId: string, onUpdate: BoardUpdateHandler): Subscription {
+    let set = this.perBoard.get(boardId)
+    if (!set) {
+      set = new Set()
+      this.perBoard.set(boardId, set)
+    }
+    set.add(onUpdate)
+    this.ensureEventSource()
+    return {
+      close: () => {
+        const s = this.perBoard.get(boardId)
+        if (!s) return
+        s.delete(onUpdate)
+        if (s.size === 0) this.perBoard.delete(boardId)
+        this.closeIfIdle()
+      },
+    }
+  }
+
+  onBoardListUpdate(handler: () => void): Subscription {
+    this.listHandlers.add(handler)
+    this.ensureEventSource()
+    return {
+      close: () => {
+        this.listHandlers.delete(handler)
+        this.closeIfIdle()
+      },
+    }
+  }
+
+  private ensureEventSource(): void {
+    if (this.es) return
+    if (typeof EventSource === 'undefined') return // Test env / SSR — handlers stay registered but never fire.
+    const es = new EventSource(`${this.baseUrl}/events`)
+    es.addEventListener('board.updated', (ev) => {
+      try {
+        const data = JSON.parse((ev as MessageEvent).data) as { board_id: string; version: number }
+        const set = this.perBoard.get(data.board_id)
+        if (set) for (const h of set) h({ boardId: data.board_id, version: data.version })
+      } catch {
+        // ignore malformed payload
+      }
+    })
+    es.addEventListener('board.list.updated', () => {
+      for (const h of this.listHandlers) h()
+    })
+    this.es = es
+  }
+
+  private closeIfIdle(): void {
+    if (this.perBoard.size === 0 && this.listHandlers.size === 0 && this.es) {
+      this.es.close()
+      this.es = null
+    }
+  }
 }
