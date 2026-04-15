@@ -2,6 +2,7 @@ import { useRef, useState, useEffect, type FormEvent } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import type { Card as CardModel } from '@shared/types.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
+import { renderMarkdown } from './markdownPreview.js'
 
 export function CardDetailModal({
   card,
@@ -24,9 +25,26 @@ export function CardDetailModal({
   const priorityRef = useRef<HTMLSelectElement>(null)
   const dueRef = useRef<HTMLInputElement>(null)
   const assigneeRef = useRef<HTMLInputElement>(null)
+  const [tab, setTab] = useState<'edit' | 'preview'>('edit')
+  const [previewHtml, setPreviewHtml] = useState<string | null>(null)
+  const renderGenRef = useRef(0)
 
   const [titleValid, setTitleValid] = useState((card.title ?? '').trim().length > 0)
   const mutation = useBoardMutation(boardId)
+
+  const onPickPreview = (): void => {
+    setTab('preview')
+    setPreviewHtml(null)
+    const gen = ++renderGenRef.current
+    void renderMarkdown(bodyRef.current?.value ?? '').then((html) => {
+      if (renderGenRef.current === gen) setPreviewHtml(html)
+    })
+  }
+
+  const onPickEdit = (): void => {
+    setTab('edit')
+    setPreviewHtml(null)
+  }
 
   useEffect(() => {
     if (open) setTitleValid((card.title ?? '').trim().length > 0)
@@ -79,16 +97,62 @@ export function CardDetailModal({
                 className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
-            <label className="block">
-              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Body</span>
+            <div>
+              <div className="flex items-center justify-between">
+                <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Body</span>
+                <div role="tablist" className="flex gap-1 text-xs">
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === 'edit'}
+                    onClick={onPickEdit}
+                    className={
+                      'px-2 py-1 rounded ' +
+                      (tab === 'edit'
+                        ? 'border-b-2 border-[color:var(--accent-500)] font-semibold text-slate-800 dark:text-slate-100'
+                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700')
+                    }
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    role="tab"
+                    aria-selected={tab === 'preview'}
+                    onClick={onPickPreview}
+                    className={
+                      'px-2 py-1 rounded ' +
+                      (tab === 'preview'
+                        ? 'border-b-2 border-[color:var(--accent-500)] font-semibold text-slate-800 dark:text-slate-100'
+                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700')
+                    }
+                  >
+                    Preview
+                  </button>
+                </div>
+              </div>
               <textarea
                 ref={bodyRef}
                 aria-label="card body"
                 rows={6}
                 defaultValue={card.body ?? ''}
+                hidden={tab === 'preview'}
                 className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
-            </label>
+              {tab === 'preview' && (
+                previewHtml === null ? (
+                  <div className="mt-1 min-h-32 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs italic text-slate-400">
+                    Rendering…
+                  </div>
+                ) : (
+                  <div
+                    aria-label="card body preview"
+                    className="mt-1 min-h-32 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-sm prose prose-sm dark:prose-invert max-w-none"
+                    dangerouslySetInnerHTML={{ __html: previewHtml }}
+                  />
+                )
+              )}
+            </div>
             <label className="block">
               <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Tags (comma separated)</span>
               <input
