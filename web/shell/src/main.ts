@@ -9,6 +9,10 @@ function bootstrap(): void {
   const iframe = document.getElementById('renderer') as HTMLIFrameElement | null
   if (!iframe) throw new Error('renderer iframe not found')
 
+  const params = new URLSearchParams(window.location.search)
+  const mode = params.get('renderer') ?? 'default'
+  iframe.src = mode === 'stub' ? '/app/renderer-stub/' : '/app/renderer/default/'
+
   const adapter = new LocalAdapter(new BrowserStorage())
   const transport = shellTransport(iframe, window.location.origin)
   const broker = new Broker(transport, adapter, { shellVersion: SHELL_VERSION })
