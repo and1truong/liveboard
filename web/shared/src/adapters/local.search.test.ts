@@ -30,4 +30,35 @@ describe('LocalAdapter.search', () => {
     const hits = await a.search('xx', 2)
     expect(hits.length).toBe(2)
   })
+
+  it('search returns cardId on hits', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    await a.createBoard('Foo')
+    await a.mutateBoard('foo', 1, { type: 'add_card', column: 'Todo', title: 'alpha-token' })
+    const hits = await a.search('alpha')
+    expect(hits[0].cardId).not.toBe('')
+  })
+})
+
+describe('LocalAdapter.backlinks', () => {
+  it('returns cards that link to the given cardId', async () => {
+    const a = new LocalAdapter(new MemoryStorage())
+    await a.createBoard('Target')
+    await a.mutateBoard('target', 1, { type: 'add_card', column: 'Todo', title: 'tgt' })
+    const tgtBoard = await a.getBoard('target')
+    const tgtId = tgtBoard.columns![0].cards![0].id!
+    expect(tgtId).toBeTruthy()
+
+    await a.createBoard('Source')
+    await a.mutateBoard('source', 1, { type: 'add_card', column: 'Todo', title: 'src' })
+    await a.mutateBoard('source', 2, {
+      type: 'edit_card', col_idx: 0, card_idx: 0,
+      title: 'src', body: '', tags: [], links: [`target:${tgtId}`],
+      priority: '', due: '', assignee: '',
+    })
+
+    const back = await a.backlinks(tgtId)
+    expect(back.length).toBe(1)
+    expect(back[0].boardId).toBe('source')
+  })
 })

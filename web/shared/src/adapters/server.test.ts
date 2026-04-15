@@ -266,6 +266,7 @@ describe('ServerAdapter mutate + settings', () => {
               board_name: 'Foo',
               col_idx: 0,
               card_idx: 2,
+              card_id: '',
               card_title: 'hi',
               snippet: 'hi <mark>match</mark>',
             },
@@ -279,9 +280,36 @@ describe('ServerAdapter mutate + settings', () => {
       boardName: 'Foo',
       colIdx: 0,
       cardIdx: 2,
+      cardId: '',
       cardTitle: 'hi',
       snippet: 'hi <mark>match</mark>',
     })
     expect(log[0].url).toBe('/api/v1/search?q=match&limit=5')
+  })
+
+  it('search returns cardId in mapped hit', async () => {
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => jsonResponse([{
+        board_id: 'foo', board_name: 'Foo', col_idx: 0, card_idx: 1,
+        card_id: 'AbCdEfGhIj', card_title: 'hi', snippet: '',
+      }])),
+    })
+    const hits = await a.search('hi')
+    expect(hits[0].cardId).toBe('AbCdEfGhIj')
+  })
+
+  it('backlinks GETs /cards/{id}/backlinks and maps DTO', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(
+        () => jsonResponse([{ board_id: 'src', board_name: 'Src', col_idx: 0, card_idx: 2, card_title: 'source' }]),
+        log,
+      ),
+    })
+    const hits = await a.backlinks('TGT0000001')
+    expect(hits).toEqual([{ boardId: 'src', boardName: 'Src', colIdx: 0, cardIdx: 2, cardTitle: 'source' }])
+    expect(log[0].url).toBe('/api/v1/cards/TGT0000001/backlinks')
   })
 })

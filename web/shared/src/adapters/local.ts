@@ -1,5 +1,6 @@
 import type {
   BackendAdapter,
+  BacklinkHit,
   BoardSummary,
   BoardUpdateHandler,
   ResolvedSettings,
@@ -244,6 +245,7 @@ export class LocalAdapter implements BackendAdapter {
               boardName,
               colIdx,
               cardIdx,
+              cardId: c.id ?? '',
               cardTitle: c.title ?? '',
               snippet: c.title ?? '',
             })
@@ -253,5 +255,32 @@ export class LocalAdapter implements BackendAdapter {
       }
     }
     return hits
+  }
+
+  async backlinks(cardId: string): Promise<BacklinkHit[]> {
+    if (!cardId) return []
+    const ws = this.loadWorkspace()
+    const target = ':' + cardId
+    const out: BacklinkHit[] = []
+    for (const id of ws.boardIds) {
+      const board = this.loadBoard(id)
+      const cols = board.columns ?? []
+      for (let c = 0; c < cols.length; c++) {
+        const cards = cols[c]?.cards ?? []
+        for (let k = 0; k < cards.length; k++) {
+          const links = cards[k].links ?? []
+          if (links.some((l) => l.endsWith(target))) {
+            out.push({
+              boardId: id,
+              boardName: board.name ?? id,
+              colIdx: c,
+              cardIdx: k,
+              cardTitle: cards[k].title ?? '',
+            })
+          }
+        }
+      }
+    }
+    return out
   }
 }

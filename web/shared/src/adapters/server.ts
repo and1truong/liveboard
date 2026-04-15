@@ -1,6 +1,7 @@
 import type { Board, BoardSettings, MutationOp } from '../types.js'
 import type {
   BackendAdapter,
+  BacklinkHit,
   BoardSummary,
   BoardUpdateHandler,
   ResolvedSettings,
@@ -118,6 +119,7 @@ export class ServerAdapter implements BackendAdapter {
       board_name: string
       col_idx: number
       card_idx: number
+      card_id: string
       card_title: string
       snippet: string
     }>>(`/search?${params}`)
@@ -126,8 +128,26 @@ export class ServerAdapter implements BackendAdapter {
       boardName: d.board_name,
       colIdx: d.col_idx,
       cardIdx: d.card_idx,
+      cardId: d.card_id,
       cardTitle: d.card_title,
       snippet: d.snippet,
+    }))
+  }
+
+  async backlinks(cardId: string): Promise<BacklinkHit[]> {
+    const raw = await this.getJSON<Array<{
+      board_id: string
+      board_name: string
+      col_idx: number
+      card_idx: number
+      card_title: string
+    }>>(`/cards/${encodeURIComponent(cardId)}/backlinks`)
+    return raw.map((d) => ({
+      boardId: d.board_id,
+      boardName: d.board_name,
+      colIdx: d.col_idx,
+      cardIdx: d.card_idx,
+      cardTitle: d.card_title,
     }))
   }
   async getWorkspaceInfo(): Promise<WorkspaceInfo> {

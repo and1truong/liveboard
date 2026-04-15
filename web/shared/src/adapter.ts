@@ -41,6 +41,7 @@ export interface BackendAdapter {
   deleteBoard(boardId: string): Promise<void>
   onBoardListUpdate(handler: () => void): Subscription
   search(query: string, limit?: number): Promise<SearchHit[]>
+  backlinks(cardId: string): Promise<BacklinkHit[]>
 }
 
 export interface SearchHit {
@@ -48,6 +49,15 @@ export interface SearchHit {
   boardName: string
   colIdx: number
   cardIdx: number
+  cardId: string
   cardTitle: string
   snippet: string
+}
+
+export interface BacklinkHit {
+  boardId: string
+  boardName: string
+  colIdx: number
+  cardIdx: number
+  cardTitle: string
 }
