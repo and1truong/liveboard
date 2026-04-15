@@ -243,3 +243,26 @@ func TestRenameBoard_invalidName(t *testing.T) {
 		t.Errorf("status = %d", rec.Code)
 	}
 }
+
+func TestDeleteBoard(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	if rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("setup: %d %s", rec.Code, body)
+	}
+	rec, body := doReq(t, deps, http.MethodDelete, "/api/v1/boards/Foo", "")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("status = %d, body = %s", rec.Code, body)
+	}
+	rec2, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/Foo", "")
+	if rec2.Code != http.StatusNotFound {
+		t.Errorf("expected 404 after delete, got %d", rec2.Code)
+	}
+}
+
+func TestDeleteBoard_notFound(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	rec, _ := doReq(t, deps, http.MethodDelete, "/api/v1/boards/nope", "")
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d", rec.Code)
+	}
+}
