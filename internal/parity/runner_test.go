@@ -105,8 +105,8 @@ func runVector(t *testing.T, path string) {
 	if err := json.Unmarshal(gotJSON, &got); err != nil {
 		t.Fatalf("re-parse got: %v", err)
 	}
-	want = stripNulls(want)
-	got = stripNulls(got)
+	want = stripNulls(stripCardIDs(want))
+	got = stripNulls(stripCardIDs(got))
 
 	if diff := jsonDiff(want, got); diff != "" {
 		t.Errorf("board mismatch:\n%s", diff)
@@ -123,6 +123,31 @@ func sentinelCode(err error) string {
 		return "INVALID"
 	default:
 		return "INTERNAL"
+	}
+}
+
+// stripCardIDs recursively removes "id" keys from card objects so that
+// mutation vector tests are not sensitive to ID assignment (covered separately
+// in board_test.go).
+func stripCardIDs(v any) any {
+	switch x := v.(type) {
+	case map[string]any:
+		out := map[string]any{}
+		for k, val := range x {
+			if k == "id" {
+				continue
+			}
+			out[k] = stripCardIDs(val)
+		}
+		return out
+	case []any:
+		out := make([]any, 0, len(x))
+		for _, el := range x {
+			out = append(out, stripCardIDs(el))
+		}
+		return out
+	default:
+		return v
 	}
 }
 

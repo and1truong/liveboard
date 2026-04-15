@@ -11,6 +11,7 @@ import (
 	"sync"
 
 	"github.com/and1truong/liveboard/internal/parser"
+	"github.com/and1truong/liveboard/internal/util/cardid"
 	"github.com/and1truong/liveboard/internal/writer"
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -41,6 +42,16 @@ type Engine struct {
 // New creates a new Engine instance.
 func New() *Engine {
 	return &Engine{}
+}
+
+// ensureCardID assigns a fresh ID to c if it has none.
+func ensureCardID(c *models.Card) {
+	if c == nil {
+		return
+	}
+	if c.ID == "" {
+		c.ID = cardid.NewID()
+	}
 }
 
 // boardLock returns the per-board mutex, creating one if needed.
@@ -112,9 +123,11 @@ func ApplyAddCard(b *models.Board, columnName, title string, prepend bool) (*mod
 		if b.Columns[i].Name == columnName {
 			if prepend {
 				b.Columns[i].Cards = append([]models.Card{{Title: title}}, b.Columns[i].Cards...)
+				ensureCardID(&b.Columns[i].Cards[0])
 				return &b.Columns[i].Cards[0], nil
 			}
 			b.Columns[i].Cards = append(b.Columns[i].Cards, models.Card{Title: title})
+			ensureCardID(&b.Columns[i].Cards[len(b.Columns[i].Cards)-1])
 			return &b.Columns[i].Cards[len(b.Columns[i].Cards)-1], nil
 		}
 	}
@@ -141,6 +154,7 @@ func ApplyMoveCard(b *models.Board, colIdx, cardIdx int, targetColumn string) er
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
+	ensureCardID(&b.Columns[colIdx].Cards[cardIdx])
 	card := b.Columns[colIdx].Cards[cardIdx]
 	b.Columns[colIdx].Cards = removeCardAt(b.Columns[colIdx].Cards, cardIdx)
 	for i := range b.Columns {
@@ -232,6 +246,7 @@ func ApplyReorderCard(b *models.Board, colIdx, cardIdx, beforeIdx int, targetCol
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
+	ensureCardID(&b.Columns[colIdx].Cards[cardIdx])
 	card := b.Columns[colIdx].Cards[cardIdx]
 	b.Columns[colIdx].Cards = removeCardAt(b.Columns[colIdx].Cards, cardIdx)
 
@@ -269,6 +284,7 @@ func ApplyCompleteCard(b *models.Board, colIdx, cardIdx int) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
+	ensureCardID(&b.Columns[colIdx].Cards[cardIdx])
 	b.Columns[colIdx].Cards[cardIdx].Completed = !b.Columns[colIdx].Cards[cardIdx].Completed
 	return nil
 }
@@ -286,6 +302,7 @@ func ApplyTagCard(b *models.Board, colIdx, cardIdx int, tags []string) error {
 		return err
 	}
 	card := &b.Columns[colIdx].Cards[cardIdx]
+	ensureCardID(card)
 	existing := make(map[string]bool)
 	for _, t := range card.Tags {
 		existing[t] = true
@@ -311,6 +328,7 @@ func ApplyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tag
 		return err
 	}
 	card := &b.Columns[colIdx].Cards[cardIdx]
+	ensureCardID(card)
 	if title != "" {
 		card.Title = title
 	}

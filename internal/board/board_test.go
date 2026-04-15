@@ -1050,3 +1050,68 @@ func TestMoveCardToBoard_SameBoardRejected(t *testing.T) {
 		t.Fatal("expected error for same-board move")
 	}
 }
+
+func TestApplyAddCardAssignsID(t *testing.T) {
+	b := &models.Board{Columns: []models.Column{{Name: "Todo"}}}
+	c, err := ApplyAddCard(b, "Todo", "hello", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c.ID == "" {
+		t.Fatal("expected ID to be assigned")
+	}
+	if len(c.ID) != 10 {
+		t.Fatalf("unexpected ID length: %q", c.ID)
+	}
+}
+
+func TestApplyEditCardAssignsIDWhenMissing(t *testing.T) {
+	b := &models.Board{Columns: []models.Column{{Name: "Todo", Cards: []models.Card{{Title: "x"}}}}}
+	if err := ApplyEditCard(b, 0, 0, "x", "", nil, "", "", ""); err != nil {
+		t.Fatal(err)
+	}
+	if b.Columns[0].Cards[0].ID == "" {
+		t.Fatal("expected ID after edit")
+	}
+}
+
+func TestApplyAddCardDistinctIDs(t *testing.T) {
+	b := &models.Board{Columns: []models.Column{{Name: "Todo"}}}
+	c1, err := ApplyAddCard(b, "Todo", "a", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	c2, err := ApplyAddCard(b, "Todo", "b", false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if c1.ID == c2.ID {
+		t.Fatalf("expected distinct IDs, got %q twice", c1.ID)
+	}
+}
+
+func TestApplyCompleteTagMovePreserveAndAssignID(t *testing.T) {
+	b := &models.Board{Columns: []models.Column{
+		{Name: "Todo", Cards: []models.Card{{Title: "x"}}},
+		{Name: "Done"},
+	}}
+	if err := ApplyCompleteCard(b, 0, 0); err != nil {
+		t.Fatal(err)
+	}
+	id1 := b.Columns[0].Cards[0].ID
+	if id1 == "" {
+		t.Fatal("complete_card must assign ID")
+	}
+	if err := ApplyTagCard(b, 0, 0, []string{"a"}); err != nil {
+		t.Fatal(err)
+	}
+	if b.Columns[0].Cards[0].ID != id1 {
+		t.Fatal("tag_card must preserve ID")
+	}
+	if err := ApplyMoveCard(b, 0, 0, "Done"); err != nil {
+		t.Fatal(err)
+	}
+	if b.Columns[1].Cards[0].ID != id1 {
+		t.Fatal("move_card must preserve ID")
+	}
+}
