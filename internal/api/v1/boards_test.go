@@ -183,3 +183,63 @@ func TestCreateBoard_malformedJSON(t *testing.T) {
 		t.Errorf("status = %d", rec.Code)
 	}
 }
+
+func TestRenameBoard(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	if rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`); rec.Code != http.StatusCreated {
+		t.Fatalf("setup: %d %s", rec.Code, body)
+	}
+	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/Foo", `{"new_name":"Bar"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, body = %s", rec.Code, body)
+	}
+	var s struct {
+		ID      string `json:"id"`
+		Name    string `json:"name"`
+		Version int    `json:"version"`
+	}
+	if err := json.Unmarshal([]byte(body), &s); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if s.ID != "Bar" || s.Name != "Bar" {
+		t.Errorf("summary = %+v", s)
+	}
+
+	// Old slug 404.
+	rec2, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/Foo", "")
+	if rec2.Code != http.StatusNotFound {
+		t.Errorf("old slug: want 404, got %d", rec2.Code)
+	}
+	// New slug 200.
+	rec3, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/Bar", "")
+	if rec3.Code != http.StatusOK {
+		t.Errorf("new slug: want 200, got %d", rec3.Code)
+	}
+}
+
+func TestRenameBoard_collision(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`)
+	doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Bar"}`)
+	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/Foo", `{"new_name":"Bar"}`)
+	if rec.Code != http.StatusConflict {
+		t.Errorf("status = %d, body = %s", rec.Code, body)
+	}
+}
+
+func TestRenameBoard_notFound(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/nope", `{"new_name":"X"}`)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("status = %d", rec.Code)
+	}
+}
+
+func TestRenameBoard_invalidName(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`)
+	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/Foo", `{"new_name":""}`)
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("status = %d", rec.Code)
+	}
+}
