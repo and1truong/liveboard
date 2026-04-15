@@ -118,7 +118,7 @@ export function CardEditable({
               type="button"
               aria-label="open card details"
               onClick={() => setModalOpen(true)}
-              className="mt-1 block w-full text-left"
+              className="mt-2 flex min-h-6 w-full items-center justify-between gap-2 rounded text-left hover:bg-slate-50"
             >
               {card.tags && card.tags.length > 0 ? (
                 <ul className="flex flex-wrap gap-1">
@@ -129,8 +129,9 @@ export function CardEditable({
                   ))}
                 </ul>
               ) : (
-                <span className="block h-2 w-full" />
+                <span className="text-xs text-slate-300">Click to edit details</span>
               )}
+              <span aria-hidden className="text-xs text-slate-300 opacity-0 group-hover:opacity-100">↗</span>
             </button>
           </div>
           <button
