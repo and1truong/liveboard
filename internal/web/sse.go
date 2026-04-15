@@ -10,9 +10,11 @@ import (
 
 // SSEBroker manages Server-Sent Events connections for real-time board updates.
 type SSEBroker struct {
-	mu      sync.RWMutex
-	clients map[string]map[chan string]struct{} // boardSlug -> set of channels
-	global  map[chan SSEEvent]struct{}          // global subscribers (for reminders)
+	mu        sync.RWMutex
+	clients   map[string]map[chan string]struct{} // boardSlug -> set of channels
+	global    map[chan SSEEvent]struct{}          // global subscribers (for reminders)
+	boardList map[chan SSEEvent]struct{}          // workspace-list subscribers (board.list.updated)
+	allBoards map[chan SSEEvent]struct{}          // workspace-wide board.updated subscribers
 }
 
 // SSEEvent carries an event type and JSON payload for global SSE.
@@ -24,8 +26,10 @@ type SSEEvent struct {
 // NewSSEBroker creates a new SSE broker.
 func NewSSEBroker() *SSEBroker {
 	return &SSEBroker{
-		clients: make(map[string]map[chan string]struct{}),
-		global:  make(map[chan SSEEvent]struct{}),
+		clients:   make(map[string]map[chan string]struct{}),
+		global:    make(map[chan SSEEvent]struct{}),
+		boardList: make(map[chan SSEEvent]struct{}),
+		allBoards: make(map[chan SSEEvent]struct{}),
 	}
 }
 
@@ -99,9 +103,18 @@ func (b *SSEBroker) Shutdown() {
 		close(ch)
 		delete(b.global, ch)
 	}
+	for ch := range b.boardList {
+		close(ch)
+		delete(b.boardList, ch)
+	}
+	for ch := range b.allBoards {
+		close(ch)
+		delete(b.allBoards, ch)
+	}
 }
 
-// Publish sends a notification to all subscribers of a board slug.
+// Publish sends a notification to all subscribers of a board slug, and to
+// workspace-wide all-boards subscribers.
 func (b *SSEBroker) Publish(slug string) {
 	b.mu.RLock()
 	defer b.mu.RUnlock()
@@ -113,6 +126,58 @@ func (b *SSEBroker) Publish(slug string) {
 			default:
 				// Drop if channel is full (non-blocking)
 			}
+		}
+	}
+	for ch := range b.allBoards {
+		select {
+		case ch <- SSEEvent{Type: "board.updated", Payload: slug}:
+		default:
+		}
+	}
+}
+
+// SubscribeBoardList registers a channel for workspace-list events
+// (board.list.updated). The returned cancel func unregisters and closes the channel.
+func (b *SSEBroker) SubscribeBoardList() (chan SSEEvent, func()) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	ch := make(chan SSEEvent, 8)
+	b.boardList[ch] = struct{}{}
+	return ch, func() {
+		b.mu.Lock()
+		defer b.mu.Unlock()
+		if _, ok := b.boardList[ch]; ok {
+			delete(b.boardList, ch)
+			close(ch)
+		}
+	}
+}
+
+// PublishBoardList fans out a board.list.updated event to all workspace-list subscribers.
+func (b *SSEBroker) PublishBoardList() {
+	b.mu.RLock()
+	defer b.mu.RUnlock()
+	for ch := range b.boardList {
+		select {
+		case ch <- SSEEvent{Type: "board.list.updated"}:
+		default:
+		}
+	}
+}
+
+// SubscribeAllBoards registers a channel that receives every board.updated event
+// regardless of slug. The returned cancel func unregisters and closes the channel.
+func (b *SSEBroker) SubscribeAllBoards() (chan SSEEvent, func()) {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	ch := make(chan SSEEvent, 32)
+	b.allBoards[ch] = struct{}{}
+	return ch, func() {
+		b.mu.Lock()
+		defer b.mu.Unlock()
+		if _, ok := b.allBoards[ch]; ok {
+			delete(b.allBoards, ch)
+			close(ch)
 		}
 	}
 }
