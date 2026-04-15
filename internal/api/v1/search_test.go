@@ -18,6 +18,7 @@ type searchHitDTO struct {
 	BoardName string `json:"board_name"`
 	ColIdx    int    `json:"col_idx"`
 	CardIdx   int    `json:"card_idx"`
+	CardID    string `json:"card_id"`
 	CardTitle string `json:"card_title"`
 	Snippet   string `json:"snippet"`
 }
@@ -72,6 +73,9 @@ func TestSearch_FindsCard(t *testing.T) {
 	}
 	if hits[0].BoardID != "demo" {
 		t.Errorf("board_id = %q", hits[0].BoardID)
+	}
+	if hits[0].CardID == "" {
+		t.Errorf("card_id is empty")
 	}
 }
 
