@@ -1,0 +1,128 @@
+import { useState, useRef, useEffect } from 'react'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { useBoardMutation } from '../mutations/useBoardMutation.js'
+import { stageDelete } from '../mutations/undoable.js'
+import { moveColumnTarget } from '../mutations/moveColumn.js'
+
+export function ColumnHeader({
+  name,
+  cardCount,
+  colIdx,
+  allColumnNames,
+  boardId,
+}: {
+  name: string
+  cardCount: number
+  colIdx: number
+  allColumnNames: string[]
+  boardId: string
+}): JSX.Element {
+  const [mode, setMode] = useState<'view' | 'edit'>('view')
+  const inputRef = useRef<HTMLInputElement>(null)
+  const mutation = useBoardMutation(boardId)
+  const committedRef = useRef(false)
+
+  useEffect(() => {
+    if (mode === 'edit') {
+      committedRef.current = false
+      inputRef.current?.focus()
+      inputRef.current?.select()
+    }
+  }, [mode])
+
+  const commitRename = (): void => {
+    if (committedRef.current) return
+    committedRef.current = true
+    const next = (inputRef.current?.value ?? '').trim()
+    if (next && next !== name) {
+      mutation.mutate({ type: 'rename_column', old_name: name, new_name: next })
+    }
+    Promise.resolve().then(() => setMode('view'))
+  }
+
+  const cancelRename = (): void => {
+    if (committedRef.current) return
+    committedRef.current = true
+    Promise.resolve().then(() => setMode('view'))
+  }
+
+  const move = (dir: 'left' | 'right'): void => {
+    const target = moveColumnTarget(allColumnNames, colIdx, dir)
+    if (target === null) return
+    mutation.mutate({ type: 'move_column', name, after_col: target })
+  }
+
+  const leftDisabled = colIdx === 0
+  const rightDisabled = colIdx === allColumnNames.length - 1
+
+  if (mode === 'edit') {
+    return (
+      <header className="mb-3 flex items-center justify-between">
+        <input
+          ref={inputRef}
+          aria-label={`rename column ${name}`}
+          defaultValue={name}
+          onBlur={commitRename}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') { e.preventDefault(); commitRename() }
+            else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
+          }}
+          className="w-full bg-white px-1 text-sm font-semibold outline-none ring-1 ring-blue-400 rounded"
+        />
+      </header>
+    )
+  }
+
+  return (
+    <header className="mb-3 flex items-center justify-between">
+      <h2 className="text-sm font-semibold text-slate-800">{name}</h2>
+      <div className="flex items-center gap-2">
+        <span className="text-xs text-slate-500">{cardCount}</span>
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger
+            aria-label={`column menu ${name}`}
+            className="rounded p-1 text-slate-500 hover:bg-slate-200"
+          >
+            ⋮
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content
+              sideOffset={4}
+              className="z-50 min-w-40 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200"
+            >
+              <DropdownMenu.Item
+                onSelect={() => setMode('edit')}
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100"
+              >
+                Rename
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                disabled={leftDisabled}
+                onSelect={() => move('left')}
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 data-[disabled]:text-slate-300 data-[disabled]:cursor-not-allowed"
+              >
+                Move left
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                disabled={rightDisabled}
+                onSelect={() => move('right')}
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 data-[disabled]:text-slate-300 data-[disabled]:cursor-not-allowed"
+              >
+                Move right
+              </DropdownMenu.Item>
+              <DropdownMenu.Separator className="my-1 h-px bg-slate-200" />
+              <DropdownMenu.Item
+                onSelect={() =>
+                  stageDelete(mutation, { type: 'delete_column', name }, name)
+                }
+                className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50"
+              >
+                Delete
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
+      </div>
+    </header>
+  )
+}
