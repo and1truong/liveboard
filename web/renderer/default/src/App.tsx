@@ -2,6 +2,7 @@ import { useState } from 'react'
 import type { Client } from '@shared/client.js'
 import { BoardSidebar } from './components/BoardSidebar.js'
 import { BoardView } from './components/BoardView.js'
+import { Toaster } from './toast.js'
 
 export function App({ client }: { client: Client }): JSX.Element {
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -11,6 +12,7 @@ export function App({ client }: { client: Client }): JSX.Element {
       <main className="flex-1 overflow-hidden">
         <BoardView boardId={activeId} client={client} />
       </main>
+      <Toaster position="bottom-right" richColors closeButton />
     </div>
   )
 }
