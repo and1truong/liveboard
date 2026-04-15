@@ -3,6 +3,11 @@ import * as Dialog from '@radix-ui/react-dialog'
 import type { Card as CardModel } from '@shared/types.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { renderMarkdown } from './markdownPreview.js'
+import { useBacklinks } from '../queries/useBacklinks.js'
+import { useOptionalActiveBoard } from '../contexts/ActiveBoardContext.js'
+import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
+import { LinkChip } from './LinkChip.js'
+import { LinkPicker } from './LinkPicker.js'
 
 export function CardDetailModal({
   card,
@@ -30,7 +35,26 @@ export function CardDetailModal({
   const renderGenRef = useRef(0)
 
   const [titleValid, setTitleValid] = useState((card.title ?? '').trim().length > 0)
+  const [links, setLinks] = useState<string[]>(card.links ?? [])
+  const [pickerOpen, setPickerOpen] = useState(false)
   const mutation = useBoardMutation(boardId)
+
+  const backlinks = useBacklinks(card.id)
+  const activeBoardCtx = useOptionalActiveBoard()
+  const focusCtx = useOptionalBoardFocus()
+
+  useEffect(() => { if (open) setLinks(card.links ?? []) }, [open, card.links])
+
+  const addLink = (t: string): void => {
+    if (!links.includes(t)) setLinks([...links, t])
+    setPickerOpen(false)
+  }
+  const removeLink = (t: string): void => setLinks(links.filter((l) => l !== t))
+  const navigateToBacklink = (b: typeof backlinks[number]): void => {
+    activeBoardCtx?.setActive(b.boardId)
+    Promise.resolve().then(() => focusCtx?.setFocused({ colIdx: b.colIdx, cardIdx: b.cardIdx }))
+    onOpenChange(false)
+  }
 
   const onPickPreview = (): void => {
     setTab('preview')
@@ -66,7 +90,7 @@ export function CardDetailModal({
         title,
         body: bodyRef.current?.value ?? '',
         tags,
-        links: card.links ?? [],
+        links,
         priority: priorityRef.current?.value ?? '',
         due: dueRef.current?.value ?? '',
         assignee: assigneeRef.current?.value ?? '',
@@ -78,6 +102,7 @@ export function CardDetailModal({
   }
 
   return (
+    <>
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
@@ -199,6 +224,39 @@ export function CardDetailModal({
                 />
               </label>
             </div>
+            <div>
+              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Links</span>
+              <ul className="mt-1 flex flex-wrap gap-1">
+                {links.map((l) => (
+                  <LinkChip key={l} target={l} onRemove={() => removeLink(l)} />
+                ))}
+              </ul>
+              <button
+                type="button"
+                onClick={() => setPickerOpen(true)}
+                className="mt-1 text-xs text-[color:var(--accent-600)] hover:underline"
+              >
+                + Add link
+              </button>
+            </div>
+            {backlinks.length > 0 && (
+              <div>
+                <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Linked from</span>
+                <ul className="mt-1 flex flex-wrap gap-1">
+                  {backlinks.map((b) => (
+                    <li
+                      key={`${b.boardId}:${b.colIdx}:${b.cardIdx}`}
+                      className="flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-700 px-2 py-1 text-xs"
+                    >
+                      <button type="button" onClick={() => navigateToBacklink(b)} className="text-left">
+                        <span className="text-slate-500 dark:text-slate-400">{b.boardName} · </span>
+                        {b.cardTitle}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <div className="mt-2 flex justify-end gap-2">
               <button
                 type="button"
@@ -219,5 +277,13 @@ export function CardDetailModal({
         </Dialog.Content>
       </Dialog.Portal>
     </Dialog.Root>
+    <LinkPicker
+      open={pickerOpen}
+      onOpenChange={setPickerOpen}
+      onPick={addLink}
+      excludeBoardId={boardId}
+      excludeCardId={card.id}
+    />
+    </>
   )
 }

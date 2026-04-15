@@ -17,3 +17,7 @@ export function useActiveBoard(): ActiveBoardCtx {
   if (!v) throw new Error('useActiveBoard must be used within ActiveBoardProvider')
   return v
 }
+
+export function useOptionalActiveBoard(): ActiveBoardCtx | null {
+  return useContext(Ctx)
+}
