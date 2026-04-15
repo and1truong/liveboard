@@ -83,6 +83,10 @@ func writeCard(b *strings.Builder, card *models.Card) {
 		fmt.Fprintf(b, "- [%s] %s\n", checkbox, title)
 	}
 
+	if card.ID != "" {
+		fmt.Fprintf(b, "  id: %s\n", card.ID)
+	}
+
 	// Write metadata-only tags (exclude inline tags already in title).
 	metaTags := metadataOnlyTags(card.Tags, card.InlineTags)
 	if len(metaTags) > 0 {

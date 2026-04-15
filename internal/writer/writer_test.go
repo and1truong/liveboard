@@ -431,3 +431,53 @@ func TestPlainItemDefaultCheckbox(t *testing.T) {
 		t.Errorf("default card should have checkbox:\n%s", rendered)
 	}
 }
+
+func TestRenderCardIDFirst(t *testing.T) {
+	b := &models.Board{
+		Version: 1, Name: "B",
+		Columns: []models.Column{{Name: "Todo", Cards: []models.Card{
+			{ID: "XYZ1234567", Title: "T", Assignee: "alice", Priority: "high"},
+		}}},
+	}
+	out, err := Render(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := "- [ ] T\n  id: XYZ1234567\n  assignee: alice\n  priority: high\n"
+	if !strings.Contains(out, want) {
+		t.Fatalf("expected %q in output:\n%s", want, out)
+	}
+}
+
+func TestRenderCardIDOmittedWhenEmpty(t *testing.T) {
+	b := &models.Board{
+		Version: 1, Name: "B",
+		Columns: []models.Column{{Name: "Todo", Cards: []models.Card{{Title: "T"}}}},
+	}
+	out, err := Render(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(out, "  id:") {
+		t.Fatalf("did not expect id line:\n%s", out)
+	}
+}
+
+func TestRenderRoundTripID(t *testing.T) {
+	src := "---\nversion: 1\nname: B\n---\n\n## Todo\n\n- [ ] T\n  id: ABCDEFGHIJ\n"
+	parsed, err := parser.Parse(src)
+	if err != nil {
+		t.Fatal(err)
+	}
+	out, err := Render(parsed)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parsed2, err := parser.Parse(out)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if parsed2.Columns[0].Cards[0].ID != "ABCDEFGHIJ" {
+		t.Fatalf("round-trip lost id: %+v", parsed2.Columns[0].Cards[0])
+	}
+}
