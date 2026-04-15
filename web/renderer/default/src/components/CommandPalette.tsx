@@ -89,6 +89,7 @@ export function CommandPalette(): JSX.Element {
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content
           aria-label="Command palette"
+          aria-describedby={undefined}
           className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-lg bg-white p-2 shadow-xl dark:bg-slate-800"
         >
           <Dialog.Title className="sr-only">Command palette</Dialog.Title>
