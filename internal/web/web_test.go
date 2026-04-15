@@ -781,6 +781,7 @@ func TestNewHandler(t *testing.T) {
 	h := NewHandler(ws, eng, "test", false, false)
 	if h == nil {
 		t.Fatal("handler is nil")
+		return
 	}
 	if h.ws != ws {
 		t.Error("ws not set")

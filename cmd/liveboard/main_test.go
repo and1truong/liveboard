@@ -555,18 +555,14 @@ func TestServeCmdFlags_WithEnvVars(t *testing.T) {
 	t.Setenv("LIVEBOARD_HOST", "0.0.0.0")
 	t.Setenv("LIVEBOARD_PORT", "9090")
 	cmd := serveCmd()
-	f := cmd.Flags().Lookup("host")
-	if f == nil {
+	if f := cmd.Flags().Lookup("host"); f == nil {
 		t.Fatal("missing --host flag")
-	}
-	if f.DefValue != "0.0.0.0" {
+	} else if f.DefValue != "0.0.0.0" {
 		t.Errorf("host default = %q, want 0.0.0.0", f.DefValue)
 	}
-	pf := cmd.Flags().Lookup("port")
-	if pf == nil {
+	if pf := cmd.Flags().Lookup("port"); pf == nil {
 		t.Fatal("missing --port flag")
-	}
-	if pf.DefValue != "9090" {
+	} else if pf.DefValue != "9090" {
 		t.Errorf("port default = %q, want 9090", pf.DefValue)
 	}
 }
@@ -574,12 +570,10 @@ func TestServeCmdFlags_WithEnvVars(t *testing.T) {
 func TestServeCmdFlags_WithInvalidPort(t *testing.T) {
 	t.Setenv("LIVEBOARD_PORT", "notaport")
 	cmd := serveCmd()
-	pf := cmd.Flags().Lookup("port")
-	if pf == nil {
-		t.Fatal("missing --port flag")
-	}
 	// Invalid port should fallback to default 7070
-	if pf.DefValue != "7070" {
+	if pf := cmd.Flags().Lookup("port"); pf == nil {
+		t.Fatal("missing --port flag")
+	} else if pf.DefValue != "7070" {
 		t.Errorf("port default = %q, want 7070", pf.DefValue)
 	}
 }

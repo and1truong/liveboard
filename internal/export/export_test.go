@@ -361,8 +361,8 @@ func TestBuildSummaries(t *testing.T) {
 	}
 	if roadmap == nil {
 		t.Fatal("roadmap summary not found")
+		return
 	}
-
 	if roadmap.Name != "Product Roadmap" {
 		t.Errorf("name = %q, want Product Roadmap", roadmap.Name)
 	}

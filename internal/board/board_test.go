@@ -57,8 +57,7 @@ func TestAddCard(t *testing.T) {
 	}
 	if card == nil {
 		t.Fatal("AddCard returned nil card")
-	}
-	if card.Title != "New task" {
+	} else if card.Title != "New task" {
 		t.Errorf("returned card title = %q, want %q", card.Title, "New task")
 	}
 
