@@ -66,6 +66,7 @@ export function CardDetailModal({
         title,
         body: bodyRef.current?.value ?? '',
         tags,
+        links: card.links ?? [],
         priority: priorityRef.current?.value ?? '',
         due: dueRef.current?.value ?? '',
         assignee: assigneeRef.current?.value ?? '',

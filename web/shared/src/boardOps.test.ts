@@ -88,7 +88,7 @@ describe('applyOp card id assignment', () => {
     const b: Board = { columns: [{ name: 'Todo', cards: [{ title: 'x' }] }] }
     const out = applyOp(b, {
       type: 'edit_card', col_idx: 0, card_idx: 0,
-      title: 'x', body: '', tags: [], priority: '', due: '', assignee: '',
+      title: 'x', body: '', tags: [], links: [], priority: '', due: '', assignee: '',
     })
     expect(out.columns![0]!.cards[0]!.id).toBe('OPTID00002')
   })
@@ -98,7 +98,7 @@ describe('applyOp card id assignment', () => {
     const b: Board = { columns: [{ name: 'Todo', cards: [{ id: 'KEEPME1234', title: 'x' }] }] }
     const out = applyOp(b, {
       type: 'edit_card', col_idx: 0, card_idx: 0,
-      title: 'x', body: '', tags: [], priority: '', due: '', assignee: '',
+      title: 'x', body: '', tags: [], links: [], priority: '', due: '', assignee: '',
     })
     expect(out.columns![0]!.cards[0]!.id).toBe('KEEPME1234')
   })

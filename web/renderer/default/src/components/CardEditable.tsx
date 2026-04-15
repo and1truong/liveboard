@@ -57,6 +57,7 @@ export function CardEditable({
         title,
         body: card.body ?? '',
         tags: card.tags ?? [],
+        links: card.links ?? [],
         priority: card.priority ?? '',
         due: card.due ?? '',
         assignee: card.assignee ?? '',
