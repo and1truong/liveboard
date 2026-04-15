@@ -113,7 +113,7 @@ export function ColumnHeader({
               <DropdownMenu.Separator className="my-1 h-px bg-slate-200" />
               <DropdownMenu.Item
                 onSelect={() =>
-                  stageDelete(mutation, { type: 'delete_column', name }, name)
+                  stageDelete(() => mutation.mutate({ type: 'delete_column', name }), name)
                 }
                 className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50"
               >

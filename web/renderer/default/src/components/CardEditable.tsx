@@ -140,8 +140,7 @@ export function CardEditable({
             onClick={(e) => {
               e.stopPropagation()
               stageDelete(
-                mutation,
-                { type: 'delete_card', col_idx: colIdx, card_idx: cardIdx },
+                () => mutation.mutate({ type: 'delete_card', col_idx: colIdx, card_idx: cardIdx }),
                 card.title,
               )
             }}
