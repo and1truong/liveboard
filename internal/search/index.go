@@ -26,6 +26,7 @@ type doc struct {
 	BoardName string   `json:"board_name"`
 	ColIdx    int      `json:"col_idx"`
 	CardIdx   int      `json:"card_idx"`
+	CardID    string   `json:"card_id"`
 	Title     string   `json:"title"`
 	Body      string   `json:"body"`
 	Tags      []string `json:"tags"`
@@ -62,6 +63,7 @@ func (i *Index) UpdateBoard(slug string, b *models.Board) error {
 				BoardName: boardName,
 				ColIdx:    cIdx,
 				CardIdx:   kIdx,
+				CardID:    c.ID,
 				Title:     c.Title,
 				Body:      c.Body,
 				Tags:      c.Tags,
