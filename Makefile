@@ -4,7 +4,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch online ipad-framework ipad-project ipad shell
+.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch online ipad-framework ipad-project ipad shell renderer frontend
 
 # Fail fast if tailwindcss is missing
 check-tailwind:
@@ -83,6 +83,14 @@ css-watch:
 shell:
 	cd web/shared && bun install --frozen-lockfile
 	bun run web/shell/build.ts
+
+.PHONY: renderer
+renderer:
+	cd web/renderer/default && bun install --frozen-lockfile
+	cd web/renderer/default && bunx --bun vite build
+
+.PHONY: frontend
+frontend: shell renderer
 
 # Build LiveBoard Online (browser-only SPA with localStorage)
 online: check-tailwind
