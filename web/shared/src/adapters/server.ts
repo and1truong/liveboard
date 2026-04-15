@@ -98,9 +98,18 @@ export class ServerAdapter implements BackendAdapter {
   getBoard(boardId: string): Promise<Board> {
     return this.getJSON<Board>(`/boards/${encodeURIComponent(boardId)}`)
   }
-  mutateBoard(_boardId: string, _clientVersion: number, _op: MutationOp): Promise<Board> { throw new Error('not implemented') }
-  getSettings(_boardId: string): Promise<ResolvedSettings> { throw new Error('not implemented') }
-  putBoardSettings(_boardId: string, _patch: Partial<BoardSettings>): Promise<void> { throw new Error('not implemented') }
+  mutateBoard(boardId: string, clientVersion: number, op: MutationOp): Promise<Board> {
+    return this.postJSON<Board>(
+      `/boards/${encodeURIComponent(boardId)}/mutations`,
+      { client_version: clientVersion, op },
+    )
+  }
+  getSettings(boardId: string): Promise<ResolvedSettings> {
+    return this.getJSON<ResolvedSettings>(`/boards/${encodeURIComponent(boardId)}/settings`)
+  }
+  putBoardSettings(boardId: string, patch: Partial<BoardSettings>): Promise<void> {
+    return this.putEmpty(`/boards/${encodeURIComponent(boardId)}/settings`, patch)
+  }
   async getWorkspaceInfo(): Promise<WorkspaceInfo> {
     const raw = await this.getJSON<{ name: string; board_count: number }>('/workspace')
     return { name: raw.name, boardCount: raw.board_count }

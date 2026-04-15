@@ -189,3 +189,68 @@ describe('ServerAdapter CRUD', () => {
     }
   })
 })
+
+describe('ServerAdapter mutate + settings', () => {
+  it('mutateBoard POSTs client_version + op and returns Board', async () => {
+    const log: RequestRecord[] = []
+    const board = { name: 'Foo', version: 2, columns: [] }
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => jsonResponse(board), log),
+    })
+    const out = await a.mutateBoard('foo', 1, { type: 'add_card', column: 'Todo', title: 'x' })
+    expect(out).toEqual(board)
+    expect(log[0].method).toBe('POST')
+    expect(log[0].url).toBe('/api/v1/boards/foo/mutations')
+    expect(JSON.parse(log[0].body!)).toEqual({
+      client_version: 1,
+      op: { type: 'add_card', column: 'Todo', title: 'x' },
+    })
+  })
+
+  it('mutateBoard surfaces VERSION_CONFLICT', async () => {
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => errorResponse('VERSION_CONFLICT', 'stale', 409)),
+    })
+    try {
+      await a.mutateBoard('foo', 0, { type: 'add_card', column: 'Todo', title: 'x' })
+      throw new Error('expected throw')
+    } catch (e) {
+      expect((e as ProtocolError).code).toBe('VERSION_CONFLICT')
+    }
+  })
+
+  it('getSettings GETs and returns ResolvedSettings shape', async () => {
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() =>
+        jsonResponse({
+          show_checkbox: false,
+          card_position: 'bottom',
+          expand_columns: false,
+          view_mode: 'board',
+          card_display_mode: 'compact',
+          week_start: 'monday',
+        }),
+      ),
+    })
+    const s = await a.getSettings('foo')
+    expect(s.show_checkbox).toBe(false)
+    expect(s.card_display_mode).toBe('compact')
+  })
+
+  it('putBoardSettings PUTs partial body and resolves void on 204', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => new Response(null, { status: 204 }), log),
+    })
+    await a.putBoardSettings('foo', { show_checkbox: false })
+    expect(log[0]).toEqual({
+      method: 'PUT',
+      url: '/api/v1/boards/foo/settings',
+      body: JSON.stringify({ show_checkbox: false }),
+    })
+  })
+})
