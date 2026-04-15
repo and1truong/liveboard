@@ -1,10 +1,12 @@
-import { useState, useRef, useEffect } from 'react'
+import { Suspense, lazy, useState, useRef, useEffect } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import type { BoardSummary } from '@shared/adapter.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useRenameBoard, useDeleteBoard } from '../mutations/useBoardCrud.js'
 import { stageDelete } from '../mutations/undoable.js'
-import { BoardSettingsModal } from './BoardSettingsModal.js'
+const BoardSettingsModal = lazy(() =>
+  import('./BoardSettingsModal.js').then((m) => ({ default: m.BoardSettingsModal })),
+)
 
 export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
   const { active, setActive } = useActiveBoard()
@@ -108,12 +110,14 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
         </DropdownMenu.Portal>
       </DropdownMenu.Root>
     </li>
-    <BoardSettingsModal
-      boardId={board.id}
-      boardName={board.name}
-      open={settingsOpen}
-      onOpenChange={setSettingsOpen}
-    />
+    <Suspense fallback={null}>
+      <BoardSettingsModal
+        boardId={board.id}
+        boardName={board.name}
+        open={settingsOpen}
+        onOpenChange={setSettingsOpen}
+      />
+    </Suspense>
     </>
   )
 }
