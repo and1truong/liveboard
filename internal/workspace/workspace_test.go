@@ -1,9 +1,12 @@
 package workspace
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
+
+	"github.com/and1truong/liveboard/internal/board"
 )
 
 const testBoardContent = `---
@@ -494,5 +497,67 @@ func TestListBoards_SkipsNonMdFiles(t *testing.T) {
 	}
 	if len(boards) != 1 {
 		t.Errorf("expected 1 board (txt excluded), got %d", len(boards))
+	}
+}
+
+func TestRenameBoard(t *testing.T) {
+	ws := setupWorkspace(t)
+	if _, err := ws.CreateBoard("Foo"); err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := ws.RenameBoard("Foo", "Bar")
+	if err != nil {
+		t.Fatalf("rename: %v", err)
+	}
+	if b.Name != "Bar" {
+		t.Errorf("name = %q, want Bar", b.Name)
+	}
+
+	if _, err := os.Stat(filepath.Join(ws.Dir, "Foo.md")); !os.IsNotExist(err) {
+		t.Errorf("old file still present: err=%v", err)
+	}
+	if _, err := os.Stat(filepath.Join(ws.Dir, "Bar.md")); err != nil {
+		t.Errorf("new file missing: %v", err)
+	}
+	if _, err := ws.LoadBoard("Foo"); err == nil {
+		t.Errorf("expected error loading old name")
+	}
+	loaded, err := ws.LoadBoard("Bar")
+	if err != nil {
+		t.Fatalf("load new: %v", err)
+	}
+	if loaded.Name != "Bar" {
+		t.Errorf("loaded name = %q, want Bar", loaded.Name)
+	}
+}
+
+func TestRenameBoard_collision(t *testing.T) {
+	ws := setupWorkspace(t)
+	if _, err := ws.CreateBoard("Foo"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.CreateBoard("Bar"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.RenameBoard("Foo", "Bar"); !errors.Is(err, ErrAlreadyExists) {
+		t.Errorf("expected ErrAlreadyExists, got %v", err)
+	}
+}
+
+func TestRenameBoard_notFound(t *testing.T) {
+	ws := setupWorkspace(t)
+	if _, err := ws.RenameBoard("nope", "X"); !errors.Is(err, board.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestRenameBoard_invalidName(t *testing.T) {
+	ws := setupWorkspace(t)
+	if _, err := ws.CreateBoard("Foo"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := ws.RenameBoard("Foo", ""); !errors.Is(err, ErrInvalidBoardName) {
+		t.Errorf("expected ErrInvalidBoardName, got %v", err)
 	}
 }

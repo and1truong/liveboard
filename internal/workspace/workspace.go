@@ -149,6 +149,54 @@ func (w *Workspace) DeleteBoard(name string) error {
 	return os.Remove(path)
 }
 
+// RenameBoard renames a board file from <oldName>.md to <newName>.md and
+// updates the board's in-file Name. Returns the updated board.
+// Errors: board.ErrNotFound if old missing, ErrAlreadyExists if new collides,
+// ErrInvalidBoardName if newName is invalid.
+func (w *Workspace) RenameBoard(oldName, newName string) (*models.Board, error) {
+	newName = strings.TrimSpace(newName)
+	oldPath, err := w.BoardPath(oldName)
+	if err != nil {
+		return nil, err
+	}
+	newPath, err := w.BoardPath(newName)
+	if err != nil {
+		return nil, err
+	}
+	if _, err := os.Stat(oldPath); os.IsNotExist(err) {
+		return nil, fmt.Errorf("board %q: %w", oldName, board.ErrNotFound)
+	}
+	if oldPath != newPath {
+		if _, err := os.Stat(newPath); err == nil {
+			return nil, fmt.Errorf("board %q: %w", newName, ErrAlreadyExists)
+		}
+	}
+	b, err := w.Engine.LoadBoard(oldPath)
+	if err != nil {
+		return nil, err
+	}
+	b.Name = newName
+	b.FilePath = newPath
+	b.Version++
+	content, err := writer.Render(b)
+	if err != nil {
+		return nil, err
+	}
+	if oldPath != newPath {
+		if err := os.WriteFile(newPath, []byte(content), 0644); err != nil {
+			return nil, err
+		}
+		if err := os.Remove(oldPath); err != nil {
+			return nil, err
+		}
+	} else {
+		if err := os.WriteFile(oldPath, []byte(content), 0644); err != nil {
+			return nil, err
+		}
+	}
+	return b, nil
+}
+
 // validBoardName allows alphanumeric, unicode letters, spaces, dashes, underscores, periods.
 var validBoardName = regexp.MustCompile(`^[\p{L}\p{N} ._-]+$`)
 
