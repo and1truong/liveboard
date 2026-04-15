@@ -1,11 +1,12 @@
-import { describe, expect, it, mock } from 'bun:test'
-import { fireEvent, waitFor } from '@testing-library/react'
+import { describe, expect, it } from 'bun:test'
+import { waitFor } from '@testing-library/react'
 import { Broker } from '@shared/broker.js'
 import { Client } from '@shared/client.js'
 import { LocalAdapter } from '@shared/adapters/local.js'
 import { MemoryStorage } from '@shared/adapters/local-storage-driver.js'
 import { createMemoryPair } from '@shared/transport.js'
 import { ClientProvider } from '../queries.js'
+import { ActiveBoardProvider } from '../contexts/ActiveBoardContext.js'
 import { BoardSidebar } from './BoardSidebar.js'
 import { renderWithQuery } from '../test-utils.js'
 
@@ -22,34 +23,23 @@ describe('BoardSidebar', () => {
     const client = await setup()
     const { getByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <BoardSidebar activeId={null} onSelect={() => {}} />
+        <ActiveBoardProvider>
+          <BoardSidebar />
+        </ActiveBoardProvider>
       </ClientProvider>,
     )
     await waitFor(() => expect(getByText('Welcome')).toBeDefined())
   })
 
-  it('fires onSelect with board id on click', async () => {
+  it('renders + New board affordance', async () => {
     const client = await setup()
-    const onSelect = mock(() => {})
-    const { getByText } = renderWithQuery(
+    const { findByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <BoardSidebar activeId={null} onSelect={onSelect} />
+        <ActiveBoardProvider>
+          <BoardSidebar />
+        </ActiveBoardProvider>
       </ClientProvider>,
     )
-    await waitFor(() => expect(getByText('Welcome')).toBeDefined())
-    fireEvent.click(getByText('Welcome'))
-    expect(onSelect).toHaveBeenCalledWith('welcome')
-  })
-
-  it('highlights active board', async () => {
-    const client = await setup()
-    const { getByText } = renderWithQuery(
-      <ClientProvider client={client}>
-        <BoardSidebar activeId="welcome" onSelect={() => {}} />
-      </ClientProvider>,
-    )
-    await waitFor(() => expect(getByText('Welcome')).toBeDefined())
-    const btn = getByText('Welcome').closest('button')!
-    expect(btn.className).toContain('bg-slate-200')
+    await findByText('+ New board')
   })
 })

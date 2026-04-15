@@ -1,31 +1,34 @@
 import { useEffect } from 'react'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
+import { ProtocolError } from '@shared/protocol.js'
 import { useBoard } from '../queries.js'
 import { EmptyState } from './EmptyState.js'
 import { AddColumnButton } from './AddColumnButton.js'
 import { BoardDndContext } from '../dnd/BoardDndContext.js'
 import { SortableColumn } from '../dnd/SortableColumn.js'
 import { encodeColumnId } from '../dnd/cardId.js'
+import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 
-export function BoardView({
-  boardId,
-  client,
-}: {
-  boardId: string | null
-  client: Client
-}): JSX.Element {
-  const { data, isLoading, error } = useBoard(boardId)
+export function BoardView({ client }: { client: Client }): JSX.Element {
+  const { active, setActive } = useActiveBoard()
+  const { data, isLoading, error } = useBoard(active)
 
   useEffect(() => {
-    if (!boardId) return
-    void client.subscribe(boardId)
+    if (!active) return
+    void client.subscribe(active)
     return () => {
-      void client.unsubscribe(boardId)
+      void client.unsubscribe(active)
     }
-  }, [boardId, client])
+  }, [active, client])
 
-  if (!boardId) return <EmptyState title="Select a board" />
+  useEffect(() => {
+    if (error instanceof ProtocolError && error.code === 'NOT_FOUND') {
+      setActive(null)
+    }
+  }, [error, setActive])
+
+  if (!active) return <EmptyState title="Select a board" />
   if (isLoading) return <EmptyState title="Loading…" />
   if (error) return <EmptyState title="Failed to load board" detail={String(error)} />
   if (!data) return <EmptyState title="Board not found" />
@@ -34,7 +37,7 @@ export function BoardView({
   if (columns.length === 0) {
     return (
       <div className="flex h-full gap-4 overflow-x-auto p-4">
-        <AddColumnButton boardId={boardId} />
+        <AddColumnButton boardId={active} />
       </div>
     )
   }
@@ -43,7 +46,7 @@ export function BoardView({
   const columnIds = names.map(encodeColumnId)
 
   return (
-    <BoardDndContext boardId={boardId}>
+    <BoardDndContext boardId={active}>
       <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
         <div className="flex h-full gap-4 overflow-x-auto p-4">
           {columns.map((col, i) => (
@@ -52,10 +55,10 @@ export function BoardView({
               column={col}
               colIdx={i}
               allColumnNames={names}
-              boardId={boardId}
+              boardId={active}
             />
           ))}
-          <AddColumnButton boardId={boardId} />
+          <AddColumnButton boardId={active} />
         </div>
       </SortableContext>
     </BoardDndContext>
