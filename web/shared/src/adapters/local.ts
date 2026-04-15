@@ -12,6 +12,7 @@ import { ProtocolError } from '../protocol.js'
 import { applyOp } from '../boardOps.js'
 import type { StorageDriver } from './local-storage-driver.js'
 import { WELCOME_BOARD, WORKSPACE_NAME } from './local-seed.js'
+import { slugify } from '../util/slug.js'
 
 const KEY_PREFIX = 'liveboard:v1:'
 const boardKey = (id: string): string => `${KEY_PREFIX}board:${id}`
@@ -25,6 +26,7 @@ interface StoredWorkspace {
 export class LocalAdapter implements BackendAdapter {
   private readonly channel: BroadcastChannel | null
   private readonly handlers = new Map<string, Set<BoardUpdateHandler>>()
+  private readonly boardListHandlers = new Set<() => void>()
 
   constructor(private readonly storage: StorageDriver, channelName = 'liveboard') {
     this.seedIfEmpty()
@@ -35,6 +37,8 @@ export class LocalAdapter implements BackendAdapter {
         const data = ev.data as { type?: string; boardId?: string; version?: number }
         if (data?.type === 'board.updated' && data.boardId) {
           this.fanOut(data.boardId, data.version ?? 0)
+        } else if (data?.type === 'board.list.updated') {
+          this.fanOutBoardList()
         }
       }
     }
@@ -142,5 +146,78 @@ export class LocalAdapter implements BackendAdapter {
     board.version = (board.version ?? 0) + 1
     this.storage.set(boardKey(boardId), JSON.stringify(board))
     this.publishUpdate(boardId, board.version)
+  }
+
+  onBoardListUpdate(handler: () => void): Subscription {
+    this.boardListHandlers.add(handler)
+    return {
+      close: () => {
+        this.boardListHandlers.delete(handler)
+      },
+    }
+  }
+
+  private fanOutBoardList(): void {
+    for (const h of this.boardListHandlers) h()
+  }
+
+  private publishBoardListUpdate(): void {
+    this.fanOutBoardList()
+    this.channel?.postMessage({ type: 'board.list.updated' })
+  }
+
+  async createBoard(name: string): Promise<BoardSummary> {
+    const trimmed = name.trim()
+    if (!trimmed) throw new ProtocolError('INVALID', 'name required')
+    const id = slugify(trimmed)
+    if (!id) throw new ProtocolError('INVALID', 'name has no usable characters')
+    const ws = this.loadWorkspace()
+    if (ws.boardIds.includes(id)) {
+      throw new ProtocolError('ALREADY_EXISTS', `board ${id} exists`)
+    }
+    const board: Board = {
+      name: trimmed,
+      version: 1,
+      columns: [{ name: 'Todo', cards: [] }],
+    }
+    this.storage.set(boardKey(id), JSON.stringify(board))
+    ws.boardIds.push(id)
+    this.storage.set(workspaceKey(), JSON.stringify(ws))
+    this.publishBoardListUpdate()
+    return { id, name: trimmed, version: 1 }
+  }
+
+  async renameBoard(boardId: string, newName: string): Promise<BoardSummary> {
+    const trimmed = newName.trim()
+    if (!trimmed) throw new ProtocolError('INVALID', 'name required')
+    const newId = slugify(trimmed)
+    if (!newId) throw new ProtocolError('INVALID', 'name has no usable characters')
+    const board = this.loadBoard(boardId)
+    const ws = this.loadWorkspace()
+    if (newId !== boardId && ws.boardIds.includes(newId)) {
+      throw new ProtocolError('ALREADY_EXISTS', `board ${newId} exists`)
+    }
+    board.name = trimmed
+    board.version = (board.version ?? 0) + 1
+    if (newId === boardId) {
+      this.storage.set(boardKey(boardId), JSON.stringify(board))
+    } else {
+      this.storage.set(boardKey(newId), JSON.stringify(board))
+      this.storage.remove(boardKey(boardId))
+      const idx = ws.boardIds.indexOf(boardId)
+      if (idx >= 0) ws.boardIds[idx] = newId
+      this.storage.set(workspaceKey(), JSON.stringify(ws))
+    }
+    this.publishBoardListUpdate()
+    return { id: newId, name: trimmed, version: board.version }
+  }
+
+  async deleteBoard(boardId: string): Promise<void> {
+    this.loadBoard(boardId)
+    this.storage.remove(boardKey(boardId))
+    const ws = this.loadWorkspace()
+    ws.boardIds = ws.boardIds.filter((x) => x !== boardId)
+    this.storage.set(workspaceKey(), JSON.stringify(ws))
+    this.publishBoardListUpdate()
   }
 }

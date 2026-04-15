@@ -36,4 +36,8 @@ export interface BackendAdapter {
   getSettings(boardId: string): Promise<ResolvedSettings>
   putBoardSettings(boardId: string, patch: Partial<BoardSettings>): Promise<void>
   subscribe(boardId: string, onUpdate: BoardUpdateHandler): Subscription
+  createBoard(name: string): Promise<BoardSummary>
+  renameBoard(boardId: string, newName: string): Promise<BoardSummary>
+  deleteBoard(boardId: string): Promise<void>
+  onBoardListUpdate(handler: () => void): Subscription
 }
