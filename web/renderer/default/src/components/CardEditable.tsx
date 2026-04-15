@@ -71,7 +71,7 @@ export function CardEditable({
 
   if (mode === 'edit') {
     return (
-      <div className="rounded-md bg-white p-3 shadow-sm ring-2 ring-blue-400">
+      <div className="rounded-md bg-white p-3 shadow-sm ring-2 ring-[color:var(--accent-500)]">
         <input
           ref={inputRef}
           aria-label="card title"

@@ -75,7 +75,7 @@ export function CardDetailModal({
                 aria-label="card title"
                 defaultValue={card.title ?? ''}
                 onInput={(e) => setTitleValid((e.currentTarget.value ?? '').trim().length > 0)}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <label className="block">
@@ -85,7 +85,7 @@ export function CardDetailModal({
                 aria-label="card body"
                 rows={6}
                 defaultValue={card.body ?? ''}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <label className="block">
@@ -94,7 +94,7 @@ export function CardDetailModal({
                 ref={tagsRef}
                 aria-label="card tags"
                 defaultValue={(card.tags ?? []).join(', ')}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -104,7 +104,7 @@ export function CardDetailModal({
                   ref={priorityRef}
                   aria-label="card priority"
                   defaultValue={card.priority ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 >
                   <option value="">—</option>
                   <option value="low">Low</option>
@@ -120,7 +120,7 @@ export function CardDetailModal({
                   aria-label="card due"
                   type="date"
                   defaultValue={card.due ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 />
               </label>
               <label className="block">
@@ -129,7 +129,7 @@ export function CardDetailModal({
                   ref={assigneeRef}
                   aria-label="card assignee"
                   defaultValue={card.assignee ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 />
               </label>
             </div>
@@ -144,7 +144,7 @@ export function CardDetailModal({
               <button
                 type="submit"
                 disabled={!titleValid || mutation.isPending}
-                className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="rounded bg-[color:var(--accent-600)] px-3 py-1 text-sm font-medium text-white hover:bg-[color:var(--accent-500)] disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {mutation.isPending ? 'Saving…' : 'Save'}
               </button>

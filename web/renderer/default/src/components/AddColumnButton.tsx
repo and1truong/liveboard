@@ -43,7 +43,7 @@ export function AddColumnButton({ boardId }: { boardId: string }): JSX.Element {
             else if (e.key === 'Escape') { e.preventDefault(); cancel() }
           }}
           placeholder="Column name…"
-          className="w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-slate-200 focus:ring-blue-400"
+          className="w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)]"
         />
       </div>
     )

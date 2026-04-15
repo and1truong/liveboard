@@ -67,7 +67,7 @@ export function ColumnHeader({
             if (e.key === 'Enter') { e.preventDefault(); commitRename() }
             else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
           }}
-          className="w-full bg-white px-1 text-sm font-semibold outline-none ring-1 ring-blue-400 rounded"
+          className="w-full bg-white px-1 text-sm font-semibold outline-none ring-1 ring-[color:var(--accent-500)] rounded"
         />
       </header>
     )

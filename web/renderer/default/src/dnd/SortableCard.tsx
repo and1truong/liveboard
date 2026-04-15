@@ -70,7 +70,7 @@ export function SortableCard({
       onFocus={() => setFocused({ colIdx, cardIdx })}
       onKeyDown={onKeyDown}
       className={`group/sortable relative outline-none rounded-md ${
-        isFocused ? 'ring-2 ring-blue-400 ring-offset-2' : ''
+        isFocused ? 'ring-2 ring-[color:var(--accent-500)] ring-offset-2' : ''
       }`}
     >
       <button

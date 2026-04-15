@@ -48,7 +48,7 @@ export function AddCardButton({
           else if (e.key === 'Escape') { e.preventDefault(); cancel() }
         }}
         placeholder="Card title…"
-        className="mt-2 w-full rounded-md bg-white p-2 text-sm shadow-sm ring-1 ring-slate-200 outline-none focus:ring-blue-400"
+        className="mt-2 w-full rounded-md bg-white p-2 text-sm shadow-sm ring-1 ring-slate-200 outline-none focus:ring-[color:var(--accent-500)]"
       />
     )
   }

@@ -60,7 +60,7 @@ export function BoardSettingsModal({
                 ref={modeRef}
                 aria-label="card display mode"
                 defaultValue={settings.card_display_mode}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               >
                 <option value="normal">Normal</option>
                 <option value="compact">Compact</option>
@@ -77,7 +77,7 @@ export function BoardSettingsModal({
               <button
                 type="submit"
                 disabled={mutation.isPending}
-                className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+                className="rounded bg-[color:var(--accent-600)] px-3 py-1 text-sm font-medium text-white hover:bg-[color:var(--accent-500)] disabled:cursor-not-allowed disabled:bg-slate-300"
               >
                 {mutation.isPending ? 'Saving…' : 'Save'}
               </button>

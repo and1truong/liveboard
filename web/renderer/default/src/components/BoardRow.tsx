@@ -52,7 +52,7 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
             if (e.key === 'Enter') { e.preventDefault(); commitRename() }
             else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
           }}
-          className="block w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-blue-400"
+          className="block w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-[color:var(--accent-500)]"
         />
       </li>
     )
