@@ -30,7 +30,7 @@ export function AddBoardButton(): JSX.Element {
 
   if (open) {
     return (
-      <div className="border-t border-slate-200 p-2">
+      <div className="border-t border-slate-200 p-2 dark:border-slate-800">
         <input
           ref={inputRef}
           aria-label="new board name"
@@ -41,7 +41,7 @@ export function AddBoardButton(): JSX.Element {
             else if (e.key === 'Escape') { e.preventDefault(); cancel() }
           }}
           placeholder="Board name…"
-          className="w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)]"
+          className="w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)] dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
         />
       </div>
     )

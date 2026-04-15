@@ -73,7 +73,7 @@ export function CardEditable({
 
   if (mode === 'edit') {
     return (
-      <div className="rounded-md bg-white p-3 shadow-sm ring-2 ring-[color:var(--accent-500)]">
+      <div className="rounded-md bg-white p-3 shadow-sm ring-2 ring-[color:var(--accent-500)] dark:bg-slate-800">
         <input
           ref={inputRef}
           aria-label="card title"
@@ -83,7 +83,7 @@ export function CardEditable({
             if (e.key === 'Enter') { e.preventDefault(); commit() }
             else if (e.key === 'Escape') { e.preventDefault(); cancel() }
           }}
-          className="w-full bg-transparent text-sm font-semibold outline-none"
+          className="w-full bg-transparent text-sm font-semibold outline-none dark:text-slate-100"
         />
       </div>
     )
@@ -129,7 +129,7 @@ export function CardEditable({
               type="button"
               aria-label="open card details"
               onClick={() => onModalOpenChange(true)}
-              className="mt-2 flex min-h-6 w-full items-center justify-between gap-2 rounded text-left hover:bg-slate-50"
+              className="mt-2 flex min-h-6 w-full items-center justify-between gap-2 rounded text-left hover:bg-slate-50 dark:hover:bg-slate-700"
             >
               {card.tags && card.tags.length > 0 ? (
                 <ul className="flex flex-wrap gap-1">

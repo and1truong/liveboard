@@ -67,7 +67,7 @@ export function ColumnHeader({
             if (e.key === 'Enter') { e.preventDefault(); commitRename() }
             else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
           }}
-          className="w-full bg-white px-1 text-sm font-semibold outline-none ring-1 ring-[color:var(--accent-500)] rounded"
+          className="w-full bg-white px-1 text-sm font-semibold outline-none ring-1 ring-[color:var(--accent-500)] rounded dark:bg-slate-800 dark:text-slate-100"
         />
       </header>
     )
@@ -81,41 +81,41 @@ export function ColumnHeader({
         <DropdownMenu.Root>
           <DropdownMenu.Trigger
             aria-label={`column menu ${name}`}
-            className="rounded p-1 text-slate-500 hover:bg-slate-200"
+            className="rounded p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700"
           >
             ⋮
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content
               sideOffset={4}
-              className="z-50 min-w-40 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200"
+              className="z-50 min-w-40 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 dark:text-slate-100"
             >
               <DropdownMenu.Item
                 onSelect={() => setMode('edit')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100"
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
               >
                 Rename
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 disabled={leftDisabled}
                 onSelect={() => move('left')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 data-[disabled]:text-slate-300 data-[disabled]:cursor-not-allowed"
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600 data-[disabled]:cursor-not-allowed"
               >
                 Move left
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 disabled={rightDisabled}
                 onSelect={() => move('right')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 data-[disabled]:text-slate-300 data-[disabled]:cursor-not-allowed"
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600 data-[disabled]:cursor-not-allowed"
               >
                 Move right
               </DropdownMenu.Item>
-              <DropdownMenu.Separator className="my-1 h-px bg-slate-200" />
+              <DropdownMenu.Separator className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
               <DropdownMenu.Item
                 onSelect={() =>
                   stageDelete(() => mutation.mutate({ type: 'delete_column', name }), name)
                 }
-                className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50"
+                className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
               >
                 Delete
               </DropdownMenu.Item>

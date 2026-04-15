@@ -121,7 +121,7 @@ export function CardDetailModal({
                   aria-label="card due"
                   type="date"
                   defaultValue={card.due ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)] dark:[color-scheme:dark] dark:text-slate-100"
                 />
               </label>
               <label className="block">
@@ -138,7 +138,7 @@ export function CardDetailModal({
               <button
                 type="button"
                 onClick={() => onOpenChange(false)}
-                className="rounded px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
+                className="rounded px-3 py-1 text-sm text-slate-600 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-700"
               >
                 Cancel
               </button>

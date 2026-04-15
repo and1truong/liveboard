@@ -76,33 +76,33 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
       <DropdownMenu.Root>
         <DropdownMenu.Trigger
           aria-label={`board menu ${board.name}`}
-          className="rounded p-1 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-200"
+          className="rounded p-1 text-slate-400 opacity-0 group-hover:opacity-100 hover:bg-slate-200 dark:text-slate-500 dark:hover:bg-slate-700"
         >
           ⋮
         </DropdownMenu.Trigger>
         <DropdownMenu.Portal>
           <DropdownMenu.Content
             sideOffset={4}
-            className="z-50 min-w-32 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200"
+            className="z-50 min-w-32 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 dark:text-slate-100"
           >
             <DropdownMenu.Item
               onSelect={() => setMode('edit')}
-              className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100"
+              className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
             >
               Rename
             </DropdownMenu.Item>
             <DropdownMenu.Item
               onSelect={() => setSettingsOpen(true)}
-              className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100"
+              className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
             >
               Settings
             </DropdownMenu.Item>
-            <DropdownMenu.Separator className="my-1 h-px bg-slate-200" />
+            <DropdownMenu.Separator className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
             <DropdownMenu.Item
               onSelect={() =>
                 stageDelete(() => deleteMut.mutate(board.id), board.name)
               }
-              className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50"
+              className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
             >
               Delete
             </DropdownMenu.Item>
