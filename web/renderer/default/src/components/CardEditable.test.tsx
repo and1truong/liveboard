@@ -87,4 +87,16 @@ describe('CardEditable', () => {
       expect(b?.columns?.[0]?.cards?.[0]?.completed).toBe(true)
     })
   })
+
+  it('clicking "open card details" reveals the modal', async () => {
+    const { client, qc } = await setup()
+    const { getByLabelText, getByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <CardEditable card={{ title: 'hello' }} colIdx={0} cardIdx={0} boardId="welcome" />
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    fireEvent.click(getByLabelText('open card details'))
+    await waitFor(() => expect(getByText('Edit card')).toBeDefined())
+  })
 })
