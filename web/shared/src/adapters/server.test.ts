@@ -101,3 +101,91 @@ describe('ServerAdapter HTTP', () => {
     }
   })
 })
+
+describe('ServerAdapter CRUD', () => {
+  it('createBoard POSTs name and returns BoardSummary', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(
+        () => jsonResponse({ id: 'foo', name: 'Foo', version: 1 }, 201),
+        log,
+      ),
+    })
+    const s = await a.createBoard('Foo')
+    expect(s).toEqual({ id: 'foo', name: 'Foo', version: 1 })
+    expect(log[0]).toEqual({
+      method: 'POST',
+      url: '/api/v1/boards',
+      body: JSON.stringify({ name: 'Foo' }),
+    })
+  })
+
+  it('createBoard collision surfaces ALREADY_EXISTS', async () => {
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => errorResponse('ALREADY_EXISTS', 'exists', 409)),
+    })
+    try {
+      await a.createBoard('Foo')
+      throw new Error('expected throw')
+    } catch (e) {
+      expect((e as ProtocolError).code).toBe('ALREADY_EXISTS')
+    }
+  })
+
+  it('getBoard GETs /boards/{id}', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(
+        () => jsonResponse({ name: 'Welcome', version: 1, columns: [] }),
+        log,
+      ),
+    })
+    const b = await a.getBoard('welcome')
+    expect(b.name).toBe('Welcome')
+    expect(log[0].url).toBe('/api/v1/boards/welcome')
+  })
+
+  it('renameBoard PATCHes new_name and returns new summary', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(
+        () => jsonResponse({ id: 'bar', name: 'Bar', version: 2 }),
+        log,
+      ),
+    })
+    const s = await a.renameBoard('foo', 'Bar')
+    expect(s).toEqual({ id: 'bar', name: 'Bar', version: 2 })
+    expect(log[0]).toEqual({
+      method: 'PATCH',
+      url: '/api/v1/boards/foo',
+      body: JSON.stringify({ new_name: 'Bar' }),
+    })
+  })
+
+  it('deleteBoard DELETEs and resolves void on 204', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => new Response(null, { status: 204 }), log),
+    })
+    await a.deleteBoard('foo')
+    expect(log[0]).toEqual({ method: 'DELETE', url: '/api/v1/boards/foo', body: null })
+  })
+
+  it('deleteBoard NOT_FOUND throws ProtocolError', async () => {
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => errorResponse('NOT_FOUND', 'gone', 404)),
+    })
+    try {
+      await a.deleteBoard('nope')
+      throw new Error('expected throw')
+    } catch (e) {
+      expect((e as ProtocolError).code).toBe('NOT_FOUND')
+    }
+  })
+})

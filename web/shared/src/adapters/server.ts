@@ -86,10 +86,18 @@ export class ServerAdapter implements BackendAdapter {
   listBoards(): Promise<BoardSummary[]> {
     return this.getJSON<BoardSummary[]>('/boards')
   }
-  createBoard(_name: string): Promise<BoardSummary> { throw new Error('not implemented') }
-  renameBoard(_boardId: string, _newName: string): Promise<BoardSummary> { throw new Error('not implemented') }
-  deleteBoard(_boardId: string): Promise<void> { throw new Error('not implemented') }
-  getBoard(_boardId: string): Promise<Board> { throw new Error('not implemented') }
+  createBoard(name: string): Promise<BoardSummary> {
+    return this.postJSON<BoardSummary>('/boards', { name })
+  }
+  renameBoard(boardId: string, newName: string): Promise<BoardSummary> {
+    return this.patchJSON<BoardSummary>(`/boards/${encodeURIComponent(boardId)}`, { new_name: newName })
+  }
+  deleteBoard(boardId: string): Promise<void> {
+    return this.deleteEmpty(`/boards/${encodeURIComponent(boardId)}`)
+  }
+  getBoard(boardId: string): Promise<Board> {
+    return this.getJSON<Board>(`/boards/${encodeURIComponent(boardId)}`)
+  }
   mutateBoard(_boardId: string, _clientVersion: number, _op: MutationOp): Promise<Board> { throw new Error('not implemented') }
   getSettings(_boardId: string): Promise<ResolvedSettings> { throw new Error('not implemented') }
   putBoardSettings(_boardId: string, _patch: Partial<BoardSettings>): Promise<void> { throw new Error('not implemented') }
