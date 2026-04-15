@@ -83,7 +83,9 @@ export class ServerAdapter implements BackendAdapter {
   }
 
   // === BackendAdapter — stubbed; filled in Tasks 2–5 ===
-  listBoards(): Promise<BoardSummary[]> { throw new Error('not implemented') }
+  listBoards(): Promise<BoardSummary[]> {
+    return this.getJSON<BoardSummary[]>('/boards')
+  }
   createBoard(_name: string): Promise<BoardSummary> { throw new Error('not implemented') }
   renameBoard(_boardId: string, _newName: string): Promise<BoardSummary> { throw new Error('not implemented') }
   deleteBoard(_boardId: string): Promise<void> { throw new Error('not implemented') }
@@ -91,7 +93,10 @@ export class ServerAdapter implements BackendAdapter {
   mutateBoard(_boardId: string, _clientVersion: number, _op: MutationOp): Promise<Board> { throw new Error('not implemented') }
   getSettings(_boardId: string): Promise<ResolvedSettings> { throw new Error('not implemented') }
   putBoardSettings(_boardId: string, _patch: Partial<BoardSettings>): Promise<void> { throw new Error('not implemented') }
-  getWorkspaceInfo(): Promise<WorkspaceInfo> { throw new Error('not implemented') }
+  async getWorkspaceInfo(): Promise<WorkspaceInfo> {
+    const raw = await this.getJSON<{ name: string; board_count: number }>('/workspace')
+    return { name: raw.name, boardCount: raw.board_count }
+  }
   subscribe(_boardId: string, _onUpdate: BoardUpdateHandler): Subscription { throw new Error('not implemented') }
   onBoardListUpdate(_handler: () => void): Subscription { throw new Error('not implemented') }
 }
