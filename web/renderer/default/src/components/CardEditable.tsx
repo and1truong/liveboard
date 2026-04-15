@@ -3,6 +3,7 @@ import type { Card as CardModel } from '@shared/types.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { CardDetailModal } from './CardDetailModal.js'
+import { useBoardSettings } from '../queries/useBoardSettings.js'
 
 const PRIORITY_DOT: Record<string, string> = {
   critical: 'bg-red-600',
@@ -29,6 +30,9 @@ export function CardEditable({
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const inputRef = useRef<HTMLInputElement>(null)
   const mutation = useBoardMutation(boardId)
+  const settings = useBoardSettings(boardId)
+  const showCheckbox = settings.show_checkbox
+  const compact = settings.card_display_mode === 'compact'
   const committedRef = useRef(false)
 
   useEffect(() => {
@@ -85,23 +89,25 @@ export function CardEditable({
 
   return (
     <>
-      <div className="group relative rounded-md bg-white p-3 shadow-sm ring-1 ring-slate-200">
+      <div className={`group relative rounded-md bg-white shadow-sm ring-1 ring-slate-200 ${compact ? 'p-2 text-xs' : 'p-3 text-sm'}`}>
         <div className="flex items-start gap-2">
-          <button
-            type="button"
-            aria-label={card.completed ? 'mark incomplete' : 'mark complete'}
-            onClick={(e) => {
-              e.stopPropagation()
-              mutation.mutate({
-                type: 'complete_card',
-                col_idx: colIdx,
-                card_idx: cardIdx,
-              })
-            }}
-            className={`mt-1 h-4 w-4 shrink-0 rounded-full border ${
-              card.completed ? 'bg-slate-400 border-slate-400' : 'border-slate-300'
-            }`}
-          />
+          {showCheckbox && (
+            <button
+              type="button"
+              aria-label={card.completed ? 'mark incomplete' : 'mark complete'}
+              onClick={(e) => {
+                e.stopPropagation()
+                mutation.mutate({
+                  type: 'complete_card',
+                  col_idx: colIdx,
+                  card_idx: cardIdx,
+                })
+              }}
+              className={`mt-1 h-4 w-4 shrink-0 rounded-full border ${
+                card.completed ? 'bg-slate-400 border-slate-400' : 'border-slate-300'
+              }`}
+            />
+          )}
           <div className="flex-1">
             <div
               onDoubleClick={() => setMode('edit')}
