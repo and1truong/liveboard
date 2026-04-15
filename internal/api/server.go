@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"io/fs"
+	"strings"
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -24,6 +25,7 @@ import (
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
 	staticweb "github.com/and1truong/liveboard/web"
+	renderer "github.com/and1truong/liveboard/web/renderer/default"
 	shell "github.com/and1truong/liveboard/web/shell"
 )
 
@@ -347,12 +349,19 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 }
 
 func (s *Server) mountShellRoutes(r chi.Router) {
-	sub, err := fs.Sub(shell.FS, "dist")
+	shellSub, err := fs.Sub(shell.FS, "dist")
 	if err != nil {
 		log.Printf("shell embed: %v", err)
 		return
 	}
-	handler := http.StripPrefix("/app/", http.FileServer(http.FS(sub)))
+	rendererSub, err := fs.Sub(renderer.FS, "dist")
+	if err != nil {
+		log.Printf("renderer embed: %v", err)
+		return
+	}
+	shellHandler := http.StripPrefix("/app/", http.FileServer(http.FS(shellSub)))
+	rendererHandler := http.StripPrefix("/app/renderer/default/", http.FileServer(http.FS(rendererSub)))
+
 	r.Get("/app", func(w http.ResponseWriter, req *http.Request) {
 		http.Redirect(w, req, "/app/", http.StatusMovedPermanently)
 	})
@@ -360,7 +369,11 @@ func (s *Server) mountShellRoutes(r chi.Router) {
 		if s.noCache {
 			w.Header().Set("Cache-Control", "no-cache, no-store")
 		}
-		handler.ServeHTTP(w, req)
+		if strings.HasPrefix(req.URL.Path, "/app/renderer/default/") {
+			rendererHandler.ServeHTTP(w, req)
+			return
+		}
+		shellHandler.ServeHTTP(w, req)
 	})
 }
 

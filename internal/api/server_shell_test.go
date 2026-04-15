@@ -40,3 +40,18 @@ func TestShellRoute_Enabled(t *testing.T) {
 		t.Fatalf("response did not contain expected shell HTML")
 	}
 }
+
+func TestShellRoute_Renderer(t *testing.T) {
+	t.Setenv("LIVEBOARD_APP_SHELL", "1")
+	s := setupShellTest(t)
+
+	req := httptest.NewRequest(http.MethodGet, "/app/renderer/default/", nil)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "<div id=\"root\">") {
+		t.Fatalf("response did not contain renderer root div")
+	}
+}
