@@ -9,6 +9,7 @@ import { BoardDndContext } from '../dnd/BoardDndContext.js'
 import { SortableColumn } from '../dnd/SortableColumn.js'
 import { encodeColumnId } from '../dnd/cardId.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
+import { BoardFocusProvider } from '../contexts/BoardFocusContext.js'
 
 export function BoardView({ client }: { client: Client }): JSX.Element {
   const { active, setActive } = useActiveBoard()
@@ -46,21 +47,23 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
   const columnIds = names.map(encodeColumnId)
 
   return (
-    <BoardDndContext boardId={active}>
-      <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-        <div className="flex h-full gap-4 overflow-x-auto p-4">
-          {columns.map((col, i) => (
-            <SortableColumn
-              key={`${col.name}-${i}`}
-              column={col}
-              colIdx={i}
-              allColumnNames={names}
-              boardId={active}
-            />
-          ))}
-          <AddColumnButton boardId={active} />
-        </div>
-      </SortableContext>
-    </BoardDndContext>
+    <BoardFocusProvider columns={columns}>
+      <BoardDndContext boardId={active}>
+        <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+          <div className="flex h-full gap-4 overflow-x-auto p-4">
+            {columns.map((col, i) => (
+              <SortableColumn
+                key={`${col.name}-${i}`}
+                column={col}
+                colIdx={i}
+                allColumnNames={names}
+                boardId={active}
+              />
+            ))}
+            <AddColumnButton boardId={active} />
+          </div>
+        </SortableContext>
+      </BoardDndContext>
+    </BoardFocusProvider>
   )
 }

@@ -1,7 +1,11 @@
+import { useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Card as CardModel } from '@shared/types.js'
 import { CardEditable } from '../components/CardEditable.js'
+import { useBoardMutation } from '../mutations/useBoardMutation.js'
+import { stageDelete } from '../mutations/undoable.js'
+import { useBoardFocus, useCardFocus } from '../contexts/BoardFocusContext.js'
 import { encodeCardId } from './cardId.js'
 
 export function SortableCard({
@@ -20,13 +24,55 @@ export function SortableCard({
     id,
     data: { type: 'card', col_idx: colIdx, card_idx: cardIdx },
   })
+  const { isFocused, ref: focusRef } = useCardFocus(colIdx, cardIdx)
+  const { focused, setFocused, move } = useBoardFocus()
+  const [modalOpen, setModalOpen] = useState(false)
+  const mutation = useBoardMutation(boardId)
+
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
   }
+
+  const showFocusedTabStop =
+    isFocused || (focused === null && colIdx === 0 && cardIdx === 0)
+
+  const onKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.defaultPrevented) return
+    const tag = (e.target as HTMLElement).tagName
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'BUTTON') return
+    switch (e.key) {
+      case 'ArrowUp':    e.preventDefault(); move('up'); break
+      case 'ArrowDown':  e.preventDefault(); move('down'); break
+      case 'ArrowLeft':  e.preventDefault(); move('left'); break
+      case 'ArrowRight': e.preventDefault(); move('right'); break
+      case 'Enter':      e.preventDefault(); setModalOpen(true); break
+      case 'Delete':
+      case 'Backspace':
+        e.preventDefault()
+        stageDelete(
+          () => mutation.mutate({ type: 'delete_card', col_idx: colIdx, card_idx: cardIdx }),
+          card.title,
+        )
+        break
+    }
+  }
+
   return (
-    <div ref={setNodeRef} style={style} className="group/sortable relative">
+    <div
+      ref={(el) => {
+        setNodeRef(el)
+        focusRef(el)
+      }}
+      style={style}
+      tabIndex={showFocusedTabStop ? 0 : -1}
+      onFocus={() => setFocused({ colIdx, cardIdx })}
+      onKeyDown={onKeyDown}
+      className={`group/sortable relative outline-none rounded-md ${
+        isFocused ? 'ring-2 ring-blue-400 ring-offset-2' : ''
+      }`}
+    >
       <button
         type="button"
         aria-label="drag card"
@@ -36,7 +82,14 @@ export function SortableCard({
       >
         ⋮⋮
       </button>
-      <CardEditable card={card} colIdx={colIdx} cardIdx={cardIdx} boardId={boardId} />
+      <CardEditable
+        card={card}
+        colIdx={colIdx}
+        cardIdx={cardIdx}
+        boardId={boardId}
+        modalOpen={modalOpen}
+        onModalOpenChange={setModalOpen}
+      />
     </div>
   )
 }
