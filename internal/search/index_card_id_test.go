@@ -3,8 +3,9 @@ package search
 import (
 	"testing"
 
-	"github.com/and1truong/liveboard/pkg/models"
 	"github.com/blevesearch/bleve/v2"
+
+	"github.com/and1truong/liveboard/pkg/models"
 )
 
 func TestUpdateBoardIndexesCardID(t *testing.T) {
@@ -15,8 +16,8 @@ func TestUpdateBoardIndexesCardID(t *testing.T) {
 	b := &models.Board{Name: "B", Columns: []models.Column{{Name: "Todo", Cards: []models.Card{
 		{ID: "ABCDE12345", Title: "hello world"},
 	}}}}
-	if err := idx.UpdateBoard("b", b); err != nil {
-		t.Fatal(err)
+	if uerr := idx.UpdateBoard("b", b); uerr != nil {
+		t.Fatal(uerr)
 	}
 	q := bleve.NewTermQuery("hello")
 	q.SetField("title")
