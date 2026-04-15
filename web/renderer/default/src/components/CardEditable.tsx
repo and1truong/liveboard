@@ -1,8 +1,10 @@
-import { useState, useRef, useEffect } from 'react'
+import { Suspense, lazy, useState, useRef, useEffect } from 'react'
 import type { Card as CardModel } from '@shared/types.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
-import { CardDetailModal } from './CardDetailModal.js'
+const CardDetailModal = lazy(() =>
+  import('./CardDetailModal.js').then((m) => ({ default: m.CardDetailModal })),
+)
 import { useBoardSettings } from '../queries/useBoardSettings.js'
 
 const PRIORITY_DOT: Record<string, string> = {
@@ -159,14 +161,16 @@ export function CardEditable({
           </button>
         </div>
       </div>
-      <CardDetailModal
-        card={card}
-        colIdx={colIdx}
-        cardIdx={cardIdx}
-        boardId={boardId}
-        open={modalOpen}
-        onOpenChange={onModalOpenChange}
-      />
+      <Suspense fallback={null}>
+        <CardDetailModal
+          card={card}
+          colIdx={colIdx}
+          cardIdx={cardIdx}
+          boardId={boardId}
+          open={modalOpen}
+          onOpenChange={onModalOpenChange}
+        />
+      </Suspense>
     </>
   )
 }
