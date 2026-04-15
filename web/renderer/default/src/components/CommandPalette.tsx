@@ -12,8 +12,12 @@ import { stageDelete } from '../mutations/undoable.js'
 
 type Page = 'list' | 'create' | 'rename'
 
-export function CommandPalette(): JSX.Element {
-  const [open, setOpen] = useState(false)
+interface CommandPaletteProps {
+  open: boolean
+  onOpenChange: (next: boolean) => void
+}
+
+export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX.Element {
   const [page, setPage] = useState<Page>('list')
   const inputRef = useRef<HTMLInputElement>(null)
   const committedRef = useRef(false)
@@ -26,18 +30,6 @@ export function CommandPalette(): JSX.Element {
 
   const activeBoard = boards.data?.find((b) => b.id === active) ?? null
   const activeName = activeBoard?.name ?? ''
-
-  // Global Cmd+K / Ctrl+K toggle.
-  useEffect(() => {
-    const handler = (e: KeyboardEvent): void => {
-      if (e.key === 'k' && (e.metaKey || e.ctrlKey)) {
-        e.preventDefault()
-        setOpen((v) => !v)
-      }
-    }
-    window.addEventListener('keydown', handler)
-    return () => window.removeEventListener('keydown', handler)
-  }, [])
 
   // Reset to list page on every (re)open.
   useEffect(() => {
@@ -60,7 +52,7 @@ export function CommandPalette(): JSX.Element {
   }, [open, page])
 
   const close = (): void => {
-    setOpen(false)
+    onOpenChange(false)
   }
 
   const submitCreate = (e: FormEvent): void => {
@@ -84,7 +76,7 @@ export function CommandPalette(): JSX.Element {
   }
 
   return (
-    <Dialog.Root open={open} onOpenChange={setOpen}>
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content

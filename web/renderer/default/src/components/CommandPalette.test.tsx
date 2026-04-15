@@ -10,7 +10,7 @@ import { createMemoryPair } from '@shared/transport.js'
 import { ClientProvider } from '../queries.js'
 import { ActiveBoardProvider, useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { renderWithQuery } from '../test-utils.js'
-import { CommandPalette } from './CommandPalette.js'
+import { CommandPaletteHost } from './CommandPaletteHost.js'
 
 async function setup(): Promise<{ client: Client; qc: QueryClient }> {
   const [iframeT, shellT] = createMemoryPair()
@@ -40,7 +40,7 @@ describe('CommandPalette', () => {
     const { queryByPlaceholderText, findByPlaceholderText } = renderWithQuery(
       <ClientProvider client={client}>
         <ActiveBoardProvider>
-          <CommandPalette />
+          <CommandPaletteHost />
         </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
@@ -55,7 +55,7 @@ describe('CommandPalette', () => {
     const { findByText } = renderWithQuery(
       <ClientProvider client={client}>
         <ActiveBoardProvider>
-          <CommandPalette />
+          <CommandPaletteHost />
         </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
@@ -71,7 +71,7 @@ describe('CommandPalette', () => {
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <ActiveProbe onChange={(v) => { activeSeen = v }} />
-          <CommandPalette />
+          <CommandPaletteHost />
         </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
@@ -88,7 +88,7 @@ describe('CommandPalette', () => {
     const { queryByText, findByText } = renderWithQuery(
       <ClientProvider client={client}>
         <ActiveBoardProvider>
-          <CommandPalette />
+          <CommandPaletteHost />
         </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
@@ -105,7 +105,7 @@ describe('CommandPalette', () => {
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <SeedActive id="welcome" />
-          <CommandPalette />
+          <CommandPaletteHost />
         </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
