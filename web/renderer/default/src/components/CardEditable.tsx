@@ -89,7 +89,7 @@ export function CardEditable({
 
   return (
     <>
-      <div className={`group relative rounded-md bg-white shadow-sm ring-1 ring-slate-200 ${compact ? 'p-2 text-xs' : 'p-3 text-sm'}`}>
+      <div className={`group relative rounded-md bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 ${compact ? 'p-2 text-xs' : 'p-3 text-sm'}`}>
         <div className="flex items-start gap-2">
           {showCheckbox && (
             <button
@@ -119,7 +119,7 @@ export function CardEditable({
                   className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[card.priority] ?? 'bg-slate-300'}`}
                 />
               )}
-              <h3 className={`text-sm font-semibold ${card.completed ? 'line-through text-slate-400' : ''}`}>
+              <h3 className={`text-sm font-semibold dark:text-slate-100 ${card.completed ? 'line-through text-slate-400' : ''}`}>
                 {card.title}
               </h3>
             </div>
@@ -132,13 +132,13 @@ export function CardEditable({
               {card.tags && card.tags.length > 0 ? (
                 <ul className="flex flex-wrap gap-1">
                   {card.tags.map((t) => (
-                    <li key={t} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">
+                    <li key={t} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                       {t}
                     </li>
                   ))}
                 </ul>
               ) : (
-                <span className="text-xs text-slate-300">Click to edit details</span>
+                <span className="text-xs text-slate-300 dark:text-slate-500">Click to edit details</span>
               )}
               <span aria-hidden className="text-xs text-slate-300 opacity-0 group-hover:opacity-100">↗</span>
             </button>

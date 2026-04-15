@@ -65,7 +65,7 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
         type="button"
         onClick={() => setActive(board.id)}
         className={`flex flex-1 items-center gap-2 rounded px-2 py-1.5 text-left text-sm ${
-          isActive ? 'bg-slate-200 text-slate-900' : 'text-slate-700 hover:bg-slate-100'
+          isActive ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
         }`}
       >
         {board.icon && <span aria-hidden>{board.icon}</span>}

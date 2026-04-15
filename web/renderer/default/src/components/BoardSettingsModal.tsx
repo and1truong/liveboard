@@ -38,13 +38,13 @@ export function BoardSettingsModal({
         <Dialog.Content
           key={String(open)}
           aria-label="Board settings"
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl"
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-md -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl dark:bg-slate-800"
         >
-          <Dialog.Title className="text-lg font-semibold text-slate-800">
+          <Dialog.Title className="text-lg font-semibold text-slate-800 dark:text-slate-100">
             Settings: {boardName}
           </Dialog.Title>
           <form onSubmit={submit} className="mt-4 space-y-4">
-            <label className="flex items-center gap-2 text-sm text-slate-700">
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
               <input
                 ref={checkboxRef}
                 aria-label="show complete checkbox"
@@ -54,13 +54,13 @@ export function BoardSettingsModal({
               />
               Show complete checkbox on cards
             </label>
-            <label className="block text-sm text-slate-700">
-              <span className="block text-xs font-medium text-slate-600">Card display</span>
+            <label className="block text-sm text-slate-700 dark:text-slate-300">
+              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Card display</span>
               <select
                 ref={modeRef}
                 aria-label="card display mode"
                 defaultValue={settings.card_display_mode}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               >
                 <option value="normal">Normal</option>
                 <option value="compact">Compact</option>

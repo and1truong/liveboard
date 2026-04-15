@@ -75,7 +75,7 @@ export function ColumnHeader({
 
   return (
     <header className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-semibold text-slate-800">{name}</h2>
+      <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{name}</h2>
       <div className="flex items-center gap-2">
         <span className="text-xs text-slate-500">{cardCount}</span>
         <DropdownMenu.Root>

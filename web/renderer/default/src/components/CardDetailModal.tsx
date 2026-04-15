@@ -64,47 +64,47 @@ export function CardDetailModal({
         <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
         <Dialog.Content
           key={String(open)}
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl"
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl dark:bg-slate-800"
         >
-          <Dialog.Title className="text-lg font-semibold text-slate-800">Edit card</Dialog.Title>
+          <Dialog.Title className="text-lg font-semibold text-slate-800 dark:text-slate-100">Edit card</Dialog.Title>
           <form onSubmit={submit} className="mt-4 space-y-3">
             <label className="block">
-              <span className="block text-xs font-medium text-slate-600">Title</span>
+              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Title</span>
               <input
                 ref={titleRef}
                 aria-label="card title"
                 defaultValue={card.title ?? ''}
                 onInput={(e) => setTitleValid((e.currentTarget.value ?? '').trim().length > 0)}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-medium text-slate-600">Body</span>
+              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Body</span>
               <textarea
                 ref={bodyRef}
                 aria-label="card body"
                 rows={6}
                 defaultValue={card.body ?? ''}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <label className="block">
-              <span className="block text-xs font-medium text-slate-600">Tags (comma separated)</span>
+              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Tags (comma separated)</span>
               <input
                 ref={tagsRef}
                 aria-label="card tags"
                 defaultValue={(card.tags ?? []).join(', ')}
-                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <div className="grid grid-cols-3 gap-3">
               <label className="block">
-                <span className="block text-xs font-medium text-slate-600">Priority</span>
+                <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Priority</span>
                 <select
                   ref={priorityRef}
                   aria-label="card priority"
                   defaultValue={card.priority ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 >
                   <option value="">—</option>
                   <option value="low">Low</option>
@@ -114,22 +114,22 @@ export function CardDetailModal({
                 </select>
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-slate-600">Due</span>
+                <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Due</span>
                 <input
                   ref={dueRef}
                   aria-label="card due"
                   type="date"
                   defaultValue={card.due ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 />
               </label>
               <label className="block">
-                <span className="block text-xs font-medium text-slate-600">Assignee</span>
+                <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Assignee</span>
                 <input
                   ref={assigneeRef}
                   aria-label="card assignee"
                   defaultValue={card.assignee ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 />
               </label>
             </div>

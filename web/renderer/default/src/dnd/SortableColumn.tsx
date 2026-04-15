@@ -35,7 +35,7 @@ export function SortableColumn({
     <section
       ref={setNodeRef}
       style={style}
-      className="flex w-72 shrink-0 flex-col rounded-lg bg-slate-100 p-3"
+      className="flex w-72 shrink-0 flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900"
     >
       <div className="mb-3 flex items-center gap-2">
         <button
