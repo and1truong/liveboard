@@ -3,6 +3,7 @@ import type { Client } from '@shared/client.js'
 import { useBoard } from '../queries.js'
 import { Column } from './Column.js'
 import { EmptyState } from './EmptyState.js'
+import { AddColumnButton } from './AddColumnButton.js'
 
 export function BoardView({
   boardId,
@@ -28,14 +29,27 @@ export function BoardView({
 
   const columns = data.columns ?? []
   if (columns.length === 0) {
-    return <EmptyState title="This board has no columns yet." />
+    return (
+      <div className="flex h-full gap-4 overflow-x-auto p-4">
+        <AddColumnButton boardId={boardId} />
+      </div>
+    )
   }
+
+  const names = columns.map((c) => c.name)
 
   return (
     <div className="flex h-full gap-4 overflow-x-auto p-4">
       {columns.map((col, i) => (
-        <Column key={`${col.name}-${i}`} column={col} />
+        <Column
+          key={`${col.name}-${i}`}
+          column={col}
+          colIdx={i}
+          allColumnNames={names}
+          boardId={boardId}
+        />
       ))}
+      <AddColumnButton boardId={boardId} />
     </div>
   )
 }

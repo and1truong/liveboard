@@ -1,21 +1,37 @@
 import type { Column as ColumnModel } from '@shared/types.js'
-import { Card } from './Card.js'
+import { CardEditable } from './CardEditable.js'
+import { ColumnHeader } from './ColumnHeader.js'
+import { AddCardButton } from './AddCardButton.js'
 
-export function Column({ column }: { column: ColumnModel }): JSX.Element {
+export function Column({
+  column,
+  colIdx,
+  allColumnNames,
+  boardId,
+}: {
+  column: ColumnModel
+  colIdx: number
+  allColumnNames: string[]
+  boardId: string
+}): JSX.Element {
   const cards = column.cards ?? []
   return (
     <section className="flex w-72 shrink-0 flex-col rounded-lg bg-slate-100 p-3">
-      <header className="mb-3 flex items-center justify-between">
-        <h2 className="text-sm font-semibold text-slate-800">{column.name}</h2>
-        <span className="text-xs text-slate-500">{cards.length}</span>
-      </header>
+      <ColumnHeader
+        name={column.name}
+        cardCount={cards.length}
+        colIdx={colIdx}
+        allColumnNames={allColumnNames}
+        boardId={boardId}
+      />
       <ul className="flex flex-col gap-2">
         {cards.map((card, i) => (
           <li key={`${column.name}-${i}`}>
-            <Card card={card} />
+            <CardEditable card={card} colIdx={colIdx} cardIdx={i} boardId={boardId} />
           </li>
         ))}
       </ul>
+      <AddCardButton columnName={column.name} boardId={boardId} />
     </section>
   )
 }
