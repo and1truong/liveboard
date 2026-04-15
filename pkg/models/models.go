@@ -46,6 +46,7 @@ type Card struct {
 	NoCheckbox bool              `json:"no_checkbox,omitempty"`
 	Tags       []string          `json:"tags,omitempty"`
 	InlineTags []string          `json:"inline_tags,omitempty"`
+	Links      []string          `json:"links,omitempty" yaml:"links,omitempty"`
 	Assignee   string            `json:"assignee,omitempty"`
 	Priority   string            `json:"priority,omitempty"`
 	Due        string            `json:"due,omitempty"`

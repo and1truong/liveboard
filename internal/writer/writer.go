@@ -58,6 +58,7 @@ func Render(board *models.Board) (string, error) {
 	return b.String(), nil
 }
 
+//nolint:cyclop // field-by-field emit; each new Card field adds one branch
 func writeCard(b *strings.Builder, card *models.Card) {
 	// Build title with inline tags restored.
 	var title string
@@ -85,6 +86,9 @@ func writeCard(b *strings.Builder, card *models.Card) {
 
 	if card.ID != "" {
 		fmt.Fprintf(b, "  id: %s\n", card.ID)
+	}
+	if len(card.Links) > 0 {
+		fmt.Fprintf(b, "  links: %s\n", strings.Join(card.Links, ", "))
 	}
 
 	// Write metadata-only tags (exclude inline tags already in title).

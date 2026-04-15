@@ -30,6 +30,7 @@ export interface Card {
   no_checkbox?: boolean
   tags?: string[]
   inline_tags?: string[]
+  links?: string[]
   assignee?: string
   priority?: string
   due?: string
@@ -64,6 +65,7 @@ export type MutationOp =
       title: string
       body: string
       tags: string[]
+      links: string[]
       priority: string
       due: string
       assignee: string

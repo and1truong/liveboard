@@ -481,3 +481,22 @@ func TestRenderRoundTripID(t *testing.T) {
 		t.Fatalf("round-trip lost id: %+v", parsed2.Columns[0].Cards[0])
 	}
 }
+
+func TestWriteCard_Links(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{{
+			Name: "Todo",
+			Cards: []models.Card{{
+				Title: "Hi",
+				Links: []string{"foo:aBc1234XyZ", "bar:Q9rT5pZ2nM"},
+			}},
+		}},
+	}
+	raw, err := Render(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(raw, "links: foo:aBc1234XyZ, bar:Q9rT5pZ2nM") {
+		t.Errorf("links line missing in output:\n%s", raw)
+	}
+}

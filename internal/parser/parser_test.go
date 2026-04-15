@@ -1,6 +1,7 @@
 package parser
 
 import (
+	"reflect"
 	"testing"
 )
 
@@ -694,5 +695,21 @@ func TestParseCardIDAbsent(t *testing.T) {
 	}
 	if got := b.Columns[0].Cards[0].ID; got != "" {
 		t.Fatalf("want empty id, got %q", got)
+	}
+}
+
+func TestParseCard_Links(t *testing.T) {
+	md := "## Todo\n\n- [ ] Card title\n  links: foo:aBc1234XyZ, bar:Q9rT5pZ2nM\n"
+	boards, err := Parse(md)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(boards.Columns) != 1 || len(boards.Columns[0].Cards) != 1 {
+		t.Fatal("unexpected structure")
+	}
+	got := boards.Columns[0].Cards[0].Links
+	want := []string{"foo:aBc1234XyZ", "bar:Q9rT5pZ2nM"}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("links = %v, want %v", got, want)
 	}
 }

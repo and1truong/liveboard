@@ -103,6 +103,7 @@ type EditCardOp struct {
 	Title    string   `json:"title"`
 	Body     string   `json:"body"`
 	Tags     []string `json:"tags"`
+	Links    []string `json:"links"`
 	Priority string   `json:"priority"`
 	Due      string   `json:"due"`
 	Assignee string   `json:"assignee"`

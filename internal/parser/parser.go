@@ -177,6 +177,13 @@ func Parse(content string) (*models.Board, error) {
 					currentCard.Due = val
 				case "id":
 					currentCard.ID = val
+				case "links":
+					for _, l := range strings.Split(val, ",") {
+						l = strings.TrimSpace(l)
+						if l != "" {
+							currentCard.Links = append(currentCard.Links, l)
+						}
+					}
 				default:
 					if currentCard.Metadata == nil {
 						currentCard.Metadata = make(map[string]string)
