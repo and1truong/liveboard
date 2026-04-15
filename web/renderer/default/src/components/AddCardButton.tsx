@@ -57,7 +57,7 @@ export function AddCardButton({
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="mt-2 w-full rounded-md px-2 py-1 text-left text-xs text-slate-500 hover:bg-slate-200"
+      className="mt-2 w-full rounded-md px-2 py-1 text-left text-xs text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-800"
     >
       + Add card
     </button>

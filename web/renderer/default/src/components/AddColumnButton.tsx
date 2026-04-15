@@ -53,7 +53,7 @@ export function AddColumnButton({ boardId }: { boardId: string }): JSX.Element {
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="flex w-72 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 p-3 text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700"
+      className="flex w-72 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 p-3 text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200"
     >
       + Add column
     </button>

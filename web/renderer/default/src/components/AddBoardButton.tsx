@@ -51,7 +51,7 @@ export function AddBoardButton(): JSX.Element {
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="border-t border-slate-200 px-3 py-2 text-left text-sm text-slate-500 hover:bg-slate-50"
+      className="border-t border-slate-200 px-3 py-2 text-left text-sm text-slate-500 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
     >
       + New board
     </button>

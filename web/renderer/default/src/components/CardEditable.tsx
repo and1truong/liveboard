@@ -140,7 +140,7 @@ export function CardEditable({
                   ))}
                 </ul>
               ) : (
-                <span className="text-xs text-slate-300 dark:text-slate-500">Click to edit details</span>
+                <span className="text-xs text-slate-300 dark:text-slate-600">Click to edit details</span>
               )}
               <span aria-hidden className="text-xs text-slate-300 opacity-0 group-hover:opacity-100">↗</span>
             </button>
