@@ -1,0 +1,157 @@
+import { useRef, useState, useEffect, type FormEvent } from 'react'
+import * as Dialog from '@radix-ui/react-dialog'
+import type { Card as CardModel } from '@shared/types.js'
+import { useBoardMutation } from '../mutations/useBoardMutation.js'
+
+export function CardDetailModal({
+  card,
+  colIdx,
+  cardIdx,
+  boardId,
+  open,
+  onOpenChange,
+}: {
+  card: CardModel
+  colIdx: number
+  cardIdx: number
+  boardId: string
+  open: boolean
+  onOpenChange: (next: boolean) => void
+}): JSX.Element {
+  const titleRef = useRef<HTMLInputElement>(null)
+  const bodyRef = useRef<HTMLTextAreaElement>(null)
+  const tagsRef = useRef<HTMLInputElement>(null)
+  const priorityRef = useRef<HTMLSelectElement>(null)
+  const dueRef = useRef<HTMLInputElement>(null)
+  const assigneeRef = useRef<HTMLInputElement>(null)
+
+  const [titleValid, setTitleValid] = useState((card.title ?? '').trim().length > 0)
+  const mutation = useBoardMutation(boardId)
+
+  useEffect(() => {
+    if (open) setTitleValid((card.title ?? '').trim().length > 0)
+  }, [open, card.title])
+
+  const submit = (e: FormEvent): void => {
+    e.preventDefault()
+    const title = (titleRef.current?.value ?? '').trim()
+    if (!title) return
+    const tags = (tagsRef.current?.value ?? '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean)
+    mutation.mutate(
+      {
+        type: 'edit_card',
+        col_idx: colIdx,
+        card_idx: cardIdx,
+        title,
+        body: bodyRef.current?.value ?? '',
+        tags,
+        priority: priorityRef.current?.value ?? '',
+        due: dueRef.current?.value ?? '',
+        assignee: assigneeRef.current?.value ?? '',
+      },
+      {
+        onSuccess: () => onOpenChange(false),
+      },
+    )
+  }
+
+  return (
+    <Dialog.Root open={open} onOpenChange={onOpenChange}>
+      <Dialog.Portal>
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
+        <Dialog.Content
+          key={String(open)}
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl"
+        >
+          <Dialog.Title className="text-lg font-semibold text-slate-800">Edit card</Dialog.Title>
+          <form onSubmit={submit} className="mt-4 space-y-3">
+            <label className="block">
+              <span className="block text-xs font-medium text-slate-600">Title</span>
+              <input
+                ref={titleRef}
+                aria-label="card title"
+                defaultValue={card.title ?? ''}
+                onInput={(e) => setTitleValid((e.currentTarget.value ?? '').trim().length > 0)}
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-xs font-medium text-slate-600">Body</span>
+              <textarea
+                ref={bodyRef}
+                aria-label="card body"
+                rows={6}
+                defaultValue={card.body ?? ''}
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+              />
+            </label>
+            <label className="block">
+              <span className="block text-xs font-medium text-slate-600">Tags (comma separated)</span>
+              <input
+                ref={tagsRef}
+                aria-label="card tags"
+                defaultValue={(card.tags ?? []).join(', ')}
+                className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+              />
+            </label>
+            <div className="grid grid-cols-3 gap-3">
+              <label className="block">
+                <span className="block text-xs font-medium text-slate-600">Priority</span>
+                <select
+                  ref={priorityRef}
+                  aria-label="card priority"
+                  defaultValue={card.priority ?? ''}
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                >
+                  <option value="">—</option>
+                  <option value="low">Low</option>
+                  <option value="medium">Medium</option>
+                  <option value="high">High</option>
+                  <option value="critical">Critical</option>
+                </select>
+              </label>
+              <label className="block">
+                <span className="block text-xs font-medium text-slate-600">Due</span>
+                <input
+                  ref={dueRef}
+                  aria-label="card due"
+                  type="date"
+                  defaultValue={card.due ?? ''}
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                />
+              </label>
+              <label className="block">
+                <span className="block text-xs font-medium text-slate-600">Assignee</span>
+                <input
+                  ref={assigneeRef}
+                  aria-label="card assignee"
+                  defaultValue={card.assignee ?? ''}
+                  className="mt-1 w-full rounded border border-slate-300 px-2 py-1 text-sm outline-none focus:border-blue-400"
+                />
+              </label>
+            </div>
+            <div className="mt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="rounded px-3 py-1 text-sm text-slate-600 hover:bg-slate-100"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={!titleValid || mutation.isPending}
+                className="rounded bg-blue-600 px-3 py-1 text-sm font-medium text-white disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                {mutation.isPending ? 'Saving…' : 'Save'}
+              </button>
+            </div>
+          </form>
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  )
+}
