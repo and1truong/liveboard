@@ -145,6 +145,10 @@ export function useBoardFocus(): BoardFocusCtx {
   return v
 }
 
+export function useOptionalBoardFocus(): BoardFocusCtx | null {
+  return useContext(Ctx)
+}
+
 export function useCardFocus(
   colIdx: number,
   cardIdx: number,

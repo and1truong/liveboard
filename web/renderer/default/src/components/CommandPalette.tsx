@@ -3,6 +3,9 @@ import * as Dialog from '@radix-ui/react-dialog'
 import { Command } from 'cmdk'
 import { useBoardList } from '../queries.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
+import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
+import { useSearch } from '../queries/useSearch.js'
+import { sanitize } from './markdownPreview.js'
 import {
   useCreateBoard,
   useRenameBoard,
@@ -22,6 +25,10 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
   const inputRef = useRef<HTMLInputElement>(null)
   const committedRef = useRef(false)
 
+  const [query, setQuery] = useState('')
+  const hits = useSearch(query)
+  const focusCtx = useOptionalBoardFocus()
+
   const boards = useBoardList()
   const { active, setActive } = useActiveBoard()
   const createMut = useCreateBoard()
@@ -35,6 +42,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
   useEffect(() => {
     if (open) {
       setPage('list')
+      setQuery('')
       committedRef.current = false
     }
   }, [open])
@@ -88,7 +96,9 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
           {page === 'list' && (
             <Command label="Command palette" className="flex flex-col gap-1">
               <Command.Input
-                placeholder="Type a command or board name…"
+                value={query}
+                onValueChange={setQuery}
+                placeholder="Type a command, board, or card…"
                 className="w-full rounded px-3 py-2 text-base outline-none placeholder:text-slate-400"
               />
               <Command.List className="max-h-80 overflow-y-auto">
@@ -143,6 +153,31 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                     </>
                   )}
                 </Command.Group>
+                {hits.length > 0 && (
+                  <Command.Group heading="Cards" className="text-xs uppercase text-slate-400 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1">
+                    {hits.map((h) => (
+                      <Command.Item
+                        key={`${h.boardId}:${h.colIdx}:${h.cardIdx}`}
+                        value={`card ${h.cardTitle} ${query}`}
+                        onSelect={() => {
+                          setActive(h.boardId)
+                          Promise.resolve().then(() => focusCtx?.setFocused({ colIdx: h.colIdx, cardIdx: h.cardIdx }))
+                          close()
+                        }}
+                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
+                      >
+                        <span className="font-semibold">{h.cardTitle}</span>
+                        <span className="ml-2 text-xs text-slate-400">in {h.boardName}</span>
+                        {h.snippet && (
+                          <span
+                            className="block text-xs text-slate-500 dark:text-slate-400"
+                            dangerouslySetInnerHTML={{ __html: sanitize(h.snippet) }}
+                          />
+                        )}
+                      </Command.Item>
+                    ))}
+                  </Command.Group>
+                )}
               </Command.List>
             </Command>
           )}

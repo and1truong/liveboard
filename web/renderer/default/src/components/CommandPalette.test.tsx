@@ -45,9 +45,9 @@ describe('CommandPalette', () => {
       </ClientProvider>,
       { queryClient: qc },
     )
-    expect(queryByPlaceholderText('Type a command or board name…')).toBeNull()
+    expect(queryByPlaceholderText('Type a command, board, or card…')).toBeNull()
     fireEvent.keyDown(window, { key: 'k', metaKey: true })
-    await findByPlaceholderText('Type a command or board name…')
+    await findByPlaceholderText('Type a command, board, or card…')
   })
 
   it('lists boards from cache', async () => {
@@ -80,7 +80,7 @@ describe('CommandPalette', () => {
     const item = await findByText('Welcome')
     fireEvent.click(item)
     await waitFor(() => expect(activeSeen).toBe('welcome'))
-    await waitFor(() => expect(queryByPlaceholderText('Type a command or board name…')).toBeNull())
+    await waitFor(() => expect(queryByPlaceholderText('Type a command, board, or card…')).toBeNull())
   })
 
   it('Rename current board hidden when no active board', async () => {
