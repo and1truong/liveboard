@@ -53,7 +53,10 @@ export function dispatchDrop(
     if (fromIdx === toIdx) return null
     const name = a.name as string
     const cols = board.columns ?? []
-    const after_col = fromIdx < toIdx ? (cols[toIdx]?.name ?? '') : ''
+    const after_col =
+      fromIdx < toIdx
+        ? (cols[toIdx]?.name ?? '')
+        : (cols[toIdx - 1]?.name ?? '')
     return { type: 'move_column', name, after_col }
   }
 

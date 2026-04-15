@@ -151,7 +151,7 @@ describe('dispatchDrop', () => {
         over('column:B', 'column', { name: 'B', col_idx: 1 }),
         board,
       ),
-    ).toEqual({ type: 'move_column', name: 'C', after_col: '' })
+    ).toEqual({ type: 'move_column', name: 'C', after_col: 'A' })
   })
 
   it('returns null when types do not match (card over nothing)', () => {
