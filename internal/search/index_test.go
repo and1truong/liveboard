@@ -94,3 +94,41 @@ func TestSearch_TwoBoardsCorrectAttribution(t *testing.T) {
 		t.Errorf("expected both boards in hits, got %v", seen)
 	}
 }
+
+func TestSearch_Backlinks(t *testing.T) {
+	const tgtID = "tgt-card-001"
+
+	idx := mustNew(t)
+
+	// source board: card links to target
+	srcCard := models.Card{
+		Title: "Source card",
+		Body:  "",
+		Links: []string{"target:" + tgtID},
+	}
+	srcBoard := newBoard("Source", col("Todo", srcCard))
+	if err := idx.UpdateBoard("source", srcBoard); err != nil {
+		t.Fatal(err)
+	}
+
+	// target board: a plain card (the link target)
+	tgtCard := models.Card{Title: "Target card", Body: ""}
+	tgtBoard := newBoard("Target", col("Done", tgtCard))
+	if err := idx.UpdateBoard("target", tgtBoard); err != nil {
+		t.Fatal(err)
+	}
+
+	hits, err := idx.Backlinks(tgtID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hits) != 1 {
+		t.Fatalf("expected 1 backlink hit, got %d", len(hits))
+	}
+	if hits[0].BoardID != "source" {
+		t.Errorf("backlink board_id = %q, want %q", hits[0].BoardID, "source")
+	}
+	if hits[0].CardTitle != "Source card" {
+		t.Errorf("backlink title = %q", hits[0].CardTitle)
+	}
+}
