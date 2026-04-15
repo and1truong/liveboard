@@ -135,6 +135,7 @@ export class ServerAdapter implements BackendAdapter {
   }
 
   async backlinks(cardId: string): Promise<BacklinkHit[]> {
+    if (!cardId) return []
     const raw = await this.getJSON<Array<{
       board_id: string
       board_name: string
