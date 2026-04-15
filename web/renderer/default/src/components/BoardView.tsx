@@ -1,9 +1,12 @@
 import { useEffect } from 'react'
+import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
 import { useBoard } from '../queries.js'
-import { Column } from './Column.js'
 import { EmptyState } from './EmptyState.js'
 import { AddColumnButton } from './AddColumnButton.js'
+import { BoardDndContext } from '../dnd/BoardDndContext.js'
+import { SortableColumn } from '../dnd/SortableColumn.js'
+import { encodeColumnId } from '../dnd/cardId.js'
 
 export function BoardView({
   boardId,
@@ -37,19 +40,24 @@ export function BoardView({
   }
 
   const names = columns.map((c) => c.name)
+  const columnIds = names.map(encodeColumnId)
 
   return (
-    <div className="flex h-full gap-4 overflow-x-auto p-4">
-      {columns.map((col, i) => (
-        <Column
-          key={`${col.name}-${i}`}
-          column={col}
-          colIdx={i}
-          allColumnNames={names}
-          boardId={boardId}
-        />
-      ))}
-      <AddColumnButton boardId={boardId} />
-    </div>
+    <BoardDndContext boardId={boardId}>
+      <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+        <div className="flex h-full gap-4 overflow-x-auto p-4">
+          {columns.map((col, i) => (
+            <SortableColumn
+              key={`${col.name}-${i}`}
+              column={col}
+              colIdx={i}
+              allColumnNames={names}
+              boardId={boardId}
+            />
+          ))}
+          <AddColumnButton boardId={boardId} />
+        </div>
+      </SortableContext>
+    </BoardDndContext>
   )
 }
