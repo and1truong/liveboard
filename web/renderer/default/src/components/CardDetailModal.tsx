@@ -43,7 +43,10 @@ export function CardDetailModal({
   const activeBoardCtx = useOptionalActiveBoard()
   const focusCtx = useOptionalBoardFocus()
 
-  useEffect(() => { if (open) setLinks(card.links ?? []) }, [open, card.links])
+  useEffect(() => {
+    if (open) setLinks(card.links ?? [])
+    else setPickerOpen(false)
+  }, [open, card.links])
 
   const addLink = (t: string): void => {
     if (!links.includes(t)) setLinks([...links, t])
