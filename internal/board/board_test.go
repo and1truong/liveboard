@@ -300,7 +300,7 @@ func TestReorderCardInvalidIndices(t *testing.T) {
 func TestEditCard(t *testing.T) {
 	path, eng := setupMultiCardBoard(t)
 
-	err := eng.EditCard(path, 0, 0, "Updated Title", "Some body text", []string{"tag1", "tag2"}, "medium", "2025-06-01", "alice")
+	err := eng.EditCard(path, 0, 0, "Updated Title", "Some body text", []string{"tag1", "tag2"}, nil, "medium", "2025-06-01", "alice")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -331,7 +331,7 @@ func TestEditCardPartialUpdate(t *testing.T) {
 	path, eng := setupMultiCardBoard(t)
 
 	// Empty title means keep existing
-	err := eng.EditCard(path, 0, 0, "", "", nil, "", "", "")
+	err := eng.EditCard(path, 0, 0, "", "", nil, nil, "", "", "")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -348,7 +348,7 @@ func TestEditCardPartialUpdate(t *testing.T) {
 func TestEditCardInvalidIndex(t *testing.T) {
 	path, eng := setupMultiCardBoard(t)
 
-	err := eng.EditCard(path, 0, 99, "X", "", nil, "", "", "")
+	err := eng.EditCard(path, 0, 99, "X", "", nil, nil, "", "", "")
 	if err == nil {
 		t.Fatal("expected error for invalid card index")
 	}
@@ -1067,11 +1067,34 @@ func TestApplyAddCardAssignsID(t *testing.T) {
 
 func TestApplyEditCardAssignsIDWhenMissing(t *testing.T) {
 	b := &models.Board{Columns: []models.Column{{Name: "Todo", Cards: []models.Card{{Title: "x"}}}}}
-	if err := ApplyEditCard(b, 0, 0, "x", "", nil, "", "", ""); err != nil {
+	if err := ApplyEditCard(b, 0, 0, "x", "", nil, nil, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if b.Columns[0].Cards[0].ID == "" {
 		t.Fatal("expected ID after edit")
+	}
+}
+
+func TestEditCardLinksPersistedOnReload(t *testing.T) {
+	path, eng := setupTestBoard(t)
+
+	links := []string{"board:abc123/crd456", "board:def789/ghi012"}
+	if err := eng.EditCard(path, 0, 0, "Updated Title", "body", []string{"tag1"}, links, "high", "", "alice"); err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := eng.LoadBoard(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	card := b.Columns[0].Cards[0]
+	if len(card.Links) != len(links) {
+		t.Fatalf("expected %d links, got %d", len(links), len(card.Links))
+	}
+	for i, want := range links {
+		if card.Links[i] != want {
+			t.Errorf("links[%d]: want %q, got %q", i, want, card.Links[i])
+		}
 	}
 }
 

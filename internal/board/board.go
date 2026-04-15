@@ -323,7 +323,7 @@ func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) e
 }
 
 // ApplyEditCard updates a card's fields within b.
-func ApplyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tags []string, priority, due, assignee string) error {
+func ApplyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tags []string, links []string, priority, due, assignee string) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
@@ -334,16 +334,17 @@ func ApplyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tag
 	}
 	card.Body = body
 	card.Tags = tags
+	card.Links = links
 	card.Priority = priority
 	card.Due = due
 	card.Assignee = assignee
 	return nil
 }
 
-// EditCard updates a card's title, body, tags, priority, due, and assignee in-place.
-func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, priority, due, assignee string) error {
+// EditCard updates a card's title, body, tags, links, priority, due, and assignee in-place.
+func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, links []string, priority, due, assignee string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyEditCard(b, colIdx, cardIdx, title, body, tags, priority, due, assignee)
+		return ApplyEditCard(b, colIdx, cardIdx, title, body, tags, links, priority, due, assignee)
 	})
 }
 

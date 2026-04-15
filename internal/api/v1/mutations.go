@@ -409,7 +409,7 @@ func Apply(b *models.Board, op MutationOp) error {
 			return fmt.Errorf("edit_card: missing params")
 		}
 		p := op.EditCard
-		return board.ApplyEditCard(b, p.ColIdx, p.CardIdx, p.Title, p.Body, p.Tags, p.Priority, p.Due, p.Assignee)
+		return board.ApplyEditCard(b, p.ColIdx, p.CardIdx, p.Title, p.Body, p.Tags, p.Links, p.Priority, p.Due, p.Assignee)
 	case "delete_card":
 		if op.DeleteCard == nil {
 			return fmt.Errorf("delete_card: missing params")

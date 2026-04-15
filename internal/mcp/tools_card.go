@@ -102,7 +102,7 @@ func (m *Server) registerCardCRUDTools() {
 			return errResult(err)
 		}
 		err = m.eng.EditCard(path, args.ColumnIndex, args.CardIndex,
-			args.Title, args.Body, args.Tags, args.Priority, args.Due, args.Assignee)
+			args.Title, args.Body, args.Tags, nil, args.Priority, args.Due, args.Assignee)
 		if err != nil {
 			return errResult(err)
 		}
