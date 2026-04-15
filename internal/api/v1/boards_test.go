@@ -56,9 +56,27 @@ func TestListBoards(t *testing.T) {
 	if len(body) != 1 {
 		t.Fatalf("want 1 board, got %d", len(body))
 	}
-	// Board is []models.Board; the identifier field is "name" (json:"name").
-	if s, _ := body[0]["name"].(string); s == "" {
-		t.Errorf("expected non-empty name, got %v", body[0])
+	// Response must be the BoardSummary DTO the renderer expects, not a raw
+	// models.Board. Missing `id` → every row's active check collapses to
+	// undefined===undefined, highlighting all rows and blocking load.
+	row := body[0]
+	id, _ := row["id"].(string)
+	name, _ := row["name"].(string)
+	if id == "" {
+		t.Errorf("expected non-empty id, got %v", row)
+	}
+	if name == "" {
+		t.Errorf("expected non-empty name, got %v", row)
+	}
+	if id != name {
+		t.Errorf("id and name should match for summary: id=%q name=%q", id, name)
+	}
+	if _, ok := row["version"]; !ok {
+		t.Errorf("expected version field, got %v", row)
+	}
+	// Raw models.Board exposes columns; the DTO must not.
+	if _, leaked := row["columns"]; leaked {
+		t.Errorf("listBoards leaked raw Board (columns present): %v", row)
 	}
 }
 
