@@ -9,6 +9,7 @@ export function errorToast(code: string): void {
     OUT_OF_RANGE: 'Index out of range',
     INVALID: 'Invalid input',
     INTERNAL: 'Server error — try again',
+    ALREADY_EXISTS: 'A board with that name already exists',
   }
   toast.error(copy[code] ?? code)
 }
