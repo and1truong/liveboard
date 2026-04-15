@@ -2,7 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import type { Card as CardModel } from '@shared/types.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
-import { Card } from './Card.js'
+import { CardDetailModal } from './CardDetailModal.js'
+
+const PRIORITY_DOT: Record<string, string> = {
+  critical: 'bg-red-600',
+  high: 'bg-orange-500',
+  medium: 'bg-yellow-400',
+  low: 'bg-slate-300',
+}
 
 export function CardEditable({
   card,
@@ -16,9 +23,9 @@ export function CardEditable({
   boardId: string
 }): JSX.Element {
   const [mode, setMode] = useState<'view' | 'edit'>('view')
+  const [modalOpen, setModalOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const mutation = useBoardMutation(boardId)
-  // Guards against double-commit from concurrent blur+keydown.
   const committedRef = useRef(false)
 
   useEffect(() => {
@@ -46,14 +53,12 @@ export function CardEditable({
         assignee: card.assignee ?? '',
       })
     }
-    // Defer mode switch so the current event cycle completes before unmounting the input.
     Promise.resolve().then(() => setMode('view'))
   }
 
   const cancel = (): void => {
     if (committedRef.current) return
     committedRef.current = true
-    // Defer mode switch so the current event cycle completes before unmounting the input.
     Promise.resolve().then(() => setMode('view'))
   }
 
@@ -66,13 +71,8 @@ export function CardEditable({
           defaultValue={card.title}
           onBlur={commit}
           onKeyDown={(e) => {
-            if (e.key === 'Enter') {
-              e.preventDefault()
-              commit()
-            } else if (e.key === 'Escape') {
-              e.preventDefault()
-              cancel()
-            }
+            if (e.key === 'Enter') { e.preventDefault(); commit() }
+            else if (e.key === 'Escape') { e.preventDefault(); cancel() }
           }}
           className="w-full bg-transparent text-sm font-semibold outline-none"
         />
@@ -81,45 +81,83 @@ export function CardEditable({
   }
 
   return (
-    <div
-      className="group relative"
-      onDoubleClick={() => {
-        setMode('edit')
-      }}
-    >
-      <div className="flex items-start gap-2">
-        <button
-          type="button"
-          aria-label={card.completed ? 'mark incomplete' : 'mark complete'}
-          onClick={() =>
-            mutation.mutate({
-              type: 'complete_card',
-              col_idx: colIdx,
-              card_idx: cardIdx,
-            })
-          }
-          className={`mt-3 h-4 w-4 shrink-0 rounded-full border ${
-            card.completed ? 'bg-slate-400 border-slate-400' : 'border-slate-300'
-          }`}
-        />
-        <div className="flex-1">
-          <Card card={card} />
+    <>
+      <div className="group relative rounded-md bg-white p-3 shadow-sm ring-1 ring-slate-200">
+        <div className="flex items-start gap-2">
+          <button
+            type="button"
+            aria-label={card.completed ? 'mark incomplete' : 'mark complete'}
+            onClick={(e) => {
+              e.stopPropagation()
+              mutation.mutate({
+                type: 'complete_card',
+                col_idx: colIdx,
+                card_idx: cardIdx,
+              })
+            }}
+            className={`mt-1 h-4 w-4 shrink-0 rounded-full border ${
+              card.completed ? 'bg-slate-400 border-slate-400' : 'border-slate-300'
+            }`}
+          />
+          <div className="flex-1">
+            <div
+              onDoubleClick={() => setMode('edit')}
+              className="flex items-start gap-2"
+            >
+              {card.priority && (
+                <span
+                  aria-label={`priority ${card.priority}`}
+                  className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[card.priority] ?? 'bg-slate-300'}`}
+                />
+              )}
+              <h3 className={`text-sm font-semibold ${card.completed ? 'line-through text-slate-400' : ''}`}>
+                {card.title}
+              </h3>
+            </div>
+            <button
+              type="button"
+              aria-label="open card details"
+              onClick={() => setModalOpen(true)}
+              className="mt-1 block w-full text-left"
+            >
+              {card.tags && card.tags.length > 0 ? (
+                <ul className="flex flex-wrap gap-1">
+                  {card.tags.map((t) => (
+                    <li key={t} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700">
+                      {t}
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <span className="block h-2 w-full" />
+              )}
+            </button>
+          </div>
+          <button
+            type="button"
+            aria-label="delete card"
+            onClick={(e) => {
+              e.stopPropagation()
+              stageDelete(
+                mutation,
+                { type: 'delete_card', col_idx: colIdx, card_idx: cardIdx },
+                card.title,
+              )
+            }}
+            className="opacity-0 group-hover:opacity-100 mt-1 text-xs text-slate-400 hover:text-red-500"
+          >
+            ✕
+          </button>
         </div>
-        <button
-          type="button"
-          aria-label="delete card"
-          onClick={() =>
-            stageDelete(
-              mutation,
-              { type: 'delete_card', col_idx: colIdx, card_idx: cardIdx },
-              card.title,
-            )
-          }
-          className="opacity-0 group-hover:opacity-100 mt-1 text-xs text-slate-400 hover:text-red-500"
-        >
-          ✕
-        </button>
       </div>
-    </div>
+      <CardDetailModal
+        card={card}
+        colIdx={colIdx}
+        cardIdx={cardIdx}
+        boardId={boardId}
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+      />
+    </>
   )
 }
