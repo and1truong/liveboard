@@ -55,6 +55,9 @@ func (d Deps) createBoard(w http.ResponseWriter, r *http.Request) {
 	if d.SSE != nil {
 		d.SSE.PublishBoardList()
 	}
+	if d.Search != nil && b != nil {
+		_ = d.Search.UpdateBoard(b.Name, b)
+	}
 	w.WriteHeader(http.StatusCreated)
 	_ = json.NewEncoder(w).Encode(toBoardSummary(b))
 }
@@ -76,6 +79,12 @@ func (d Deps) renameBoard(w http.ResponseWriter, r *http.Request) {
 	if d.SSE != nil {
 		d.SSE.PublishBoardList()
 	}
+	if d.Search != nil && b != nil {
+		if slug != b.Name {
+			_ = d.Search.DeleteBoard(slug)
+		}
+		_ = d.Search.UpdateBoard(b.Name, b)
+	}
 	_ = json.NewEncoder(w).Encode(toBoardSummary(b))
 }
 
@@ -87,6 +96,9 @@ func (d Deps) deleteBoard(w http.ResponseWriter, r *http.Request) {
 	}
 	if d.SSE != nil {
 		d.SSE.PublishBoardList()
+	}
+	if d.Search != nil {
+		_ = d.Search.DeleteBoard(slug)
 	}
 	w.WriteHeader(http.StatusNoContent)
 }

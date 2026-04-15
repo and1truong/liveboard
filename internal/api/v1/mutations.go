@@ -42,6 +42,9 @@ func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
 	if d.SSE != nil {
 		d.SSE.Publish(slug)
 	}
+	if d.Search != nil && updated != nil {
+		_ = d.Search.UpdateBoard(slug, updated)
+	}
 
 	_ = json.NewEncoder(w).Encode(updated)
 }

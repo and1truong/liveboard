@@ -7,6 +7,7 @@ import (
 	"github.com/go-chi/chi/v5"
 
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/search"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
@@ -16,6 +17,7 @@ type Deps struct {
 	Workspace *workspace.Workspace
 	Engine    *board.Engine
 	SSE       *web.SSEBroker
+	Search    *search.Index
 }
 
 // Router returns a chi subrouter with all /api/v1 routes registered.
@@ -24,6 +26,7 @@ func Router(d Deps) chi.Router {
 	r.Use(jsonContentType)
 	r.Get("/workspace", d.getWorkspace)
 	r.Get("/events", d.getEvents)
+	r.Get("/search", d.getSearch)
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
 		r.Post("/", d.createBoard)

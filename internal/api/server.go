@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"io/fs"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -22,6 +23,7 @@ import (
 	"github.com/and1truong/liveboard/internal/board"
 	livemcp "github.com/and1truong/liveboard/internal/mcp"
 	"github.com/and1truong/liveboard/internal/reminder"
+	"github.com/and1truong/liveboard/internal/search"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
@@ -299,10 +301,27 @@ func (s *Server) mountWebRoutes(r chi.Router) {
 }
 
 func (s *Server) mountAPIRoutes(r chi.Router) {
+	idx, err := search.New()
+	if err != nil {
+		log.Printf("search: failed to init index: %v", err)
+	}
+	if idx != nil {
+		if boards, err := s.ws.ListBoards(); err == nil {
+			for i := range boards {
+				b := boards[i]
+				slug := strings.TrimSuffix(filepath.Base(b.FilePath), ".md")
+				if slug == "" {
+					continue
+				}
+				_ = idx.UpdateBoard(slug, &b)
+			}
+		}
+	}
 	r.Mount("/api/v1", apiv1.Router(apiv1.Deps{
 		Workspace: s.ws,
 		Engine:    s.eng,
 		SSE:       s.webHandler.SSE,
+		Search:    idx,
 	}))
 	r.Method(http.MethodGet, "/api/versions", apiv1.VersionsHandler())
 
