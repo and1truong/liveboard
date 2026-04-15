@@ -23,6 +23,13 @@
       "autoPort": true
     },
     {
+      "name": "adapter-test",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=/usr/local/bin:$HOME/go/bin:/usr/local/go/bin:$PATH && make adapter-test"],
+      "port": 7070,
+      "autoPort": true
+    },
+    {
       "name": "online",
       "runtimeExecutable": "python3",
       "runtimeArgs": ["-m", "http.server", "8090", "-d", "dist/online"],
