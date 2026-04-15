@@ -40,4 +40,14 @@ export interface BackendAdapter {
   renameBoard(boardId: string, newName: string): Promise<BoardSummary>
   deleteBoard(boardId: string): Promise<void>
   onBoardListUpdate(handler: () => void): Subscription
+  search(query: string, limit?: number): Promise<SearchHit[]>
+}
+
+export interface SearchHit {
+  boardId: string
+  boardName: string
+  colIdx: number
+  cardIdx: number
+  cardTitle: string
+  snippet: string
 }

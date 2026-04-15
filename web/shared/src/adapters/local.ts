@@ -3,6 +3,7 @@ import type {
   BoardSummary,
   BoardUpdateHandler,
   ResolvedSettings,
+  SearchHit,
   Subscription,
   WorkspaceInfo,
 } from '../adapter.js'
@@ -221,5 +222,36 @@ export class LocalAdapter implements BackendAdapter {
     ws.boardIds = ws.boardIds.filter((x) => x !== boardId)
     this.storage.set(workspaceKey(), JSON.stringify(ws))
     this.publishBoardListUpdate()
+  }
+
+  async search(query: string, limit = 20): Promise<SearchHit[]> {
+    const q = query.trim().toLowerCase()
+    if (!q) return []
+    const ws = this.loadWorkspace()
+    const hits: SearchHit[] = []
+    for (const id of ws.boardIds) {
+      const board = this.loadBoard(id)
+      const boardName = board.name ?? id
+      const cols = board.columns ?? []
+      for (let colIdx = 0; colIdx < cols.length; colIdx++) {
+        const cards = cols[colIdx]?.cards ?? []
+        for (let cardIdx = 0; cardIdx < cards.length; cardIdx++) {
+          const c = cards[cardIdx]
+          const haystack = `${c.title ?? ''} ${c.body ?? ''} ${(c.tags ?? []).join(' ')}`.toLowerCase()
+          if (haystack.includes(q)) {
+            hits.push({
+              boardId: id,
+              boardName,
+              colIdx,
+              cardIdx,
+              cardTitle: c.title ?? '',
+              snippet: c.title ?? '',
+            })
+            if (hits.length >= limit) return hits
+          }
+        }
+      }
+    }
+    return hits
   }
 }

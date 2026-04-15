@@ -253,4 +253,35 @@ describe('ServerAdapter mutate + settings', () => {
       body: JSON.stringify({ show_checkbox: false }),
     })
   })
+
+  it('search GETs /search?q=&limit= and maps DTO to camelCase', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(
+        () =>
+          jsonResponse([
+            {
+              board_id: 'foo',
+              board_name: 'Foo',
+              col_idx: 0,
+              card_idx: 2,
+              card_title: 'hi',
+              snippet: 'hi <mark>match</mark>',
+            },
+          ]),
+        log,
+      ),
+    })
+    const hits = await a.search('match', 5)
+    expect(hits[0]).toEqual({
+      boardId: 'foo',
+      boardName: 'Foo',
+      colIdx: 0,
+      cardIdx: 2,
+      cardTitle: 'hi',
+      snippet: 'hi <mark>match</mark>',
+    })
+    expect(log[0].url).toBe('/api/v1/search?q=match&limit=5')
+  })
 })

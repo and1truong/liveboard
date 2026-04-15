@@ -1,5 +1,5 @@
 import type { Board, BoardSettings } from './types.js'
-import type { BoardSummary, ResolvedSettings, WorkspaceInfo } from './adapter.js'
+import type { BoardSummary, ResolvedSettings, SearchHit, WorkspaceInfo } from './adapter.js'
 import type { MutationOp } from './types.js'
 import type { Event as ProtoEvent, Message, Request, Welcome } from './protocol.js'
 import { ProtocolError, PROTOCOL_VERSION } from './protocol.js'
@@ -151,5 +151,8 @@ export class Client {
   }
   deleteBoard(boardId: string): Promise<void> {
     return this.request({ kind: 'request', method: 'board.delete', params: { boardId } })
+  }
+  search(query: string, limit?: number): Promise<SearchHit[]> {
+    return this.request({ kind: 'request', method: 'search', params: { query, limit } })
   }
 }

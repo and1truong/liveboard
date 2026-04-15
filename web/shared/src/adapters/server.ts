@@ -4,6 +4,7 @@ import type {
   BoardSummary,
   BoardUpdateHandler,
   ResolvedSettings,
+  SearchHit,
   Subscription,
   WorkspaceInfo,
 } from '../adapter.js'
@@ -109,6 +110,25 @@ export class ServerAdapter implements BackendAdapter {
   }
   putBoardSettings(boardId: string, patch: Partial<BoardSettings>): Promise<void> {
     return this.putEmpty(`/boards/${encodeURIComponent(boardId)}/settings`, patch)
+  }
+  async search(query: string, limit = 20): Promise<SearchHit[]> {
+    const params = new URLSearchParams({ q: query, limit: String(limit) })
+    const raw = await this.getJSON<Array<{
+      board_id: string
+      board_name: string
+      col_idx: number
+      card_idx: number
+      card_title: string
+      snippet: string
+    }>>(`/search?${params}`)
+    return raw.map((d) => ({
+      boardId: d.board_id,
+      boardName: d.board_name,
+      colIdx: d.col_idx,
+      cardIdx: d.card_idx,
+      cardTitle: d.card_title,
+      snippet: d.snippet,
+    }))
   }
   async getWorkspaceInfo(): Promise<WorkspaceInfo> {
     const raw = await this.getJSON<{ name: string; board_count: number }>('/workspace')

@@ -28,6 +28,7 @@ export type Request =
   | { id: string; kind: 'request'; method: 'board.create'; params: { name: string } }
   | { id: string; kind: 'request'; method: 'board.rename'; params: { boardId: string; newName: string } }
   | { id: string; kind: 'request'; method: 'board.delete'; params: { boardId: string } }
+  | { id: string; kind: 'request'; method: 'search'; params: { query: string; limit?: number } }
 
 export type ErrorCode =
   | 'NOT_FOUND'
