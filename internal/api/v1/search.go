@@ -12,6 +12,7 @@ type searchHitDTO struct {
 	BoardName string `json:"board_name"`
 	ColIdx    int    `json:"col_idx"`
 	CardIdx   int    `json:"card_idx"`
+	CardID    string `json:"card_id"`
 	CardTitle string `json:"card_title"`
 	Snippet   string `json:"snippet"`
 }
@@ -42,6 +43,7 @@ func (d Deps) getSearch(w http.ResponseWriter, r *http.Request) {
 			BoardName: h.BoardName,
 			ColIdx:    h.ColIdx,
 			CardIdx:   h.CardIdx,
+			CardID:    h.CardID,
 			CardTitle: h.CardTitle,
 			Snippet:   h.Snippet,
 		})

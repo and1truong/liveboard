@@ -27,6 +27,7 @@ func Router(d Deps) chi.Router {
 	r.Get("/workspace", d.getWorkspace)
 	r.Get("/events", d.getEvents)
 	r.Get("/search", d.getSearch)
+	r.Get("/cards/{cardId}/backlinks", d.getBacklinks)
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
 		r.Post("/", d.createBoard)
