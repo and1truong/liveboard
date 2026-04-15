@@ -24,6 +24,7 @@ export interface Column {
 }
 
 export interface Card {
+  id?: string
   title: string
   completed?: boolean
   no_checkbox?: boolean
