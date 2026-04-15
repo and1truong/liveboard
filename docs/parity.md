@@ -65,3 +65,7 @@ Canonical error strings: `NOT_FOUND`, `OUT_OF_RANGE`, `INVALID`, `ALREADY_EXISTS
 ## Adapters
 
 The `LocalAdapter` at `web/shared/src/adapters/local.ts` consumes `applyOp` from the parity module. Its tests (`local.test.ts`) verify adapter-specific behavior (version conflicts, seed, BroadcastChannel); the underlying mutation correctness is covered by the vector suite above.
+
+## Renderer
+
+The default React renderer at `web/renderer/default/` consumes the Client from `web/shared/src/client.ts`. It is a read-only board viewer (P4a scope). Mutations come in P4b. Component-level tests live alongside each component and cover the query-invalidation path end-to-end against a stubbed in-memory Broker.

@@ -174,11 +174,12 @@ POST   /boards/{slug}/cards/{index}/complete  Toggle completion
 
 ## Shell (preview)
 
-Experimental postMessage shell + stub renderer. Enable with:
+Experimental postMessage shell + React renderer. Enable with:
 
+    make shell && make renderer
     LIVEBOARD_APP_SHELL=1 liveboard serve
 
-Then open <http://localhost:7070/app/> — the stub iframe exercises every protocol method and logs results.
+Then open <http://localhost:7070/app/> — the React renderer (read-only board view) loads by default. Append `?renderer=stub` to load the P3 integration harness instead.
 
 -----
 
