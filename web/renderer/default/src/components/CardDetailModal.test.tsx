@@ -109,6 +109,29 @@ describe('CardDetailModal', () => {
     expect(after.columns[0].cards[0].title).toBe(beforeTitle)
   })
 
+  it('Preview tab renders the body as HTML', async () => {
+    const { client, qc } = await setup()
+    const seedWithBody = { ...seed, body: '# Hi\n\n**bold**' }
+    const { findByLabelText, getByRole } = renderWithQuery(
+      <ClientProvider client={client}>
+        <CardDetailModal
+          card={seedWithBody}
+          colIdx={0}
+          cardIdx={0}
+          boardId="welcome"
+          open={true}
+          onOpenChange={() => {}}
+        />
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    await findByLabelText('card body')
+    fireEvent.click(getByRole('tab', { name: /preview/i }))
+    const preview = await findByLabelText('card body preview')
+    expect(preview.innerHTML).toContain('<h1>Hi</h1>')
+    expect(preview.innerHTML).toContain('<strong>bold</strong>')
+  })
+
   it('empty title disables Save button', async () => {
     const { client, qc } = await setup()
     const { getByLabelText, getByText } = renderWithQuery(
