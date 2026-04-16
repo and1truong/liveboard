@@ -1,4 +1,4 @@
-import { useSortable, SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { useSortable, SortableContext, rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Column as ColumnModel } from '@shared/types.js'
 import { ColumnHeader } from '../components/ColumnHeader.js'
@@ -47,8 +47,8 @@ export function SortableColumn({
     id,
     data: { type: 'column', name: column.name, col_idx: colIdx },
   })
-  const { overColIdx } = useDragState()
-  const isDropTarget = !isDragging && overColIdx === colIdx
+  const { drop } = useDragState()
+  const showEndDropLine = !isDragging && drop?.type === 'column' && drop.colIdx === colIdx
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -65,7 +65,7 @@ export function SortableColumn({
         ref={setNodeRef}
         style={style}
         aria-label={`collapsed column ${column.name}`}
-        className={`flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-slate-100 p-3 dark:bg-slate-900 ${isDropTarget ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
+        className="flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-slate-100 p-3 dark:bg-slate-900"
         onClick={toggleCollapse}
       >
         <button
@@ -97,7 +97,7 @@ export function SortableColumn({
     <section
       ref={setNodeRef}
       style={style}
-      className={`${sectionClass} ${isDropTarget ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
+      className={sectionClass}
     >
       <div className="mb-3 flex items-center gap-2">
         {!isFocusMode && (
@@ -122,7 +122,7 @@ export function SortableColumn({
           />
         </div>
       </div>
-      <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
+      <SortableContext items={cardIds} strategy={isFocusMode ? rectSortingStrategy : verticalListSortingStrategy}>
         <ul
           className={
             isFocusMode
@@ -141,6 +141,12 @@ export function SortableColumn({
               />
             </li>
           ))}
+          {showEndDropLine && (
+            <li
+              aria-hidden
+              className="pointer-events-none h-[3px] rounded-full bg-[color:var(--accent-500)]"
+            />
+          )}
         </ul>
       </SortableContext>
       <AddCardButton columnName={column.name} boardId={boardId} />
