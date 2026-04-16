@@ -107,6 +107,11 @@
     0 2px 6px rgba(0, 0, 0, 0.08);
   --sb-focus-ring:      color-mix(in srgb, var(--accent-500) 32%, transparent);
   --sb-ease:            cubic-bezier(0.32, 0.72, 0, 1);
+
+  /* Header (toolbar) tokens — translucent material, hairline border.
+     Mirrors sidebar vibrancy so the chrome reads as one material. */
+  --header-bg:          rgb(252 252 254 / 0.78);
+  --header-border:      rgba(0, 0, 0, 0.08);
 }
 
 .dark {
@@ -125,4 +130,24 @@
     0 0 0 0.5px rgba(0, 0, 0, 0.6),
     0 10px 30px -8px rgba(0, 0, 0, 0.6),
     0 2px 6px rgba(0, 0, 0, 0.4);
+
+  --header-bg:          rgb(26 27 35 / 0.78);
+  --header-border:      rgba(255, 255, 255, 0.06);
+}
+
+:root.theme-aqua {
+  --header-bg:          rgb(255 255 255 / 0.85);
+}
+:root.dark.theme-aqua {
+  --header-bg:          rgb(30 30 32 / 0.82);
+}
+
+/* Filter popover open animation — matches macOS HIG menu spring. */
+@keyframes lb-filter-popover-in {
+  from { opacity: 0; transform: translateY(-2px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+.lb-filter-popover[data-state="open"] {
+  animation: lb-filter-popover-in 140ms cubic-bezier(0.32, 0.72, 0, 1);
+  transform-origin: var(--radix-popover-content-transform-origin);
 }

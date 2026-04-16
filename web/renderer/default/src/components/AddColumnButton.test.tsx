@@ -23,25 +23,25 @@ async function setup(): Promise<{ client: Client; qc: QueryClient }> {
 describe('AddColumnButton', () => {
   it('click reveals input', async () => {
     const { client, qc } = await setup()
-    const { getByText, getByLabelText } = renderWithQuery(
+    const { getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
         <AddColumnButton boardId="welcome" />
       </ClientProvider>,
       { queryClient: qc },
     )
-    fireEvent.click(getByText('+ Add column'))
+    fireEvent.click(getByLabelText('add list'))
     await waitFor(() => expect(getByLabelText('new column name')).toBeDefined())
   })
 
   it('blur with text commits add_column', async () => {
     const { client, qc } = await setup()
-    const { getByText, getByLabelText } = renderWithQuery(
+    const { getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
         <AddColumnButton boardId="welcome" />
       </ClientProvider>,
       { queryClient: qc },
     )
-    fireEvent.click(getByText('+ Add column'))
+    fireEvent.click(getByLabelText('add list'))
     const input = await waitFor(() => getByLabelText('new column name')) as HTMLInputElement
     fireEvent.change(input, { target: { value: 'Review' } })
     fireEvent.blur(input)
