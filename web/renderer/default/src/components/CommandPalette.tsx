@@ -52,7 +52,9 @@ const ARROW = (
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX.Element {
   const [page, setPage] = useState<Page>('list')
+  const [cmdValue, setCmdValue] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
+  const cmdListRef = useRef<HTMLDivElement>(null)
   const committedRef = useRef(false)
 
   const [query, setQuery] = useState('')
@@ -75,6 +77,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
     if (open) {
       setPage('list')
       setQuery('')
+      setCmdValue('')
       committedRef.current = false
     }
   }, [open])
@@ -115,6 +118,26 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
     close()
   }
 
+  const handleCmdKeyDown = (e: React.KeyboardEvent): void => {
+    if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return
+    const list = cmdListRef.current
+    if (!list) return
+    const items = Array.from(list.querySelectorAll<HTMLElement>('[cmdk-item]:not([hidden])'))
+    if (items.length === 0) return
+    const selectedIdx = items.findIndex((el) => el.getAttribute('aria-selected') === 'true')
+    if (e.key === 'ArrowDown' && selectedIdx === items.length - 1) {
+      e.preventDefault()
+      e.stopPropagation()
+      const val = items[0].getAttribute('data-value')
+      if (val) { setCmdValue(val); list.scrollTop = 0 }
+    } else if (e.key === 'ArrowUp' && selectedIdx === 0) {
+      e.preventDefault()
+      e.stopPropagation()
+      const val = items[items.length - 1].getAttribute('data-value')
+      if (val) { setCmdValue(val); list.scrollTop = list.scrollHeight }
+    }
+  }
+
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -126,16 +149,17 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
         >
           <Dialog.Title className="sr-only">Command palette</Dialog.Title>
           {page === 'list' && (
-            <Command label="Command palette" className="flex flex-col">
+            <Command label="Command palette" className="flex flex-col" value={cmdValue} onValueChange={setCmdValue}>
               <div className="border-b border-[color:var(--color-border)]">
                 <Command.Input
                   value={query}
                   onValueChange={setQuery}
+                  onKeyDown={handleCmdKeyDown}
                   placeholder="Type a command, board, or card…"
                   className="w-full rounded px-3 py-2.5 text-base text-[color:var(--color-text-primary)] outline-none placeholder:text-[color:var(--color-text-muted)] bg-transparent"
                 />
               </div>
-              <Command.List className="max-h-80 overflow-y-auto py-2">
+              <Command.List ref={cmdListRef} className="max-h-80 overflow-y-auto py-2">
                 <Command.Empty className="px-3 py-2 text-sm text-[color:var(--color-text-muted)]">
                   No matches.
                 </Command.Empty>
