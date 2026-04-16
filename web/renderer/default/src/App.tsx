@@ -35,9 +35,9 @@ export function App({ client, initialBoardId, initialCardPos, initialFocusedColu
     <ThemeProvider>
       <ActiveBoardProvider initialBoardId={initialBoardId ?? null} initialCardPos={initialCardPos ?? null} initialFocusedColumn={initialFocusedColumn ?? null}>
         <ListEventsBridge />
-        <div className="flex h-screen w-screen">
+        <div className="lb-app-shell flex h-screen w-screen flex-col md:flex-row">
           <BoardSidebar collapsed={sidebarCollapsed} />
-          <main className="flex-1 overflow-hidden dark:bg-slate-950">
+          <main className="flex-1 overflow-hidden bg-[color:var(--color-bg)]">
             <BoardView client={client} onToggleSidebar={toggleSidebar} />
           </main>
           <CommandPaletteHost />

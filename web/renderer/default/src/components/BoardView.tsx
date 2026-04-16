@@ -133,12 +133,12 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
       <FocusedColumnProvider columns={columns}>
         <BoardDndContext boardId={active}>
           <div className="flex h-full flex-col">
-            <div className="flex h-12 shrink-0 items-center gap-3 border-b border-slate-200 px-4 dark:border-slate-800">
+            <div className="flex h-12 shrink-0 items-center gap-3 border-b border-[color:var(--color-border)] px-4">
               <button
                 type="button"
                 onClick={onToggleSidebar}
                 title="Toggle sidebar"
-                className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+                className="hidden md:flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
               >
                 <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
                   <path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z" />
@@ -166,7 +166,7 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
                     value={filterQuery}
                     onChange={(e) => setFilterQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Escape' && setFilterQuery('')}
-                    className="h-7 w-40 rounded border border-slate-200 bg-white py-1 pl-7 pr-2 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder-slate-500"
+                    className="h-7 w-40 rounded border border-[color:var(--color-border)] bg-[color:var(--color-surface)] py-1 pl-7 pr-2 text-sm text-slate-700 placeholder-slate-400 focus:border-[color:var(--accent-500)] focus:outline-none dark:text-slate-200 dark:placeholder-slate-500"
                   />
                   {filterQuery && (
                     <button
@@ -186,7 +186,7 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
                   className={`flex h-7 w-7 items-center justify-center rounded border text-sm transition-colors ${
                     hideCompleted
                       ? 'border-green-300 bg-green-100 text-green-700 dark:border-green-700 dark:bg-green-900/40 dark:text-green-400'
-                      : 'border-slate-200 bg-white text-slate-400 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900'
+                      : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-slate-400 hover:text-slate-600'
                   }`}
                 >
                   ✓

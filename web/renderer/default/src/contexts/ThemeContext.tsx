@@ -8,9 +8,9 @@ import {
 } from 'react'
 
 export type Mode = 'light' | 'dark' | 'system'
-export type ThemeName = 'indigo' | 'github' | 'gitlab' | 'emerald' | 'rose' | 'sunset'
+export type ThemeName = 'indigo' | 'github' | 'gitlab' | 'emerald' | 'rose' | 'sunset' | 'aqua'
 
-export const THEME_NAMES: ThemeName[] = ['indigo', 'github', 'gitlab', 'emerald', 'rose', 'sunset']
+export const THEME_NAMES: ThemeName[] = ['indigo', 'github', 'gitlab', 'emerald', 'rose', 'sunset', 'aqua']
 
 const MODE_KEY = 'liveboard:mode'
 const THEME_KEY = 'liveboard:theme'

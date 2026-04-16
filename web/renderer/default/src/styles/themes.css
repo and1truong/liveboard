@@ -9,6 +9,85 @@
 :root.theme-emerald { --accent-500: #10b981; --accent-600: #059669; }
 :root.theme-rose    { --accent-500: #f43f5e; --accent-600: #e11d48; }
 :root.theme-sunset  { --accent-500: #f97316; --accent-600: #ea580c; }
+:root.theme-aqua    { --accent-500: #007AFF; --accent-600: #0062CC; }
+
+/* Semantic color tokens — light mode defaults (indigo / neutral). */
+:root {
+  --color-bg:             #f4f4f6;
+  --color-surface:        #ffffff;
+  --color-column-bg:      #ecedf0;
+  --color-border:         #e2e3e8;
+  --color-border-dashed:  #c8cad3;
+  --shadow-card:          0 1px 2px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.06);
+  --shadow-raised:        0 4px 12px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  --shadow-sidebar:       2px 0 8px rgba(0,0,0,0.06);
+  --color-hover:          rgba(0,0,0,0.04);
+}
+
+/* Dark mode overrides. */
+.dark {
+  --color-bg:             #0f1015;
+  --color-surface:        #1a1b23;
+  --color-column-bg:      #22232d;
+  --color-border:         #2e3042;
+  --color-border-dashed:  #3d3f56;
+  --shadow-card:          0 1px 2px rgba(0,0,0,0.3);
+  --shadow-raised:        0 4px 12px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+  --shadow-sidebar:       2px 0 8px rgba(0,0,0,0.4);
+  --color-hover:          rgba(255,255,255,0.06);
+}
+
+/* Per-theme light overrides — matching HTMLx web/css/themes.css values. */
+:root.theme-emerald {
+  --color-bg:             #f5f7f5;
+  --color-column-bg:      #e8ece8;
+  --color-border:         #d4dbd4;
+  --color-border-dashed:  #b8c4b8;
+}
+
+:root.theme-rose {
+  --color-bg:             #fdf5f6;
+  --color-column-bg:      #f2e8ea;
+  --color-border:         #e8d5d8;
+  --color-border-dashed:  #d4b8be;
+}
+
+:root.theme-aqua {
+  --color-bg:             #ECECEC;
+  --color-surface:        #FFFFFF;
+  --color-column-bg:      #E0E0E4;
+  --color-border:         #C8C8CC;
+  --color-border-dashed:  #AEAEB2;
+  --sb-bg:                rgb(255 255 255 / 0.82);
+  --sb-bg-solid:          #ffffff;
+}
+
+/* Dark overrides for themed variants. */
+.dark.theme-aqua, .dark .theme-aqua {
+  --color-bg:             #1C1C1E;
+  --color-surface:        #2C2C2E;
+  --color-column-bg:      #38383A;
+  --color-border:         #48484A;
+  --color-border-dashed:  #636366;
+  --sb-bg:                rgb(30 30 32 / 0.82);
+  --sb-bg-solid:          #1e1e20;
+}
+
+.dark.theme-emerald, .dark .theme-emerald {
+  --color-bg:             #0c1410;
+  --color-surface:        #141f1a;
+  --color-column-bg:      #1a2820;
+  --color-border:         #274030;
+  --color-border-dashed:  #3a5a48;
+}
+
+.dark.theme-rose, .dark .theme-rose {
+  --color-bg:             #150a0e;
+  --color-surface:        #1f1218;
+  --color-column-bg:      #29171e;
+  --color-border:         #40242e;
+  --color-border-dashed:  #5c3542;
+}
 
 /* Sidebar tokens — macOS HIG Source List vocabulary.
    Vibrant translucent surface, hairline dividers, inset selection bevel. */

@@ -108,7 +108,7 @@ export function SortableListSection({
       ref={setNodeRef}
       style={style}
       aria-label={`section ${column.name}`}
-      className="overflow-hidden rounded-xl bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700"
+      className="overflow-hidden rounded-xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-[var(--shadow-card)]"
     >
       <header className="group flex items-center gap-2 px-3 py-2">
         <button
@@ -125,7 +125,7 @@ export function SortableListSection({
           type="button"
           aria-label={collapsed ? `expand section ${column.name}` : `collapse section ${column.name}`}
           onClick={toggleCollapse}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-500 hover:bg-[color:var(--color-column-bg)] dark:text-slate-400"
         >
           <svg
             width="10"
@@ -147,7 +147,7 @@ export function SortableListSection({
               if (e.key === 'Enter') { e.preventDefault(); commitRename() }
               else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
             }}
-            className="flex-1 rounded bg-slate-50 px-1 text-sm font-semibold outline-none ring-1 ring-[color:var(--accent-500)] dark:bg-slate-800 dark:text-slate-100"
+            className="flex-1 rounded bg-[color:var(--color-column-bg)] px-1 text-sm font-semibold outline-none ring-1 ring-[color:var(--accent-500)] dark:text-slate-100"
           />
         ) : (
           <button
@@ -158,7 +158,7 @@ export function SortableListSection({
             <h2 className="truncate text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
               {column.name}
             </h2>
-            <span className="rounded-full bg-slate-100 px-2 py-0.5 text-xs text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+            <span className="rounded-full bg-[color:var(--color-column-bg)] px-2 py-0.5 text-xs text-slate-500 dark:text-slate-400">
               {visibleCards.length}
             </span>
           </button>
@@ -166,50 +166,50 @@ export function SortableListSection({
         <DropdownMenu.Root>
           <DropdownMenu.Trigger
             aria-label={`section menu ${column.name}`}
-            className="rounded p-1 text-slate-400 opacity-0 hover:bg-slate-100 hover:text-slate-600 group-hover:opacity-100 dark:hover:bg-slate-800"
+            className="rounded p-1 text-slate-400 opacity-0 hover:bg-[color:var(--color-column-bg)] hover:text-slate-600 group-hover:opacity-100"
           >
             ⋮
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content
               sideOffset={4}
-              className="z-50 min-w-40 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 dark:text-slate-100"
+              className="z-50 min-w-40 rounded-md bg-[color:var(--color-surface)] p-1 shadow-[var(--shadow-raised)] border border-[color:var(--color-border)] dark:text-slate-100"
             >
               {focusCtx && !isFocused && (
                 <DropdownMenu.Item
                   onSelect={() => focusCtx.setFocused(column.name)}
-                  className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
+                  className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
                 >
                   Focus
                 </DropdownMenu.Item>
               )}
               <DropdownMenu.Item
                 onSelect={() => setRenaming(true)}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
               >
                 Rename
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 disabled={leftDisabled}
                 onSelect={() => move('left')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)] data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
               >
                 Move up
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 disabled={rightDisabled}
                 onSelect={() => move('right')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)] data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
               >
                 Move down
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 onSelect={toggleCollapse}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
               >
                 {collapsed ? 'Expand' : 'Collapse'}
               </DropdownMenu.Item>
-              <DropdownMenu.Separator className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+              <DropdownMenu.Separator className="my-1 h-px bg-[color:var(--color-border)]" />
               <DropdownMenu.Item
                 onSelect={() =>
                   stageDelete(
@@ -290,7 +290,7 @@ function ListQuickAdd({
         e.preventDefault()
         commit()
       }}
-      className="flex items-center gap-2 border-t border-slate-100 px-3 py-2 dark:border-slate-700"
+      className="flex items-center gap-2 border-t border-[color:var(--color-border-dashed)] px-3 py-2"
     >
       <span aria-hidden className="text-slate-300 dark:text-slate-600">+</span>
       <input

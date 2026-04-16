@@ -66,7 +66,7 @@ export function SortableColumn({
         ref={setNodeRef}
         style={style}
         aria-label={`collapsed column ${column.name}`}
-        className="flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-slate-100 p-3 dark:bg-slate-900"
+        className="flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-[color:var(--color-column-bg)] p-3"
         onClick={toggleCollapse}
       >
         <button
@@ -91,8 +91,8 @@ export function SortableColumn({
   }
 
   const sectionClass = isFocusMode
-    ? 'flex w-full flex-1 flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900'
-    : `flex ${settings.expand_columns ? 'min-w-[200px] flex-[1_1_0]' : 'w-72 shrink-0'} flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900`
+    ? 'flex w-full flex-1 flex-col rounded-lg bg-[color:var(--color-column-bg)] p-3'
+    : `flex ${settings.expand_columns ? 'min-w-[200px] flex-[1_1_0]' : 'w-72 shrink-0'} flex-col rounded-lg bg-[color:var(--color-column-bg)] p-3`
 
   return (
     <section

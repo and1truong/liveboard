@@ -1,5 +1,7 @@
 import { useState, useRef, useEffect } from 'react'
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useBoardList, useWorkspaceInfo } from '../queries.js'
+import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { EmptyState } from './EmptyState.js'
 import { BoardRow } from './BoardRow.js'
 import { AddBoardButton } from './AddBoardButton.js'
@@ -8,6 +10,8 @@ import { ThemePicker } from './ThemePicker.js'
 export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JSX.Element {
   const boards = useBoardList()
   const ws = useWorkspaceInfo()
+  const { active, setActive } = useActiveBoard()
+  const activeBoard = boards.data?.find((b) => b.id === active)
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -55,6 +59,30 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
         )}
         <hr className="lb-sidebar__sep" />
         <AddBoardButton />
+      </div>
+      <div className="lb-sidebar__mobile-dropdown">
+        <DropdownMenu.Root>
+          <DropdownMenu.Trigger className="lb-mobile-trigger" aria-label="Switch board">
+            <span>{activeBoard?.name ?? 'Boards'}</span>
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden>
+              <path d="M3 4.5L6 7.5L9 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </DropdownMenu.Trigger>
+          <DropdownMenu.Portal>
+            <DropdownMenu.Content className="lb-popover" sideOffset={4} align="end">
+              {boards.data?.map((b) => (
+                <DropdownMenu.Item
+                  key={b.id}
+                  onSelect={() => setActive(b.id)}
+                  className={`lb-popover__item${b.id === active ? ' lb-popover__item--active' : ''}`}
+                >
+                  <span className="lb-popover__icon" aria-hidden>{b.icon || '\u25A6'}</span>
+                  <span>{b.name}</span>
+                </DropdownMenu.Item>
+              ))}
+            </DropdownMenu.Content>
+          </DropdownMenu.Portal>
+        </DropdownMenu.Root>
       </div>
       <div ref={menuRef} className="lb-sidebar__footer">
         {menuOpen && (

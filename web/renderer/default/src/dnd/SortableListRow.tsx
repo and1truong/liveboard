@@ -18,7 +18,7 @@ const PRIORITY_CHIP: Record<string, string> = {
   critical: 'bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300',
   high: 'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300',
   medium: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/40 dark:text-yellow-300',
-  low: 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300',
+  low: 'bg-[color:var(--color-column-bg)] text-slate-600 dark:text-slate-300',
 }
 
 export function SortableListRow({
@@ -95,7 +95,7 @@ export function SortableListRow({
           style={style}
           tabIndex={0}
           onKeyDown={onKeyDown}
-          className={`group relative flex items-start gap-3 border-b border-slate-100 px-3 py-2 outline-none last:border-b-0 hover:bg-slate-50 focus:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800/60 dark:focus:bg-slate-800/60 ${
+          className={`group relative flex items-start gap-3 border-b border-[color:var(--color-border-dashed)] px-3 py-2 outline-none last:border-b-0 hover:bg-[color:var(--color-column-bg)] focus:bg-[color:var(--color-column-bg)] ${
             card.completed ? 'opacity-50' : ''
           }`}
         >
@@ -124,7 +124,7 @@ export function SortableListRow({
             className={`mt-1 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
               card.completed
                 ? 'border-[color:var(--accent-500)] bg-[color:var(--accent-500)] text-white'
-                : 'border-slate-300 hover:border-[color:var(--accent-500)] dark:border-slate-500'
+                : 'border-[color:var(--color-border)] hover:border-[color:var(--accent-500)]'
             }`}
           >
             {card.completed && (
@@ -157,19 +157,19 @@ export function SortableListRow({
                   </span>
                 )}
                 {card.due && (
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                  <span className="rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-[10px] text-slate-600 dark:text-slate-300">
                     📅 {card.due}
                   </span>
                 )}
                 {card.assignee && (
-                  <span className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                  <span className="rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-[10px] text-slate-600 dark:text-slate-300">
                     👤 {card.assignee}
                   </span>
                 )}
                 {card.tags?.map((t) => (
                   <span
                     key={t}
-                    className="rounded bg-slate-100 px-1.5 py-0.5 text-[10px] text-slate-700 dark:bg-slate-700 dark:text-slate-200"
+                    className="rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-200"
                   >
                     {t}
                   </span>

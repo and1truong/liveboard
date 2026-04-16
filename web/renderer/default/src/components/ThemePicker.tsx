@@ -8,6 +8,7 @@ const SWATCH_COLOR: Record<ThemeName, string> = {
   emerald: '#10b981',
   rose: '#f43f5e',
   sunset: '#f97316',
+  aqua: '#007AFF',
 }
 
 export function ThemePicker(): JSX.Element {

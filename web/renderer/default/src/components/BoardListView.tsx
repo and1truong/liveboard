@@ -103,7 +103,7 @@ function AddListInline({ boardId }: { boardId: string }): JSX.Element {
           if (e.key === 'Enter') { e.preventDefault(); commit() }
           else if (e.key === 'Escape') { e.preventDefault(); cancel() }
         }}
-        className="rounded bg-white px-3 py-2 text-sm outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)] dark:bg-slate-900 dark:text-slate-100 dark:ring-slate-700"
+        className="rounded bg-[color:var(--color-surface)] px-3 py-2 text-sm outline-none border border-[color:var(--color-border)] focus:border-[color:var(--accent-500)] dark:text-slate-100"
       />
     )
   }
@@ -112,7 +112,7 @@ function AddListInline({ boardId }: { boardId: string }): JSX.Element {
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="self-start rounded px-2 py-1 text-sm text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800"
+      className="self-start rounded px-2 py-1 text-sm text-slate-500 hover:bg-[color:var(--color-column-bg)] dark:text-slate-400"
     >
       + Add list
     </button>
