@@ -58,8 +58,10 @@
   --sb-bg-solid:          #ffffff;
 }
 
-/* Dark overrides for themed variants. */
-.dark.theme-aqua, .dark .theme-aqua {
+/* Dark overrides for themed variants.
+   Use :root prefix (specificity 0,3,0) to guarantee these beat the
+   light-mode :root.theme-* blocks (0,2,0) regardless of source order. */
+:root.dark.theme-aqua {
   --color-bg:             #1C1C1E;
   --color-surface:        #2C2C2E;
   --color-column-bg:      #38383A;
@@ -69,7 +71,7 @@
   --sb-bg-solid:          #1e1e20;
 }
 
-.dark.theme-emerald, .dark .theme-emerald {
+:root.dark.theme-emerald {
   --color-bg:             #0c1410;
   --color-surface:        #141f1a;
   --color-column-bg:      #1a2820;
@@ -77,7 +79,7 @@
   --color-border-dashed:  #3a5a48;
 }
 
-.dark.theme-rose, .dark .theme-rose {
+:root.dark.theme-rose {
   --color-bg:             #150a0e;
   --color-surface:        #1f1218;
   --color-column-bg:      #29171e;
