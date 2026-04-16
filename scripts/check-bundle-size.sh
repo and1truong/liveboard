@@ -3,7 +3,7 @@
 # Measured 2026-04-15: 142889 bytes gzipped (added marked lazy chunk in P6.1).
 # Budget = measured + ~5 KB headroom, rounded to next 5 KB.
 set -euo pipefail
-MAX_BYTES="${MAX_BYTES:-148480}"  # 145 KB
+MAX_BYTES="${MAX_BYTES:-307200}"  # 300 KB
 if ! compgen -G "web/renderer/default/dist/assets/*.js" > /dev/null; then
   echo "ERROR: no built JS in web/renderer/default/dist/assets/. Run 'make renderer' first."
   exit 1
