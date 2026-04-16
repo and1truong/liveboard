@@ -5,21 +5,40 @@ import { ColumnHeader } from '../components/ColumnHeader.js'
 import { AddCardButton } from '../components/AddCardButton.js'
 import { SortableCard } from './SortableCard.js'
 import { encodeCardId, encodeColumnId } from './cardId.js'
+import { useBoardMutation } from '../mutations/useBoardMutation.js'
+import { useBoardSettings } from '../queries/useBoardSettings.js'
 
 export function SortableColumn({
   column,
   colIdx,
   allColumnNames,
   boardId,
+  collapsed = false,
+  filterQuery = '',
+  hideCompleted = false,
 }: {
   column: ColumnModel
   colIdx: number
   allColumnNames: string[]
   boardId: string
+  collapsed?: boolean
+  filterQuery?: string
+  hideCompleted?: boolean
 }): JSX.Element {
   const id = encodeColumnId(column.name)
   const cards = column.cards ?? []
-  const cardIds = cards.map((_, i) => encodeCardId(colIdx, i))
+  const q = filterQuery.toLowerCase()
+  const visibleCards = cards.filter((card) => {
+    if (hideCompleted && card.completed) return false
+    if (q) {
+      const hay = [card.title, card.body ?? '', ...(card.tags ?? []), card.assignee ?? ''].join(' ').toLowerCase()
+      return hay.includes(q)
+    }
+    return true
+  })
+  const cardIds = visibleCards.map((_, i) => encodeCardId(colIdx, i))
+  const mutation = useBoardMutation(boardId)
+  const settings = useBoardSettings(boardId)
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id,
@@ -31,11 +50,45 @@ export function SortableColumn({
     opacity: isDragging ? 0.5 : 1,
   }
 
+  const toggleCollapse = (): void => {
+    mutation.mutate({ type: 'toggle_column_collapse', col_idx: colIdx })
+  }
+
+  if (collapsed) {
+    return (
+      <section
+        ref={setNodeRef}
+        style={style}
+        aria-label={`collapsed column ${column.name}`}
+        className="flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-slate-100 p-3 dark:bg-slate-900"
+        onClick={toggleCollapse}
+      >
+        <button
+          type="button"
+          aria-label={`drag column ${column.name}`}
+          {...attributes}
+          {...listeners}
+          onClick={(e) => e.stopPropagation()}
+          className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing"
+        >
+          ⋮⋮
+        </button>
+        <h2
+          className="mt-2 text-sm font-semibold text-slate-800 dark:text-slate-100"
+          style={{ writingMode: 'vertical-rl' }}
+        >
+          {column.name}
+        </h2>
+        <span className="mt-2 text-xs text-slate-500">{visibleCards.length}</span>
+      </section>
+    )
+  }
+
   return (
     <section
       ref={setNodeRef}
       style={style}
-      className="flex w-72 shrink-0 flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900"
+      className={`flex ${settings.expand_columns ? 'min-w-[200px] flex-[1_1_0]' : 'w-72 shrink-0'} flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900`}
     >
       <div className="mb-3 flex items-center gap-2">
         <button
@@ -50,18 +103,25 @@ export function SortableColumn({
         <div className="flex-1">
           <ColumnHeader
             name={column.name}
-            cardCount={cards.length}
+            cardCount={visibleCards.length}
             colIdx={colIdx}
             allColumnNames={allColumnNames}
             boardId={boardId}
+            collapsed={collapsed}
           />
         </div>
       </div>
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
         <ul className="flex flex-col gap-2">
-          {cards.map((card, i) => (
+          {visibleCards.map((card, i) => (
             <li key={`${column.name}-${i}`}>
-              <SortableCard card={card} colIdx={colIdx} cardIdx={i} boardId={boardId} />
+              <SortableCard
+                card={card}
+                colIdx={colIdx}
+                cardIdx={i}
+                boardId={boardId}
+                allColumnNames={allColumnNames}
+              />
             </li>
           ))}
         </ul>

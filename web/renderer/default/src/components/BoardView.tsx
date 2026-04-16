@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
 import { ProtocolError } from '@shared/protocol.js'
@@ -14,6 +14,10 @@ import { BoardFocusProvider } from '../contexts/BoardFocusContext.js'
 export function BoardView({ client }: { client: Client }): JSX.Element {
   const { active, setActive } = useActiveBoard()
   const { data, isLoading, error } = useBoard(active)
+  const [filterQuery, setFilterQuery] = useState('')
+  const [hideCompleted, setHideCompleted] = useState(
+    () => localStorage.getItem('lb_hideCompleted') === 'true'
+  )
 
   useEffect(() => {
     if (!active) return
@@ -28,6 +32,12 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
       setActive(null)
     }
   }, [error, setActive])
+
+  const toggleHideCompleted = (): void => {
+    const next = !hideCompleted
+    setHideCompleted(next)
+    localStorage.setItem('lb_hideCompleted', String(next))
+  }
 
   if (!active) return <EmptyState title="Select a board" />
   if (isLoading) return <EmptyState title="Loading…" />
@@ -49,20 +59,66 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
   return (
     <BoardFocusProvider columns={columns}>
       <BoardDndContext boardId={active}>
-        <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
-          <div className="flex h-full gap-4 overflow-x-auto p-4">
-            {columns.map((col, i) => (
-              <SortableColumn
-                key={`${col.name}-${i}`}
-                column={col}
-                colIdx={i}
-                allColumnNames={names}
-                boardId={active}
-              />
-            ))}
-            <AddColumnButton boardId={active} />
+        <div className="flex h-full flex-col">
+          <div className="flex h-12 shrink-0 items-center gap-3 border-b border-slate-200 px-4 dark:border-slate-800">
+            {data.icon && <span className="text-xl leading-none">{data.icon}</span>}
+            <h1 className="text-base font-semibold text-slate-800 dark:text-slate-100">{data.name}</h1>
+            <div className="ml-auto flex items-center gap-2">
+              <div className="relative flex items-center">
+                <svg className="pointer-events-none absolute left-2 text-slate-400" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <circle cx="6.5" cy="6.5" r="5"/><line x1="10" y1="10" x2="14.5" y2="14.5"/>
+                </svg>
+                <input
+                  type="text"
+                  placeholder="Filter…"
+                  value={filterQuery}
+                  onChange={(e) => setFilterQuery(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Escape' && setFilterQuery('')}
+                  className="h-7 w-40 rounded border border-slate-200 bg-white py-1 pl-7 pr-2 text-sm text-slate-700 placeholder-slate-400 focus:border-blue-400 focus:outline-none dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200 dark:placeholder-slate-500"
+                />
+                {filterQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setFilterQuery('')}
+                    className="absolute right-1.5 text-slate-400 hover:text-slate-600"
+                    aria-label="Clear filter"
+                  >
+                    ×
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={toggleHideCompleted}
+                title="Hide completed items"
+                className={`flex h-7 w-7 items-center justify-center rounded border text-sm transition-colors ${
+                  hideCompleted
+                    ? 'border-green-300 bg-green-100 text-green-700 dark:border-green-700 dark:bg-green-900/40 dark:text-green-400'
+                    : 'border-slate-200 bg-white text-slate-400 hover:text-slate-600 dark:border-slate-700 dark:bg-slate-900'
+                }`}
+              >
+                ✓
+              </button>
+            </div>
           </div>
-        </SortableContext>
+          <SortableContext items={columnIds} strategy={horizontalListSortingStrategy}>
+            <div className="flex flex-1 gap-4 overflow-x-auto p-4">
+              {columns.map((col, i) => (
+                <SortableColumn
+                  key={`${col.name}-${i}`}
+                  column={col}
+                  colIdx={i}
+                  allColumnNames={names}
+                  boardId={active}
+                  collapsed={data.list_collapse?.[i] ?? false}
+                  filterQuery={filterQuery}
+                  hideCompleted={hideCompleted}
+                />
+              ))}
+              <AddColumnButton boardId={active} />
+            </div>
+          </SortableContext>
+        </div>
       </BoardDndContext>
     </BoardFocusProvider>
   )
