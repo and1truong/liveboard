@@ -12,10 +12,14 @@ function ListEventsBridge(): null {
   return null
 }
 
-export function App({ client }: { client: Client }): JSX.Element {
+export function App({ client, initialBoardId, initialCardPos }: {
+  client: Client
+  initialBoardId?: string | null
+  initialCardPos?: { colIdx: number; cardIdx: number } | null
+}): JSX.Element {
   return (
     <ThemeProvider>
-      <ActiveBoardProvider>
+      <ActiveBoardProvider initialBoardId={initialBoardId ?? null} initialCardPos={initialCardPos ?? null}>
         <ListEventsBridge />
         <div className="flex h-screen w-screen">
           <BoardSidebar />

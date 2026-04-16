@@ -11,8 +11,12 @@ async function boot(): Promise<void> {
   if (!root) throw new Error('#root missing')
 
   const client = createClient()
+  let initialBoardId: string | null = null
+  let initialCardPos: { colIdx: number; cardIdx: number } | null = null
   try {
-    await client.ready()
+    const welcome = await client.ready()
+    initialBoardId = welcome.initialBoardId ?? null
+    initialCardPos = welcome.initialCardPos ?? null
   } catch (e) {
     root.textContent = `Couldn't connect to shell: ${(e as Error).message}`
     return
@@ -22,7 +26,7 @@ async function boot(): Promise<void> {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ClientProvider client={client}>
-          <App client={client} />
+          <App client={client} initialBoardId={initialBoardId} initialCardPos={initialCardPos} />
         </ClientProvider>
       </QueryClientProvider>
     </StrictMode>,

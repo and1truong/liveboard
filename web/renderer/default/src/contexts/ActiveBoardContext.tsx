@@ -1,15 +1,59 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useRef, useState, type ReactNode } from 'react'
+import { useClient } from '../queries.js'
+
+export interface CardPos {
+  colIdx: number
+  cardIdx: number
+}
 
 interface ActiveBoardCtx {
   active: string | null
   setActive: (next: string | null) => void
+  activeCard: CardPos | null
+  setActiveCard: (next: CardPos | null) => void
 }
 
 const Ctx = createContext<ActiveBoardCtx | null>(null)
 
-export function ActiveBoardProvider({ children }: { children: ReactNode }): JSX.Element {
-  const [active, setActive] = useState<string | null>(null)
-  return <Ctx.Provider value={{ active, setActive }}>{children}</Ctx.Provider>
+export function ActiveBoardProvider({
+  children,
+  initialBoardId,
+  initialCardPos,
+}: {
+  children: ReactNode
+  initialBoardId?: string | null
+  initialCardPos?: CardPos | null
+}): JSX.Element {
+  const client = useClient()
+  const [active, setActiveRaw] = useState<string | null>(initialBoardId ?? null)
+  const [activeCard, setActiveCardRaw] = useState<CardPos | null>(initialCardPos ?? null)
+  const remoteRef = useRef(false)
+
+  const setActive = useCallback((next: string | null) => {
+    setActiveRaw(next)
+    setActiveCardRaw(null)
+    if (!remoteRef.current) {
+      client.emit('active.changed', { boardId: next, cardPos: null })
+    }
+  }, [client])
+
+  const setActiveCard = useCallback((next: CardPos | null) => {
+    setActiveCardRaw(next)
+    if (!remoteRef.current) {
+      client.emit('active.changed', { boardId: active, cardPos: next })
+    }
+  }, [client, active])
+
+  useEffect(() => {
+    return client.on('active.set', ({ boardId, cardPos }) => {
+      remoteRef.current = true
+      setActiveRaw(boardId)
+      setActiveCardRaw(cardPos ?? null)
+      remoteRef.current = false
+    })
+  }, [client])
+
+  return <Ctx.Provider value={{ active, setActive, activeCard, setActiveCard }}>{children}</Ctx.Provider>
 }
 
 export function useActiveBoard(): ActiveBoardCtx {
