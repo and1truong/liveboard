@@ -1,7 +1,8 @@
 ---
+version: 2
 name: Side Projects
 description: Personal dev stuff and learning goals
-icon: "\U0001F6E0\uFE0F"
+icon: "\U0001F6E0️"
 list-collapse:
     - false
     - false
