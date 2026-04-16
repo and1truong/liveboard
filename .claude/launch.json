@@ -9,6 +9,13 @@
       "autoPort": true
     },
     {
+      "name": "dev-app",
+      "runtimeExecutable": "/bin/bash",
+      "runtimeArgs": ["-c", "export PATH=/usr/local/bin:$HOME/go/bin:/usr/local/go/bin:$PATH && make dev-app"],
+      "port": 7070,
+      "autoPort": true
+    },
+    {
       "name": "dev-student",
       "runtimeExecutable": "make",
       "runtimeArgs": ["dev", "DEMO=student-y7"],
