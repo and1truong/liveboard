@@ -1,6 +1,7 @@
-import { forwardRef, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react'
+import { forwardRef, useEffect, useRef, useState, type FormEvent, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useBoardSettings, useUpdateSettings } from '../queries/useBoardSettings.js'
+import { useAvailableTags } from '../queries/useAvailableTags.js'
 import { useDeleteBoard } from '../mutations/useBoardCrud.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
@@ -54,20 +55,16 @@ export function BoardSettingsModal({
   const [confirmDelete, setConfirmDelete] = useState(false)
   const savedTagColors = board?.tag_colors ?? {}
   const [tagColors, setTagColors] = useState<Record<string, string>>(savedTagColors)
-  // When the modal reopens for a board, reset the draft from the latest saved state.
+  // When the modal reopens for a board, reset all drafts from the latest saved state.
   useEffect(() => {
-    if (open) setTagColors(board?.tag_colors ?? {})
-  }, [open, board?.tag_colors])
-
-  const availableTags = useMemo(() => {
-    const set = new Set<string>(board?.tags ?? [])
-    for (const col of board?.columns ?? []) {
-      for (const card of col.cards ?? []) {
-        for (const t of card.tags ?? []) set.add(t)
-      }
+    if (open) {
+      setTagColors(board?.tag_colors ?? {})
+      setViewMode(normalizeViewMode(settings.view_mode))
+      setWeekStart(normalizeWeekStart(settings.week_start))
     }
-    return Array.from(set).sort((a, b) => a.localeCompare(b))
-  }, [board])
+  }, [open, board?.tag_colors, settings.view_mode, settings.week_start])
+
+  const availableTags = useAvailableTags(board)
 
   const setTagColor = (tag: string, color: string): void => {
     setTagColors((prev) => {

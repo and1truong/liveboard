@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useMemo, useState, type DragEvent } from 'react'
 import type { Board, Card as CardModel, Column } from '@shared/types.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
+import { useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
 
@@ -54,18 +55,17 @@ export function BoardCalendarView({
   data,
   active,
   columns,
-  filterQuery,
-  hideCompleted,
 }: {
   data: Board
   active: string
   columns: Column[]
-  filterQuery: string
-  hideCompleted: boolean
 }): JSX.Element {
   void data
   const settings = useBoardSettings(active)
   const weekStart: 0 | 1 = settings.week_start === 'sunday' ? 0 : 1
+  const { filter } = useBoardFilter()
+  const filterQuery = filter.query
+  const hideCompleted = filter.hideCompleted
 
   const now = new Date()
   const [subView, setSubView] = useState<SubView>('month')
@@ -78,7 +78,7 @@ export function BoardCalendarView({
     const byDate: Record<string, FlatCard[]> = {}
     const unsched: FlatCard[] = []
     columns.forEach((col, colIdx) => {
-      col.cards.forEach((card, cardIdx) => {
+      ;(col.cards ?? []).forEach((card, cardIdx) => {
         const entry: FlatCard = { card, colIdx, cardIdx, columnName: col.name }
         if (card.due) {
           if (!byDate[card.due]) byDate[card.due] = []

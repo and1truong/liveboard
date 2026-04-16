@@ -9,6 +9,8 @@ import { encodeCardId, encodeColumnId, encodeColumnEndId } from './cardId.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
 import { useDragState } from './BoardDndContext.js'
+import { useBoardFilter } from '../contexts/BoardFilterContext.js'
+import { filterCard } from '../utils/cardFilter.js'
 
 export function SortableColumn({
   column,
@@ -16,8 +18,6 @@ export function SortableColumn({
   allColumnNames,
   boardId,
   collapsed = false,
-  filterQuery = '',
-  hideCompleted = false,
   isFocusMode = false,
 }: {
   column: ColumnModel
@@ -25,21 +25,12 @@ export function SortableColumn({
   allColumnNames: string[]
   boardId: string
   collapsed?: boolean
-  filterQuery?: string
-  hideCompleted?: boolean
   isFocusMode?: boolean
 }): JSX.Element {
   const id = encodeColumnId(column.name)
   const cards = column.cards ?? []
-  const q = filterQuery.toLowerCase()
-  const visibleCards = cards.filter((card) => {
-    if (hideCompleted && card.completed) return false
-    if (q) {
-      const hay = [card.title, card.body ?? '', ...(card.tags ?? []), card.assignee ?? ''].join(' ').toLowerCase()
-      return hay.includes(q)
-    }
-    return true
-  })
+  const { filter } = useBoardFilter()
+  const visibleCards = cards.filter((card) => filterCard(card, filter))
   const cardIds = visibleCards.map((_, i) => encodeCardId(colIdx, i))
   const mutation = useBoardMutation(boardId)
   const settings = useBoardSettings(boardId)

@@ -11,14 +11,10 @@ export function BoardListView({
   data,
   active,
   columns,
-  filterQuery,
-  hideCompleted,
 }: {
   data: Board
   active: string
   columns: Column[]
-  filterQuery: string
-  hideCompleted: boolean
 }): JSX.Element {
   const { focused } = useFocusedColumn()
   const names = columns.map((c) => c.name)
@@ -37,8 +33,6 @@ export function BoardListView({
             allColumnNames={names}
             boardId={active}
             collapsed={data.list_collapse?.[i] ?? false}
-            filterQuery={filterQuery}
-            hideCompleted={hideCompleted}
           />
         )
       })}
