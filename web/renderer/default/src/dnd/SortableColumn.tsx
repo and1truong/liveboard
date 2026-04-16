@@ -7,6 +7,7 @@ import { SortableCard } from './SortableCard.js'
 import { encodeCardId, encodeColumnId } from './cardId.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
+import { useDragState } from './BoardDndContext.js'
 
 export function SortableColumn({
   column,
@@ -16,6 +17,7 @@ export function SortableColumn({
   collapsed = false,
   filterQuery = '',
   hideCompleted = false,
+  isFocusMode = false,
 }: {
   column: ColumnModel
   colIdx: number
@@ -24,6 +26,7 @@ export function SortableColumn({
   collapsed?: boolean
   filterQuery?: string
   hideCompleted?: boolean
+  isFocusMode?: boolean
 }): JSX.Element {
   const id = encodeColumnId(column.name)
   const cards = column.cards ?? []
@@ -44,6 +47,8 @@ export function SortableColumn({
     id,
     data: { type: 'column', name: column.name, col_idx: colIdx },
   })
+  const { overColIdx } = useDragState()
+  const isDropTarget = !isDragging && overColIdx === colIdx
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
     transition,
@@ -54,13 +59,13 @@ export function SortableColumn({
     mutation.mutate({ type: 'toggle_column_collapse', col_idx: colIdx })
   }
 
-  if (collapsed) {
+  if (collapsed && !isFocusMode) {
     return (
       <section
         ref={setNodeRef}
         style={style}
         aria-label={`collapsed column ${column.name}`}
-        className="flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-slate-100 p-3 dark:bg-slate-900"
+        className={`flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-slate-100 p-3 dark:bg-slate-900 ${isDropTarget ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
         onClick={toggleCollapse}
       >
         <button
@@ -84,22 +89,28 @@ export function SortableColumn({
     )
   }
 
+  const sectionClass = isFocusMode
+    ? 'flex w-full flex-1 flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900'
+    : `flex ${settings.expand_columns ? 'min-w-[200px] flex-[1_1_0]' : 'w-72 shrink-0'} flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900`
+
   return (
     <section
       ref={setNodeRef}
       style={style}
-      className={`flex ${settings.expand_columns ? 'min-w-[200px] flex-[1_1_0]' : 'w-72 shrink-0'} flex-col rounded-lg bg-slate-100 p-3 dark:bg-slate-900`}
+      className={`${sectionClass} ${isDropTarget ? 'ring-2 ring-blue-400 ring-offset-1' : ''}`}
     >
       <div className="mb-3 flex items-center gap-2">
-        <button
-          type="button"
-          aria-label={`drag column ${column.name}`}
-          {...attributes}
-          {...listeners}
-          className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing"
-        >
-          ⋮⋮
-        </button>
+        {!isFocusMode && (
+          <button
+            type="button"
+            aria-label={`drag column ${column.name}`}
+            {...attributes}
+            {...listeners}
+            className="cursor-grab text-slate-400 hover:text-slate-600 active:cursor-grabbing"
+          >
+            ⋮⋮
+          </button>
+        )}
         <div className="flex-1">
           <ColumnHeader
             name={column.name}
@@ -112,7 +123,13 @@ export function SortableColumn({
         </div>
       </div>
       <SortableContext items={cardIds} strategy={verticalListSortingStrategy}>
-        <ul className="flex flex-col gap-2">
+        <ul
+          className={
+            isFocusMode
+              ? 'min-h-[3rem] grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-2.5 overflow-y-auto'
+              : 'min-h-[3rem] flex flex-col gap-2'
+          }
+        >
           {visibleCards.map((card, i) => (
             <li key={`${column.name}-${i}`}>
               <SortableCard
