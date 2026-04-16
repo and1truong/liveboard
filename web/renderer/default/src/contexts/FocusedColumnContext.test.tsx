@@ -39,4 +39,20 @@ describe('FocusedColumnContext', () => {
     act(() => result.current.setFocused(null))
     expect(result.current.focused).toBeNull()
   })
+
+  it('clears focused when active board changes', () => {
+    let active: string | null = 'b1'
+    const { result, rerender } = renderHook(() => useFocusedColumn(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <FocusedColumnProvider columns={cols} active={active}>
+          {children}
+        </FocusedColumnProvider>
+      ),
+    })
+    act(() => result.current.setFocused('Todo'))
+    expect(result.current.focused).toBe('Todo')
+    active = 'b2'
+    rerender()
+    expect(result.current.focused).toBeNull()
+  })
 })
