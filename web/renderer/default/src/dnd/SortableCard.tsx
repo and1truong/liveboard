@@ -10,6 +10,7 @@ import { stageDelete } from '../mutations/undoable.js'
 import { useBoardFocus, useCardFocus } from '../contexts/BoardFocusContext.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { encodeCardId } from './cardId.js'
+import { useDragState } from './BoardDndContext.js'
 
 export function SortableCard({
   card,
@@ -38,6 +39,12 @@ export function SortableCard({
   }, [setActiveCard, colIdx, cardIdx])
   const [quickOpen, setQuickOpen] = useState(false)
   const mutation = useBoardMutation(boardId)
+  const { drop } = useDragState()
+  const showDropLine =
+    !isDragging &&
+    drop?.type === 'card' &&
+    drop.colIdx === colIdx &&
+    drop.cardIdx === cardIdx
 
   const style: React.CSSProperties = {
     transform: CSS.Transform.toString(transform),
@@ -93,6 +100,12 @@ export function SortableCard({
             isFocused ? 'ring-2 ring-[color:var(--accent-500)] ring-offset-2' : ''
           }`}
         >
+          {showDropLine && (
+            <div
+              aria-hidden
+              className="pointer-events-none absolute -top-[5.5px] left-0 right-0 h-[3px] rounded-full bg-[color:var(--accent-500)]"
+            />
+          )}
           <button
             type="button"
             aria-label="drag card"

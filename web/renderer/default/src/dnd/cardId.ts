@@ -16,3 +16,12 @@ export function decodeColumnId(id: string): string | null {
   if (!id.startsWith('column:')) return null
   return id.slice('column:'.length)
 }
+
+export function encodeColumnEndId(name: string): string {
+  return `colend:${name}`
+}
+
+export function decodeColumnEndId(id: string): string | null {
+  if (!id.startsWith('colend:')) return null
+  return id.slice('colend:'.length)
+}

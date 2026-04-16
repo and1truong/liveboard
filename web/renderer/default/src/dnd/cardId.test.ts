@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'bun:test'
-import { encodeCardId, decodeCardId, encodeColumnId, decodeColumnId } from './cardId.js'
+import {
+  encodeCardId,
+  decodeCardId,
+  encodeColumnId,
+  decodeColumnId,
+  encodeColumnEndId,
+  decodeColumnEndId,
+} from './cardId.js'
 
 describe('cardId', () => {
   it('encodes card with col_idx + card_idx', () => {
@@ -30,5 +37,12 @@ describe('cardId', () => {
   it('returns null for non-column id', () => {
     expect(decodeColumnId('card:0:0')).toBeNull()
     expect(decodeColumnId('garbage')).toBeNull()
+  })
+
+  it('encodes/decodes column-end with name', () => {
+    expect(encodeColumnEndId('Todo')).toBe('colend:Todo')
+    expect(decodeColumnEndId('colend:Todo')).toBe('Todo')
+    expect(decodeColumnEndId('column:Todo')).toBeNull()
+    expect(decodeColumnEndId('garbage')).toBeNull()
   })
 })

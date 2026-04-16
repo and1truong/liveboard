@@ -114,6 +114,21 @@ describe('dispatchDrop', () => {
     })
   })
 
+  it('appends card to end via column-end drop zone', () => {
+    expect(
+      dispatchDrop(
+        active('card:0:0', 'card', { col_idx: 0, card_idx: 0 }),
+        over('colend:B', 'column-end', { name: 'B' }),
+        board,
+      ),
+    ).toEqual({
+      type: 'move_card',
+      col_idx: 0,
+      card_idx: 0,
+      target_column: 'B',
+    })
+  })
+
   it('returns null when column dropped on itself', () => {
     expect(
       dispatchDrop(

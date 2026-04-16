@@ -1,10 +1,11 @@
 import { useSortable, SortableContext, rectSortingStrategy, verticalListSortingStrategy } from '@dnd-kit/sortable'
+import { useDroppable } from '@dnd-kit/core'
 import { CSS } from '@dnd-kit/utilities'
 import type { Column as ColumnModel } from '@shared/types.js'
 import { ColumnHeader } from '../components/ColumnHeader.js'
 import { AddCardButton } from '../components/AddCardButton.js'
 import { SortableCard } from './SortableCard.js'
-import { encodeCardId, encodeColumnId } from './cardId.js'
+import { encodeCardId, encodeColumnId, encodeColumnEndId } from './cardId.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
 import { useDragState } from './BoardDndContext.js'
@@ -141,15 +142,28 @@ export function SortableColumn({
               />
             </li>
           ))}
-          {showEndDropLine && (
-            <li
-              aria-hidden
-              className="pointer-events-none h-[3px] rounded-full bg-[color:var(--accent-500)]"
-            />
-          )}
+          <ColumnEndDropZone columnName={column.name} active={showEndDropLine} />
         </ul>
       </SortableContext>
       <AddCardButton columnName={column.name} boardId={boardId} />
     </section>
   )
+}
+
+function ColumnEndDropZone({
+  columnName,
+  active,
+}: {
+  columnName: string
+  active: boolean
+}): JSX.Element {
+  const { setNodeRef } = useDroppable({
+    id: encodeColumnEndId(columnName),
+    data: { type: 'column-end', name: columnName },
+  })
+  const { isDragActive } = useDragState()
+  // Reserve hover area only during a drag, so the column doesn't have permanent dead space below cards.
+  const baseClass = isDragActive ? 'min-h-[2rem]' : 'h-0'
+  const lineClass = active ? 'h-[3px] min-h-[3px] mt-1 bg-[color:var(--accent-500)] rounded-full' : ''
+  return <li ref={setNodeRef} aria-hidden className={`${baseClass} ${lineClass}`} />
 }

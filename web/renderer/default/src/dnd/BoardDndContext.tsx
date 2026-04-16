@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import { createContext, useContext, useState, type ReactNode } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -9,6 +9,7 @@ import {
   useSensor,
   useSensors,
   type DragEndEvent,
+  type DragOverEvent,
   type DragStartEvent,
 } from '@dnd-kit/core'
 import { sortableKeyboardCoordinates } from '@dnd-kit/sortable'
@@ -17,7 +18,16 @@ import type { Board } from '@shared/types.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { Card } from '../components/Card.js'
 import { dispatchDrop } from './dispatchDrop.js'
-import { decodeCardId, decodeColumnId } from './cardId.js'
+import { decodeCardId, decodeColumnId, decodeColumnEndId } from './cardId.js'
+
+export type DropTarget =
+  | { type: 'card'; colIdx: number; cardIdx: number }
+  | { type: 'column'; colIdx: number }
+  | null
+
+interface DragState { drop: DropTarget; isDragActive: boolean }
+const DragStateContext = createContext<DragState>({ drop: null, isDragActive: false })
+export function useDragState(): DragState { return useContext(DragStateContext) }
 
 export function BoardDndContext({
   boardId,
@@ -29,6 +39,7 @@ export function BoardDndContext({
   const qc = useQueryClient()
   const mutation = useBoardMutation(boardId)
   const [activeId, setActiveId] = useState<string | null>(null)
+  const [drop, setDrop] = useState<DropTarget>(null)
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
@@ -40,8 +51,33 @@ export function BoardDndContext({
     setActiveId(String(e.active.id))
   }
 
+  const onDragOver = (e: DragOverEvent): void => {
+    // Only show drop indicator when dragging a card; column reorder uses sortable animation only.
+    const activeType = e.active.data.current?.type
+    if (activeType !== 'card' || !e.over) { setDrop(null); return }
+    const overId = String(e.over.id)
+    const card = decodeCardId(overId)
+    if (card) { setDrop({ type: 'card', colIdx: card.colIdx, cardIdx: card.cardIdx }); return }
+    const endName = decodeColumnEndId(overId)
+    if (endName) {
+      const board = qc.getQueryData<Board>(['board', boardId])
+      const idx = board?.columns?.findIndex((c) => c.name === endName) ?? -1
+      setDrop(idx >= 0 ? { type: 'column', colIdx: idx } : null)
+      return
+    }
+    const colName = decodeColumnId(overId)
+    if (colName) {
+      const board = qc.getQueryData<Board>(['board', boardId])
+      const idx = board?.columns?.findIndex((c) => c.name === colName) ?? -1
+      setDrop(idx >= 0 ? { type: 'column', colIdx: idx } : null)
+      return
+    }
+    setDrop(null)
+  }
+
   const onDragEnd = (e: DragEndEvent): void => {
     setActiveId(null)
+    setDrop(null)
     const board = qc.getQueryData<Board>(['board', boardId])
     if (!board) return
     const op = dispatchDrop(
@@ -55,16 +91,19 @@ export function BoardDndContext({
   const overlay = renderOverlay(activeId, qc.getQueryData<Board>(['board', boardId]))
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCorners}
-      onDragStart={onDragStart}
-      onDragEnd={onDragEnd}
-      onDragCancel={() => setActiveId(null)}
-    >
-      {children}
-      <DragOverlay>{overlay}</DragOverlay>
-    </DndContext>
+    <DragStateContext.Provider value={{ drop, isDragActive: activeId != null }}>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCorners}
+        onDragStart={onDragStart}
+        onDragOver={onDragOver}
+        onDragEnd={onDragEnd}
+        onDragCancel={() => { setActiveId(null); setDrop(null) }}
+      >
+        {children}
+        <DragOverlay>{overlay}</DragOverlay>
+      </DndContext>
+    </DragStateContext.Provider>
   )
 }
 

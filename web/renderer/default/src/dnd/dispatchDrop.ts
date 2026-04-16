@@ -34,7 +34,7 @@ export function dispatchDrop(
       }
     }
 
-    if (o.type === 'column') {
+    if (o.type === 'column' || o.type === 'column-end') {
       const targetName = o.name as string
       return {
         type: 'move_card',
