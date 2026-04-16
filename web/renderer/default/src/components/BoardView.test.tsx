@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { useEffect } from 'react'
-import { waitFor } from '@testing-library/react'
+import { fireEvent, waitFor } from '@testing-library/react'
 import { Broker } from '@shared/broker.js'
 import { Client } from '@shared/client.js'
 import { LocalAdapter } from '@shared/adapters/local.js'
@@ -66,5 +66,49 @@ describe('BoardView', () => {
     )
     // Effect fires: setActive(null) → empty state appears.
     await waitFor(() => expect(getByText('Select a board')).toBeDefined())
+  })
+
+  it('renders only the focused column and an exit bar while in focus mode', async () => {
+    const client = await setup()
+    const { getByText, queryByText, getByLabelText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <SeedActive id="welcome" />
+          <BoardView client={client} />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+    )
+    await waitFor(() => expect(getByText('Todo')).toBeDefined())
+    // Enter focus mode via the Todo column menu.
+    fireEvent.pointerDown(getByLabelText('column menu Todo'), { button: 0, pointerType: 'mouse' })
+    fireEvent.click(await findByText('Focus'))
+    // Exit bar is visible.
+    await waitFor(() => expect(getByText(/Focusing:/)).toBeDefined())
+    // Other columns are no longer in the DOM.
+    expect(queryByText('Doing')).toBeNull()
+    expect(queryByText('Done')).toBeNull()
+    // "Add list" button is hidden.
+    expect(queryByText('+ Add list')).toBeNull()
+  })
+
+  it('exits focus mode via the exit bar button', async () => {
+    const client = await setup()
+    const { getByText, queryByText, getByLabelText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <SeedActive id="welcome" />
+          <BoardView client={client} />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+    )
+    await waitFor(() => expect(getByText('Todo')).toBeDefined())
+    fireEvent.pointerDown(getByLabelText('column menu Todo'), { button: 0, pointerType: 'mouse' })
+    fireEvent.click(await findByText('Focus'))
+    await waitFor(() => expect(getByText(/Focusing:/)).toBeDefined())
+    fireEvent.click(getByText(/Exit Focus/))
+    // All three columns back.
+    await waitFor(() => expect(getByText('Doing')).toBeDefined())
+    expect(getByText('Done')).toBeDefined()
+    expect(queryByText(/Focusing:/)).toBeNull()
   })
 })
