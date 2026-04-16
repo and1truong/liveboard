@@ -20,13 +20,15 @@ async function setup(): Promise<Client> {
 describe('App integration', () => {
   it('selecting a board renders its columns', async () => {
     const client = await setup()
-    const { getByText } = renderWithQuery(
+    const { getAllByText, getByText } = renderWithQuery(
       <ClientProvider client={client}>
         <App client={client} />
       </ClientProvider>,
     )
-    await waitFor(() => expect(getByText('Welcome')).toBeDefined())
-    fireEvent.click(getByText('Welcome'))
+    // Multiple "Welcome" candidates exist (sidebar row + boards-grid card); the
+    // sidebar row is the first interactive one rendered.
+    await waitFor(() => expect(getAllByText('Welcome').length).toBeGreaterThan(0))
+    fireEvent.click(getAllByText('Welcome')[0])
     await waitFor(() => expect(getByText('Todo')).toBeDefined())
   })
 

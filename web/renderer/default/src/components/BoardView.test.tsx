@@ -36,7 +36,7 @@ describe('BoardView', () => {
         </ActiveBoardProvider>
       </ClientProvider>,
     )
-    expect(getByText('Select a board')).toBeDefined()
+    await waitFor(() => expect(getByText('My Boards')).toBeDefined())
   })
 
   it('renders columns from the welcome board', async () => {
@@ -65,7 +65,7 @@ describe('BoardView', () => {
       </ClientProvider>,
     )
     // Effect fires: setActive(null) → empty state appears.
-    await waitFor(() => expect(getByText('Select a board')).toBeDefined())
+    await waitFor(() => expect(getByText('My Boards')).toBeDefined())
   })
 
   it('renders only the focused column and an exit bar while in focus mode', async () => {
