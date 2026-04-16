@@ -13,6 +13,7 @@ import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { BoardFocusProvider } from '../contexts/BoardFocusContext.js'
 import { BoardsGrid } from './BoardsGrid.js'
 import { BoardListView } from './BoardListView.js'
+import { BoardCalendarView } from './BoardCalendarView.js'
 import { FocusedColumnProvider, useFocusedColumn } from '../contexts/FocusedColumnContext.js'
 import { FocusExitBar } from './FocusExitBar.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
@@ -193,7 +194,15 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
                 </button>
               </div>
             </div>
-            {settings.view_mode === 'list' ? (
+            {settings.view_mode === 'calendar' ? (
+              <BoardCalendarView
+                data={data}
+                active={active}
+                columns={columns}
+                filterQuery={filterQuery}
+                hideCompleted={hideCompleted}
+              />
+            ) : settings.view_mode === 'list' ? (
               <BoardListView
                 data={data}
                 active={active}
