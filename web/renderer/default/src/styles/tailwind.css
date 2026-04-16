@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "./themes.css";
 @import "./sidebar.css";
+@import "./settings-modal.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 
