@@ -26,7 +26,7 @@ export function BoardListView({
   const visibleColumns = focused !== null ? columns.filter((c) => c.name === focused) : columns
 
   const body = (
-    <div className="mx-auto flex w-full max-w-[680px] flex-col gap-3 p-4">
+    <div className="flex w-full flex-col gap-3 p-4">
       {visibleColumns.map((col) => {
         const i = columns.indexOf(col)
         return (
