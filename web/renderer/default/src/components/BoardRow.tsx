@@ -3,6 +3,7 @@ import type { BoardSummary } from '@shared/adapter.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useDeleteBoard } from '../mutations/useBoardCrud.js'
 import { stageDelete } from '../mutations/undoable.js'
+import { BoardIconPicker } from './BoardIconPicker.js'
 
 export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
   const { active, setActive } = useActiveBoard()
@@ -11,6 +12,7 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
 
   return (
     <li className="group flex items-center gap-1">
+      <BoardIconPicker boardId={board.id} icon={board.icon} />
       <button
         type="button"
         onClick={() => setActive(board.id)}
@@ -18,7 +20,6 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
           isActive ? 'bg-slate-200 text-slate-900 dark:bg-slate-700 dark:text-slate-100' : 'text-slate-700 hover:bg-slate-100 dark:text-slate-200 dark:hover:bg-slate-800'
         }`}
       >
-        {board.icon && <span aria-hidden>{board.icon}</span>}
         <span className="flex min-w-0 flex-1 flex-col">
           <span className="truncate">{board.name}</span>
           {board.updatedAgo && (
