@@ -25,6 +25,28 @@ function makeAdapter(cfg: LiveboardConfig): BackendAdapter {
   return new LocalAdapter(new BrowserStorage())
 }
 
+const BOARD_PATH_RE = /^\/app\/b\/([^/]+?)(?:\/c\/(\d+)-(\d+))?(?:\/|$)/
+
+interface ParsedUrl {
+  boardId: string | null
+  cardPos: { colIdx: number; cardIdx: number } | null
+}
+
+function parseUrl(): ParsedUrl {
+  const m = window.location.pathname.match(BOARD_PATH_RE)
+  if (!m) return { boardId: null, cardPos: null }
+  const boardId = m[1]
+  const cardPos = m[2] != null ? { colIdx: Number(m[2]), cardIdx: Number(m[3]) } : null
+  return { boardId, cardPos }
+}
+
+function buildUrl(boardId: string | null, cardPos?: { colIdx: number; cardIdx: number } | null): string {
+  if (!boardId) return '/app/'
+  let url = `/app/b/${boardId}`
+  if (cardPos) url += `/c/${cardPos.colIdx}-${cardPos.cardIdx}`
+  return url
+}
+
 function bootstrap(): void {
   const iframe = document.getElementById('renderer') as HTMLIFrameElement | null
   if (!iframe) throw new Error('renderer iframe not found')
@@ -35,7 +57,24 @@ function bootstrap(): void {
 
   const adapter = makeAdapter(readConfig())
   const transport = shellTransport(iframe, window.location.origin)
-  const broker = new Broker(transport, adapter, { shellVersion: SHELL_VERSION })
+  const initial = parseUrl()
+  const broker = new Broker(transport, adapter, {
+    shellVersion: SHELL_VERSION,
+    initialBoardId: initial.boardId,
+    initialCardPos: initial.cardPos,
+  })
+
+  broker.onEvent('active.changed', ({ boardId, cardPos }) => {
+    const url = buildUrl(boardId, cardPos)
+    if (window.location.pathname !== url) {
+      window.history.pushState({ boardId, cardPos }, '', url)
+    }
+  })
+
+  window.addEventListener('popstate', () => {
+    const { boardId, cardPos } = parseUrl()
+    broker.emit('active.set', { boardId, cardPos })
+  })
 
   window.addEventListener('beforeunload', () => broker.close())
 }
