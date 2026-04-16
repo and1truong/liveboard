@@ -157,7 +157,7 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
               </button>
               <div className="ml-auto flex items-center gap-2">
                 <div className="relative flex items-center">
-                  <svg className="pointer-events-none absolute left-2 text-slate-400" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+                  <svg className="pointer-events-none absolute left-2 text-[color:var(--color-text-muted)]" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
                     <circle cx="6.5" cy="6.5" r="5"/><line x1="10" y1="10" x2="14.5" y2="14.5"/>
                   </svg>
                   <input
@@ -166,13 +166,13 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
                     value={filterQuery}
                     onChange={(e) => setFilterQuery(e.target.value)}
                     onKeyDown={(e) => e.key === 'Escape' && setFilterQuery('')}
-                    className="h-7 w-40 rounded border border-[color:var(--color-border)] bg-[color:var(--color-surface)] py-1 pl-7 pr-2 text-sm text-slate-700 placeholder-slate-400 focus:border-[color:var(--accent-500)] focus:outline-none dark:text-slate-200 dark:placeholder-slate-500"
+                    className="h-7 w-40 rounded border border-[color:var(--color-border)] bg-[color:var(--color-surface)] py-1 pl-7 pr-2 text-sm text-[color:var(--color-text-primary)] placeholder-[color:var(--color-text-muted)] focus:border-[color:var(--accent-500)] focus:outline-none"
                   />
                   {filterQuery && (
                     <button
                       type="button"
                       onClick={() => setFilterQuery('')}
-                      className="absolute right-1.5 text-slate-400 hover:text-slate-600"
+                      className="absolute right-1.5 text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-secondary)]"
                       aria-label="Clear filter"
                     >
                       ×
@@ -186,7 +186,7 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
                   className={`flex h-7 w-7 items-center justify-center rounded border text-sm transition-colors ${
                     hideCompleted
                       ? 'border-green-300 bg-green-100 text-green-700 dark:border-green-700 dark:bg-green-900/40 dark:text-green-400'
-                      : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-slate-400 hover:text-slate-600'
+                      : 'border-[color:var(--color-border)] bg-[color:var(--color-surface)] text-[color:var(--color-text-muted)] hover:text-[color:var(--color-text-secondary)]'
                   }`}
                 >
                   ✓

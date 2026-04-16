@@ -108,11 +108,11 @@ export function CardDetailModal({
     <>
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
         <Dialog.Content
           key={String(open)}
           aria-describedby={undefined}
-          className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg bg-white p-6 shadow-xl dark:bg-slate-800"
+          className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-raised)]"
         >
           <Dialog.Title className="text-lg font-semibold text-slate-800 dark:text-slate-100">Edit card</Dialog.Title>
           <form onSubmit={submit} className="mt-4 space-y-3">
@@ -123,7 +123,7 @@ export function CardDetailModal({
                 aria-label="card title"
                 defaultValue={card.title ?? ''}
                 onInput={(e) => setTitleValid((e.currentTarget.value ?? '').trim().length > 0)}
-                className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <div>
@@ -138,8 +138,8 @@ export function CardDetailModal({
                     className={
                       'px-2 py-1 rounded ' +
                       (tab === 'edit'
-                        ? 'border-b-2 border-[color:var(--accent-500)] font-semibold text-slate-800 dark:text-slate-100'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700')
+                        ? 'border-b-2 border-[color:var(--accent-500)] font-semibold text-[color:var(--color-text-primary)]'
+                        : 'text-[color:var(--color-text-secondary)] hover:bg-[color:var(--color-hover)]')
                     }
                   >
                     Edit
@@ -152,8 +152,8 @@ export function CardDetailModal({
                     className={
                       'px-2 py-1 rounded ' +
                       (tab === 'preview'
-                        ? 'border-b-2 border-[color:var(--accent-500)] font-semibold text-slate-800 dark:text-slate-100'
-                        : 'text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700')
+                        ? 'border-b-2 border-[color:var(--accent-500)] font-semibold text-[color:var(--color-text-primary)]'
+                        : 'text-[color:var(--color-text-secondary)] hover:bg-[color:var(--color-hover)]')
                     }
                   >
                     Preview
@@ -166,17 +166,17 @@ export function CardDetailModal({
                 rows={6}
                 defaultValue={card.body ?? ''}
                 hidden={tab === 'preview'}
-                className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
               {tab === 'preview' && (
                 previewHtml === null ? (
-                  <div className="mt-1 min-h-32 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-xs italic text-slate-400">
+                  <div className="mt-1 min-h-32 rounded border border-[color:var(--color-border-dashed)] px-2 py-1 text-xs italic text-slate-400">
                     Rendering…
                   </div>
                 ) : (
                   <div
                     aria-label="card body preview"
-                    className="mt-1 min-h-32 rounded border border-slate-200 dark:border-slate-700 px-2 py-1 text-sm prose prose-sm dark:prose-invert max-w-none"
+                    className="mt-1 min-h-32 rounded border border-[color:var(--color-border-dashed)] px-2 py-1 text-sm prose prose-sm dark:prose-invert max-w-none"
                     dangerouslySetInnerHTML={{ __html: previewHtml }}
                   />
                 )
@@ -188,7 +188,7 @@ export function CardDetailModal({
                 ref={tagsRef}
                 aria-label="card tags"
                 defaultValue={(card.tags ?? []).join(', ')}
-                className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
               />
             </label>
             <div className="grid grid-cols-3 gap-3">
@@ -198,7 +198,7 @@ export function CardDetailModal({
                   ref={priorityRef}
                   aria-label="card priority"
                   defaultValue={card.priority ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                  className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 >
                   <option value="">—</option>
                   <option value="low">Low</option>
@@ -214,7 +214,7 @@ export function CardDetailModal({
                   aria-label="card due"
                   type="date"
                   defaultValue={card.due ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)] dark:[color-scheme:dark] dark:text-slate-100"
+                  className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)] dark:[color-scheme:dark] dark:text-slate-100"
                 />
               </label>
               <label className="block">
@@ -223,7 +223,7 @@ export function CardDetailModal({
                   ref={assigneeRef}
                   aria-label="card assignee"
                   defaultValue={card.assignee ?? ''}
-                  className="mt-1 w-full rounded border border-slate-300 dark:border-slate-600 px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+                  className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
                 />
               </label>
             </div>
@@ -249,7 +249,7 @@ export function CardDetailModal({
                   {backlinks.map((b) => (
                     <li
                       key={`${b.boardId}:${b.colIdx}:${b.cardIdx}`}
-                      className="flex items-center gap-1 rounded bg-slate-100 dark:bg-slate-700 px-2 py-1 text-xs"
+                      className="flex items-center gap-1 rounded bg-[color:var(--color-column-bg)] px-2 py-1 text-xs"
                     >
                       <button type="button" onClick={() => navigateToBacklink(b)} className="text-left">
                         <span className="text-slate-500 dark:text-slate-400">{b.boardName} · </span>

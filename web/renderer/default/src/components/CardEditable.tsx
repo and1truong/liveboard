@@ -74,7 +74,7 @@ export function CardEditable({
 
   if (mode === 'edit') {
     return (
-      <div className="rounded-md bg-white p-3 shadow-sm ring-2 ring-[color:var(--accent-500)] dark:bg-slate-800">
+      <div className="rounded-md bg-[color:var(--color-surface)] p-3 shadow-sm ring-2 ring-[color:var(--accent-500)]">
         <input
           ref={inputRef}
           aria-label="card title"
@@ -92,7 +92,7 @@ export function CardEditable({
 
   return (
     <>
-      <div className={`group relative rounded-md bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 ${compact ? 'p-2 text-xs' : 'p-3 text-sm'}`}>
+      <div className={`group relative rounded-md bg-[color:var(--color-surface)] shadow-sm ring-1 ring-[color:var(--color-border)] ${compact ? 'p-2 text-xs' : 'p-3 text-sm'}`}>
         <div className="flex items-start gap-2">
           {showCheckbox && (
             <button
@@ -130,12 +130,12 @@ export function CardEditable({
               type="button"
               aria-label="open card details"
               onClick={() => onModalOpenChange(true)}
-              className="mt-2 flex min-h-6 w-full items-center justify-between gap-2 rounded text-left hover:bg-slate-50 dark:hover:bg-slate-700"
+              className="mt-2 flex min-h-6 w-full items-center justify-between gap-2 rounded text-left hover:bg-[color:var(--color-hover)]"
             >
               {card.tags && card.tags.length > 0 ? (
                 <ul className="flex flex-wrap gap-1">
                   {card.tags.map((t) => (
-                    <li key={t} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700 dark:bg-slate-700 dark:text-slate-200">
+                    <li key={t} className="rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-xs text-slate-700 dark:text-slate-200">
                       {t}
                     </li>
                   ))}
