@@ -119,15 +119,30 @@ dev-app:
 	trap "kill $$RENDERER_PID 2>/dev/null" EXIT; \
 	cd web/shell && bunx --bun vite
 
+# Dev server for adapter-test with Vite HMR.
+# Go serves /api/v1 (real server adapter) on :7070 and reverse-proxies /app/*
+# to shell Vite (:5180) and /app/renderer/default/* to renderer Vite (:5173).
+# HMR WS is proxied through Go so TS/CSS edits hot-reload without rebuild.
 .PHONY: adapter-test
-adapter-test: shell renderer release-port
-	LIVEBOARD_APP_SHELL=1 go run ./cmd/liveboard serve --dir ./demo --port 7070
-
-# Same as adapter-test but with unminified renderer + React dev bundle
-# (readable stack traces, full React error messages).
-.PHONY: adapter-test-dev
-adapter-test-dev: shell renderer-dev release-port
-	LIVEBOARD_APP_SHELL=1 go run ./cmd/liveboard serve --dir ./demo --port 7070
+adapter-test:
+	-lsof -ti :7070 | xargs kill -9 2>/dev/null
+	-lsof -ti :5173 | xargs kill -9 2>/dev/null
+	-lsof -ti :5180 | xargs kill -9 2>/dev/null
+	cd web/shared && bun install --frozen-lockfile
+	cd web/shell && bun install --frozen-lockfile
+	cd web/renderer/default && bun install --frozen-lockfile
+	@echo "Go:       http://localhost:7070/app/"
+	@echo "Shell:    :5180 (proxied via Go)"
+	@echo "Renderer: :5173 (proxied via Go)"
+	@( cd web/renderer/default && bunx --bun vite --port 5173 --strictPort ) & \
+	RENDERER_PID=$$!; \
+	( cd web/shell && bunx --bun vite --port 5180 --strictPort ) & \
+	SHELL_PID=$$!; \
+	trap "kill $$RENDERER_PID $$SHELL_PID 2>/dev/null" EXIT; \
+	LIVEBOARD_APP_SHELL=1 \
+	LIVEBOARD_SHELL_DEV_URL=http://localhost:5180 \
+	LIVEBOARD_RENDERER_DEV_URL=http://localhost:5173 \
+	go run ./cmd/liveboard serve --dir ./demo/indie-dev --port 7070
 
 # Build LiveBoard Online (browser-only SPA with localStorage)
 online: check-tailwind
