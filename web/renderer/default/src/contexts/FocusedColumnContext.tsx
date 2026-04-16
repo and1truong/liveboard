@@ -3,7 +3,6 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
   useState,
   type ReactNode,
 } from 'react'
@@ -26,13 +25,9 @@ export function FocusedColumnProvider({
   children: ReactNode
 }): JSX.Element {
   const [focused, setFocused] = useState<string | null>(null)
-  const activeRef = useRef(active)
 
   useEffect(() => {
-    if (activeRef.current !== active) {
-      activeRef.current = active
-      setFocused(null)
-    }
+    setFocused(null)
   }, [active])
 
   const value = useMemo<FocusedColumnCtx>(
