@@ -188,15 +188,18 @@
                     <template x-for="group in groupedItems" :key="group.label">
                         <div x-show="group.items.length > 0">
                             <div class="cmd-palette-category" x-text="group.label"></div>
-                            <template x-for="item in group.items" :key="item.url">
+                            <template x-for="item in group.items" :key="item._key">
                                 <div class="cmd-palette-item"
                                      :class="{ active: item._idx === activeIdx }"
                                      :style="'--i:' + item._idx"
                                      :data-cmd-active="item._idx === activeIdx"
-                                     @click="if(item.url) window.location.href = item.url"
+                                     @click="selectItem(item)"
                                      @mouseenter="activeIdx = item._idx">
                                     <span class="cmd-palette-item-icon" x-text="item.icon"></span>
-                                    <span class="cmd-palette-item-name" x-html="highlightName(item.name, item.matchIndices)"></span>
+                                    <span class="cmd-palette-item-body">
+                                        <span class="cmd-palette-item-name" x-html="highlightName(item.name, item.matchIndices)"></span>
+                                        <span class="cmd-palette-item-sub" x-show="item.sub" x-text="item.sub"></span>
+                                    </span>
                                     <span class="cmd-palette-item-arrow" x-show="item._idx === activeIdx">
                                         <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><path d="M6 3l5 5-5 5"/></svg>
                                     </span>

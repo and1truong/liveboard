@@ -125,8 +125,20 @@ input.cmd-palette-input {
     width: 28px;
 }
 
+.cmd-palette-item-body {
+    @apply flex-1 flex flex-col overflow-hidden;
+    min-width: 0;
+}
+
 .cmd-palette-item-name {
-    @apply flex-1 overflow-hidden text-ellipsis whitespace-nowrap;
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+}
+
+.cmd-palette-item-sub {
+    @apply overflow-hidden text-ellipsis whitespace-nowrap;
+    font-size: 11px;
+    color: var(--color-text-tertiary);
+    margin-top: 1px;
 }
 
 .cmd-palette-item-arrow {

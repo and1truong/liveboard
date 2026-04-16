@@ -464,4 +464,31 @@
   document.addEventListener("htmx:afterSettle", function () {
     requestAnimationFrame(attach);
   });
+
+  // Handle ?open_card=colIdx:cardIdx — set by the command palette when navigating cross-board.
+  document.addEventListener('alpine:initialized', function () {
+    var params = new URLSearchParams(window.location.search);
+    var openCard = params.get('open_card');
+    if (!openCard) return;
+
+    // Clean the param from the URL without triggering a reload.
+    var url = new URL(window.location.href);
+    url.searchParams.delete('open_card');
+    history.replaceState(null, '', url.pathname + (url.search && url.search !== '?' ? url.search : ''));
+
+    var parts = openCard.split(':');
+    if (parts.length !== 2) return;
+    var colIdx = parts[0];
+    var cardIdx = parts[1];
+
+    var tryOpen = function () {
+      var cardEl = document.querySelector('[data-col-idx="' + colIdx + '"][data-card-idx="' + cardIdx + '"]');
+      var modalComp = document.querySelector('[x-data^="cardModal"]');
+      if (cardEl && modalComp && modalComp._x_dataStack) {
+        Alpine.$data(modalComp).show(cardEl);
+      }
+    };
+    // Give HTMX/Alpine a tick to finish rendering.
+    requestAnimationFrame(tryOpen);
+  });
 })();
