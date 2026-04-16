@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Command } from 'cmdk'
+import { Plus, Pencil, LayoutGrid, List, CalendarDays, Trash2 } from 'lucide-react'
 import { useBoardList } from '../queries.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
@@ -20,12 +21,34 @@ const VIEW_MODES: { value: 'board' | 'list' | 'calendar'; label: string }[] = [
   { value: 'calendar', label: 'Calendar' },
 ]
 
+const VIEW_ICONS: Record<string, ReactNode> = {
+  board: <LayoutGrid size={15} />,
+  list: <List size={15} />,
+  calendar: <CalendarDays size={15} />,
+}
+
+const ICON_CLS = 'shrink-0 mr-2.5 text-[color:var(--color-text-muted)]'
+
 type Page = 'list' | 'create' | 'rename'
 
 interface CommandPaletteProps {
   open: boolean
   onOpenChange: (next: boolean) => void
 }
+
+const ITEM_BASE =
+  'group cursor-pointer border-l-2 border-transparent rounded-r px-3 py-2.5 text-sm ' +
+  'text-[color:var(--color-text-primary)] flex items-center ' +
+  'aria-selected:bg-[color:var(--color-column-bg)] aria-selected:border-[var(--accent-500)]'
+
+const ARROW = (
+  <span
+    aria-hidden
+    className="ml-auto pl-3 opacity-0 group-aria-selected:opacity-100 text-[color:var(--color-text-muted)]"
+  >
+    ›
+  </span>
+)
 
 export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX.Element {
   const [page, setPage] = useState<Page>('list')
@@ -95,27 +118,29 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
       <Dialog.Portal>
-        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40" />
+        <Dialog.Overlay className="fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />
         <Dialog.Content
           aria-label="Command palette"
           aria-describedby={undefined}
-          className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-lg bg-white p-2 shadow-xl dark:bg-slate-800"
+          className="fixed left-1/2 top-[20%] z-50 w-full max-w-lg -translate-x-1/2 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-3 shadow-[var(--shadow-raised)]"
         >
           <Dialog.Title className="sr-only">Command palette</Dialog.Title>
           {page === 'list' && (
-            <Command label="Command palette" className="flex flex-col gap-1">
-              <Command.Input
-                value={query}
-                onValueChange={setQuery}
-                placeholder="Type a command, board, or card…"
-                className="w-full rounded px-3 py-2 text-base outline-none placeholder:text-slate-400"
-              />
-              <Command.List className="max-h-80 overflow-y-auto">
-                <Command.Empty className="px-3 py-2 text-sm text-slate-400">
+            <Command label="Command palette" className="flex flex-col">
+              <div className="border-b border-[color:var(--color-border)]">
+                <Command.Input
+                  value={query}
+                  onValueChange={setQuery}
+                  placeholder="Type a command, board, or card…"
+                  className="w-full rounded px-3 py-2.5 text-base text-[color:var(--color-text-primary)] outline-none placeholder:text-[color:var(--color-text-muted)] bg-transparent"
+                />
+              </div>
+              <Command.List className="max-h-80 overflow-y-auto py-2">
+                <Command.Empty className="px-3 py-2 text-sm text-[color:var(--color-text-muted)]">
                   No matches.
                 </Command.Empty>
                 {boards.data && boards.data.length > 0 && (
-                  <Command.Group heading="Boards" className="text-xs uppercase text-slate-400 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1">
+                  <Command.Group heading="Boards" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:font-bold [&_[cmdk-group-heading]]:text-[color:var(--color-text-muted)]">
                     {boards.data.map((b) => (
                       <Command.Item
                         key={b.id}
@@ -124,30 +149,37 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                           setActive(b.id)
                           close()
                         }}
-                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
+                        className={ITEM_BASE}
                       >
-                        {b.icon && <span aria-hidden className="mr-2">{b.icon}</span>}
-                        {b.name}
+                        <span className="flex-1 min-w-0">
+                          {b.icon && <span aria-hidden className="mr-2">{b.icon}</span>}
+                          {b.name}
+                        </span>
+                        {ARROW}
                       </Command.Item>
                     ))}
                   </Command.Group>
                 )}
-                <Command.Group heading="Actions" className="text-xs uppercase text-slate-400 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1">
+                <Command.Group heading="Actions" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:font-bold [&_[cmdk-group-heading]]:text-[color:var(--color-text-muted)]">
                   <Command.Item
                     value="action create board"
                     onSelect={() => setPage('create')}
-                    className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
+                    className={ITEM_BASE}
                   >
-                    Create board
+                    <span aria-hidden className={ICON_CLS}><Plus size={15} /></span>
+                    <span className="flex-1 min-w-0">Create board</span>
+                    {ARROW}
                   </Command.Item>
                   {active !== null && (
                     <>
                       <Command.Item
                         value="action rename current board"
                         onSelect={() => setPage('rename')}
-                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
+                        className={ITEM_BASE}
                       >
-                        Rename current board
+                        <span aria-hidden className={ICON_CLS}><Pencil size={15} /></span>
+                        <span className="flex-1 min-w-0">Rename current board</span>
+                        {ARROW}
                       </Command.Item>
                       {VIEW_MODES.filter((m) => m.value !== settings.view_mode).map((m) => (
                         <Command.Item
@@ -157,9 +189,11 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                             updateSettingsMut.mutate({ view_mode: m.value })
                             close()
                           }}
-                          className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
+                          className={ITEM_BASE}
                         >
-                          Switch view: {m.label}
+                          <span aria-hidden className={ICON_CLS}>{VIEW_ICONS[m.value]}</span>
+                          <span className="flex-1 min-w-0">Switch view: {m.label}</span>
+                          {ARROW}
                         </Command.Item>
                       ))}
                       <Command.Item
@@ -168,15 +202,27 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                           stageDelete(() => deleteMut.mutate(active), activeName)
                           close()
                         }}
-                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-red-600 aria-selected:bg-red-50 dark:text-red-400 dark:aria-selected:bg-red-900/30"
+                        className={
+                          'group cursor-pointer border-l-2 border-transparent rounded-r px-3 py-2.5 text-sm ' +
+                          'flex items-center text-red-600 ' +
+                          'aria-selected:bg-red-50 aria-selected:border-red-500 ' +
+                          'dark:text-red-400 dark:aria-selected:bg-red-900/30 dark:aria-selected:border-red-500'
+                        }
                       >
-                        Delete current board
+                        <span aria-hidden className="shrink-0 mr-2.5"><Trash2 size={15} /></span>
+                        <span className="flex-1 min-w-0">Delete current board</span>
+                        <span
+                          aria-hidden
+                          className="ml-auto pl-3 opacity-0 group-aria-selected:opacity-100 text-red-400"
+                        >
+                          ›
+                        </span>
                       </Command.Item>
                     </>
                   )}
                 </Command.Group>
                 {hits.length > 0 && (
-                  <Command.Group heading="Cards" className="text-xs uppercase text-slate-400 [&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:py-1">
+                  <Command.Group heading="Cards" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:font-bold [&_[cmdk-group-heading]]:text-[color:var(--color-text-muted)]">
                     {hits.map((h) => (
                       <Command.Item
                         key={`${h.boardId}:${h.colIdx}:${h.cardIdx}`}
@@ -186,16 +232,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                           Promise.resolve().then(() => focusCtx?.setFocused({ colIdx: h.colIdx, cardIdx: h.cardIdx }))
                           close()
                         }}
-                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
+                        className={ITEM_BASE}
                       >
-                        <span className="font-semibold">{h.cardTitle}</span>
-                        <span className="ml-2 text-xs text-slate-400">in {h.boardName}</span>
-                        {h.snippet && (
-                          <span
-                            className="block text-xs text-slate-500 dark:text-slate-400"
-                            dangerouslySetInnerHTML={{ __html: sanitize(h.snippet) }}
-                          />
-                        )}
+                        <span className="flex-1 min-w-0">
+                          <span className="font-semibold">{h.cardTitle}</span>
+                          <span className="ml-2 text-xs text-[color:var(--color-text-muted)]">in {h.boardName}</span>
+                          {h.snippet && (
+                            <span
+                              className="block text-xs text-[color:var(--color-text-muted)]"
+                              dangerouslySetInnerHTML={{ __html: sanitize(h.snippet) }}
+                            />
+                          )}
+                        </span>
+                        {ARROW}
                       </Command.Item>
                     ))}
                   </Command.Group>
@@ -206,7 +255,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
 
           {page === 'create' && (
             <form onSubmit={submitCreate} className="flex flex-col gap-1">
-              <div className="px-3 pt-1 text-xs uppercase text-slate-400">New board</div>
+              <div className="px-3 pt-1 text-xs uppercase text-[color:var(--color-text-muted)]">New board</div>
               <input
                 ref={inputRef}
                 aria-label="new board name"
@@ -215,14 +264,14 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                 onKeyDown={(e) => {
                   if (e.key === 'Escape') { e.preventDefault(); close() }
                 }}
-                className="w-full rounded px-3 py-2 text-base outline-none placeholder:text-slate-400"
+                className="w-full rounded px-3 py-2 text-base text-[color:var(--color-text-primary)] outline-none placeholder:text-[color:var(--color-text-muted)] bg-transparent"
               />
             </form>
           )}
 
           {page === 'rename' && (
             <form onSubmit={submitRename} className="flex flex-col gap-1">
-              <div className="px-3 pt-1 text-xs uppercase text-slate-400">Rename board</div>
+              <div className="px-3 pt-1 text-xs uppercase text-[color:var(--color-text-muted)]">Rename board</div>
               <input
                 ref={inputRef}
                 aria-label="rename current board"
