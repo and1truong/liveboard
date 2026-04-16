@@ -30,7 +30,7 @@ export function AddBoardButton(): JSX.Element {
 
   if (open) {
     return (
-      <div className="border-t border-slate-200 p-2 dark:border-slate-800">
+      <div className="lb-row lb-row--add-input">
         <input
           ref={inputRef}
           aria-label="new board name"
@@ -41,7 +41,7 @@ export function AddBoardButton(): JSX.Element {
             else if (e.key === 'Escape') { e.preventDefault(); cancel() }
           }}
           placeholder="Board name…"
-          className="w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)] dark:bg-slate-800 dark:text-slate-100 dark:ring-slate-700 dark:placeholder:text-slate-500"
+          className="lb-row__input"
         />
       </div>
     )
@@ -51,9 +51,10 @@ export function AddBoardButton(): JSX.Element {
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="w-full border-t border-slate-200 px-3 py-2 text-left text-sm text-slate-500 hover:bg-slate-50 dark:border-slate-800 dark:text-slate-400 dark:hover:bg-slate-800"
+      className="lb-row lb-row--add"
     >
-      + New board
+      <span className="lb-row__plus" aria-hidden>+</span>
+      <span className="lb-row__label">+ New board</span>
     </button>
   )
 }

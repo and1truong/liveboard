@@ -9,3 +9,43 @@
 :root.theme-emerald { --accent-500: #10b981; --accent-600: #059669; }
 :root.theme-rose    { --accent-500: #f43f5e; --accent-600: #e11d48; }
 :root.theme-sunset  { --accent-500: #f97316; --accent-600: #ea580c; }
+
+/* Sidebar tokens — macOS HIG Source List vocabulary.
+   Vibrant translucent surface, hairline dividers, inset selection bevel. */
+:root {
+  --sb-bg:              rgb(246 246 248 / 0.72);
+  --sb-bg-solid:        #f6f6f8;
+  --sb-border:          rgba(0, 0, 0, 0.08);
+  --sb-divider:         rgba(0, 0, 0, 0.06);
+  --sb-row-hover:       rgba(0, 0, 0, 0.045);
+  --sb-row-pressed:     rgba(0, 0, 0, 0.08);
+  --sb-text-primary:    #1c1c1e;
+  --sb-text-secondary:  #636368;
+  --sb-text-tertiary:   #8e8e93;
+  --sb-popover-bg:      rgb(255 255 255 / 0.82);
+  --sb-popover-ring:    rgba(0, 0, 0, 0.12);
+  --sb-popover-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.12),
+    0 10px 30px -8px rgba(0, 0, 0, 0.22),
+    0 2px 6px rgba(0, 0, 0, 0.08);
+  --sb-focus-ring:      color-mix(in srgb, var(--accent-500) 32%, transparent);
+  --sb-ease:            cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.dark {
+  --sb-bg:              rgb(30 30 32 / 0.72);
+  --sb-bg-solid:        #1e1e20;
+  --sb-border:          rgba(255, 255, 255, 0.06);
+  --sb-divider:         rgba(255, 255, 255, 0.06);
+  --sb-row-hover:       rgba(255, 255, 255, 0.06);
+  --sb-row-pressed:     rgba(255, 255, 255, 0.1);
+  --sb-text-primary:    #f2f2f4;
+  --sb-text-secondary:  #a1a1a8;
+  --sb-text-tertiary:   #6e6e76;
+  --sb-popover-bg:      rgb(44 44 48 / 0.82);
+  --sb-popover-ring:    rgba(255, 255, 255, 0.08);
+  --sb-popover-shadow:
+    0 0 0 0.5px rgba(0, 0, 0, 0.6),
+    0 10px 30px -8px rgba(0, 0, 0, 0.6),
+    0 2px 6px rgba(0, 0, 0, 0.4);
+}

@@ -54,7 +54,7 @@ export function BoardIconPicker({
   }
 
   return (
-    <span ref={wrapperRef} className="relative shrink-0">
+    <span ref={wrapperRef} style={{ position: 'relative', flexShrink: 0 }}>
       <button
         type="button"
         onClick={(e) => {
@@ -63,27 +63,24 @@ export function BoardIconPicker({
         }}
         title="Change icon"
         aria-label="Change board icon"
-        className="flex h-7 w-7 items-center justify-center rounded text-base leading-none transition-colors hover:bg-slate-200 dark:hover:bg-slate-700"
+        className={`lb-row__icon${icon ? '' : ' lb-row__icon--placeholder'}`}
       >
-        {icon ? (
-          <span aria-hidden>{icon}</span>
-        ) : (
-          <span aria-hidden className="text-slate-400 dark:text-slate-500">{PLACEHOLDER}</span>
-        )}
+        <span aria-hidden>{icon || PLACEHOLDER}</span>
       </button>
       {open && (
         <div
           role="dialog"
           aria-label="Choose board icon"
           onClick={(e) => e.stopPropagation()}
-          className="absolute left-full top-0 z-50 ml-2 grid w-[260px] grid-cols-8 gap-1 rounded-lg border border-slate-200 bg-white p-2 shadow-xl dark:border-slate-700 dark:bg-slate-800"
+          className="lb-popover lb-popover--grid"
+          style={{ position: 'absolute', left: '100%', top: 0, marginLeft: 8 }}
         >
           <button
             type="button"
             onClick={() => pick('')}
             title="Remove icon"
             aria-label="Remove icon"
-            className="flex h-8 w-8 items-center justify-center rounded text-sm text-slate-400 hover:bg-slate-100 dark:text-slate-500 dark:hover:bg-slate-700"
+            className="lb-popover__cell lb-popover__cell--clear"
           >
             ✕
           </button>
@@ -92,7 +89,7 @@ export function BoardIconPicker({
               key={e}
               type="button"
               onClick={() => pick(e)}
-              className="flex h-8 w-8 items-center justify-center rounded text-lg leading-none hover:bg-slate-100 dark:hover:bg-slate-700"
+              className="lb-popover__cell"
             >
               {e}
             </button>

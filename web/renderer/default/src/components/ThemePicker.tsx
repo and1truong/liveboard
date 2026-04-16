@@ -14,36 +14,29 @@ export function ThemePicker(): JSX.Element {
   const { mode, theme, setMode, setTheme } = useTheme()
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger
-        aria-label="Theme picker"
-        className="rounded p-1 text-slate-500 hover:bg-slate-100 dark:text-slate-300 dark:hover:bg-slate-800"
-      >
-        🎨
+      <DropdownMenu.Trigger aria-label="Theme picker" className="lb-iconbtn">
+        <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>🎨</span>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
-        <DropdownMenu.Content
-          sideOffset={4}
-          className="z-50 min-w-48 rounded-md bg-white p-2 shadow-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700"
-        >
-          <DropdownMenu.Label className="px-2 py-1 text-xs uppercase tracking-wide text-slate-400">
-            Mode
-          </DropdownMenu.Label>
+        <DropdownMenu.Content sideOffset={6} className="lb-popover" style={{ minWidth: 200 }}>
+          <DropdownMenu.Label className="lb-popover__label">Mode</DropdownMenu.Label>
           <DropdownMenu.RadioGroup value={mode} onValueChange={(v) => setMode(v as Mode)}>
             {(['light', 'dark', 'system'] as Mode[]).map((m) => (
               <DropdownMenu.RadioItem
                 key={m}
                 value={m}
-                className="cursor-pointer rounded px-2 py-1 text-sm text-slate-800 outline-none aria-checked:bg-slate-100 dark:text-slate-100 dark:aria-checked:bg-slate-700"
+                className="lb-popover__item"
               >
-                {m.charAt(0).toUpperCase() + m.slice(1)}
+                <span className="lb-popover__icon" aria-hidden>
+                  {m === 'light' ? '☀' : m === 'dark' ? '☾' : '◐'}
+                </span>
+                <span>{m.charAt(0).toUpperCase() + m.slice(1)}</span>
               </DropdownMenu.RadioItem>
             ))}
           </DropdownMenu.RadioGroup>
-          <DropdownMenu.Separator className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
-          <DropdownMenu.Label className="px-2 py-1 text-xs uppercase tracking-wide text-slate-400">
-            Theme
-          </DropdownMenu.Label>
-          <div className="flex gap-1 p-1">
+          <hr className="lb-popover__sep" />
+          <DropdownMenu.Label className="lb-popover__label">Theme</DropdownMenu.Label>
+          <div className="lb-swatches">
             {THEME_NAMES.map((t) => (
               <button
                 key={t}
@@ -51,8 +44,8 @@ export function ThemePicker(): JSX.Element {
                 aria-label={`theme ${t}`}
                 aria-pressed={theme === t}
                 onClick={() => setTheme(t)}
-                style={{ backgroundColor: SWATCH_COLOR[t] }}
-                className={`h-6 w-6 rounded-full ${theme === t ? 'ring-2 ring-offset-2 ring-slate-400 dark:ring-offset-slate-800' : ''}`}
+                style={{ backgroundColor: SWATCH_COLOR[t], color: SWATCH_COLOR[t] }}
+                className="lb-swatches__dot"
               />
             ))}
           </div>
