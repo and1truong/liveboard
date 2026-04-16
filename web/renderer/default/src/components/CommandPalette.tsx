@@ -12,6 +12,13 @@ import {
   useDeleteBoard,
 } from '../mutations/useBoardCrud.js'
 import { stageDelete } from '../mutations/undoable.js'
+import { useBoardSettings, useUpdateSettings } from '../queries/useBoardSettings.js'
+
+const VIEW_MODES: { value: 'board' | 'list' | 'calendar'; label: string }[] = [
+  { value: 'board', label: 'Board' },
+  { value: 'list', label: 'List' },
+  { value: 'calendar', label: 'Calendar' },
+]
 
 type Page = 'list' | 'create' | 'rename'
 
@@ -34,6 +41,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
   const createMut = useCreateBoard()
   const renameMut = useRenameBoard()
   const deleteMut = useDeleteBoard()
+  const settings = useBoardSettings(active)
+  const updateSettingsMut = useUpdateSettings(active ?? '')
 
   const activeBoard = boards.data?.find((b) => b.id === active) ?? null
   const activeName = activeBoard?.name ?? ''
@@ -140,6 +149,19 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                       >
                         Rename current board
                       </Command.Item>
+                      {VIEW_MODES.filter((m) => m.value !== settings.view_mode).map((m) => (
+                        <Command.Item
+                          key={`view-${m.value}`}
+                          value={`action switch view ${m.label}`}
+                          onSelect={() => {
+                            updateSettingsMut.mutate({ view_mode: m.value })
+                            close()
+                          }}
+                          className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
+                        >
+                          Switch view: {m.label}
+                        </Command.Item>
+                      ))}
                       <Command.Item
                         value="action delete current board"
                         onSelect={() => {
