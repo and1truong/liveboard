@@ -16,7 +16,7 @@ export interface FocusedColumnCtx {
 const Ctx = createContext<FocusedColumnCtx | null>(null)
 
 export function FocusedColumnProvider({
-  columns: _columns,
+  columns,
   active,
   children,
 }: {
@@ -29,6 +29,12 @@ export function FocusedColumnProvider({
   useEffect(() => {
     setFocused(null)
   }, [active])
+
+  useEffect(() => {
+    if (focused === null) return
+    const exists = columns.some((c) => c.name === focused)
+    if (!exists) setFocused(null)
+  }, [columns, focused])
 
   const value = useMemo<FocusedColumnCtx>(
     () => ({ focused, setFocused }),

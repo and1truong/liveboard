@@ -55,4 +55,35 @@ describe('FocusedColumnContext', () => {
     rerender()
     expect(result.current.focused).toBeNull()
   })
+
+  it('clears focused when the focused column is removed', () => {
+    let columns: Column[] = cols
+    const { result, rerender } = renderHook(() => useFocusedColumn(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <FocusedColumnProvider columns={columns} active="b1">
+          {children}
+        </FocusedColumnProvider>
+      ),
+    })
+    act(() => result.current.setFocused('Doing'))
+    expect(result.current.focused).toBe('Doing')
+    columns = [cols[0]!, cols[2]!]
+    rerender()
+    expect(result.current.focused).toBeNull()
+  })
+
+  it('clears focused when the focused column is renamed', () => {
+    let columns: Column[] = cols
+    const { result, rerender } = renderHook(() => useFocusedColumn(), {
+      wrapper: ({ children }: { children: React.ReactNode }) => (
+        <FocusedColumnProvider columns={columns} active="b1">
+          {children}
+        </FocusedColumnProvider>
+      ),
+    })
+    act(() => result.current.setFocused('Doing'))
+    columns = [cols[0]!, { name: 'In Progress', cards: [] }, cols[2]!]
+    rerender()
+    expect(result.current.focused).toBeNull()
+  })
 })
