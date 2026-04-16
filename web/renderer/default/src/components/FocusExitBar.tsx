@@ -10,11 +10,12 @@ export function FocusExitBar(): JSX.Element | null {
       </span>
       <button
         type="button"
+        aria-label="Exit focus mode"
         onClick={() => setFocused(null)}
         className="inline-flex items-center gap-1.5 rounded border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600 transition-colors hover:border-[color:var(--accent-500)] hover:bg-[color:var(--accent-500)] hover:text-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300"
       >
         Exit Focus
-        <span className="rounded border border-current px-1 py-0.5 text-[10px] opacity-60">Esc</span>
+        <kbd className="rounded border border-current px-1 py-0.5 font-sans text-[10px] opacity-60">Esc</kbd>
       </button>
     </div>
   )

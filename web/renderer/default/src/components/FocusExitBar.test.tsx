@@ -9,22 +9,26 @@ import { FocusExitBar } from './FocusExitBar.js'
 
 const cols: Column[] = [{ name: 'Todo', cards: [] }]
 
-function Probe({ initial }: { initial: string }): JSX.Element {
-  const { focused, setFocused } = useFocusedColumn()
-  // Set once on first render.
-  if (focused === null && initial) {
-    queueMicrotask(() => setFocused(initial))
-  }
-  return <FocusExitBar />
-}
-
 describe('FocusExitBar', () => {
   it('renders with the focused column name', async () => {
+    let setFocusedRef: ((v: string | null) => void) | null = null
+
+    function TestHost(): JSX.Element {
+      const { setFocused } = useFocusedColumn()
+      setFocusedRef = setFocused
+      return <FocusExitBar />
+    }
+
     const { findByText } = render(
       <FocusedColumnProvider columns={cols} active="b1">
-        <Probe initial="Todo" />
+        <TestHost />
       </FocusedColumnProvider>,
     )
+
+    act(() => {
+      setFocusedRef!('Todo')
+    })
+
     expect(await findByText(/Focusing:/)).toBeDefined()
     expect(await findByText('Todo')).toBeDefined()
   })
@@ -39,11 +43,14 @@ describe('FocusExitBar', () => {
   })
 
   it('exit button clears focused', async () => {
+    let setFocusedRef: ((v: string | null) => void) | null = null
+
     function Host(): JSX.Element {
-      const { focused } = useFocusedColumn()
+      const { focused, setFocused } = useFocusedColumn()
+      setFocusedRef = setFocused
       return (
         <>
-          <Probe initial="Todo" />
+          <FocusExitBar />
           <span data-testid="state">{focused ?? 'null'}</span>
         </>
       )
@@ -53,6 +60,11 @@ describe('FocusExitBar', () => {
         <Host />
       </FocusedColumnProvider>,
     )
+
+    act(() => {
+      setFocusedRef!('Todo')
+    })
+
     const btn = await findByText(/Exit Focus/)
     act(() => {
       fireEvent.click(btn)
