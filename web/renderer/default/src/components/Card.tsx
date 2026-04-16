@@ -17,7 +17,7 @@ export function Card({ card }: { card: CardModel }): JSX.Element {
             className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${PRIORITY_DOT[card.priority] ?? 'bg-slate-300'}`}
           />
         )}
-        <h3 className={`text-sm font-semibold dark:text-slate-100 ${card.completed ? 'line-through text-slate-400 dark:text-slate-500' : ''}`}>
+        <h3 className={`text-sm font-semibold dark:text-slate-100 ${card.completed ? 'text-slate-400 dark:text-slate-500' : ''}`}>
           {card.title}
         </h3>
       </div>

@@ -16,8 +16,8 @@ describe('Card', () => {
     const { getByLabelText } = render(<Card card={{ title: 'x', priority: 'high' }} />)
     expect(getByLabelText('priority high')).toBeDefined()
   })
-  it('strikes through completed cards', () => {
+  it('dims completed cards', () => {
     const { getByText } = render(<Card card={{ title: 'done', completed: true }} />)
-    expect(getByText('done').className).toContain('line-through')
+    expect(getByText('done').className).toContain('text-slate-400')
   })
 })

@@ -98,7 +98,7 @@
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
-    &.completed { @apply opacity-50 line-through; }
+    &.completed { @apply opacity-50; }
     &.dragging { @apply opacity-40; }
 
     .priority-dot {
