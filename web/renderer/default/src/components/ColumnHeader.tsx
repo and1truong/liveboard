@@ -1,8 +1,9 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useContext } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { moveColumnTarget } from '../mutations/moveColumn.js'
+import { FocusedColumnContext } from '../contexts/FocusedColumnContext.js'
 
 export function ColumnHeader({
   name,
@@ -23,6 +24,8 @@ export function ColumnHeader({
   const inputRef = useRef<HTMLInputElement>(null)
   const mutation = useBoardMutation(boardId)
   const committedRef = useRef(false)
+  const focusCtx = useContext(FocusedColumnContext)
+  const isFocused = focusCtx?.focused === name
 
   useEffect(() => {
     if (mode === 'edit') {
@@ -110,6 +113,14 @@ export function ColumnHeader({
               sideOffset={4}
               className="z-50 min-w-40 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 dark:text-slate-100"
             >
+              {focusCtx && !isFocused && (
+                <DropdownMenu.Item
+                  onSelect={() => focusCtx.setFocused(name)}
+                  className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
+                >
+                  Focus
+                </DropdownMenu.Item>
+              )}
               <DropdownMenu.Item
                 onSelect={() => setMode('edit')}
                 className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"

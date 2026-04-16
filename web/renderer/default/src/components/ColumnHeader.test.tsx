@@ -9,6 +9,12 @@ import { createMemoryPair } from '@shared/transport.js'
 import { ClientProvider } from '../queries.js'
 import { renderWithQuery } from '../test-utils.js'
 import { ColumnHeader } from './ColumnHeader.js'
+import { useEffect } from 'react'
+import type { Column } from '@shared/types.js'
+import {
+  FocusedColumnProvider,
+  useFocusedColumn,
+} from '../contexts/FocusedColumnContext.js'
 
 async function setup(): Promise<{ client: Client; qc: QueryClient }> {
   const [iframeT, shellT] = createMemoryPair()
@@ -56,5 +62,55 @@ describe('ColumnHeader', () => {
     )
     fireEvent.pointerDown(getByLabelText('column menu Todo'), { button: 0, pointerType: 'mouse' })
     expect(await findByText('Expand')).toBeDefined()
+  })
+
+  it('shows a Focus menu item that sets the focused column', async () => {
+    const { client, qc } = await setup()
+    const colsList: Column[] = [
+      { name: 'Todo', cards: [] },
+      { name: 'Doing', cards: [] },
+    ]
+    let currentFocused: string | null = null
+    function Spy(): null {
+      currentFocused = useFocusedColumn().focused
+      return null
+    }
+    const { getByLabelText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <FocusedColumnProvider columns={colsList} active="welcome">
+          <Spy />
+          <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo','Doing']} boardId="welcome" />
+        </FocusedColumnProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    fireEvent.pointerDown(getByLabelText('column menu Todo'), { button: 0, pointerType: 'mouse' })
+    fireEvent.click(await findByText('Focus'))
+    expect(currentFocused as string | null).toBe('Todo')
+  })
+
+  it('hides the Focus item when this column is already focused', async () => {
+    const { client, qc } = await setup()
+    const colsList: Column[] = [{ name: 'Todo', cards: [] }]
+    function Seed(): null {
+      const { setFocused } = useFocusedColumn()
+      useEffect(() => {
+        setFocused('Todo')
+      }, [setFocused])
+      return null
+    }
+    const { getByLabelText, queryByText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <FocusedColumnProvider columns={colsList} active="welcome">
+          <Seed />
+          <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" />
+        </FocusedColumnProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    fireEvent.pointerDown(getByLabelText('column menu Todo'), { button: 0, pointerType: 'mouse' })
+    // Rename should still be present in both states.
+    expect(await findByText('Rename')).toBeDefined()
+    expect(queryByText('Focus')).toBeNull()
   })
 })
