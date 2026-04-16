@@ -6,6 +6,7 @@ Markdown-powered Kanban board with real-time collaboration.
 
 - **Backend**: Go 1.24, chi/v5 router, cobra CLI
 - **Frontend**: HTMX + SSE (real-time), Alpine.js (client reactivity), vanilla JS (drag-and-drop, command palette)
+  - tools: use bun if we can, instead of node/npm/pnpm
 - **Storage**: Markdown files with YAML frontmatter — no database
 - **Dev**: `make dev` (air live reload), port 7070
 

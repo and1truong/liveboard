@@ -47,6 +47,7 @@ type Server struct {
 	httpServer        *http.Server
 	noCache           bool
 	readOnly          bool
+	appShell          bool
 	basicAuthUser     string
 	basicAuthPass     string
 }
@@ -61,6 +62,7 @@ func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, is
 		mcpServer:     livemcp.New(ws, eng, version),
 		noCache:       noCache,
 		readOnly:      readOnly,
+		appShell:      isDesktop || os.Getenv("LIVEBOARD_APP_SHELL") == "1",
 		basicAuthUser: basicAuthUser,
 		basicAuthPass: basicAuthPass,
 	}
@@ -229,7 +231,7 @@ func (s *Server) buildRouter() chi.Router {
 		staticHandler.ServeHTTP(w, req)
 	})
 
-	if os.Getenv("LIVEBOARD_APP_SHELL") == "1" {
+	if s.appShell {
 		s.mountShellRoutes(r)
 		log.Println("shell mounted at /app/")
 	}

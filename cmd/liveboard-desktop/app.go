@@ -67,9 +67,11 @@ func (a *App) startup(ctx context.Context) {
 		return
 	}
 
-	// Restore last viewed board
+	// Restore last viewed board, defaulting to shell root
 	if s := web.LoadSettingsFromDir(dir); s.LastBoard != "" {
-		a.url = a.url + "/board/" + s.LastBoard
+		a.url = a.url + "/app/b/" + s.LastBoard
+	} else {
+		a.url = a.url + "/app/"
 	}
 }
 
@@ -116,9 +118,9 @@ func (a *App) switchWorkspace(dir string) {
 		}
 
 		// Navigate webview to new server, restoring last board if available
-		target := a.url
+		target := a.url + "/app/"
 		if s := web.LoadSettingsFromDir(dir); s.LastBoard != "" {
-			target = a.url + "/board/" + s.LastBoard
+			target = a.url + "/app/b/" + s.LastBoard
 		}
 		runtime.WindowExecJS(a.ctx, fmt.Sprintf(`window.location.href = "%s"`, target))
 

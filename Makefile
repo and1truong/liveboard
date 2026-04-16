@@ -37,7 +37,7 @@ generate-icon:
 	@echo "Generated icon.icns from SVG"
 
 # Build a complete .app bundle for local use (binary + Info.plist + icon)
-bundle-desktop: build-desktop
+bundle-desktop: frontend build-desktop
 	@mkdir -p LiveBoard.app/Contents/Resources
 	@cp cmd/liveboard-desktop/Info.plist LiveBoard.app/Contents/
 	@cp cmd/liveboard-desktop/icon.icns LiveBoard.app/Contents/Resources/
