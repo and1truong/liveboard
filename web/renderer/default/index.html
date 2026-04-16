@@ -8,7 +8,7 @@
   <script>
     try {
       const m = localStorage.getItem('liveboard:mode') || 'system';
-      const t = localStorage.getItem('liveboard:theme') || 'indigo';
+      const t = localStorage.getItem('liveboard:theme') || 'aqua';
       const dark = m === 'dark' || (m === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
       document.documentElement.classList.toggle('dark', dark);
       document.documentElement.classList.add('theme-' + t);

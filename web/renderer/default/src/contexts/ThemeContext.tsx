@@ -8,9 +8,9 @@ import {
 } from 'react'
 
 export type Mode = 'light' | 'dark' | 'system'
-export type ThemeName = 'indigo' | 'github' | 'gitlab' | 'emerald' | 'rose' | 'sunset' | 'aqua'
+export type ThemeName = 'aqua' | 'emerald' | 'rose'
 
-export const THEME_NAMES: ThemeName[] = ['indigo', 'github', 'gitlab', 'emerald', 'rose', 'sunset', 'aqua']
+export const THEME_NAMES: ThemeName[] = ['aqua', 'emerald', 'rose']
 
 const MODE_KEY = 'liveboard:mode'
 const THEME_KEY = 'liveboard:theme'
@@ -38,7 +38,7 @@ function readTheme(): ThemeName {
     const v = localStorage.getItem(THEME_KEY)
     if (v && (THEME_NAMES as string[]).includes(v)) return v as ThemeName
   } catch {}
-  return 'indigo'
+  return 'aqua'
 }
 
 function systemPrefersDark(): boolean {

@@ -2,13 +2,9 @@ import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { THEME_NAMES, useTheme, type Mode, type ThemeName } from '../contexts/ThemeContext.js'
 
 const SWATCH_COLOR: Record<ThemeName, string> = {
-  indigo: '#6366f1',
-  github: '#2da44e',
-  gitlab: '#fc6d26',
+  aqua: '#007AFF',
   emerald: '#10b981',
   rose: '#f43f5e',
-  sunset: '#f97316',
-  aqua: '#007AFF',
 }
 
 export function ThemePicker(): JSX.Element {
