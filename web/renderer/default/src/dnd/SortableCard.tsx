@@ -1,11 +1,14 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import type { Card as CardModel } from '@shared/types.js'
 import { CardEditable } from '../components/CardEditable.js'
+import { CardContextMenu } from '../components/CardContextMenu.js'
+import { QuickEditDialog } from '../components/QuickEditDialog.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { useBoardFocus, useCardFocus } from '../contexts/BoardFocusContext.js'
+import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { encodeCardId } from './cardId.js'
 
 export function SortableCard({
@@ -13,11 +16,13 @@ export function SortableCard({
   colIdx,
   cardIdx,
   boardId,
+  allColumnNames,
 }: {
   card: CardModel
   colIdx: number
   cardIdx: number
   boardId: string
+  allColumnNames: string[]
 }): JSX.Element {
   const id = encodeCardId(colIdx, cardIdx)
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
@@ -26,7 +31,12 @@ export function SortableCard({
   })
   const { isFocused, ref: focusRef } = useCardFocus(colIdx, cardIdx)
   const { focused, setFocused, move } = useBoardFocus()
-  const [modalOpen, setModalOpen] = useState(false)
+  const { activeCard, setActiveCard } = useActiveBoard()
+  const modalOpen = activeCard?.colIdx === colIdx && activeCard?.cardIdx === cardIdx
+  const setModalOpen = useCallback((open: boolean) => {
+    setActiveCard(open ? { colIdx, cardIdx } : null)
+  }, [setActiveCard, colIdx, cardIdx])
+  const [quickOpen, setQuickOpen] = useState(false)
   const mutation = useBoardMutation(boardId)
 
   const style: React.CSSProperties = {
@@ -60,36 +70,56 @@ export function SortableCard({
   }
 
   return (
-    <div
-      ref={(el) => {
-        setNodeRef(el)
-        focusRef(el)
-      }}
-      style={style}
-      tabIndex={showFocusedTabStop ? 0 : -1}
-      onFocus={() => setFocused({ colIdx, cardIdx })}
-      onKeyDown={onKeyDown}
-      className={`group/sortable relative outline-none rounded-md ${
-        isFocused ? 'ring-2 ring-[color:var(--accent-500)] ring-offset-2' : ''
-      }`}
-    >
-      <button
-        type="button"
-        aria-label="drag card"
-        {...attributes}
-        {...listeners}
-        className="absolute -left-4 top-3 cursor-grab text-slate-300 opacity-0 group-hover/sortable:opacity-100 active:cursor-grabbing"
-      >
-        ⋮⋮
-      </button>
-      <CardEditable
+    <>
+      <CardContextMenu
         card={card}
         colIdx={colIdx}
         cardIdx={cardIdx}
         boardId={boardId}
-        modalOpen={modalOpen}
-        onModalOpenChange={setModalOpen}
+        allColumnNames={allColumnNames}
+        onQuickEdit={() => setQuickOpen(true)}
+        onOpenDetail={() => setModalOpen(true)}
+      >
+        <div
+          ref={(el) => {
+            setNodeRef(el)
+            focusRef(el)
+          }}
+          style={style}
+          tabIndex={showFocusedTabStop ? 0 : -1}
+          onFocus={() => setFocused({ colIdx, cardIdx })}
+          onKeyDown={onKeyDown}
+          className={`group/sortable relative outline-none rounded-md ${
+            isFocused ? 'ring-2 ring-[color:var(--accent-500)] ring-offset-2' : ''
+          }`}
+        >
+          <button
+            type="button"
+            aria-label="drag card"
+            {...attributes}
+            {...listeners}
+            className="absolute -left-4 top-3 cursor-grab text-slate-300 opacity-0 group-hover/sortable:opacity-100 active:cursor-grabbing"
+          >
+            ⋮⋮
+          </button>
+          <CardEditable
+            card={card}
+            colIdx={colIdx}
+            cardIdx={cardIdx}
+            boardId={boardId}
+            modalOpen={modalOpen}
+            onModalOpenChange={setModalOpen}
+          />
+        </div>
+      </CardContextMenu>
+      <QuickEditDialog
+        card={card}
+        colIdx={colIdx}
+        cardIdx={cardIdx}
+        boardId={boardId}
+        open={quickOpen}
+        onOpenChange={setQuickOpen}
       />
-    </div>
+    </>
   )
 }
