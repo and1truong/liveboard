@@ -22,5 +22,8 @@ export function createClient(parentOrigin: string = window.location.origin): Cli
     void queryClient.invalidateQueries({ queryKey: ['board', boardId] })
     void queryClient.invalidateQueries({ queryKey: ['boards'] })
   })
+  client.on('key.forward', (data) => {
+    window.dispatchEvent(new KeyboardEvent('keydown', { ...data, bubbles: true, cancelable: true }))
+  })
   return client
 }

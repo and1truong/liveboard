@@ -64,11 +64,15 @@ func TestGetWorkspace(t *testing.T) {
 	}
 
 	var body struct {
+		Name       string `json:"name"`
 		Dir        string `json:"dir"`
 		BoardCount int    `json:"board_count"`
 	}
 	if err := json.NewDecoder(rec.Body).Decode(&body); err != nil {
 		t.Fatalf("decode: %v", err)
+	}
+	if body.Name != "LiveBoard" {
+		t.Errorf("want name=%q, got %q", "LiveBoard", body.Name)
 	}
 	if body.Dir == "" {
 		t.Error("dir should not be empty")

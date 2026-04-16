@@ -17,5 +17,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // HMR client connects through the Go server (dev-adapter-test) or the
+    // shell Vite proxy (dev-app), both on :7070.
+    hmr: {
+      clientPort: 7070,
+    },
   },
 })

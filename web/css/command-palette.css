@@ -114,6 +114,7 @@ input.cmd-palette-input {
 
     &.active {
         @apply rounded-none;
+        background: var(--color-column-bg);
         box-shadow: inset 2px 0 0 var(--color-accent);
     }
 }
@@ -141,6 +142,33 @@ mark.cmd-palette-highlight {
     color: var(--color-accent-text, var(--color-accent));
     border-radius: 2px;
     padding: 0 1px;
+}
+
+/* === dark mode direct overrides === */
+html[data-theme="dark"] .cmd-palette {
+    background: #21222e;
+    box-shadow: 0 24px 80px rgba(0,0,0,.55), 0 8px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.07);
+}
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .cmd-palette {
+        background: #21222e;
+        box-shadow: 0 24px 80px rgba(0,0,0,.55), 0 8px 24px rgba(0,0,0,.35), 0 0 0 1px rgba(255,255,255,.07);
+    }
+}
+
+html[data-theme="dark"] .cmd-palette-item { color: #e8e9f0; }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .cmd-palette-item { color: #e8e9f0; }
+}
+
+html[data-theme="dark"] .cmd-palette-item:hover { background: #2c2d3d; }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .cmd-palette-item:hover { background: #2c2d3d; }
+}
+
+html[data-theme="dark"] .cmd-palette-item.active { background: #2c2d3d; color: #e8e9f0; }
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .cmd-palette-item.active { background: #2c2d3d; color: #e8e9f0; }
 }
 
 /* empty state */

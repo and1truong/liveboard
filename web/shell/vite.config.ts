@@ -39,5 +39,11 @@ export default defineConfig({
         ws: true,
       },
     },
+    // When fronted by the Go server (make dev-adapter-test), the browser
+    // connects via :7070. Point HMR back through that origin so the WS
+    // upgrade is proxied by Go instead of hitting Vite's internal port.
+    hmr: {
+      clientPort: 7070,
+    },
   },
 })

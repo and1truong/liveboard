@@ -5,11 +5,15 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net"
 	"net/http"
+	"net/http/httputil"
 	"net/http/pprof"
+	"net/url"
 	"os"
+	"strconv"
 	"time"
 
 	"io/fs"
@@ -376,6 +380,13 @@ func injectLiveboardConfig(html []byte) []byte {
 }
 
 func (s *Server) mountShellRoutes(r chi.Router) {
+	// Dev mode: proxy to Vite dev servers instead of serving embedded bundles.
+	// Enables HMR for TS/CSS without rebuild. See Makefile dev-adapter-test.
+	if shellURL, rendererURL := os.Getenv("LIVEBOARD_SHELL_DEV_URL"), os.Getenv("LIVEBOARD_RENDERER_DEV_URL"); shellURL != "" && rendererURL != "" {
+		s.mountShellDevProxy(r, shellURL, rendererURL)
+		return
+	}
+
 	shellSub, err := fs.Sub(shell.FS, "dist")
 	if err != nil {
 		log.Printf("shell embed: %v", err)
@@ -424,6 +435,68 @@ func (s *Server) mountShellRoutes(r chi.Router) {
 		}
 		shellHandler.ServeHTTP(w, req)
 	})
+}
+
+// newViteProxy builds a reverse proxy to a Vite dev server. HTML responses are
+// patched to swap the liveboard config marker so the shell boots into the
+// server adapter. Accept-Encoding is stripped so the upstream returns plain
+// bytes we can rewrite. WebSocket upgrades (Vite HMR) are forwarded natively
+// by httputil.ReverseProxy.
+func newViteProxy(target string) (*httputil.ReverseProxy, error) {
+	u, err := url.Parse(target)
+	if err != nil {
+		return nil, fmt.Errorf("parse %q: %w", target, err)
+	}
+	proxy := httputil.NewSingleHostReverseProxy(u)
+	orig := proxy.Director
+	proxy.Director = func(req *http.Request) {
+		orig(req)
+		req.Header.Del("Accept-Encoding")
+	}
+	proxy.ModifyResponse = func(resp *http.Response) error {
+		if !strings.HasPrefix(resp.Header.Get("Content-Type"), "text/html") {
+			return nil
+		}
+		body, err := io.ReadAll(resp.Body)
+		if err != nil {
+			return err
+		}
+		_ = resp.Body.Close()
+		patched := injectLiveboardConfig(body)
+		resp.Body = io.NopCloser(bytes.NewReader(patched))
+		resp.ContentLength = int64(len(patched))
+		resp.Header.Set("Content-Length", strconv.Itoa(len(patched)))
+		return nil
+	}
+	return proxy, nil
+}
+
+func (s *Server) mountShellDevProxy(r chi.Router, shellURL, rendererURL string) {
+	shellProxy, err := newViteProxy(shellURL)
+	if err != nil {
+		log.Printf("shell dev proxy: %v", err)
+		return
+	}
+	rendererProxy, err := newViteProxy(rendererURL)
+	if err != nil {
+		log.Printf("renderer dev proxy: %v", err)
+		return
+	}
+
+	r.Get("/app", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/app/", http.StatusMovedPermanently)
+	})
+	r.HandleFunc("/app/*", func(w http.ResponseWriter, req *http.Request) {
+		if s.noCache {
+			w.Header().Set("Cache-Control", "no-cache, no-store")
+		}
+		if strings.HasPrefix(req.URL.Path, "/app/renderer/default/") {
+			rendererProxy.ServeHTTP(w, req)
+			return
+		}
+		shellProxy.ServeHTTP(w, req)
+	})
+	log.Printf("shell proxying to Vite: shell=%s renderer=%s", shellURL, rendererURL)
 }
 
 func jsonContentType(next http.Handler) http.Handler {

@@ -115,7 +115,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                           setActive(b.id)
                           close()
                         }}
-                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100"
+                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
                       >
                         {b.icon && <span aria-hidden className="mr-2">{b.icon}</span>}
                         {b.name}
@@ -127,7 +127,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                   <Command.Item
                     value="action create board"
                     onSelect={() => setPage('create')}
-                    className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100"
+                    className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
                   >
                     Create board
                   </Command.Item>
@@ -136,7 +136,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                       <Command.Item
                         value="action rename current board"
                         onSelect={() => setPage('rename')}
-                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100"
+                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-slate-800 aria-selected:bg-slate-100 dark:text-slate-100 dark:aria-selected:bg-slate-700"
                       >
                         Rename current board
                       </Command.Item>
@@ -146,7 +146,7 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                           stageDelete(() => deleteMut.mutate(active), activeName)
                           close()
                         }}
-                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-red-600 aria-selected:bg-red-50"
+                        className="cursor-pointer rounded px-3 py-1.5 text-sm text-red-600 aria-selected:bg-red-50 dark:text-red-400 dark:aria-selected:bg-red-900/30"
                       >
                         Delete current board
                       </Command.Item>

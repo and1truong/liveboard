@@ -77,6 +77,20 @@ function bootstrap(): void {
   })
 
   window.addEventListener('beforeunload', () => broker.close())
+
+  window.addEventListener('keydown', (e) => {
+    broker.emit('key.forward', {
+      key: e.key,
+      code: e.code,
+      keyCode: e.keyCode,
+      charCode: e.charCode,
+      metaKey: e.metaKey,
+      ctrlKey: e.ctrlKey,
+      altKey: e.altKey,
+      shiftKey: e.shiftKey,
+      repeat: e.repeat,
+    })
+  })
 }
 
 if (document.readyState === 'loading') {
