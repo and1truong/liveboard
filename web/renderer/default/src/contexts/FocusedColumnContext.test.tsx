@@ -86,4 +86,63 @@ describe('FocusedColumnContext', () => {
     rerender()
     expect(result.current.focused).toBeNull()
   })
+
+  it('Escape keydown clears focused', () => {
+    const { result } = renderHook(() => useFocusedColumn(), {
+      wrapper: wrapper(cols),
+    })
+    act(() => result.current.setFocused('Todo'))
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    })
+    expect(result.current.focused).toBeNull()
+  })
+
+  it('Escape is ignored while an input is focused', () => {
+    const input = document.createElement('input')
+    document.body.appendChild(input)
+    input.focus()
+    try {
+      const { result } = renderHook(() => useFocusedColumn(), {
+        wrapper: wrapper(cols),
+      })
+      act(() => result.current.setFocused('Todo'))
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      })
+      expect(result.current.focused).toBe('Todo')
+    } finally {
+      input.remove()
+    }
+  })
+
+  it('Escape is ignored while a Radix dialog is open', () => {
+    const dialog = document.createElement('div')
+    dialog.setAttribute('role', 'dialog')
+    dialog.setAttribute('data-state', 'open')
+    document.body.appendChild(dialog)
+    try {
+      const { result } = renderHook(() => useFocusedColumn(), {
+        wrapper: wrapper(cols),
+      })
+      act(() => result.current.setFocused('Todo'))
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      })
+      expect(result.current.focused).toBe('Todo')
+    } finally {
+      dialog.remove()
+    }
+  })
+
+  it('does not handle Escape when no column is focused', () => {
+    const { result } = renderHook(() => useFocusedColumn(), {
+      wrapper: wrapper(cols),
+    })
+    // No-op should not throw.
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+    })
+    expect(result.current.focused).toBeNull()
+  })
 })

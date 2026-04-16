@@ -36,6 +36,26 @@ export function FocusedColumnProvider({
     if (!exists) setFocused(null)
   }, [columns, focused])
 
+  useEffect(() => {
+    if (focused === null) return
+    function onKey(e: KeyboardEvent): void {
+      if (e.key !== 'Escape') return
+      // Ignore when typing in an input/textarea/contenteditable.
+      const el = document.activeElement as HTMLElement | null
+      if (el) {
+        const tag = el.tagName
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable) return
+      }
+      // Ignore when a Radix (or compatible) dialog is open.
+      if (document.querySelector('[role="dialog"][data-state="open"]')) return
+      setFocused(null)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [focused])
+
   const value = useMemo<FocusedColumnCtx>(
     () => ({ focused, setFocused }),
     [focused],
