@@ -115,8 +115,8 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 0 6px;
-  min-height: 28px;
+  padding: 6px;
+  min-height: 36px;
   border-radius: 6px;
   color: var(--_row-fg);
   background: transparent;

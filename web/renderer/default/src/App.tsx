@@ -1,3 +1,4 @@
+import { useState, useCallback } from 'react'
 import type { Client } from '@shared/client.js'
 import { BoardSidebar } from './components/BoardSidebar.js'
 import { BoardView } from './components/BoardView.js'
@@ -18,14 +19,26 @@ export function App({ client, initialBoardId, initialCardPos, initialFocusedColu
   initialCardPos?: { colIdx: number; cardIdx: number } | null
   initialFocusedColumn?: string | null
 }): JSX.Element {
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(
+    () => localStorage.getItem('lb_sidebarCollapsed') === 'true'
+  )
+
+  const toggleSidebar = useCallback(() => {
+    setSidebarCollapsed((prev) => {
+      const next = !prev
+      localStorage.setItem('lb_sidebarCollapsed', String(next))
+      return next
+    })
+  }, [])
+
   return (
     <ThemeProvider>
       <ActiveBoardProvider initialBoardId={initialBoardId ?? null} initialCardPos={initialCardPos ?? null} initialFocusedColumn={initialFocusedColumn ?? null}>
         <ListEventsBridge />
         <div className="flex h-screen w-screen">
-          <BoardSidebar />
+          <BoardSidebar collapsed={sidebarCollapsed} />
           <main className="flex-1 overflow-hidden dark:bg-slate-950">
-            <BoardView client={client} />
+            <BoardView client={client} onToggleSidebar={toggleSidebar} />
           </main>
           <CommandPaletteHost />
           <Toaster position="bottom-right" richColors closeButton />

@@ -12,8 +12,10 @@ import { encodeColumnId } from '../dnd/cardId.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { BoardFocusProvider } from '../contexts/BoardFocusContext.js'
 import { BoardsGrid } from './BoardsGrid.js'
+import { BoardListView } from './BoardListView.js'
 import { FocusedColumnProvider, useFocusedColumn } from '../contexts/FocusedColumnContext.js'
 import { FocusExitBar } from './FocusExitBar.js'
+import { useBoardSettings } from '../queries/useBoardSettings.js'
 const BoardSettingsModal = lazy(() =>
   import('./BoardSettingsModal.js').then((m) => ({ default: m.BoardSettingsModal })),
 )
@@ -77,9 +79,10 @@ function BoardColumns({
   )
 }
 
-export function BoardView({ client }: { client: Client }): JSX.Element {
+export function BoardView({ client, onToggleSidebar }: { client: Client; onToggleSidebar: () => void }): JSX.Element {
   const { active, setActive } = useActiveBoard()
   const { data, isLoading, error } = useBoard(active)
+  const settings = useBoardSettings(active)
   const [filterQuery, setFilterQuery] = useState('')
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [hideCompleted, setHideCompleted] = useState(
@@ -131,7 +134,16 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
         <BoardDndContext boardId={active}>
           <div className="flex h-full flex-col">
             <div className="flex h-12 shrink-0 items-center gap-3 border-b border-slate-200 px-4 dark:border-slate-800">
-              {data.icon && <span className="text-xl leading-none">{data.icon}</span>}
+              <button
+                type="button"
+                onClick={onToggleSidebar}
+                title="Toggle sidebar"
+                className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800 dark:hover:text-slate-300"
+              >
+                <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                  <path d="M16.5 4A1.5 1.5 0 0 1 18 5.5v9a1.5 1.5 0 0 1-1.5 1.5h-13A1.5 1.5 0 0 1 2 14.5v-9A1.5 1.5 0 0 1 3.5 4zM7 15h9.5a.5.5 0 0 0 .5-.5v-9a.5.5 0 0 0-.5-.5H7zM3.5 5a.5.5 0 0 0-.5.5v9a.5.5 0 0 0 .5.5H6V5z" />
+                </svg>
+              </button>
               <h1 className="text-base font-semibold text-slate-800 dark:text-slate-100">{data.name}</h1>
               <button
                 type="button"
@@ -181,13 +193,23 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
                 </button>
               </div>
             </div>
-            <BoardColumns
-              data={data}
-              active={active}
-              columns={columns}
-              filterQuery={filterQuery}
-              hideCompleted={hideCompleted}
-            />
+            {settings.view_mode === 'list' ? (
+              <BoardListView
+                data={data}
+                active={active}
+                columns={columns}
+                filterQuery={filterQuery}
+                hideCompleted={hideCompleted}
+              />
+            ) : (
+              <BoardColumns
+                data={data}
+                active={active}
+                columns={columns}
+                filterQuery={filterQuery}
+                hideCompleted={hideCompleted}
+              />
+            )}
           </div>
         </BoardDndContext>
         <Suspense fallback={null}>
