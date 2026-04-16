@@ -4,12 +4,16 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/go-chi/chi/v5"
 
 	v1 "github.com/and1truong/liveboard/internal/api/v1"
+	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/workspace"
 )
 
 // doReq is a small helper for test-driving the v1 router.
@@ -62,14 +66,13 @@ func TestListBoards(t *testing.T) {
 	row := body[0]
 	id, _ := row["id"].(string)
 	name, _ := row["name"].(string)
-	if id == "" {
-		t.Errorf("expected non-empty id, got %v", row)
+	// id is the filename stem (canonical for getBoard / LoadBoard).
+	// name is the frontmatter display name. Seed is demo.md / name: Demo.
+	if id != "demo" {
+		t.Errorf("want id=demo (file slug), got %q", id)
 	}
-	if name == "" {
-		t.Errorf("expected non-empty name, got %v", row)
-	}
-	if id != name {
-		t.Errorf("id and name should match for summary: id=%q name=%q", id, name)
+	if name != "Demo" {
+		t.Errorf("want name=Demo (frontmatter), got %q", name)
 	}
 	if _, ok := row["version"]; !ok {
 		t.Errorf("expected version field, got %v", row)
@@ -112,6 +115,41 @@ func TestGetBoard(t *testing.T) {
 	}
 	if len(board.Columns[0].Cards) != 1 {
 		t.Errorf("want 1 card, got %d", len(board.Columns[0].Cards))
+	}
+}
+
+// Regression: when a board's filename differs from its frontmatter name
+// (e.g. demo file oss-project.md with `name: OSS Tracker`), listBoards must
+// expose `id` as the filename stem so getBoard can round-trip it. Otherwise
+// clicking the row issues GET /api/v1/boards/OSS Tracker → 404.
+func TestListBoards_idIsFileSlugNotName(t *testing.T) {
+	dir := t.TempDir()
+	seed := "---\nversion: 1\nname: OSS Tracker\n---\n\n## Todo\n\n- [ ] Seed\n"
+	if err := os.WriteFile(filepath.Join(dir, "oss-project.md"), []byte(seed), 0o644); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	deps := v1.Deps{Workspace: workspace.Open(dir), Engine: board.New()}
+
+	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("list: %d %s", rec.Code, body)
+	}
+	var rows []map[string]any
+	if err := json.Unmarshal([]byte(body), &rows); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(rows) != 1 {
+		t.Fatalf("want 1 row, got %d", len(rows))
+	}
+	id, _ := rows[0]["id"].(string)
+	if id != "oss-project" {
+		t.Fatalf("want id=oss-project (file slug), got %q", id)
+	}
+
+	// Round-trip: getBoard must accept the id from listBoards.
+	rec2, body2 := doReq(t, deps, http.MethodGet, "/api/v1/boards/"+id, "")
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("getBoard(%q): %d %s", id, rec2.Code, body2)
 	}
 }
 

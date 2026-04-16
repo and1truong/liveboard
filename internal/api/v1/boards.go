@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"path/filepath"
 	"strings"
 
 	"github.com/go-chi/chi/v5"
@@ -20,8 +21,18 @@ type boardSummary struct {
 	Version int    `json:"version"`
 }
 
+// boardFileSlug returns the canonical board id: the filename stem.
+// LoadBoard / BoardPath identify boards by filename, not frontmatter name —
+// using b.Name for `id` breaks getBoard whenever filename != name.
+func boardFileSlug(b *models.Board) string {
+	if b.FilePath == "" {
+		return b.Name
+	}
+	return strings.TrimSuffix(filepath.Base(b.FilePath), ".md")
+}
+
 func toBoardSummary(b *models.Board) boardSummary {
-	return boardSummary{ID: b.Name, Name: b.Name, Icon: b.Icon, Version: b.Version}
+	return boardSummary{ID: boardFileSlug(b), Name: b.Name, Icon: b.Icon, Version: b.Version}
 }
 
 func (d Deps) getBoard(w http.ResponseWriter, r *http.Request) {
@@ -120,13 +131,11 @@ func (d Deps) listBoardsLite(w http.ResponseWriter, _ *http.Request) {
 	entries := make([]boardListLiteEntry, 0, len(boards))
 	for i := range boards {
 		b := &boards[i]
-		slug := b.Name
 		cols := make([]string, 0, len(b.Columns))
 		for _, c := range b.Columns {
 			cols = append(cols, c.Name)
 		}
-		name := b.Name
-		entries = append(entries, boardListLiteEntry{Slug: slug, Name: name, Columns: cols})
+		entries = append(entries, boardListLiteEntry{Slug: boardFileSlug(b), Name: b.Name, Columns: cols})
 	}
 	_ = json.NewEncoder(w).Encode(entries)
 }
