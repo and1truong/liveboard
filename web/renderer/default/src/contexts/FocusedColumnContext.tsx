@@ -44,7 +44,7 @@ export function FocusedColumnProvider({
       const el = document.activeElement as HTMLElement | null
       if (el) {
         const tag = el.tagName
-        if (tag === 'INPUT' || tag === 'TEXTAREA' || el.isContentEditable) return
+        if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable) return
       }
       // Ignore when a Radix (or compatible) dialog is open.
       if (document.querySelector('[role="dialog"][data-state="open"]')) return

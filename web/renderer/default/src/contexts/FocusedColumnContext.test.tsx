@@ -116,6 +116,24 @@ describe('FocusedColumnContext', () => {
     }
   })
 
+  it('Escape is ignored while a select is focused', () => {
+    const select = document.createElement('select')
+    document.body.appendChild(select)
+    select.focus()
+    try {
+      const { result } = renderHook(() => useFocusedColumn(), {
+        wrapper: wrapper(cols),
+      })
+      act(() => result.current.setFocused('Todo'))
+      act(() => {
+        window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }))
+      })
+      expect(result.current.focused).toBe('Todo')
+    } finally {
+      document.body.removeChild(select)
+    }
+  })
+
   it('Escape is ignored while a Radix dialog is open', () => {
     const dialog = document.createElement('div')
     dialog.setAttribute('role', 'dialog')
