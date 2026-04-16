@@ -214,7 +214,7 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
         </BoardDndContext>
         <Suspense fallback={null}>
           <BoardSettingsModal
-            boardId={active}
+            boardId={active!}
             boardName={data.name}
             open={settingsOpen}
             onOpenChange={setSettingsOpen}

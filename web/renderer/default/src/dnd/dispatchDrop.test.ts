@@ -15,7 +15,7 @@ const board: Board = {
 function active(id: string, type: 'card' | 'column', data: Record<string, unknown>) {
   return { id, data: { current: { type, ...data } } }
 }
-function over(id: string, type: 'card' | 'column', data: Record<string, unknown>) {
+function over(id: string, type: 'card' | 'column' | 'column-end', data: Record<string, unknown>) {
   return { id, data: { current: { type, ...data } } }
 }
 

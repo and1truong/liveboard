@@ -32,7 +32,7 @@ describe('BoardView', () => {
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <SeedActive id={null} />
-          <BoardView client={client} />
+          <BoardView client={client} onToggleSidebar={() => {}} />
         </ActiveBoardProvider>
       </ClientProvider>,
     )
@@ -45,7 +45,7 @@ describe('BoardView', () => {
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <SeedActive id="welcome" />
-          <BoardView client={client} />
+          <BoardView client={client} onToggleSidebar={() => {}} />
         </ActiveBoardProvider>
       </ClientProvider>,
     )
@@ -60,7 +60,7 @@ describe('BoardView', () => {
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <SeedActive id="nope" />
-          <BoardView client={client} />
+          <BoardView client={client} onToggleSidebar={() => {}} />
         </ActiveBoardProvider>
       </ClientProvider>,
     )
@@ -74,7 +74,7 @@ describe('BoardView', () => {
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <SeedActive id="welcome" />
-          <BoardView client={client} />
+          <BoardView client={client} onToggleSidebar={() => {}} />
         </ActiveBoardProvider>
       </ClientProvider>,
     )
@@ -97,7 +97,7 @@ describe('BoardView', () => {
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <SeedActive id="welcome" />
-          <BoardView client={client} />
+          <BoardView client={client} onToggleSidebar={() => {}} />
         </ActiveBoardProvider>
       </ClientProvider>,
     )

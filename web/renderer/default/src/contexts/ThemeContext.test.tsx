@@ -21,10 +21,10 @@ describe('ThemeContext', () => {
     cleanDocClasses()
   })
 
-  it('defaults to system mode and indigo theme', () => {
+  it('defaults to system mode and aqua theme', () => {
     const { result } = renderHook(() => useTheme(), { wrapper: ThemeProvider })
     expect(result.current.mode).toBe('system')
-    expect(result.current.theme).toBe('indigo')
+    expect(result.current.theme).toBe('aqua')
   })
 
   it('setMode(dark) adds dark class and persists', () => {
@@ -56,11 +56,11 @@ describe('ThemeContext', () => {
 
   it('reads seeded localStorage values on mount', () => {
     localStorage.setItem('liveboard:mode', 'dark')
-    localStorage.setItem('liveboard:theme', 'sunset')
+    localStorage.setItem('liveboard:theme', 'rose')
     const { result } = renderHook(() => useTheme(), { wrapper: ThemeProvider })
     expect(result.current.mode).toBe('dark')
-    expect(result.current.theme).toBe('sunset')
+    expect(result.current.theme).toBe('rose')
     expect(document.documentElement.classList.contains('dark')).toBe(true)
-    expect(document.documentElement.classList.contains('theme-sunset')).toBe(true)
+    expect(document.documentElement.classList.contains('theme-rose')).toBe(true)
   })
 })
