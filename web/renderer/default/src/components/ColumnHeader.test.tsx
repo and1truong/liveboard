@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'bun:test'
+import { fireEvent } from '@testing-library/react'
 import { QueryClient } from '@tanstack/react-query'
 import { Broker } from '@shared/broker.js'
 import { Client } from '@shared/client.js'
@@ -31,5 +32,29 @@ describe('ColumnHeader', () => {
     expect(getByText('Todo')).toBeDefined()
     expect(getByText('3')).toBeDefined()
     expect(getByLabelText('column menu Todo')).toBeDefined()
+  })
+
+  it('renders "Collapse" item when expanded', async () => {
+    const { client, qc } = await setup()
+    const { getByLabelText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" collapsed={false} />
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    fireEvent.pointerDown(getByLabelText('column menu Todo'), { button: 0, pointerType: 'mouse' })
+    expect(await findByText('Collapse')).toBeDefined()
+  })
+
+  it('renders "Expand" item when collapsed', async () => {
+    const { client, qc } = await setup()
+    const { getByLabelText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" collapsed={true} />
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    fireEvent.pointerDown(getByLabelText('column menu Todo'), { button: 0, pointerType: 'mouse' })
+    expect(await findByText('Expand')).toBeDefined()
   })
 })

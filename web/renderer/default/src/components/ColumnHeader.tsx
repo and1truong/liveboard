@@ -10,12 +10,14 @@ export function ColumnHeader({
   colIdx,
   allColumnNames,
   boardId,
+  collapsed = false,
 }: {
   name: string
   cardCount: number
   colIdx: number
   allColumnNames: string[]
   boardId: string
+  collapsed?: boolean
 }): JSX.Element {
   const [mode, setMode] = useState<'view' | 'edit'>('view')
   const inputRef = useRef<HTMLInputElement>(null)
@@ -75,7 +77,25 @@ export function ColumnHeader({
 
   return (
     <header className="mb-3 flex items-center justify-between">
-      <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{name}</h2>
+      <div className="flex items-center gap-1">
+        <button
+          type="button"
+          aria-label={collapsed ? `expand column ${name}` : `collapse column ${name}`}
+          onClick={() => mutation.mutate({ type: 'toggle_column_collapse', col_idx: colIdx })}
+          className="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+        >
+          <svg
+            width="10"
+            height="10"
+            viewBox="0 0 10 10"
+            fill="none"
+            className={`transition-transform ${collapsed ? '' : 'rotate-90'}`}
+          >
+            <path d="M3 1L7 5L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </button>
+        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{name}</h2>
+      </div>
       <div className="flex items-center gap-2">
         <span className="text-xs text-slate-500">{cardCount}</span>
         <DropdownMenu.Root>
@@ -109,6 +129,14 @@ export function ColumnHeader({
                 className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600 data-[disabled]:cursor-not-allowed"
               >
                 Move right
+              </DropdownMenu.Item>
+              <DropdownMenu.Item
+                onSelect={() =>
+                  mutation.mutate({ type: 'toggle_column_collapse', col_idx: colIdx })
+                }
+                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
+              >
+                {collapsed ? 'Expand' : 'Collapse'}
               </DropdownMenu.Item>
               <DropdownMenu.Separator className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
               <DropdownMenu.Item

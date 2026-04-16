@@ -16,6 +16,7 @@ export function BoardSettingsModal({
   const settings = useBoardSettings(boardId)
   const mutation = useUpdateSettings(boardId)
   const checkboxRef = useRef<HTMLInputElement>(null)
+  const expandRef = useRef<HTMLInputElement>(null)
   const modeRef = useRef<HTMLSelectElement>(null)
 
   const submit = (e: FormEvent): void => {
@@ -23,6 +24,7 @@ export function BoardSettingsModal({
     mutation.mutate(
       {
         show_checkbox: checkboxRef.current?.checked ?? true,
+        expand_columns: expandRef.current?.checked ?? false,
         card_display_mode: (modeRef.current?.value as 'normal' | 'compact') ?? 'normal',
       },
       {
@@ -54,6 +56,19 @@ export function BoardSettingsModal({
                 className="h-4 w-4"
               />
               Show complete checkbox on cards
+            </label>
+            <label className="flex items-center gap-2 text-sm text-slate-700 dark:text-slate-300">
+              <input
+                ref={expandRef}
+                aria-label="expand columns"
+                type="checkbox"
+                defaultChecked={settings.expand_columns}
+                className="h-4 w-4"
+              />
+              <span>
+                Expand columns
+                <span className="block text-xs text-slate-500 dark:text-slate-400">Stretch to fill available space</span>
+              </span>
             </label>
             <label className="block text-sm text-slate-700 dark:text-slate-300">
               <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Card display</span>

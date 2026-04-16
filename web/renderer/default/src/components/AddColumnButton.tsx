@@ -30,32 +30,45 @@ export function AddColumnButton({ boardId }: { boardId: string }): JSX.Element {
     Promise.resolve().then(() => setOpen(false))
   }
 
-  if (open) {
-    return (
-      <div className="flex w-72 shrink-0 flex-col rounded-lg bg-slate-100 p-3">
-        <input
-          ref={inputRef}
-          aria-label="new column name"
-          defaultValue=""
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter') { e.preventDefault(); commit() }
-            else if (e.key === 'Escape') { e.preventDefault(); cancel() }
-          }}
-          placeholder="Column name…"
-          className="w-full rounded bg-white px-2 py-1 text-sm outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)]"
-        />
-      </div>
-    )
-  }
-
+  // Single persistent element — mirrors HTMX .add-column-bar which keeps ml-auto
+  // and self-stretch in both states, only the width and content change.
   return (
-    <button
-      type="button"
-      onClick={() => setOpen(true)}
-      className="flex w-72 shrink-0 items-center justify-center rounded-lg border-2 border-dashed border-slate-300 p-3 text-sm text-slate-500 hover:border-slate-400 hover:text-slate-700 dark:border-slate-700 dark:text-slate-400 dark:hover:border-slate-600 dark:hover:text-slate-200"
+    <div
+      className={`ml-auto flex shrink-0 self-stretch items-center justify-center rounded-lg border border-slate-200 bg-slate-100 dark:border-slate-700 dark:bg-slate-800 ${open ? 'cursor-default' : 'cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700'}`}
+      style={{ width: open ? 220 : 40, minHeight: 120 }}
+      onClick={!open ? () => setOpen(true) : undefined}
     >
-      + Add column
-    </button>
+      {!open && (
+        <span
+          className="select-none whitespace-nowrap text-sm font-medium text-slate-400 dark:text-slate-500"
+          style={{ writingMode: 'vertical-rl', textOrientation: 'mixed', letterSpacing: '0.5px' }}
+        >
+          + Add list
+        </span>
+      )}
+      {open && (
+        <div className="flex w-full flex-col gap-2 p-3">
+          <input
+            ref={inputRef}
+            aria-label="new column name"
+            defaultValue=""
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') { e.preventDefault(); commit() }
+              else if (e.key === 'Escape') { e.preventDefault(); cancel() }
+            }}
+            placeholder="List name"
+            className="w-full rounded bg-white px-2 py-1.5 text-sm outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)] dark:bg-slate-700 dark:text-slate-100 dark:ring-slate-600 dark:placeholder-slate-400"
+          />
+          <button
+            type="button"
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={commit}
+            className="w-full rounded px-2 py-1.5 text-sm font-medium text-slate-600 hover:bg-slate-200 dark:text-slate-300 dark:hover:bg-slate-600"
+          >
+            Add
+          </button>
+        </div>
+      )}
+    </div>
   )
 }
