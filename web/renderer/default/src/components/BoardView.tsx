@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState } from 'react'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
 import { ProtocolError } from '@shared/protocol.js'
@@ -10,11 +10,15 @@ import { SortableColumn } from '../dnd/SortableColumn.js'
 import { encodeColumnId } from '../dnd/cardId.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { BoardFocusProvider } from '../contexts/BoardFocusContext.js'
+const BoardSettingsModal = lazy(() =>
+  import('./BoardSettingsModal.js').then((m) => ({ default: m.BoardSettingsModal })),
+)
 
 export function BoardView({ client }: { client: Client }): JSX.Element {
   const { active, setActive } = useActiveBoard()
   const { data, isLoading, error } = useBoard(active)
   const [filterQuery, setFilterQuery] = useState('')
+  const [settingsOpen, setSettingsOpen] = useState(false)
   const [hideCompleted, setHideCompleted] = useState(
     () => localStorage.getItem('lb_hideCompleted') === 'true'
   )
@@ -63,6 +67,16 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
           <div className="flex h-12 shrink-0 items-center gap-3 border-b border-slate-200 px-4 dark:border-slate-800">
             {data.icon && <span className="text-xl leading-none">{data.icon}</span>}
             <h1 className="text-base font-semibold text-slate-800 dark:text-slate-100">{data.name}</h1>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen(true)}
+              title="Board settings"
+              className="flex h-6 w-6 items-center justify-center rounded text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-600 dark:hover:bg-slate-800"
+            >
+              <svg width="14" height="14" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
+                <path fillRule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
+              </svg>
+            </button>
             <div className="ml-auto flex items-center gap-2">
               <div className="relative flex items-center">
                 <svg className="pointer-events-none absolute left-2 text-slate-400" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
@@ -120,6 +134,14 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
           </SortableContext>
         </div>
       </BoardDndContext>
+      <Suspense fallback={null}>
+        <BoardSettingsModal
+          boardId={active}
+          boardName={data.name}
+          open={settingsOpen}
+          onOpenChange={setSettingsOpen}
+        />
+      </Suspense>
     </BoardFocusProvider>
   )
 }
