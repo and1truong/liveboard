@@ -7,6 +7,7 @@ import { LocalAdapter } from '@shared/adapters/local.js'
 import { MemoryStorage } from '@shared/adapters/local-storage-driver.js'
 import { createMemoryPair } from '@shared/transport.js'
 import { ClientProvider } from '../queries.js'
+import { ActiveBoardProvider } from '../contexts/ActiveBoardContext.js'
 import { renderWithQuery } from '../test-utils.js'
 import { BoardSettingsModal } from './BoardSettingsModal.js'
 
@@ -25,12 +26,14 @@ describe('BoardSettingsModal', () => {
     const { client, qc } = await setup()
     const { findByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
-        <BoardSettingsModal
+        <ActiveBoardProvider>
+          <BoardSettingsModal
           boardId="welcome"
           boardName="Welcome"
           open={true}
           onOpenChange={() => {}}
-        />
+          />
+        </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -45,12 +48,14 @@ describe('BoardSettingsModal', () => {
     const calls: boolean[] = []
     const { findByLabelText, findByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <BoardSettingsModal
+        <ActiveBoardProvider>
+          <BoardSettingsModal
           boardId="welcome"
           boardName="Welcome"
           open={true}
           onOpenChange={(v) => calls.push(v)}
-        />
+          />
+        </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -67,18 +72,43 @@ describe('BoardSettingsModal', () => {
     expect(after.card_display_mode).toBe('compact')
   })
 
+  it('Save persists the chosen view mode', async () => {
+    const { client, qc } = await setup()
+    const { findByLabelText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <BoardSettingsModal
+          boardId="welcome"
+          boardName="Welcome"
+          open={true}
+          onOpenChange={() => {}}
+          />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    fireEvent.click(await findByLabelText('view mode list'))
+    fireEvent.click(await findByText('Save'))
+    await waitFor(async () => {
+      const after = await client.getSettings('welcome')
+      expect(after.view_mode).toBe('list')
+    })
+  })
+
   it('Cancel closes without writing', async () => {
     const { client, qc } = await setup()
     const calls: boolean[] = []
     const before = await client.getSettings('welcome')
     const { findByLabelText, findByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <BoardSettingsModal
+        <ActiveBoardProvider>
+          <BoardSettingsModal
           boardId="welcome"
           boardName="Welcome"
           open={true}
           onOpenChange={(v) => calls.push(v)}
-        />
+          />
+        </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
     )

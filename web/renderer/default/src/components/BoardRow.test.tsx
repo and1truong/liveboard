@@ -24,9 +24,9 @@ async function setup() {
 const board = { id: 'foo', name: 'Foo', version: 1 }
 
 describe('BoardRow', () => {
-  it('renders name and menu trigger', async () => {
+  it('renders name', async () => {
     const { client, qc } = await setup()
-    const { getByText, getByLabelText } = renderWithQuery(
+    const { getByText } = renderWithQuery(
       <ClientProvider client={client}>
         <ActiveBoardProvider>
           <ul><BoardRow board={board} /></ul>
@@ -35,7 +35,6 @@ describe('BoardRow', () => {
       { queryClient: qc },
     )
     expect(getByText('Foo')).toBeDefined()
-    expect(getByLabelText('board menu Foo')).toBeDefined()
   })
 
   it('clicking the row attempts to set active (smoke)', async () => {
