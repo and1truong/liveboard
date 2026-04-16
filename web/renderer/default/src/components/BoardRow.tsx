@@ -19,7 +19,23 @@ export function BoardRow({ board }: { board: BoardSummary }): JSX.Element {
         }`}
       >
         {board.icon && <span aria-hidden>{board.icon}</span>}
-        <span className="truncate">{board.name}</span>
+        <span className="flex min-w-0 flex-1 flex-col">
+          <span className="truncate">{board.name}</span>
+          {board.updatedAgo && (
+            <span className="mt-0.5 text-[11px] leading-none text-slate-400 dark:text-slate-500">
+              {board.updatedAgo}
+            </span>
+          )}
+          {board.tags?.length ? (
+            <span className="mt-0.5 flex flex-wrap items-center gap-1">
+              {board.tags.map(t => (
+                <span key={t} className="rounded bg-slate-100 px-1 py-px text-[10px] leading-none text-slate-500 dark:bg-slate-700 dark:text-slate-400">
+                  {t}
+                </span>
+              ))}
+            </span>
+          ) : null}
+        </span>
       </button>
       <DropdownMenu.Root>
         <DropdownMenu.Trigger
