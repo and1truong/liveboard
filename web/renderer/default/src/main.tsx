@@ -13,10 +13,12 @@ async function boot(): Promise<void> {
   const client = createClient()
   let initialBoardId: string | null = null
   let initialCardPos: { colIdx: number; cardIdx: number } | null = null
+  let initialFocusedColumn: string | null = null
   try {
     const welcome = await client.ready()
     initialBoardId = welcome.initialBoardId ?? null
     initialCardPos = welcome.initialCardPos ?? null
+    initialFocusedColumn = welcome.initialFocusedColumn ?? null
   } catch (e) {
     root.textContent = `Couldn't connect to shell: ${(e as Error).message}`
     return
@@ -26,7 +28,7 @@ async function boot(): Promise<void> {
     <StrictMode>
       <QueryClientProvider client={queryClient}>
         <ClientProvider client={client}>
-          <App client={client} initialBoardId={initialBoardId} initialCardPos={initialCardPos} />
+          <App client={client} initialBoardId={initialBoardId} initialCardPos={initialCardPos} initialFocusedColumn={initialFocusedColumn} />
         </ClientProvider>
       </QueryClientProvider>
     </StrictMode>,

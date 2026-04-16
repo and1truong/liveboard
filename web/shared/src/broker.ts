@@ -13,6 +13,7 @@ export interface BrokerOptions {
   capabilities?: string[]
   initialBoardId?: string | null
   initialCardPos?: { colIdx: number; cardIdx: number } | null
+  initialFocusedColumn?: string | null
 }
 
 export class Broker {
@@ -53,6 +54,7 @@ export class Broker {
         capabilities: this.opts.capabilities ?? ['local-storage', 'realtime'],
         initialBoardId: this.opts.initialBoardId ?? null,
         initialCardPos: this.opts.initialCardPos ?? null,
+        initialFocusedColumn: this.opts.initialFocusedColumn ?? null,
       })
       return
     }

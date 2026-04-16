@@ -11,6 +11,7 @@ import { renderWithQuery } from '../test-utils.js'
 import { ColumnHeader } from './ColumnHeader.js'
 import { useEffect } from 'react'
 import type { Column } from '@shared/types.js'
+import { ActiveBoardProvider } from '../contexts/ActiveBoardContext.js'
 import {
   FocusedColumnProvider,
   useFocusedColumn,
@@ -77,10 +78,12 @@ describe('ColumnHeader', () => {
     }
     const { getByLabelText, findByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <FocusedColumnProvider columns={colsList} active="welcome">
-          <Spy />
-          <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo','Doing']} boardId="welcome" />
-        </FocusedColumnProvider>
+        <ActiveBoardProvider initialBoardId="welcome">
+          <FocusedColumnProvider columns={colsList}>
+            <Spy />
+            <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo','Doing']} boardId="welcome" />
+          </FocusedColumnProvider>
+        </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -101,10 +104,12 @@ describe('ColumnHeader', () => {
     }
     const { getByLabelText, queryByText, findByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <FocusedColumnProvider columns={colsList} active="welcome">
-          <Seed />
-          <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" />
-        </FocusedColumnProvider>
+        <ActiveBoardProvider initialBoardId="welcome">
+          <FocusedColumnProvider columns={colsList}>
+            <Seed />
+            <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" />
+          </FocusedColumnProvider>
+        </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
     )

@@ -12,14 +12,15 @@ function ListEventsBridge(): null {
   return null
 }
 
-export function App({ client, initialBoardId, initialCardPos }: {
+export function App({ client, initialBoardId, initialCardPos, initialFocusedColumn }: {
   client: Client
   initialBoardId?: string | null
   initialCardPos?: { colIdx: number; cardIdx: number } | null
+  initialFocusedColumn?: string | null
 }): JSX.Element {
   return (
     <ThemeProvider>
-      <ActiveBoardProvider initialBoardId={initialBoardId ?? null} initialCardPos={initialCardPos ?? null}>
+      <ActiveBoardProvider initialBoardId={initialBoardId ?? null} initialCardPos={initialCardPos ?? null} initialFocusedColumn={initialFocusedColumn ?? null}>
         <ListEventsBridge />
         <div className="flex h-screen w-screen">
           <BoardSidebar />

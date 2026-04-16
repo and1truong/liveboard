@@ -50,8 +50,9 @@ export type Event =
   | { kind: 'event'; type: 'settings.updated'; data: { boardId: string } }
   | { kind: 'event'; type: 'connection.status'; data: { online: boolean } }
   | { kind: 'event'; type: 'board.list.updated'; data: null }
-  | { kind: 'event'; type: 'active.changed'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null } }
-  | { kind: 'event'; type: 'active.set'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null } }
+  | { kind: 'event'; type: 'active.changed'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null; focusedColumn?: string | null } }
+  | { kind: 'event'; type: 'active.set'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null; focusedColumn?: string | null } }
+  | { kind: 'event'; type: 'title.changed'; data: { title: string; icon?: string | null } }
   | { kind: 'event'; type: 'key.forward'; data: { key: string; code: string; keyCode: number; charCode: number; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; repeat: boolean } }
 
 export interface Hello {
@@ -68,6 +69,7 @@ export interface Welcome {
   capabilities: string[]
   initialBoardId?: string | null
   initialCardPos?: { colIdx: number; cardIdx: number } | null
+  initialFocusedColumn?: string | null
 }
 
 export interface HandshakeError {

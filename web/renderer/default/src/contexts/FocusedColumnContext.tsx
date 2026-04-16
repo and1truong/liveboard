@@ -3,11 +3,10 @@ import {
   useContext,
   useEffect,
   useMemo,
-  useRef,
-  useState,
   type ReactNode,
 } from 'react'
 import type { Column } from '@shared/types.js'
+import { useActiveBoard } from './ActiveBoardContext.js'
 
 export interface FocusedColumnCtx {
   focused: string | null
@@ -18,53 +17,42 @@ export const FocusedColumnContext = createContext<FocusedColumnCtx | null>(null)
 
 export function FocusedColumnProvider({
   columns,
-  active,
   children,
 }: {
   columns: Column[]
-  active: string | null
   children: ReactNode
 }): JSX.Element {
-  const [focused, setFocused] = useState<string | null>(null)
-  const mountedRef = useRef(false)
+  const { focusedColumn, setFocusedColumn } = useActiveBoard()
 
+  // Exit focus mode if the focused column no longer exists.
   useEffect(() => {
-    if (!mountedRef.current) {
-      mountedRef.current = true
-      return
-    }
-    setFocused(null)
-  }, [active])
+    if (focusedColumn === null) return
+    const exists = columns.some((c) => c.name === focusedColumn)
+    if (!exists) setFocusedColumn(null)
+  }, [columns, focusedColumn, setFocusedColumn])
 
+  // Escape key exits focus mode.
   useEffect(() => {
-    if (focused === null) return
-    const exists = columns.some((c) => c.name === focused)
-    if (!exists) setFocused(null)
-  }, [columns, focused])
-
-  useEffect(() => {
-    if (focused === null) return
+    if (focusedColumn === null) return
     function onKey(e: KeyboardEvent): void {
       if (e.key !== 'Escape') return
-      // Ignore when typing in an input/textarea/contenteditable.
       const el = document.activeElement as HTMLElement | null
       if (el) {
         const tag = el.tagName
         if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT' || el.isContentEditable) return
       }
-      // Ignore when a Radix (or compatible) dialog is open.
       if (document.querySelector('[role="dialog"][data-state="open"]')) return
-      setFocused(null)
+      setFocusedColumn(null)
     }
     window.addEventListener('keydown', onKey)
     return () => {
       window.removeEventListener('keydown', onKey)
     }
-  }, [focused])
+  }, [focusedColumn, setFocusedColumn])
 
   const value = useMemo<FocusedColumnCtx>(
-    () => ({ focused, setFocused }),
-    [focused],
+    () => ({ focused: focusedColumn, setFocused: setFocusedColumn }),
+    [focusedColumn, setFocusedColumn],
   )
 
   return <FocusedColumnContext.Provider value={value}>{children}</FocusedColumnContext.Provider>

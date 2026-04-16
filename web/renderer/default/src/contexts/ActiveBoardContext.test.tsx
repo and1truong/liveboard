@@ -27,7 +27,7 @@ describe('ActiveBoardContext', () => {
     const { result } = renderHook(() => useActiveBoard(), { wrapper: Wrapper })
     act(() => result.current.setActive('foo'))
     expect(result.current.active).toBe('foo')
-    expect(fakeClient.emit).toHaveBeenCalledWith('active.changed', { boardId: 'foo', cardPos: null })
+    expect(fakeClient.emit).toHaveBeenCalledWith('active.changed', { boardId: 'foo', cardPos: null, focusedColumn: null })
     act(() => result.current.setActive(null))
     expect(result.current.active).toBeNull()
   })

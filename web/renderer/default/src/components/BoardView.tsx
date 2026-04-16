@@ -100,6 +100,11 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
     }
   }, [error, setActive])
 
+  useEffect(() => {
+    const title = data?.name ? `${data.name} — LiveBoard` : 'LiveBoard'
+    client.emit('title.changed', { title, icon: data?.icon ?? null })
+  }, [client, data?.name, data?.icon])
+
   const toggleHideCompleted = (): void => {
     const next = !hideCompleted
     setHideCompleted(next)
@@ -122,7 +127,7 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
 
   return (
     <BoardFocusProvider columns={columns}>
-      <FocusedColumnProvider columns={columns} active={active}>
+      <FocusedColumnProvider columns={columns}>
         <BoardDndContext boardId={active}>
           <div className="flex h-full flex-col">
             <div className="flex h-12 shrink-0 items-center gap-3 border-b border-slate-200 px-4 dark:border-slate-800">

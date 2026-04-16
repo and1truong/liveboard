@@ -25,25 +25,28 @@ function makeAdapter(cfg: LiveboardConfig): BackendAdapter {
   return new LocalAdapter(new BrowserStorage())
 }
 
-const BOARD_PATH_RE = /^\/app\/b\/([^/]+?)(?:\/c\/(\d+)-(\d+))?(?:\/|$)/
+const BOARD_PATH_RE = /^\/app\/b\/([^/]+?)(?:\/f\/([^/]+?))?(?:\/c\/(\d+)-(\d+))?(?:\/|$)/
 
 interface ParsedUrl {
   boardId: string | null
+  focusedColumn: string | null
   cardPos: { colIdx: number; cardIdx: number } | null
 }
 
 function parseUrl(): ParsedUrl {
   const m = window.location.pathname.match(BOARD_PATH_RE)
-  if (!m) return { boardId: null, cardPos: null }
+  if (!m) return { boardId: null, focusedColumn: null, cardPos: null }
   const boardId = m[1]
-  const cardPos = m[2] != null ? { colIdx: Number(m[2]), cardIdx: Number(m[3]) } : null
-  return { boardId, cardPos }
+  const focusedColumn = m[2] != null ? decodeURIComponent(m[2]) : null
+  const cardPos = m[3] != null ? { colIdx: Number(m[3]), cardIdx: Number(m[4]) } : null
+  return { boardId, focusedColumn, cardPos }
 }
 
-function buildUrl(boardId: string | null, cardPos?: { colIdx: number; cardIdx: number } | null): string {
+function buildUrl(boardId: string | null, opts?: { focusedColumn?: string | null; cardPos?: { colIdx: number; cardIdx: number } | null }): string {
   if (!boardId) return '/app/'
   let url = `/app/b/${boardId}`
-  if (cardPos) url += `/c/${cardPos.colIdx}-${cardPos.cardIdx}`
+  if (opts?.focusedColumn) url += `/f/${encodeURIComponent(opts.focusedColumn)}`
+  if (opts?.cardPos) url += `/c/${opts.cardPos.colIdx}-${opts.cardPos.cardIdx}`
   return url
 }
 
@@ -62,18 +65,34 @@ function bootstrap(): void {
     shellVersion: SHELL_VERSION,
     initialBoardId: initial.boardId,
     initialCardPos: initial.cardPos,
+    initialFocusedColumn: initial.focusedColumn,
   })
 
-  broker.onEvent('active.changed', ({ boardId, cardPos }) => {
-    const url = buildUrl(boardId, cardPos)
+  broker.onEvent('active.changed', ({ boardId, cardPos, focusedColumn }) => {
+    const url = buildUrl(boardId, { focusedColumn, cardPos })
     if (window.location.pathname !== url) {
-      window.history.pushState({ boardId, cardPos }, '', url)
+      window.history.pushState({ boardId, cardPos, focusedColumn }, '', url)
+    }
+  })
+
+  broker.onEvent('title.changed', ({ title, icon }) => {
+    document.title = title
+    let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
+    if (!link) {
+      link = document.createElement('link')
+      link.rel = 'icon'
+      document.head.appendChild(link)
+    }
+    if (icon) {
+      link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${icon}</text></svg>`
+    } else {
+      link.removeAttribute('href')
     }
   })
 
   window.addEventListener('popstate', () => {
-    const { boardId, cardPos } = parseUrl()
-    broker.emit('active.set', { boardId, cardPos })
+    const { boardId, cardPos, focusedColumn } = parseUrl()
+    broker.emit('active.set', { boardId, cardPos, focusedColumn })
   })
 
   window.addEventListener('beforeunload', () => broker.close())

@@ -11,6 +11,8 @@ interface ActiveBoardCtx {
   setActive: (next: string | null) => void
   activeCard: CardPos | null
   setActiveCard: (next: CardPos | null) => void
+  focusedColumn: string | null
+  setFocusedColumn: (col: string | null) => void
 }
 
 const Ctx = createContext<ActiveBoardCtx | null>(null)
@@ -19,21 +21,25 @@ export function ActiveBoardProvider({
   children,
   initialBoardId,
   initialCardPos,
+  initialFocusedColumn,
 }: {
   children: ReactNode
   initialBoardId?: string | null
   initialCardPos?: CardPos | null
+  initialFocusedColumn?: string | null
 }): JSX.Element {
   const client = useClient()
   const [active, setActiveRaw] = useState<string | null>(initialBoardId ?? null)
   const [activeCard, setActiveCardRaw] = useState<CardPos | null>(initialCardPos ?? null)
+  const [focusedColumn, setFocusedColumnRaw] = useState<string | null>(initialFocusedColumn ?? null)
   const remoteRef = useRef(false)
 
   const setActive = useCallback((next: string | null) => {
     setActiveRaw(next)
     setActiveCardRaw(null)
+    setFocusedColumnRaw(null)
     if (!remoteRef.current) {
-      client.emit('active.changed', { boardId: next, cardPos: null })
+      client.emit('active.changed', { boardId: next, cardPos: null, focusedColumn: null })
     }
   }, [client])
 
@@ -44,16 +50,24 @@ export function ActiveBoardProvider({
     }
   }, [client, active])
 
+  const setFocusedColumn = useCallback((col: string | null) => {
+    setFocusedColumnRaw(col)
+    if (!remoteRef.current) {
+      client.emit('active.changed', { boardId: active, cardPos: null, focusedColumn: col })
+    }
+  }, [client, active])
+
   useEffect(() => {
-    return client.on('active.set', ({ boardId, cardPos }) => {
+    return client.on('active.set', ({ boardId, cardPos, focusedColumn: col }) => {
       remoteRef.current = true
       setActiveRaw(boardId)
       setActiveCardRaw(cardPos ?? null)
+      setFocusedColumnRaw(col ?? null)
       remoteRef.current = false
     })
   }, [client])
 
-  return <Ctx.Provider value={{ active, setActive, activeCard, setActiveCard }}>{children}</Ctx.Provider>
+  return <Ctx.Provider value={{ active, setActive, activeCard, setActiveCard, focusedColumn, setFocusedColumn }}>{children}</Ctx.Provider>
 }
 
 export function useActiveBoard(): ActiveBoardCtx {
