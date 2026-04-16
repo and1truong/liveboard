@@ -30,6 +30,7 @@ export type Request =
   | { id: string; kind: 'request'; method: 'board.delete'; params: { boardId: string } }
   | { id: string; kind: 'request'; method: 'search'; params: { query: string; limit?: number } }
   | { id: string; kind: 'request'; method: 'backlinks'; params: { cardId: string } }
+  | { id: string; kind: 'request'; method: 'board.listLite'; params?: undefined }
 
 export type ErrorCode =
   | 'NOT_FOUND'
@@ -49,6 +50,8 @@ export type Event =
   | { kind: 'event'; type: 'settings.updated'; data: { boardId: string } }
   | { kind: 'event'; type: 'connection.status'; data: { online: boolean } }
   | { kind: 'event'; type: 'board.list.updated'; data: null }
+  | { kind: 'event'; type: 'active.changed'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null } }
+  | { kind: 'event'; type: 'active.set'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null } }
 
 export interface Hello {
   kind: 'hello'
@@ -62,6 +65,8 @@ export interface Welcome {
   protocol: number
   shellVersion: string
   capabilities: string[]
+  initialBoardId?: string | null
+  initialCardPos?: { colIdx: number; cardIdx: number } | null
 }
 
 export interface HandshakeError {

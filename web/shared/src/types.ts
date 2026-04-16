@@ -83,6 +83,13 @@ export type MutationOp =
   | { type: 'update_board_members'; members: string[] }
   | { type: 'update_board_icon'; icon: string }
   | { type: 'update_board_settings'; settings: BoardSettings }
+  | {
+      type: 'move_card_to_board'
+      col_idx: number
+      card_idx: number
+      dst_board: string
+      dst_column: string
+    }
 
 // Canonical error codes. Thrown by applyOp as OpError instances.
 export type ErrorCode = 'NOT_FOUND' | 'OUT_OF_RANGE' | 'INVALID' | 'ALREADY_EXISTS' | 'INTERNAL'

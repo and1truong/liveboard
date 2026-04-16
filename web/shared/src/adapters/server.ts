@@ -2,6 +2,7 @@ import type { Board, BoardSettings, MutationOp } from '../types.js'
 import type {
   BackendAdapter,
   BacklinkHit,
+  BoardListLiteEntry,
   BoardSummary,
   BoardUpdateHandler,
   ResolvedSettings,
@@ -87,6 +88,9 @@ export class ServerAdapter implements BackendAdapter {
   // === BackendAdapter — stubbed; filled in Tasks 2–5 ===
   listBoards(): Promise<BoardSummary[]> {
     return this.getJSON<BoardSummary[]>('/boards')
+  }
+  listBoardsLite(): Promise<BoardListLiteEntry[]> {
+    return this.getJSON<BoardListLiteEntry[]>('/boards/list-lite')
   }
   createBoard(name: string): Promise<BoardSummary> {
     return this.postJSON<BoardSummary>('/boards', { name })

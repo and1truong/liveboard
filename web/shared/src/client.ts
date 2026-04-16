@@ -1,5 +1,5 @@
 import type { Board, BoardSettings } from './types.js'
-import type { BacklinkHit, BoardSummary, ResolvedSettings, SearchHit, WorkspaceInfo } from './adapter.js'
+import type { BacklinkHit, BoardListLiteEntry, BoardSummary, ResolvedSettings, SearchHit, WorkspaceInfo } from './adapter.js'
 import type { MutationOp } from './types.js'
 import type { Event as ProtoEvent, Message, Request, Welcome } from './protocol.js'
 import { ProtocolError, PROTOCOL_VERSION } from './protocol.js'
@@ -99,6 +99,10 @@ export class Client {
     return () => set!.delete(handler)
   }
 
+  emit<T extends EventType>(type: T, data: Extract<ProtoEvent, { type: T }>['data']): void {
+    this.transport.send({ kind: 'event', type, data } as ProtoEvent)
+  }
+
   private request<T>(req: Omit<Request, 'id'>): Promise<T> {
     const id = `r${this.nextId++}`
     return new Promise<T>((resolve, reject) => {
@@ -109,6 +113,9 @@ export class Client {
 
   listBoards(): Promise<BoardSummary[]> {
     return this.request({ kind: 'request', method: 'board.list' })
+  }
+  listBoardsLite(): Promise<BoardListLiteEntry[]> {
+    return this.request({ kind: 'request', method: 'board.listLite' })
   }
   getBoard(boardId: string): Promise<Board> {
     return this.request({ kind: 'request', method: 'board.get', params: { boardId } })

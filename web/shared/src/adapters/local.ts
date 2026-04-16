@@ -1,6 +1,7 @@
 import type {
   BackendAdapter,
   BacklinkHit,
+  BoardListLiteEntry,
   BoardSummary,
   BoardUpdateHandler,
   ResolvedSettings,
@@ -78,6 +79,18 @@ export class LocalAdapter implements BackendAdapter {
     })
   }
 
+  async listBoardsLite(): Promise<BoardListLiteEntry[]> {
+    const ws = this.loadWorkspace()
+    return ws.boardIds.map((id) => {
+      const b = this.loadBoard(id)
+      return {
+        slug: id,
+        name: b.name ?? id,
+        columns: (b.columns ?? []).map((c) => c.name),
+      }
+    })
+  }
+
   async getWorkspaceInfo(): Promise<WorkspaceInfo> {
     const ws = this.loadWorkspace()
     return { name: ws.name, boardCount: ws.boardIds.length }
@@ -94,6 +107,18 @@ export class LocalAdapter implements BackendAdapter {
       throw new ProtocolError('VERSION_CONFLICT', `expected version ${clientVersion}, have ${currentVersion}`)
     }
     try {
+      if (op.type === 'move_card_to_board') {
+        const src = board.columns?.[op.col_idx]
+        const card = src?.cards?.[op.card_idx]
+        if (!card) throw new OpError('OUT_OF_RANGE', `card at ${op.col_idx}/${op.card_idx}`)
+        const dst = this.loadBoard(op.dst_board)
+        const dstCol = (dst.columns ?? []).find((c) => c.name === op.dst_column)
+        if (!dstCol) throw new OpError('NOT_FOUND', `target column ${op.dst_column}`)
+        dstCol.cards = [card, ...(dstCol.cards ?? [])]
+        dst.version = (dst.version ?? 0) + 1
+        this.storage.set(boardKey(op.dst_board), JSON.stringify(dst))
+        this.publishUpdate(op.dst_board, dst.version)
+      }
       const next = applyOp(board, op)
       next.version = currentVersion + 1
       this.storage.set(boardKey(boardId), JSON.stringify(next))

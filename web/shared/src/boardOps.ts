@@ -196,6 +196,14 @@ export function applyOp(board: Board, op: MutationOp): Board {
       b.settings = op.settings
       return b
     }
+    case 'move_card_to_board': {
+      // Source-side optimistic apply. Destination board is updated by a
+      // separate write and observed via SSE / query invalidation.
+      const src = colAt(b, op.col_idx)
+      cardAt(src, op.card_idx, op.col_idx)
+      src.cards = src.cards.filter((_, i) => i !== op.card_idx)
+      return b
+    }
     default:
       throw new OpError('INTERNAL', `unimplemented op: ${(op as MutationOp).type}`)
   }

@@ -1,16 +1,24 @@
 import type { BackendAdapter, Subscription } from './adapter.js'
-import type { Message, Request, Response, ErrorCode } from './protocol.js'
+import type { Message, Request, Response, ErrorCode, Event as ProtoEvent } from './protocol.js'
 import { PROTOCOL_VERSION } from './protocol.js'
 import type { Transport } from './transport.js'
+
+type EventType = ProtoEvent['type']
+type EventHandler<T extends EventType> = (
+  data: Extract<ProtoEvent, { type: T }>['data'],
+) => void
 
 export interface BrokerOptions {
   shellVersion: string
   capabilities?: string[]
+  initialBoardId?: string | null
+  initialCardPos?: { colIdx: number; cardIdx: number } | null
 }
 
 export class Broker {
   private readonly subs = new Map<string, Subscription>()
   private readonly boardListSub: Subscription
+  private readonly eventHandlers = new Map<EventType, Set<EventHandler<EventType>>>()
 
   constructor(
     private readonly transport: Transport,
@@ -43,7 +51,14 @@ export class Broker {
         protocol: PROTOCOL_VERSION,
         shellVersion: this.opts.shellVersion,
         capabilities: this.opts.capabilities ?? ['local-storage', 'realtime'],
+        initialBoardId: this.opts.initialBoardId ?? null,
+        initialCardPos: this.opts.initialCardPos ?? null,
       })
+      return
+    }
+    if (msg.kind === 'event') {
+      const set = this.eventHandlers.get(msg.type) as Set<EventHandler<typeof msg.type>> | undefined
+      if (set) for (const h of set) h(msg.data)
       return
     }
     if (msg.kind !== 'request') return
@@ -71,6 +86,8 @@ export class Broker {
     switch (req.method) {
       case 'board.list':
         return this.adapter.listBoards()
+      case 'board.listLite':
+        return this.adapter.listBoardsLite()
       case 'board.get':
         return this.adapter.getBoard(req.params.boardId)
       case 'board.mutate':
@@ -115,6 +132,20 @@ export class Broker {
       case 'backlinks':
         return this.adapter.backlinks(req.params.cardId)
     }
+  }
+
+  onEvent<T extends EventType>(type: T, handler: EventHandler<T>): () => void {
+    let set = this.eventHandlers.get(type) as Set<EventHandler<T>> | undefined
+    if (!set) {
+      set = new Set()
+      this.eventHandlers.set(type, set as unknown as Set<EventHandler<EventType>>)
+    }
+    set.add(handler)
+    return () => set!.delete(handler)
+  }
+
+  emit<T extends EventType>(type: T, data: Extract<ProtoEvent, { type: T }>['data']): void {
+    this.transport.send({ kind: 'event', type, data } as ProtoEvent)
   }
 
   close(): void {

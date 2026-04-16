@@ -28,8 +28,15 @@ export interface Subscription {
 
 export type BoardUpdateHandler = (payload: { boardId: string; version: number }) => void
 
+export interface BoardListLiteEntry {
+  slug: string
+  name: string
+  columns: string[]
+}
+
 export interface BackendAdapter {
   listBoards(): Promise<BoardSummary[]>
+  listBoardsLite(): Promise<BoardListLiteEntry[]>
   getWorkspaceInfo(): Promise<WorkspaceInfo>
   getBoard(boardId: string): Promise<Board>
   mutateBoard(boardId: string, clientVersion: number, op: MutationOp): Promise<Board>
