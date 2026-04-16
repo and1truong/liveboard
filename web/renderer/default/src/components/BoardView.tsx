@@ -11,6 +11,7 @@ import { SortableColumn } from '../dnd/SortableColumn.js'
 import { encodeColumnId } from '../dnd/cardId.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { BoardFocusProvider } from '../contexts/BoardFocusContext.js'
+import { BoardsGrid } from './BoardsGrid.js'
 import { FocusedColumnProvider, useFocusedColumn } from '../contexts/FocusedColumnContext.js'
 import { FocusExitBar } from './FocusExitBar.js'
 const BoardSettingsModal = lazy(() =>
@@ -105,7 +106,7 @@ export function BoardView({ client }: { client: Client }): JSX.Element {
     localStorage.setItem('lb_hideCompleted', String(next))
   }
 
-  if (!active) return <EmptyState title="Select a board" />
+  if (!active) return <BoardsGrid />
   if (isLoading) return <EmptyState title="Loading…" />
   if (error) return <EmptyState title="Failed to load board" detail={String(error)} />
   if (!data) return <EmptyState title="Board not found" />

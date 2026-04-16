@@ -3,8 +3,13 @@ import type { Board, BoardSettings, MutationOp } from './types.js'
 export interface BoardSummary {
   id: string
   name: string
+  description?: string
   icon?: string
   version: number
+  tags?: string[]
+  updatedAgo?: string
+  cardCount?: number
+  doneCount?: number
 }
 
 export interface WorkspaceInfo {

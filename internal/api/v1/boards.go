@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/go-chi/chi/v5"
 
@@ -15,10 +16,47 @@ import (
 // boardSummary is the v1 JSON shape for a board identity returned by
 // create/rename. Keys match the renderer's BoardSummary type.
 type boardSummary struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Icon    string `json:"icon,omitempty"`
-	Version int    `json:"version"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Description string   `json:"description,omitempty"`
+	Icon        string   `json:"icon,omitempty"`
+	Version     int      `json:"version"`
+	Tags        []string `json:"tags,omitempty"`
+	UpdatedAgo  string   `json:"updatedAgo,omitempty"`
+	CardCount   int      `json:"cardCount,omitempty"`
+	DoneCount   int      `json:"doneCount,omitempty"`
+}
+
+// relativeTime returns a human-readable relative time string.
+func relativeTime(t time.Time) string {
+	if t.IsZero() {
+		return ""
+	}
+	d := time.Since(t)
+	switch {
+	case d < time.Minute:
+		return "just now"
+	case d < time.Hour:
+		m := int(d.Minutes())
+		if m == 1 {
+			return "1m ago"
+		}
+		return fmt.Sprintf("%dm ago", m)
+	case d < 24*time.Hour:
+		h := int(d.Hours())
+		if h == 1 {
+			return "1h ago"
+		}
+		return fmt.Sprintf("%dh ago", h)
+	case d < 30*24*time.Hour:
+		days := int(d.Hours() / 24)
+		if days == 1 {
+			return "1d ago"
+		}
+		return fmt.Sprintf("%dd ago", days)
+	default:
+		return t.Format("Jan 2, 2006")
+	}
 }
 
 // boardFileSlug returns the canonical board id: the filename stem.
@@ -32,7 +70,26 @@ func boardFileSlug(b *models.Board) string {
 }
 
 func toBoardSummary(b *models.Board) boardSummary {
-	return boardSummary{ID: boardFileSlug(b), Name: b.Name, Icon: b.Icon, Version: b.Version}
+	cardCount, doneCount := 0, 0
+	for _, col := range b.Columns {
+		for _, card := range col.Cards {
+			cardCount++
+			if card.Completed {
+				doneCount++
+			}
+		}
+	}
+	return boardSummary{
+		ID:          boardFileSlug(b),
+		Name:        b.Name,
+		Description: b.Description,
+		Icon:        b.Icon,
+		Version:     b.Version,
+		Tags:        b.Tags,
+		UpdatedAgo:  relativeTime(b.UpdatedAt),
+		CardCount:   cardCount,
+		DoneCount:   doneCount,
+	}
 }
 
 func (d Deps) getBoard(w http.ResponseWriter, r *http.Request) {
