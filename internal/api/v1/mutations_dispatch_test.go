@@ -289,6 +289,21 @@ func TestDispatchAllVariants(t *testing.T) {
 			},
 		},
 		{
+			name: "update_tag_colors",
+			op: func(_ string) v1.MutationOp {
+				return v1.MutationOp{
+					Type: "update_tag_colors",
+					UpdateTagColors: &v1.UpdateTagColorsOp{
+						TagColors: map[string]string{"go": "#00ff00", "api": "#4080c4"},
+					},
+				}
+			},
+			deps: func(t *testing.T) (v1.Deps, string) {
+				deps := newTestDeps(t)
+				return deps, filepath.Join(deps.Workspace.Dir, "demo.md")
+			},
+		},
+		{
 			name: "update_board_settings",
 			op: func(_ string) v1.MutationOp {
 				show := true
@@ -366,6 +381,11 @@ func TestDispatchAllVariants(t *testing.T) {
 				// so check for the yaml key rather than the literal rune.
 				if !strings.Contains(string(raw), "icon:") {
 					t.Errorf("update_board_icon: 'icon:' key not found in file")
+				}
+			case "update_tag_colors":
+				raw, _ := os.ReadFile(path)
+				if !strings.Contains(string(raw), "tag-colors:") {
+					t.Errorf("update_tag_colors: 'tag-colors:' key not found in file")
 				}
 			}
 		})

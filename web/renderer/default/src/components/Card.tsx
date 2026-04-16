@@ -1,4 +1,5 @@
 import type { Card as CardModel } from '@shared/types.js'
+import { tagChipStyle } from '../utils/tagColor.js'
 
 const PRIORITY_DOT: Record<string, string> = {
   critical: 'bg-red-600',
@@ -7,7 +8,13 @@ const PRIORITY_DOT: Record<string, string> = {
   low: 'bg-slate-300',
 }
 
-export function Card({ card }: { card: CardModel }): JSX.Element {
+export function Card({
+  card,
+  tagColors,
+}: {
+  card: CardModel
+  tagColors?: Record<string, string>
+}): JSX.Element {
   return (
     <article className="rounded-md bg-[color:var(--color-surface)] p-3 border border-[color:var(--color-border)] shadow-[var(--shadow-card)]">
       <div className="flex items-start gap-2">
@@ -23,11 +30,22 @@ export function Card({ card }: { card: CardModel }): JSX.Element {
       </div>
       {card.tags && card.tags.length > 0 && (
         <ul className="mt-2 flex flex-wrap gap-1">
-          {card.tags.map((t) => (
-            <li key={t} className="rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-xs text-slate-700 dark:text-slate-200">
-              {t}
-            </li>
-          ))}
+          {card.tags.map((t) => {
+            const style = tagChipStyle(tagColors?.[t])
+            return (
+              <li
+                key={t}
+                style={style}
+                className={
+                  style
+                    ? 'rounded px-1.5 py-0.5 text-xs'
+                    : 'rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-xs text-slate-700 dark:text-slate-200'
+                }
+              >
+                {t}
+              </li>
+            )
+          })}
         </ul>
       )}
     </article>

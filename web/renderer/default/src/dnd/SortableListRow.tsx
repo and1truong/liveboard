@@ -7,6 +7,8 @@ import { QuickEditDialog } from '../components/QuickEditDialog.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
+import { useTagColors } from '../queries.js'
+import { tagChipStyle } from '../utils/tagColor.js'
 import { encodeCardId } from './cardId.js'
 import { useDragState } from './BoardDndContext.js'
 
@@ -47,6 +49,7 @@ export function SortableListRow({
   )
   const [quickOpen, setQuickOpen] = useState(false)
   const mutation = useBoardMutation(boardId)
+  const tagColors = useTagColors(boardId)
   const { drop } = useDragState()
   const showDropLine =
     !isDragging &&
@@ -166,14 +169,22 @@ export function SortableListRow({
                     👤 {card.assignee}
                   </span>
                 )}
-                {card.tags?.map((t) => (
-                  <span
-                    key={t}
-                    className="rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-200"
-                  >
-                    {t}
-                  </span>
-                ))}
+                {card.tags?.map((t) => {
+                  const style = tagChipStyle(tagColors[t])
+                  return (
+                    <span
+                      key={t}
+                      style={style}
+                      className={
+                        style
+                          ? 'rounded px-1.5 py-0.5 text-[10px]'
+                          : 'rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-200'
+                      }
+                    >
+                      {t}
+                    </span>
+                  )
+                })}
               </div>
             )}
           </button>

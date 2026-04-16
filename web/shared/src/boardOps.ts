@@ -196,6 +196,10 @@ export function applyOp(board: Board, op: MutationOp): Board {
       b.settings = op.settings
       return b
     }
+    case 'update_tag_colors': {
+      b.tag_colors = Object.keys(op.tag_colors).length > 0 ? op.tag_colors : undefined
+      return b
+    }
     case 'move_card_to_board': {
       // Source-side optimistic apply. Destination board is updated by a
       // separate write and observed via SSE / query invalidation.

@@ -83,6 +83,7 @@ export type MutationOp =
   | { type: 'update_board_members'; members: string[] }
   | { type: 'update_board_icon'; icon: string }
   | { type: 'update_board_settings'; settings: BoardSettings }
+  | { type: 'update_tag_colors'; tag_colors: Record<string, string> }
   | {
       type: 'move_card_to_board'
       col_idx: number

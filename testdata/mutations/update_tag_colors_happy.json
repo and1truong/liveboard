@@ -1,0 +1,14 @@
+{
+  "name": "update_tag_colors_happy",
+  "description": "update_tag_colors sets the per-tag color map.",
+  "board_before": {
+    "version": 1,
+    "columns": []
+  },
+  "op": { "type": "update_tag_colors", "tag_colors": { "go": "#00ff00", "api": "#4080c4" } },
+  "board_after": {
+    "version": 1,
+    "tag_colors": { "go": "#00ff00", "api": "#4080c4" },
+    "columns": []
+  }
+}

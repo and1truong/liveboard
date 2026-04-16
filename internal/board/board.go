@@ -543,6 +543,17 @@ func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []str
 	})
 }
 
+// ApplyUpdateTagColors sets a board's per-tag color map within b.
+// An empty map clears the field so it's omitted from YAML output.
+func ApplyUpdateTagColors(b *models.Board, tagColors map[string]string) error {
+	if len(tagColors) == 0 {
+		b.TagColors = nil
+	} else {
+		b.TagColors = tagColors
+	}
+	return nil
+}
+
 // ApplyUpdateBoardMembers sets the member list within b.
 func ApplyUpdateBoardMembers(b *models.Board, members []string) error {
 	b.Members = members

@@ -88,7 +88,8 @@ export function BoardDndContext({
     if (op) mutation.mutate(op)
   }
 
-  const overlay = renderOverlay(activeId, qc.getQueryData<Board>(['board', boardId]))
+  const board = qc.getQueryData<Board>(['board', boardId])
+  const overlay = renderOverlay(activeId, board)
 
   return (
     <DragStateContext.Provider value={{ drop, isDragActive: activeId != null }}>
@@ -115,7 +116,7 @@ function renderOverlay(activeId: string | null, board: Board | undefined): JSX.E
     if (!card) return null
     return (
       <div className="w-72">
-        <Card card={card} />
+        <Card card={card} tagColors={board.tag_colors} />
       </div>
     )
   }

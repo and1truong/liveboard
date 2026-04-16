@@ -105,6 +105,7 @@ type MutationOp struct {
 	UpdateBoardMembers   *UpdateBoardMembersOp   `json:"-"`
 	UpdateBoardIcon      *UpdateBoardIconOp      `json:"-"`
 	UpdateBoardSettings  *UpdateBoardSettingsOp  `json:"-"`
+	UpdateTagColors      *UpdateTagColorsOp      `json:"-"`
 	MoveCardToBoard      *MoveCardToBoardOp      `json:"-"`
 }
 
@@ -228,6 +229,11 @@ type UpdateBoardSettingsOp struct {
 	Settings models.BoardSettings `json:"settings"`
 }
 
+// UpdateTagColorsOp are the params for an "update_tag_colors" mutation.
+type UpdateTagColorsOp struct {
+	TagColors map[string]string `json:"tag_colors"`
+}
+
 // MarshalJSON encodes the active variant merged with the "type" discriminator.
 //
 //nolint:cyclop,gocognit,funlen // switch over 17 mutation variants — inherently large
@@ -319,6 +325,11 @@ func (m MutationOp) MarshalJSON() ([]byte, error) {
 			return nil, fmt.Errorf("MutationOp type=%q but UpdateBoardSettings is nil", m.Type)
 		}
 		variant = m.UpdateBoardSettings
+	case "update_tag_colors":
+		if m.UpdateTagColors == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but UpdateTagColors is nil", m.Type)
+		}
+		variant = m.UpdateTagColors
 	case "move_card_to_board":
 		if m.MoveCardToBoard == nil {
 			return nil, fmt.Errorf("MutationOp type=%q but MoveCardToBoard is nil", m.Type)
@@ -408,6 +419,9 @@ func (m *MutationOp) UnmarshalJSON(data []byte) error {
 	case "update_board_settings":
 		m.UpdateBoardSettings = &UpdateBoardSettingsOp{}
 		return json.Unmarshal(data, m.UpdateBoardSettings)
+	case "update_tag_colors":
+		m.UpdateTagColors = &UpdateTagColorsOp{}
+		return json.Unmarshal(data, m.UpdateTagColors)
 	case "move_card_to_board":
 		m.MoveCardToBoard = &MoveCardToBoardOp{}
 		return json.Unmarshal(data, m.MoveCardToBoard)
@@ -529,6 +543,11 @@ func Apply(b *models.Board, op MutationOp) error {
 			return fmt.Errorf("update_board_settings: missing params")
 		}
 		return board.ApplyUpdateBoardSettings(b, op.UpdateBoardSettings.Settings)
+	case "update_tag_colors":
+		if op.UpdateTagColors == nil {
+			return fmt.Errorf("update_tag_colors: missing params")
+		}
+		return board.ApplyUpdateTagColors(b, op.UpdateTagColors.TagColors)
 	case "move_card_to_board":
 		if op.MoveCardToBoard == nil {
 			return fmt.Errorf("move_card_to_board: missing params")

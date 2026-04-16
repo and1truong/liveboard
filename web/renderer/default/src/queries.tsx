@@ -42,6 +42,10 @@ export function useBoard(boardId: string | null): UseQueryResult<Board> {
   })
 }
 
+export function useTagColors(boardId: string | null): Record<string, string> {
+  return useBoard(boardId).data?.tag_colors ?? {}
+}
+
 export function useWorkspaceInfo(): UseQueryResult<WorkspaceInfo> {
   const client = useClient()
   return useQuery({

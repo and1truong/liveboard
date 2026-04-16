@@ -6,6 +6,8 @@ const CardDetailModal = lazy(() =>
   import('./CardDetailModal.js').then((m) => ({ default: m.CardDetailModal })),
 )
 import { useBoardSettings } from '../queries/useBoardSettings.js'
+import { useTagColors } from '../queries.js'
+import { tagChipStyle } from '../utils/tagColor.js'
 
 const PRIORITY_DOT: Record<string, string> = {
   critical: 'bg-red-600',
@@ -33,6 +35,7 @@ export function CardEditable({
   const inputRef = useRef<HTMLInputElement>(null)
   const mutation = useBoardMutation(boardId)
   const settings = useBoardSettings(boardId)
+  const tagColors = useTagColors(boardId)
   const showCheckbox = settings.show_checkbox
   const compact = settings.card_display_mode === 'compact'
   const committedRef = useRef(false)
@@ -134,11 +137,22 @@ export function CardEditable({
             >
               {card.tags && card.tags.length > 0 ? (
                 <ul className="flex flex-wrap gap-1">
-                  {card.tags.map((t) => (
-                    <li key={t} className="rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-xs text-slate-700 dark:text-slate-200">
-                      {t}
-                    </li>
-                  ))}
+                  {card.tags.map((t) => {
+                    const style = tagChipStyle(tagColors[t])
+                    return (
+                      <li
+                        key={t}
+                        style={style}
+                        className={
+                          style
+                            ? 'rounded px-1.5 py-0.5 text-xs'
+                            : 'rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-xs text-slate-700 dark:text-slate-200'
+                        }
+                      >
+                        {t}
+                      </li>
+                    )
+                  })}
                 </ul>
               ) : (
                 <span className="text-xs text-slate-300 dark:text-slate-600">Click to edit details</span>

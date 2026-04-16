@@ -156,6 +156,12 @@ func TestMutationOpUnmarshalAllVariants(t *testing.T) {
 			wantType:    "update_board_settings",
 			nonNilField: func(m *v1.MutationOp) bool { return m.UpdateBoardSettings != nil },
 		},
+		{
+			name:        "update_tag_colors",
+			jsonStr:     `{"type":"update_tag_colors","tag_colors":{"go":"#00ff00"}}`,
+			wantType:    "update_tag_colors",
+			nonNilField: func(m *v1.MutationOp) bool { return m.UpdateTagColors != nil },
+		},
 	}
 
 	for _, tc := range cases {
