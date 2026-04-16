@@ -30,6 +30,7 @@ func Router(d Deps) chi.Router {
 	r.Get("/cards/{cardId}/backlinks", d.getBacklinks)
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
+		r.Get("/list-lite", d.listBoardsLite)
 		r.Post("/", d.createBoard)
 		r.Get("/{slug}", d.getBoard)
 		r.Patch("/{slug}", d.renameBoard)

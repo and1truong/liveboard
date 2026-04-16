@@ -418,8 +418,7 @@ func (s *Server) mountShellRoutes(r chi.Router) {
 			rendererHandler.ServeHTTP(w, req)
 			return
 		}
-		// Intercept the index for adapter-config injection.
-		if path == "/app/" || path == "/app/index.html" {
+		if path == "/app/" || path == "/app/index.html" || strings.HasPrefix(path, "/app/b/") {
 			serveIndex(w, req)
 			return
 		}

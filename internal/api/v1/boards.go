@@ -103,6 +103,34 @@ func (d Deps) deleteBoard(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// boardListLiteEntry is a lightweight board descriptor for cascading selects
+// in the renderer (e.g. move-to-board picker).
+type boardListLiteEntry struct {
+	Slug    string   `json:"slug"`
+	Name    string   `json:"name"`
+	Columns []string `json:"columns"`
+}
+
+func (d Deps) listBoardsLite(w http.ResponseWriter, _ *http.Request) {
+	boards, err := d.Workspace.ListBoards()
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	entries := make([]boardListLiteEntry, 0, len(boards))
+	for i := range boards {
+		b := &boards[i]
+		slug := b.Name
+		cols := make([]string, 0, len(b.Columns))
+		for _, c := range b.Columns {
+			cols = append(cols, c.Name)
+		}
+		name := b.Name
+		entries = append(entries, boardListLiteEntry{Slug: slug, Name: name, Columns: cols})
+	}
+	_ = json.NewEncoder(w).Encode(entries)
+}
+
 func (d Deps) listBoards(w http.ResponseWriter, _ *http.Request) {
 	boards, err := d.Workspace.ListBoards()
 	if err != nil {

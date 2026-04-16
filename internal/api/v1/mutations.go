@@ -33,6 +33,11 @@ func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if req.Op.Type == "move_card_to_board" && req.Op.MoveCardToBoard != nil {
+		d.handleMoveCardToBoard(w, slug, boardPath, req.ClientVersion, req.Op.MoveCardToBoard)
+		return
+	}
+
 	updated, dispatchErr := Dispatch(d.Engine, boardPath, req.ClientVersion, req.Op)
 	if dispatchErr != nil {
 		writeError(w, dispatchErr)
@@ -46,6 +51,34 @@ func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
 		_ = d.Search.UpdateBoard(slug, updated)
 	}
 
+	_ = json.NewEncoder(w).Encode(updated)
+}
+
+func (d Deps) handleMoveCardToBoard(w http.ResponseWriter, slug, boardPath string, clientVersion int, p *MoveCardToBoardOp) {
+	dstPath, pathErr := d.Workspace.BoardPath(p.DstBoard)
+	if pathErr != nil {
+		writeError(w, pathErr)
+		return
+	}
+	if moveErr := d.Engine.MoveCardToBoard(boardPath, clientVersion, p.ColIdx, p.CardIdx, dstPath, p.DstColumn); moveErr != nil {
+		writeError(w, moveErr)
+		return
+	}
+	updated, loadErr := d.Engine.LoadBoard(boardPath)
+	if loadErr != nil {
+		writeError(w, loadErr)
+		return
+	}
+	if d.SSE != nil {
+		d.SSE.Publish(slug)
+		d.SSE.Publish(p.DstBoard)
+	}
+	if d.Search != nil {
+		_ = d.Search.UpdateBoard(slug, updated)
+		if dst, err := d.Engine.LoadBoard(dstPath); err == nil {
+			_ = d.Search.UpdateBoard(p.DstBoard, dst)
+		}
+	}
 	_ = json.NewEncoder(w).Encode(updated)
 }
 
@@ -72,6 +105,18 @@ type MutationOp struct {
 	UpdateBoardMembers   *UpdateBoardMembersOp   `json:"-"`
 	UpdateBoardIcon      *UpdateBoardIconOp      `json:"-"`
 	UpdateBoardSettings  *UpdateBoardSettingsOp  `json:"-"`
+	MoveCardToBoard      *MoveCardToBoardOp      `json:"-"`
+}
+
+// MoveCardToBoardOp are the params for a "move_card_to_board" mutation.
+// This op crosses boards: the HTTP handler special-cases it to drive the
+// atomic two-phase Engine.MoveCardToBoard. The Apply function here only
+// removes the card from the source board (for optimistic/parity purposes).
+type MoveCardToBoardOp struct {
+	ColIdx    int    `json:"col_idx"`
+	CardIdx   int    `json:"card_idx"`
+	DstBoard  string `json:"dst_board"`
+	DstColumn string `json:"dst_column"`
 }
 
 // AddCardOp are the params for an "add_card" mutation.
@@ -274,6 +319,11 @@ func (m MutationOp) MarshalJSON() ([]byte, error) {
 			return nil, fmt.Errorf("MutationOp type=%q but UpdateBoardSettings is nil", m.Type)
 		}
 		variant = m.UpdateBoardSettings
+	case "move_card_to_board":
+		if m.MoveCardToBoard == nil {
+			return nil, fmt.Errorf("MutationOp type=%q but MoveCardToBoard is nil", m.Type)
+		}
+		variant = m.MoveCardToBoard
 	default:
 		return nil, fmt.Errorf("unknown mutation op type: %q", m.Type)
 	}
@@ -358,6 +408,9 @@ func (m *MutationOp) UnmarshalJSON(data []byte) error {
 	case "update_board_settings":
 		m.UpdateBoardSettings = &UpdateBoardSettingsOp{}
 		return json.Unmarshal(data, m.UpdateBoardSettings)
+	case "move_card_to_board":
+		m.MoveCardToBoard = &MoveCardToBoardOp{}
+		return json.Unmarshal(data, m.MoveCardToBoard)
 	default:
 		return fmt.Errorf("unknown mutation op type: %q", head.Type)
 	}
@@ -476,6 +529,13 @@ func Apply(b *models.Board, op MutationOp) error {
 			return fmt.Errorf("update_board_settings: missing params")
 		}
 		return board.ApplyUpdateBoardSettings(b, op.UpdateBoardSettings.Settings)
+	case "move_card_to_board":
+		if op.MoveCardToBoard == nil {
+			return fmt.Errorf("move_card_to_board: missing params")
+		}
+		// Source-side effect: remove the card. The HTTP handler invokes the
+		// cross-board atomic write separately via Engine.MoveCardToBoard.
+		return board.ApplyDeleteCard(b, op.MoveCardToBoard.ColIdx, op.MoveCardToBoard.CardIdx)
 	default:
 		return fmt.Errorf("unknown mutation op type: %q", op.Type)
 	}
