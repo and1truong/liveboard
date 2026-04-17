@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"net/http"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
@@ -25,6 +27,7 @@ type boardSummary struct {
 	UpdatedAgo  string   `json:"updatedAgo,omitempty"`
 	CardCount   int      `json:"cardCount,omitempty"`
 	DoneCount   int      `json:"doneCount,omitempty"`
+	Pinned      bool     `json:"pinned,omitempty"`
 }
 
 // relativeTime returns a human-readable relative time string.
@@ -203,9 +206,64 @@ func (d Deps) listBoards(w http.ResponseWriter, _ *http.Request) {
 		writeError(w, err)
 		return
 	}
+
+	settings := web.LoadSettingsFromDir(d.Dir)
+	pinnedIdx := make(map[string]int, len(settings.PinnedBoards))
+	for i, slug := range settings.PinnedBoards {
+		pinnedIdx[slug] = i
+	}
+
 	summaries := make([]boardSummary, 0, len(boards))
 	for i := range boards {
-		summaries = append(summaries, toBoardSummary(&boards[i]))
+		s := toBoardSummary(&boards[i])
+		if _, ok := pinnedIdx[s.ID]; ok {
+			s.Pinned = true
+		}
+		summaries = append(summaries, s)
 	}
+
+	sort.SliceStable(summaries, func(i, j int) bool {
+		pi, iok := pinnedIdx[summaries[i].ID]
+		pj, jok := pinnedIdx[summaries[j].ID]
+		if iok && jok {
+			return pi < pj
+		}
+		if iok {
+			return true
+		}
+		if jok {
+			return false
+		}
+		return summaries[i].Name < summaries[j].Name
+	})
+
 	_ = json.NewEncoder(w).Encode(summaries)
+}
+
+func (d Deps) toggleBoardPin(w http.ResponseWriter, r *http.Request) {
+	slug := chi.URLParam(r, "slug")
+	err := web.MutateSettings(d.Dir, func(s *web.AppSettings) {
+		found := false
+		filtered := s.PinnedBoards[:0]
+		for _, p := range s.PinnedBoards {
+			if p == slug {
+				found = true
+			} else {
+				filtered = append(filtered, p)
+			}
+		}
+		if found {
+			s.PinnedBoards = filtered
+		} else {
+			s.PinnedBoards = append(s.PinnedBoards, slug)
+		}
+	})
+	if err != nil {
+		writeError(w, err)
+		return
+	}
+	if d.SSE != nil {
+		d.SSE.PublishBoardList()
+	}
+	w.WriteHeader(http.StatusNoContent)
 }

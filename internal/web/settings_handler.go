@@ -7,9 +7,15 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 )
+
+// settingsMu serializes read-modify-write cycles on settings.json so concurrent
+// mutations do not lose updates. Callers performing load+mutate+save must go
+// through MutateSettings.
+var settingsMu sync.Mutex
 
 // LayoutSettings holds visual settings rendered into layout.html for FOUC prevention.
 // Embedded in all page models so the layout template can access them uniformly.
@@ -104,6 +110,16 @@ func SaveSettingsToDir(dir string, s AppSettings) error {
 		return err
 	}
 	return os.WriteFile(filepath.Join(dir, "settings.json"), data, 0644)
+}
+
+// MutateSettings atomically loads settings, applies fn, and saves the result.
+// Concurrent callers are serialized so read-modify-write cannot lose updates.
+func MutateSettings(dir string, fn func(*AppSettings)) error {
+	settingsMu.Lock()
+	defer settingsMu.Unlock()
+	s := LoadSettingsFromDir(dir)
+	fn(&s)
+	return SaveSettingsToDir(dir, s)
 }
 
 // loadSettings reads settings.json, returning defaults if missing.

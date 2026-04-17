@@ -169,6 +169,9 @@ export class Client {
   deleteBoard(boardId: string): Promise<void> {
     return this.request({ kind: 'request', method: 'board.delete', params: { boardId } })
   }
+  togglePin(boardId: string): Promise<void> {
+    return this.request({ kind: 'request', method: 'board.pin', params: { boardId } })
+  }
   search(query: string, limit?: number): Promise<SearchHit[]> {
     return this.request({ kind: 'request', method: 'search', params: { query, limit } })
   }

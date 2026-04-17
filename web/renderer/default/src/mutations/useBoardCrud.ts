@@ -46,6 +46,16 @@ interface DeleteCtx {
   fallbackActive: string | null
 }
 
+export function useTogglePin(): UseMutationResult<void, Error, string> {
+  const client = useClient()
+  const qc = useQueryClient()
+  return useMutation<void, Error, string>({
+    mutationFn: (boardId) => client.togglePin(boardId),
+    onSuccess: () => void qc.invalidateQueries({ queryKey: ['boards'] }),
+    onError: (err) => errorToast(code(err)),
+  })
+}
+
 export function useDeleteBoard(): UseMutationResult<void, Error, string, DeleteCtx> {
   const client = useClient()
   const qc = useQueryClient()

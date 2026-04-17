@@ -39,6 +39,7 @@ func Router(d Deps) chi.Router {
 		r.Patch("/{slug}", d.renameBoard)
 		r.Delete("/{slug}", d.deleteBoard)
 		r.Post("/{slug}/mutations", d.postMutation)
+		r.Post("/{slug}/pin", d.toggleBoardPin)
 		r.Get("/{slug}/settings", d.getBoardSettings)
 		r.Put("/{slug}/settings", d.putBoardSettings)
 	})

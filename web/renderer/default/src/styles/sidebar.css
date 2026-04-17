@@ -284,6 +284,38 @@
 
 .lb-row--active .lb-row__menu { color: rgb(255 255 255 / 0.8); }
 
+.lb-row__pin-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border: 0;
+  background: transparent;
+  color: var(--sb-text-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  flex-shrink: 0;
+  transition: opacity 120ms var(--sb-ease), background-color 120ms var(--sb-ease), color 120ms var(--sb-ease);
+}
+
+.lb-row:hover .lb-row__pin-btn,
+.lb-row__pin-btn--active {
+  opacity: 1;
+}
+
+.lb-row__pin-btn--active {
+  color: var(--accent-500);
+}
+
+.lb-row__pin-btn:hover {
+  background: color-mix(in srgb, currentColor 12%, transparent);
+}
+
+.lb-row--active .lb-row__pin-btn { color: rgb(255 255 255 / 0.7); }
+.lb-row--active .lb-row__pin-btn--active { color: #fff; }
+
 /* Add board row */
 
 .lb-row--add {

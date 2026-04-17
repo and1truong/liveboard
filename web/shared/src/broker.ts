@@ -134,6 +134,9 @@ export class Broker {
       case 'board.delete':
         await this.adapter.deleteBoard(req.params.boardId)
         return null
+      case 'board.pin':
+        await this.adapter.togglePin(req.params.boardId)
+        return null
       case 'search':
         return this.adapter.search(req.params.query, req.params.limit)
       case 'backlinks':

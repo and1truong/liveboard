@@ -10,6 +10,7 @@ export interface BoardSummary {
   updatedAgo?: string
   cardCount?: number
   doneCount?: number
+  pinned?: boolean
 }
 
 export interface WorkspaceInfo {
@@ -53,6 +54,7 @@ export interface BackendAdapter {
   createBoard(name: string): Promise<BoardSummary>
   renameBoard(boardId: string, newName: string): Promise<BoardSummary>
   deleteBoard(boardId: string): Promise<void>
+  togglePin(boardId: string): Promise<void>
   onBoardListUpdate(handler: () => void): Subscription
   search(query: string, limit?: number): Promise<SearchHit[]>
   backlinks(cardId: string): Promise<BacklinkHit[]>

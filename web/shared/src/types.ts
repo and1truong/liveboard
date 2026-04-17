@@ -62,6 +62,7 @@ export interface AppSettings {
   card_display_mode: string
   keyboard_shortcuts: boolean
   week_start: string
+  pinned_boards: string[]
 }
 
 // Tagged union — discriminator is `type`.

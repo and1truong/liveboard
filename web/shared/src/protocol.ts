@@ -38,6 +38,7 @@ export type Request =
       method: 'appSettings.put'
       params: { patch: Partial<AppSettings> }
     }
+  | { id: string; kind: 'request'; method: 'board.pin'; params: { boardId: string } }
 
 export type ErrorCode =
   | 'NOT_FOUND'

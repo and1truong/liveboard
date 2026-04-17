@@ -392,6 +392,58 @@ func TestDispatchAllVariants(t *testing.T) {
 	}
 }
 
+func TestApply_moveCardToBoard(t *testing.T) {
+	deps := newTestDeps(t)
+	path := filepath.Join(deps.Workspace.Dir, "demo.md")
+	op := v1.MutationOp{
+		Type: "move_card_to_board",
+		MoveCardToBoard: &v1.MoveCardToBoardOp{
+			ColIdx: 0, CardIdx: 0, DstBoard: "other", DstColumn: "Inbox",
+		},
+	}
+	b, err := v1.Dispatch(deps.Engine, path, -1, op)
+	if err != nil {
+		t.Fatalf("dispatch: %v", err)
+	}
+	if b == nil {
+		t.Fatal("expected non-nil board")
+	}
+	if len(b.Columns) == 0 || len(b.Columns[0].Cards) != 0 {
+		t.Errorf("expected card removed from source, got columns=%+v", b.Columns)
+	}
+}
+
+func TestApply_nilParams(t *testing.T) {
+	nilOps := []v1.MutationOp{
+		{Type: "move_card"},
+		{Type: "reorder_card"},
+		{Type: "edit_card"},
+		{Type: "delete_card"},
+		{Type: "complete_card"},
+		{Type: "tag_card"},
+		{Type: "add_column"},
+		{Type: "rename_column"},
+		{Type: "delete_column"},
+		{Type: "move_column"},
+		{Type: "sort_column"},
+		{Type: "toggle_column_collapse"},
+		{Type: "update_board_meta"},
+		{Type: "update_board_members"},
+		{Type: "update_board_icon"},
+		{Type: "update_board_settings"},
+		{Type: "update_tag_colors"},
+		{Type: "move_card_to_board"},
+	}
+	b := &models.Board{Columns: []models.Column{{Name: "Todo", Cards: []models.Card{{Title: "x"}}}}}
+	for _, op := range nilOps {
+		t.Run(op.Type, func(t *testing.T) {
+			if err := v1.Apply(b, op); err == nil {
+				t.Errorf("want error for nil params on %q, got nil", op.Type)
+			}
+		})
+	}
+}
+
 func TestDispatchRespectsClientVersion(t *testing.T) {
 	deps := newTestDeps(t)
 	path := filepath.Join(deps.Workspace.Dir, "demo.md")

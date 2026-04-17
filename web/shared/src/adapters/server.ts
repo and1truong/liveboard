@@ -101,6 +101,9 @@ export class ServerAdapter implements BackendAdapter {
   deleteBoard(boardId: string): Promise<void> {
     return this.deleteEmpty(`/boards/${encodeURIComponent(boardId)}`)
   }
+  async togglePin(boardId: string): Promise<void> {
+    await this.request('POST', `/boards/${encodeURIComponent(boardId)}/pin`)
+  }
   getBoard(boardId: string): Promise<Board> {
     return this.getJSON<Board>(`/boards/${encodeURIComponent(boardId)}`)
   }

@@ -68,15 +68,31 @@ export class LocalAdapter implements BackendAdapter {
 
   async listBoards(): Promise<BoardSummary[]> {
     const ws = this.loadWorkspace()
-    return ws.boardIds.map((id) => {
+    const settings = await this.getAppSettings()
+    const pins = settings.pinned_boards
+    const pinnedIdx = new Map(pins.map((id, i) => [id, i]))
+
+    const summaries: BoardSummary[] = ws.boardIds.map((id) => {
       const b = this.loadBoard(id)
       return {
         id,
         name: b.name ?? id,
         icon: b.icon,
         version: b.version ?? 0,
+        pinned: pinnedIdx.has(id) || undefined,
       }
     })
+
+    summaries.sort((a, b) => {
+      const pi = pinnedIdx.get(a.id)
+      const pj = pinnedIdx.get(b.id)
+      if (pi !== undefined && pj !== undefined) return pi - pj
+      if (pi !== undefined) return -1
+      if (pj !== undefined) return 1
+      return a.name.localeCompare(b.name)
+    })
+
+    return summaries
   }
 
   async listBoardsLite(): Promise<BoardListLiteEntry[]> {
@@ -194,12 +210,22 @@ export class LocalAdapter implements BackendAdapter {
       card_display_mode: saved.card_display_mode ?? 'full',
       keyboard_shortcuts: saved.keyboard_shortcuts ?? false,
       week_start: saved.week_start ?? 'sunday',
+      pinned_boards: saved.pinned_boards ?? [],
     }
   }
 
   async putAppSettings(patch: Partial<AppSettings>): Promise<void> {
     const current = await this.getAppSettings()
     this.storage.set('liveboard:app_settings', JSON.stringify({ ...current, ...patch }))
+  }
+
+  async togglePin(boardId: string): Promise<void> {
+    const settings = await this.getAppSettings()
+    const pins = settings.pinned_boards
+    const idx = pins.indexOf(boardId)
+    const next = idx >= 0 ? pins.filter((_, i) => i !== idx) : [...pins, boardId]
+    await this.putAppSettings({ pinned_boards: next })
+    this.publishBoardListUpdate()
   }
 
   onBoardListUpdate(handler: () => void): Subscription {

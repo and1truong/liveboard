@@ -22,6 +22,7 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   card_display_mode: 'full',
   keyboard_shortcuts: false,
   week_start: 'sunday',
+  pinned_boards: [],
 }
 
 export function useAppSettings(): AppSettings {
