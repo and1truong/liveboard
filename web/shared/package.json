@@ -1,11 +1,66 @@
 {
   "name": "@liveboard/shared",
-  "version": "0.0.0",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
+  "files": ["dist"],
+  "main": "./dist/index.js",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./adapter": {
+      "types": "./dist/adapter.d.ts",
+      "import": "./dist/adapter.js"
+    },
+    "./broker": {
+      "types": "./dist/broker.d.ts",
+      "import": "./dist/broker.js"
+    },
+    "./client": {
+      "types": "./dist/client.d.ts",
+      "import": "./dist/client.js"
+    },
+    "./protocol": {
+      "types": "./dist/protocol.d.ts",
+      "import": "./dist/protocol.js"
+    },
+    "./transport": {
+      "types": "./dist/transport.d.ts",
+      "import": "./dist/transport.js"
+    },
+    "./boardOps": {
+      "types": "./dist/boardOps.d.ts",
+      "import": "./dist/boardOps.js"
+    },
+    "./types": {
+      "types": "./dist/types.d.ts",
+      "import": "./dist/types.js"
+    },
+    "./adapters/local": {
+      "types": "./dist/adapters/local.d.ts",
+      "import": "./dist/adapters/local.js"
+    },
+    "./adapters/server": {
+      "types": "./dist/adapters/server.d.ts",
+      "import": "./dist/adapters/server.js"
+    },
+    "./adapters/local-storage-driver": {
+      "types": "./dist/adapters/local-storage-driver.d.ts",
+      "import": "./dist/adapters/local-storage-driver.js"
+    },
+    "./transports/post-message": {
+      "types": "./dist/transports/post-message.d.ts",
+      "import": "./dist/transports/post-message.js"
+    }
+  },
   "scripts": {
+    "build": "tsc --project tsconfig.build.json",
     "test": "bun test",
     "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@types/bun": "latest",

@@ -9,7 +9,7 @@ import type {
   Subscription,
   WorkspaceInfo,
 } from '../adapter.js'
-import type { Board, BoardSettings, MutationOp } from '../types.js'
+import type { AppSettings, Board, BoardSettings, MutationOp } from '../types.js'
 import { OpError } from '../types.js'
 import { ProtocolError } from '../protocol.js'
 import { applyOp } from '../boardOps.js'
@@ -177,6 +177,31 @@ export class LocalAdapter implements BackendAdapter {
     this.publishUpdate(boardId, board.version)
   }
 
+  async getAppSettings(): Promise<AppSettings> {
+    const raw = this.storage.get('liveboard:app_settings')
+    const saved = raw ? (JSON.parse(raw) as Partial<AppSettings>) : {}
+    return {
+      site_name: saved.site_name ?? 'LiveBoard',
+      theme: saved.theme ?? 'system',
+      color_theme: saved.color_theme ?? 'aqua',
+      font_family: saved.font_family ?? 'system',
+      column_width: saved.column_width ?? 280,
+      sidebar_position: saved.sidebar_position ?? 'left',
+      default_columns: saved.default_columns ?? ['not now', 'maybe?', 'done'],
+      show_checkbox: saved.show_checkbox ?? true,
+      newline_trigger: saved.newline_trigger ?? 'shift-enter',
+      card_position: saved.card_position ?? 'append',
+      card_display_mode: saved.card_display_mode ?? 'full',
+      keyboard_shortcuts: saved.keyboard_shortcuts ?? false,
+      week_start: saved.week_start ?? 'monday',
+    }
+  }
+
+  async putAppSettings(patch: Partial<AppSettings>): Promise<void> {
+    const current = await this.getAppSettings()
+    this.storage.set('liveboard:app_settings', JSON.stringify({ ...current, ...patch }))
+  }
+
   onBoardListUpdate(handler: () => void): Subscription {
     this.boardListHandlers.add(handler)
     return {
@@ -262,7 +287,7 @@ export class LocalAdapter implements BackendAdapter {
       for (let colIdx = 0; colIdx < cols.length; colIdx++) {
         const cards = cols[colIdx]?.cards ?? []
         for (let cardIdx = 0; cardIdx < cards.length; cardIdx++) {
-          const c = cards[cardIdx]
+          const c = cards[cardIdx]!
           const haystack = `${c.title ?? ''} ${c.body ?? ''} ${(c.tags ?? []).join(' ')}`.toLowerCase()
           if (haystack.includes(q)) {
             hits.push({
@@ -293,14 +318,14 @@ export class LocalAdapter implements BackendAdapter {
       for (let c = 0; c < cols.length; c++) {
         const cards = cols[c]?.cards ?? []
         for (let k = 0; k < cards.length; k++) {
-          const links = cards[k].links ?? []
+          const links = cards[k]!.links ?? []
           if (links.some((l) => l.endsWith(target))) {
             out.push({
               boardId: id,
               boardName: board.name ?? id,
               colIdx: c,
               cardIdx: k,
-              cardTitle: cards[k].title ?? '',
+              cardTitle: cards[k]!.title ?? '',
             })
           }
         }

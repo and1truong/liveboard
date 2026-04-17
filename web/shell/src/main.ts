@@ -8,6 +8,7 @@ import type { BackendAdapter } from '../../shared/src/adapter.js'
 interface LiveboardConfig {
   adapter: 'local' | 'server'
   baseUrl?: string
+  rendererUrl?: string
 }
 
 const SHELL_VERSION = '0.0.1'
@@ -56,9 +57,10 @@ function bootstrap(): void {
 
   const params = new URLSearchParams(window.location.search)
   const mode = params.get('renderer') ?? 'default'
-  iframe.src = mode === 'stub' ? '/app/renderer-stub/' : '/app/renderer/default/'
+  const cfg = readConfig()
+  iframe.src = cfg.rendererUrl ?? (mode === 'stub' ? '/app/renderer-stub/' : '/app/renderer/default/')
 
-  const adapter = makeAdapter(readConfig())
+  const adapter = makeAdapter(cfg)
   const transport = shellTransport(iframe, window.location.origin)
   const initial = parseUrl()
   const broker = new Broker(transport, adapter, {

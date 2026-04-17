@@ -206,3 +206,16 @@ ipad: ipad-project
 		-destination '$(SIMULATOR_DEST)' \
 		-configuration Debug \
 		build
+
+
+.PHONY: npm-build
+npm-build:
+	cd web/shared && bun run build
+	cd web/shell && bun run build:npm
+	cd web/renderer/default && bun run build:npm
+
+.PHONY: npm-publish
+npm-publish: npm-build
+	cd web/shared && bun publish
+	cd web/shell && bun publish
+	cd web/renderer/default && bun publish

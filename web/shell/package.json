@@ -1,11 +1,16 @@
 {
   "name": "@liveboard/shell",
-  "private": true,
+  "version": "0.1.0",
   "type": "module",
+  "files": ["dist-npm"],
   "scripts": {
     "dev": "bunx --bun vite",
     "build": "bunx --bun vite build",
+    "build:npm": "LIVEBOARD_BASE=./ bunx --bun vite build --outDir dist-npm",
     "typecheck": "tsc --noEmit"
+  },
+  "publishConfig": {
+    "access": "public"
   },
   "devDependencies": {
     "@types/bun": "latest",

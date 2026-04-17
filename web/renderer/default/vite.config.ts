@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
-  base: '/app/renderer/default/',
+  base: process.env.LIVEBOARD_RENDERER_BASE ?? '/app/renderer/default/',
   plugins: [react()],
   resolve: {
     alias: {

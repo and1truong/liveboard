@@ -6,5 +6,6 @@ LiveBoard.app/
 /tmp/
 web/css/liveboard.css
 dist/
+dist-npm/
 ipad/Gobridge.xcframework/
 ipad/LiveBoard.xcodeproj/

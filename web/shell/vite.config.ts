@@ -12,7 +12,7 @@ const here = fileURLToPath(new URL('.', import.meta.url))
 //
 // Prod: each project builds to its own dist/ and Go embeds both via go:embed.
 export default defineConfig({
-  base: '/app/',
+  base: process.env.LIVEBOARD_BASE ?? '/app/',
   resolve: {
     alias: {
       '@shared': fileURLToPath(new URL('../shared/src', import.meta.url)),
