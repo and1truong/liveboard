@@ -161,7 +161,7 @@ func (h *Handler) loadSettings() AppSettings {
 	return LoadSettingsFromDir(h.ws.Dir)
 }
 func (h *Handler) saveSettings(s AppSettings) error {
-	return saveSettingsToDir(h.ws.Dir, s)
+	return SaveSettingsToDir(h.ws.Dir, s)
 }
 func (h *Handler) layoutSettings(s AppSettings) LayoutSettings {
 	return h.Base.layoutSettings(s)

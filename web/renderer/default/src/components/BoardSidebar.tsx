@@ -6,6 +6,7 @@ import { EmptyState } from './EmptyState.js'
 import { BoardRow } from './BoardRow.js'
 import { AddBoardButton } from './AddBoardButton.js'
 import { ThemePicker } from './ThemePicker.js'
+import { useGlobalSettingsContext } from '../contexts/GlobalSettingsContext.js'
 
 export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JSX.Element {
   const boards = useBoardList()
@@ -13,6 +14,7 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
   const { active, setActive } = useActiveBoard()
   const activeBoard = boards.data?.find((b) => b.id === active)
   const [menuOpen, setMenuOpen] = useState(false)
+  const { openSettings: openGlobalSettings } = useGlobalSettingsContext()
   const menuRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
@@ -91,10 +93,15 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
               <span className="lb-popover__icon" aria-hidden>&#128276;</span>
               <span>Reminders</span>
             </a>
-            <a href="/settings" className="lb-popover__item" role="menuitem">
+            <button
+              type="button"
+              onClick={() => { setMenuOpen(false); openGlobalSettings() }}
+              className="lb-popover__item"
+              role="menuitem"
+            >
               <span className="lb-popover__icon" aria-hidden>&#9881;</span>
               <span>Settings</span>
-            </a>
+            </button>
             <hr className="lb-popover__sep" />
             <a
               href="https://and1truong.github.io/liveboard/"

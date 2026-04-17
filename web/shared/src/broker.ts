@@ -105,6 +105,11 @@ export class Broker {
       case 'settings.put':
         await this.adapter.putBoardSettings(req.params.boardId, req.params.patch)
         return null
+      case 'appSettings.get':
+        return this.adapter.getAppSettings()
+      case 'appSettings.put':
+        await this.adapter.putAppSettings(req.params.patch)
+        return null
       case 'subscribe': {
         const { boardId } = req.params
         this.subs.get(boardId)?.close()

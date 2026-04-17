@@ -193,7 +193,7 @@ export class LocalAdapter implements BackendAdapter {
       card_position: saved.card_position ?? 'append',
       card_display_mode: saved.card_display_mode ?? 'full',
       keyboard_shortcuts: saved.keyboard_shortcuts ?? false,
-      week_start: saved.week_start ?? 'monday',
+      week_start: saved.week_start ?? 'sunday',
     }
   }
 

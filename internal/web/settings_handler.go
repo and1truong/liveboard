@@ -82,6 +82,7 @@ func defaultSettings() AppSettings {
 		NewLineTrigger:  "shift-enter",
 		CardPosition:    "append",
 		CardDisplayMode: "full",
+		WeekStart:       "sunday",
 	}
 }
 
@@ -96,8 +97,8 @@ func LoadSettingsFromDir(dir string) AppSettings {
 	return s
 }
 
-// saveSettingsToDir writes settings.json to dir.
-func saveSettingsToDir(dir string, s AppSettings) error {
+// SaveSettingsToDir writes settings.json to dir.
+func SaveSettingsToDir(dir string, s AppSettings) error {
 	data, err := json.MarshalIndent(s, "", "  ")
 	if err != nil {
 		return err
@@ -112,7 +113,7 @@ func (b *Base) loadSettings() AppSettings {
 
 // saveSettings writes settings.json.
 func (b *Base) saveSettings(s AppSettings) error {
-	return saveSettingsToDir(b.ws.Dir, s)
+	return SaveSettingsToDir(b.ws.Dir, s)
 }
 
 // SettingsHandler handles settings page and API.
@@ -165,8 +166,8 @@ func oneOf(val, def string, allowed ...string) string {
 	return def
 }
 
-// sanitizeSettings clamps and normalizes settings values to valid ranges.
-func sanitizeSettings(s *AppSettings) {
+// SanitizeSettings clamps and normalizes settings values to valid ranges.
+func SanitizeSettings(s *AppSettings) {
 	if s.ColumnWidth < 180 || s.ColumnWidth > 600 {
 		s.ColumnWidth = 280
 	}
@@ -207,7 +208,7 @@ func (sh *SettingsHandler) SettingsAPIHandler() http.Handler {
 				http.Error(w, `{"error":"invalid json"}`, http.StatusBadRequest)
 				return
 			}
-			sanitizeSettings(&s)
+			SanitizeSettings(&s)
 			if err := sh.saveSettings(s); err != nil {
 				http.Error(w, `{"error":"save failed"}`, http.StatusInternalServerError)
 				return

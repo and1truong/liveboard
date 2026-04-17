@@ -1,7 +1,7 @@
 // Wire format for iframe ↔ shell postMessage communication.
 // Tagged unions — discriminator `kind`. Requests and responses correlate by `id`.
 
-import type { MutationOp, BoardSettings } from './types.js'
+import type { AppSettings, MutationOp, BoardSettings } from './types.js'
 
 export const PROTOCOL_VERSION = 1 as const
 
@@ -31,6 +31,13 @@ export type Request =
   | { id: string; kind: 'request'; method: 'search'; params: { query: string; limit?: number } }
   | { id: string; kind: 'request'; method: 'backlinks'; params: { cardId: string } }
   | { id: string; kind: 'request'; method: 'board.listLite'; params?: undefined }
+  | { id: string; kind: 'request'; method: 'appSettings.get'; params?: undefined }
+  | {
+      id: string
+      kind: 'request'
+      method: 'appSettings.put'
+      params: { patch: Partial<AppSettings> }
+    }
 
 export type ErrorCode =
   | 'NOT_FOUND'

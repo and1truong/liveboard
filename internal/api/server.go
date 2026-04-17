@@ -324,6 +324,7 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 		}
 	}
 	r.Mount("/api/v1", apiv1.Router(apiv1.Deps{
+		Dir:       s.ws.Dir,
 		Workspace: s.ws,
 		Engine:    s.eng,
 		SSE:       s.webHandler.SSE,

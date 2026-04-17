@@ -384,21 +384,21 @@ func TestValidColorThemes(t *testing.T) {
 func TestSanitizeSettingsSiteName(t *testing.T) {
 	// Empty → default
 	s := AppSettings{}
-	sanitizeSettings(&s)
+	SanitizeSettings(&s)
 	if s.SiteName != "LiveBoard" {
 		t.Errorf("empty site_name = %q, want 'LiveBoard'", s.SiteName)
 	}
 
 	// Whitespace-only → default
 	s = AppSettings{SiteName: "   "}
-	sanitizeSettings(&s)
+	SanitizeSettings(&s)
 	if s.SiteName != "LiveBoard" {
 		t.Errorf("whitespace site_name = %q, want 'LiveBoard'", s.SiteName)
 	}
 
 	// Trimmed
 	s = AppSettings{SiteName: "  MyBoard  "}
-	sanitizeSettings(&s)
+	SanitizeSettings(&s)
 	if s.SiteName != "MyBoard" {
 		t.Errorf("trimmed site_name = %q, want 'MyBoard'", s.SiteName)
 	}
@@ -406,7 +406,7 @@ func TestSanitizeSettingsSiteName(t *testing.T) {
 	// Truncated to 50 runes
 	long := strings.Repeat("あ", 60)
 	s = AppSettings{SiteName: long}
-	sanitizeSettings(&s)
+	SanitizeSettings(&s)
 	if len([]rune(s.SiteName)) != 50 {
 		t.Errorf("truncated site_name rune len = %d, want 50", len([]rune(s.SiteName)))
 	}
@@ -414,14 +414,14 @@ func TestSanitizeSettingsSiteName(t *testing.T) {
 	// Exactly 50 runes — no truncation
 	exact := strings.Repeat("x", 50)
 	s = AppSettings{SiteName: exact}
-	sanitizeSettings(&s)
+	SanitizeSettings(&s)
 	if s.SiteName != exact {
 		t.Errorf("50-char site_name was modified")
 	}
 
 	// Valid name passes through
 	s = AppSettings{SiteName: "Acme Corp"}
-	sanitizeSettings(&s)
+	SanitizeSettings(&s)
 	if s.SiteName != "Acme Corp" {
 		t.Errorf("valid site_name = %q", s.SiteName)
 	}

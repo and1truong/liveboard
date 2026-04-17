@@ -1,4 +1,4 @@
-import type { Board, BoardSettings } from './types.js'
+import type { AppSettings, Board, BoardSettings } from './types.js'
 import type { BacklinkHit, BoardListLiteEntry, BoardSummary, ResolvedSettings, SearchHit, WorkspaceInfo } from './adapter.js'
 import type { MutationOp } from './types.js'
 import type { Event as ProtoEvent, Message, Request, Welcome } from './protocol.js'
@@ -138,6 +138,16 @@ export class Client {
       kind: 'request',
       method: 'settings.put',
       params: { boardId, patch },
+    })
+  }
+  getAppSettings(): Promise<AppSettings> {
+    return this.request({ kind: 'request', method: 'appSettings.get' })
+  }
+  putAppSettings(patch: Partial<AppSettings>): Promise<void> {
+    return this.request({
+      kind: 'request',
+      method: 'appSettings.put',
+      params: { patch },
     })
   }
   subscribe(boardId: string): Promise<void> {

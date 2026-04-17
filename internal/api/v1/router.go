@@ -14,6 +14,7 @@ import (
 
 // Deps is the set of dependencies the v1 handlers need.
 type Deps struct {
+	Dir       string // workspace directory for settings.json
 	Workspace *workspace.Workspace
 	Engine    *board.Engine
 	SSE       *web.SSEBroker
@@ -24,6 +25,8 @@ type Deps struct {
 func Router(d Deps) chi.Router {
 	r := chi.NewRouter()
 	r.Use(jsonContentType)
+	r.Get("/settings", d.getAppSettings)
+	r.Put("/settings", d.putAppSettings)
 	r.Get("/workspace", d.getWorkspace)
 	r.Get("/events", d.getEvents)
 	r.Get("/search", d.getSearch)

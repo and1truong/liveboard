@@ -1,4 +1,4 @@
-import type { Board, BoardSettings, MutationOp } from './types.js'
+import type { AppSettings, Board, BoardSettings, MutationOp } from './types.js'
 
 export interface BoardSummary {
   id: string
@@ -47,6 +47,8 @@ export interface BackendAdapter {
   mutateBoard(boardId: string, clientVersion: number, op: MutationOp): Promise<Board>
   getSettings(boardId: string): Promise<ResolvedSettings>
   putBoardSettings(boardId: string, patch: Partial<BoardSettings>): Promise<void>
+  getAppSettings(): Promise<AppSettings>
+  putAppSettings(patch: Partial<AppSettings>): Promise<void>
   subscribe(boardId: string, onUpdate: BoardUpdateHandler): Subscription
   createBoard(name: string): Promise<BoardSummary>
   renameBoard(boardId: string, newName: string): Promise<BoardSummary>

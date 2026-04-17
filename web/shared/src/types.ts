@@ -47,6 +47,23 @@ export interface BoardSettings {
   week_start?: string | null
 }
 
+// Mirrors internal/web.AppSettings — concrete workspace-level preferences.
+export interface AppSettings {
+  site_name: string
+  theme: string
+  color_theme: string
+  font_family: string
+  column_width: number
+  sidebar_position: string
+  default_columns: string[]
+  show_checkbox: boolean
+  newline_trigger: string
+  card_position: string
+  card_display_mode: string
+  keyboard_shortcuts: boolean
+  week_start: string
+}
+
 // Tagged union — discriminator is `type`.
 export type MutationOp =
   | { type: 'add_card'; column: string; title: string; prepend?: boolean }

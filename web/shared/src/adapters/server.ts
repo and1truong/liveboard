@@ -1,4 +1,4 @@
-import type { Board, BoardSettings, MutationOp } from '../types.js'
+import type { AppSettings, Board, BoardSettings, MutationOp } from '../types.js'
 import type {
   BackendAdapter,
   BacklinkHit,
@@ -115,6 +115,12 @@ export class ServerAdapter implements BackendAdapter {
   }
   putBoardSettings(boardId: string, patch: Partial<BoardSettings>): Promise<void> {
     return this.putEmpty(`/boards/${encodeURIComponent(boardId)}/settings`, patch)
+  }
+  getAppSettings(): Promise<AppSettings> {
+    return this.getJSON<AppSettings>('/settings')
+  }
+  putAppSettings(patch: Partial<AppSettings>): Promise<void> {
+    return this.putEmpty('/settings', patch)
   }
   async search(query: string, limit = 20): Promise<SearchHit[]> {
     const params = new URLSearchParams({ q: query, limit: String(limit) })

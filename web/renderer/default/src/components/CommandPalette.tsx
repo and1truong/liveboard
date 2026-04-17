@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Command } from 'cmdk'
-import { Plus, Pencil, LayoutGrid, List, CalendarDays, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Settings, LayoutGrid, List, CalendarDays, Trash2 } from 'lucide-react'
 import { useBoardList } from '../queries.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
@@ -14,6 +14,8 @@ import {
 } from '../mutations/useBoardCrud.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { useBoardSettings, useUpdateSettings } from '../queries/useBoardSettings.js'
+import { useBoardSettingsContext } from '../contexts/BoardSettingsContext.js'
+import { useGlobalSettingsContext } from '../contexts/GlobalSettingsContext.js'
 
 const VIEW_MODES: { value: 'board' | 'list' | 'calendar'; label: string }[] = [
   { value: 'board', label: 'Board' },
@@ -68,6 +70,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
   const deleteMut = useDeleteBoard()
   const settings = useBoardSettings(active)
   const updateSettingsMut = useUpdateSettings(active ?? '')
+  const { openSettings } = useBoardSettingsContext()
+  const { openSettings: openGlobalSettings } = useGlobalSettingsContext()
 
   const activeBoard = boards.data?.find((b) => b.id === active) ?? null
   const activeName = activeBoard?.name ?? ''
@@ -205,6 +209,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                         <span className="flex-1 min-w-0">Rename current board</span>
                         {ARROW}
                       </Command.Item>
+                      <Command.Item
+                        value="action board settings"
+                        onSelect={() => { openSettings(); close() }}
+                        className={ITEM_BASE}
+                      >
+                        <span aria-hidden className={ICON_CLS}><Settings size={15} /></span>
+                        <span className="flex-1 min-w-0">Board settings</span>
+                        {ARROW}
+                      </Command.Item>
                       {VIEW_MODES.filter((m) => m.value !== settings.view_mode).map((m) => (
                         <Command.Item
                           key={`view-${m.value}`}
@@ -244,6 +257,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                       </Command.Item>
                     </>
                   )}
+                  <Command.Item
+                    value="action app settings workspace preferences"
+                    onSelect={() => { openGlobalSettings(); close() }}
+                    className={ITEM_BASE}
+                  >
+                    <span aria-hidden className={ICON_CLS}><Settings size={15} /></span>
+                    <span className="flex-1 min-w-0">App settings</span>
+                    {ARROW}
+                  </Command.Item>
                 </Command.Group>
                 {hits.length > 0 && (
                   <Command.Group heading="Cards" className="[&_[cmdk-group-heading]]:px-3 [&_[cmdk-group-heading]]:pt-3 [&_[cmdk-group-heading]]:pb-1 [&_[cmdk-group-heading]]:text-xs [&_[cmdk-group-heading]]:uppercase [&_[cmdk-group-heading]]:font-bold [&_[cmdk-group-heading]]:text-[color:var(--color-text-muted)]">
