@@ -31,19 +31,7 @@ func setupShellTest(t *testing.T) *Server {
 	return NewServer(ws, ws.Engine, false, false, false, "test", "", "")
 }
 
-func TestShellRoute_Disabled(t *testing.T) {
-	t.Setenv("LIVEBOARD_APP_SHELL", "")
-	s := setupShellTest(t)
-	req := httptest.NewRequest(http.MethodGet, "/app/", nil)
-	rec := httptest.NewRecorder()
-	s.Router().ServeHTTP(rec, req)
-	if rec.Code == http.StatusOK {
-		t.Fatalf("shell route should be 404 when flag disabled; got %d", rec.Code)
-	}
-}
-
 func TestShellRoute_Enabled(t *testing.T) {
-	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	s := setupShellTest(t)
 	req := httptest.NewRequest(http.MethodGet, "/app/", nil)
 	rec := httptest.NewRecorder()
@@ -57,7 +45,6 @@ func TestShellRoute_Enabled(t *testing.T) {
 }
 
 func TestShellIndex_InjectsServerConfig(t *testing.T) {
-	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	s := setupShellTest(t)
 	req := httptest.NewRequest(http.MethodGet, "/app/", nil)
 	rec := httptest.NewRecorder()
@@ -75,7 +62,6 @@ func TestShellIndex_InjectsServerConfig(t *testing.T) {
 }
 
 func TestShellIndex_ExplicitIndexPath(t *testing.T) {
-	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	s := setupShellTest(t)
 	req := httptest.NewRequest(http.MethodGet, "/app/index.html", nil)
 	rec := httptest.NewRecorder()
@@ -90,7 +76,6 @@ func TestShellDev_ProxiesShellAndRewritesMarker(t *testing.T) {
 	shellSrv, shellPath := fakeViteServer(t, indexBody, "text/html; charset=utf-8")
 	rendererSrv, _ := fakeViteServer(t, `<div id="root"></div>`, "text/html; charset=utf-8")
 
-	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	t.Setenv("LIVEBOARD_SHELL_DEV_URL", shellSrv.URL)
 	t.Setenv("LIVEBOARD_RENDERER_DEV_URL", rendererSrv.URL)
 
@@ -118,7 +103,6 @@ func TestShellDev_ProxiesRendererSubpath(t *testing.T) {
 	shellSrv, _ := fakeViteServer(t, `SHELL`, "text/plain")
 	rendererSrv, rendererPath := fakeViteServer(t, `RENDERER_HTML`, "text/plain")
 
-	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	t.Setenv("LIVEBOARD_SHELL_DEV_URL", shellSrv.URL)
 	t.Setenv("LIVEBOARD_RENDERER_DEV_URL", rendererSrv.URL)
 
@@ -145,7 +129,6 @@ func TestShellDev_NonHTMLResponseNotRewritten(t *testing.T) {
 	shellSrv, _ := fakeViteServer(t, jsBody, "application/javascript")
 	rendererSrv, _ := fakeViteServer(t, `x`, "text/plain")
 
-	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	t.Setenv("LIVEBOARD_SHELL_DEV_URL", shellSrv.URL)
 	t.Setenv("LIVEBOARD_RENDERER_DEV_URL", rendererSrv.URL)
 
@@ -160,7 +143,6 @@ func TestShellDev_NonHTMLResponseNotRewritten(t *testing.T) {
 }
 
 func TestShellRoute_Renderer(t *testing.T) {
-	t.Setenv("LIVEBOARD_APP_SHELL", "1")
 	s := setupShellTest(t)
 
 	req := httptest.NewRequest(http.MethodGet, "/app/renderer/default/", nil)
@@ -171,5 +153,18 @@ func TestShellRoute_Renderer(t *testing.T) {
 	}
 	if !strings.Contains(rec.Body.String(), "<div id=\"root\">") {
 		t.Fatalf("response did not contain renderer root div")
+	}
+}
+
+func TestRootRedirectsToApp(t *testing.T) {
+	s := setupShellTest(t)
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	rec := httptest.NewRecorder()
+	s.Router().ServeHTTP(rec, req)
+	if rec.Code != http.StatusFound {
+		t.Fatalf("want 302, got %d", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); loc != "/app/" {
+		t.Fatalf("want Location /app/, got %q", loc)
 	}
 }

@@ -89,10 +89,6 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
       <div ref={menuRef} className="lb-sidebar__footer">
         {menuOpen && (
           <div className="lb-popover lb-popover--bottom-up" role="menu">
-            <a href="/reminders" className="lb-popover__item" role="menuitem">
-              <span className="lb-popover__icon" aria-hidden>&#128276;</span>
-              <span>Reminders</span>
-            </a>
             <button
               type="button"
               onClick={() => { setMenuOpen(false); openGlobalSettings() }}

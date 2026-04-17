@@ -5,10 +5,10 @@ Markdown-powered Kanban board with real-time collaboration.
 ## Tech Stack
 
 - **Backend**: Go 1.24, chi/v5 router, cobra CLI
-- **Frontend**: HTMX + SSE (real-time), Alpine.js (client reactivity), vanilla JS (drag-and-drop, command palette)
+- **Frontend**: React shell + renderer (TypeScript) mounted at `/app/`, served as embedded Vite bundles. `web/shell/` is the iframe host; `web/renderer/default/` is the UI; `web/shared/` is the backend-adapter protocol. Browser talks to Go via `/api/v1/*` JSON + SSE at `/api/v1/events`.
   - tools: use bun if we can, instead of node/npm/pnpm
 - **Storage**: Markdown files with YAML frontmatter — no database
-- **Dev**: `make dev` (air live reload), port 7070
+- **Dev**: `make dev` (Go + air live reload, port 7070). `make adapter-test` for renderer HMR. `make frontend` to rebuild the embedded shell+renderer bundles.
 
 ## Domain Concepts
 
@@ -57,14 +57,17 @@ settings:                         # per-board setting overrides
 ## Architecture
 
 - `cmd/liveboard/` — CLI entrypoint (cobra)
-- `internal/api/` — chi router, middleware, SSE broker
-- `internal/web/` — HTMX handlers, template rendering, settings
+- `internal/api/` — chi router, middleware, shell/renderer mount, `/api/export`, legacy REST
+- `internal/api/v1/` — JSON API consumed by the renderer (boards, mutations, settings, search, SSE events)
+- `internal/web/` — settings persistence (`settings.go`) and SSE broker (`sse.go`); no HTTP handlers
 - `internal/board/` — CRUD engine, mutex-per-board, optimistic locking
 - `internal/parser/` — markdown + YAML frontmatter parsing
 - `internal/writer/` — struct-to-markdown serialization
 - `internal/workspace/` — directory scanning, board listing
-- `internal/templates/` — Go HTML templates
-- `web/` — static assets (JS, CSS)
+- `internal/templates/` — Go HTML templates for static export only (`export_*.html`)
+- `internal/export/` — workspace → static HTML/ZIP export
+- `web/shell/`, `web/renderer/default/`, `web/shared/` — TypeScript SPA (shell iframe-hosts the renderer; shared defines the BackendAdapter protocol)
+- `web/img/` — logos / icons used by desktop bundle (`make generate-icon`)
 - `pkg/models/` — shared data structs
 
 ## On commit

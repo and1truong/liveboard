@@ -4,14 +4,10 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: check-tailwind build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop css css-watch online ipad-framework ipad-project ipad shell renderer frontend
-
-# Fail fast if tailwindcss is missing
-check-tailwind:
-	@command -v tailwindcss >/dev/null 2>&1 || { echo "Error: tailwindcss is not installed. Install it: https://tailwindcss.com/blog/standalone-cli"; exit 1; }
+.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop ipad-framework ipad-project ipad shell renderer frontend
 
 # Build CLI binary (no CGO, single arch)
-build: css
+build: frontend
 	CGO_ENABLED=0 go build -ldflags '$(LDFLAGS)' -o liveboard ./cmd/liveboard
 
 # Compile desktop binary only (fast recompile for dev — assumes bundle structure already exists)
@@ -71,14 +67,6 @@ release-desktop: bundle-desktop-release
 	gh release upload "$$TAG" "LiveBoard-$(VERSION)-macos-universal.zip" --clobber
 	bash scripts/update-desktop-cask.sh "$(VERSION)"
 
-# Build CSS with Tailwind
-css: check-tailwind
-	tailwindcss -i web/css/input.css -o web/css/liveboard.css --minify
-
-# Watch CSS for changes (dev mode)
-css-watch:
-	tailwindcss -i web/css/input.css -o web/css/liveboard.css --watch
-
 # Build shell + stub bundles via Vite (multi-page build)
 shell:
 	cd web/shared && bun install --frozen-lockfile
@@ -120,9 +108,9 @@ dev-app:
 	cd web/shell && bunx --bun vite
 
 # Dev server for adapter-test with Vite HMR.
-# Go serves /api/v1 (real server adapter) on :7070 and reverse-proxies /app/*
-# to shell Vite (:5180) and /app/renderer/default/* to renderer Vite (:5173).
-# HMR WS is proxied through Go so TS/CSS edits hot-reload without rebuild.
+# Go serves /api/v1 on :7070 and reverse-proxies /app/* to shell Vite (:5180)
+# and /app/renderer/default/* to renderer Vite (:5173). HMR WS is proxied
+# through Go so TS/CSS edits hot-reload without rebuild.
 .PHONY: adapter-test
 adapter-test:
 	-lsof -ti :7070 | xargs kill -9 2>/dev/null
@@ -139,14 +127,9 @@ adapter-test:
 	( cd web/shell && bunx --bun vite --port 5180 --strictPort ) & \
 	SHELL_PID=$$!; \
 	trap "kill $$RENDERER_PID $$SHELL_PID 2>/dev/null" EXIT; \
-	LIVEBOARD_APP_SHELL=1 \
 	LIVEBOARD_SHELL_DEV_URL=http://localhost:5180 \
 	LIVEBOARD_RENDERER_DEV_URL=http://localhost:5173 \
 	go run ./cmd/liveboard serve --dir ./demo/indie-dev --port 7070
-
-# Build LiveBoard Online (browser-only SPA with localStorage)
-online: check-tailwind
-	bash online/build.sh
 
 # Kill any process occupying the dev server port
 release-port:
@@ -156,13 +139,10 @@ release-port:
 lint:
 	golangci-lint run ./...
 
-# Start dev server with live reload (uses air if available) + Tailwind watcher
+# Start dev server with live reload (uses air if available).
+# Requires `make frontend` once to build the embedded shell/renderer bundles.
 dev: release-port
-	@tailwindcss -i web/css/input.css -o web/css/liveboard.css --minify
-	@tailwindcss -i web/css/input.css -o web/css/liveboard.css --watch & \
-	CSS_PID=$$!; \
-	trap "kill $$CSS_PID 2>/dev/null" EXIT; \
-	if command -v air >/dev/null 2>&1; then \
+	@if command -v air >/dev/null 2>&1; then \
 		NO_CACHE=1 air -- serve --dir=demo/$(DEMO)/ --port $(PORT); \
 	else \
 		echo "Tip: install 'air' for live reload: go install github.com/air-verse/air@latest"; \
@@ -188,7 +168,7 @@ demo-prompt-eng: DEMO=prompt-eng
 demo-prompt-eng: dev
 
 # Build Go xcframework for iPad (requires gomobile: go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init)
-ipad-framework: css
+ipad-framework: frontend
 	gomobile bind -target=ios -o ipad/Gobridge.xcframework ./mobile/gobridge
 	@echo "Built ipad/Gobridge.xcframework"
 

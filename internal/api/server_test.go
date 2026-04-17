@@ -955,45 +955,6 @@ func TestJSONContentTypeHeader(t *testing.T) {
 	_ = resp.Body.Close()
 }
 
-func TestStaticCacheHeaders(t *testing.T) {
-	dir := t.TempDir()
-	ws := workspace.Open(dir)
-
-	t.Run("default serves with cache headers", func(t *testing.T) {
-		srv := NewServer(ws, ws.Engine, false, false, false, "test", "", "")
-		ts := httptest.NewServer(srv.Router())
-		defer ts.Close()
-
-		resp, err := http.Get(ts.URL + "/static/css/liveboard.css")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() { _ = resp.Body.Close() }()
-
-		got := resp.Header.Get("Cache-Control")
-		if got != "public, max-age=3600" {
-			t.Fatalf("expected 'public, max-age=3600', got %q", got)
-		}
-	})
-
-	t.Run("noCache disables cache headers", func(t *testing.T) {
-		srv := NewServer(ws, ws.Engine, true, false, false, "test", "", "")
-		ts := httptest.NewServer(srv.Router())
-		defer ts.Close()
-
-		resp, err := http.Get(ts.URL + "/static/css/liveboard.css")
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer func() { _ = resp.Body.Close() }()
-
-		got := resp.Header.Get("Cache-Control")
-		if got != "no-cache, no-store" {
-			t.Fatalf("expected 'no-cache, no-store', got %q", got)
-		}
-	})
-}
-
 func TestBasicAuth(t *testing.T) {
 	dir := t.TempDir()
 	ws := workspace.Open(dir)

@@ -108,7 +108,7 @@ Cards support inline metadata below the list item:
 
 ## Web UI
 
-The built-in web UI uses [HTMX](https://htmx.org/) with Server-Sent Events — real-time updates with no separate frontend build.
+The built-in web UI is a React SPA (shell + renderer under `web/`) served at `/app/`. The Go server ships the bundles embedded via `//go:embed` and streams real-time board updates via SSE at `/api/v1/events`.
 
 <p align="center">
   <img src="web/img/liveboard-logo-dark.svg" alt="LiveBoard Dark" width="240">
@@ -172,17 +172,6 @@ POST   /boards/{slug}/cards/{index}/complete  Toggle completion
 
 -----
 
-## Shell (preview)
-
-Experimental postMessage shell + React renderer. Enable with:
-
-    make shell && make renderer
-    LIVEBOARD_APP_SHELL=1 liveboard serve
-
-Then open <http://localhost:7070/app/> — the React renderer (read-only board view) loads by default. Append `?renderer=stub` to load the P3 integration harness instead.
-
------
-
 ## Architecture
 
 ```
@@ -192,7 +181,7 @@ Then open <http://localhost:7070/app/> — the React renderer (read-only board v
                      │
          ┌───────────▼────────────┐
          │    API Layer (chi)     │
-         │   REST + HTMX/SSE    │
+         │   /api/v1 JSON + SSE   │
          └───────────┬────────────┘
                      │
       ┌──────────────┼──────────────┐
@@ -220,17 +209,20 @@ Then open <http://localhost:7070/app/> — the React renderer (read-only board v
 liveboard/
 ├── cmd/liveboard/        CLI entrypoint + serve command
 ├── internal/
-│   ├── api/              REST handlers (chi router)
+│   ├── api/              chi router, shell mount, legacy REST
+│   ├── api/v1/           JSON API consumed by the renderer
 │   ├── board/            Board engine, CRUD operations
 │   ├── parser/           Markdown → Board model
 │   ├── writer/           Board model → Markdown
-│   ├── web/              HTMX handlers + SSE broker
+│   ├── web/              Settings persistence + SSE broker
 │   ├── workspace/        Folder scanning, board resolution
-│   └── templates/        HTML templates
+│   ├── export/           Workspace → static HTML ZIP
+│   └── templates/        HTML templates used only by the static exporter
 ├── pkg/models/           Board, Column, Card types
 ├── web/
-│   ├── css/              Stylesheets
-│   ├── js/               Drag-and-drop, interactivity
+│   ├── shared/           BackendAdapter protocol (TypeScript)
+│   ├── shell/            Iframe host for the renderer (Vite + TS)
+│   ├── renderer/default/ React UI (Vite + TS)
 │   └── img/              Logos and icons
 ├── demo/                 Sample boards
 └── Makefile
@@ -244,10 +236,10 @@ liveboard/
 |---|---|
 | Language | Go 1.24 |
 | HTTP router | [chi/v5](https://github.com/go-chi/chi) |
-| Real-time UI | [HTMX](https://htmx.org/) + Server-Sent Events |
+| Real-time | Server-Sent Events on `/api/v1/events` |
 | CLI | [cobra](https://github.com/spf13/cobra) |
 | Config | [yaml.v3](https://pkg.go.dev/gopkg.in/yaml.v3) |
-| Frontend | Vanilla JS + [Alpine.js](https://alpinejs.dev/) |
+| Frontend | React + TypeScript (Vite bundles, served embedded) |
 
 -----
 
