@@ -219,3 +219,36 @@ func WriteZipTo(w io.Writer, ws *workspace.Workspace, opts Options) error {
 	_, err = w.Write(data)
 	return err
 }
+
+// WriteMarkdownZipTo streams a ZIP of the raw workspace source files (all .md
+// files plus settings.json if present) to w. No parsing or templating — the
+// files are zipped as they exist on disk.
+func WriteMarkdownZipTo(w io.Writer, ws *workspace.Workspace) error {
+	entries, err := os.ReadDir(ws.Dir)
+	if err != nil {
+		return fmt.Errorf("read workspace: %w", err)
+	}
+
+	zw := zip.NewWriter(w)
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".md") && name != "settings.json" {
+			continue
+		}
+		data, err := os.ReadFile(filepath.Join(ws.Dir, name))
+		if err != nil {
+			return fmt.Errorf("reading %s: %w", name, err)
+		}
+		fw, err := zw.Create(name)
+		if err != nil {
+			return fmt.Errorf("zip create %s: %w", name, err)
+		}
+		if _, err := fw.Write(data); err != nil {
+			return fmt.Errorf("zip write %s: %w", name, err)
+		}
+	}
+	return zw.Close()
+}

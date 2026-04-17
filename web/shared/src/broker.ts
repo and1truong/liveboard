@@ -51,7 +51,10 @@ export class Broker {
         kind: 'welcome',
         protocol: PROTOCOL_VERSION,
         shellVersion: this.opts.shellVersion,
-        capabilities: this.opts.capabilities ?? ['local-storage', 'realtime'],
+        capabilities: [
+          ...this.adapter.capabilities(),
+          ...(this.opts.capabilities ?? []),
+        ],
         initialBoardId: this.opts.initialBoardId ?? null,
         initialCardPos: this.opts.initialCardPos ?? null,
         initialFocusedColumn: this.opts.initialFocusedColumn ?? null,
@@ -142,7 +145,7 @@ export class Broker {
       case 'backlinks':
         return this.adapter.backlinks(req.params.cardId)
       case 'workspace.exportUrl':
-        return { url: this.adapter.getExportUrl() }
+        return { url: this.adapter.getExportUrl(req.params.format) }
     }
   }
 

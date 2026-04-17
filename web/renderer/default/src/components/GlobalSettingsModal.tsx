@@ -2,7 +2,10 @@ import { useState, type FormEvent, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useAppSettings, useUpdateAppSettings } from '../queries/useAppSettings.js'
 import { useExportUrl } from '../queries/useExportUrl.js'
+import { useHasCapability } from '../queries/useCapabilities.js'
 import { useTheme, type Mode, type ThemeName, THEME_NAMES } from '../contexts/ThemeContext.js'
+
+const UNSUPPORTED_EXPORT_HINT = 'Not available in browser-only mode — connect to a workspace server to enable.'
 
 const THEMES = [
   { value: 'system', label: 'System' },
@@ -56,13 +59,16 @@ export function GlobalSettingsModal({
 }): JSX.Element {
   const settings = useAppSettings()
   const mutation = useUpdateAppSettings()
-  const exportUrl = useExportUrl()
+  const htmlExportSupported = useHasCapability('export:html')
+  const mdExportSupported = useHasCapability('export:markdown')
+  const htmlExportUrl = useExportUrl('html')
+  const mdExportUrl = useExportUrl('markdown')
   const { setMode, setTheme: setColorTheme } = useTheme()
 
-  const triggerExport = (): void => {
-    if (!exportUrl) return
+  const triggerExport = (url: string | null): void => {
+    if (!url) return
     const top = window.top ?? window
-    top.location.href = exportUrl
+    top.location.href = url
   }
 
   const submit = (e: FormEvent<HTMLFormElement>): void => {
@@ -187,19 +193,42 @@ export function GlobalSettingsModal({
                 />
               </Section>
 
-              {exportUrl && (
-                <Section label="Data">
-                  <Row label="Export to HTML" hint="Download all boards as a static HTML site (ZIP).">
-                    <button
-                      type="button"
-                      onClick={triggerExport}
-                      className="lb-settings__btn lb-settings__btn--ghost"
-                    >
-                      Export
-                    </button>
-                  </Row>
-                </Section>
-              )}
+              <Section label="Data">
+                <Row
+                  label="Export to HTML"
+                  hint={htmlExportSupported
+                    ? 'Download all boards as a static HTML site (ZIP).'
+                    : UNSUPPORTED_EXPORT_HINT}
+                >
+                  <button
+                    type="button"
+                    onClick={() => triggerExport(htmlExportUrl)}
+                    disabled={!htmlExportSupported || !htmlExportUrl}
+                    title={htmlExportSupported ? undefined : UNSUPPORTED_EXPORT_HINT}
+                    aria-disabled={!htmlExportSupported || !htmlExportUrl}
+                    className="lb-settings__btn lb-settings__btn--ghost"
+                  >
+                    Export
+                  </button>
+                </Row>
+                <Row
+                  label="Export to Markdown"
+                  hint={mdExportSupported
+                    ? 'Download raw .md source files (ZIP).'
+                    : UNSUPPORTED_EXPORT_HINT}
+                >
+                  <button
+                    type="button"
+                    onClick={() => triggerExport(mdExportUrl)}
+                    disabled={!mdExportSupported || !mdExportUrl}
+                    title={mdExportSupported ? undefined : UNSUPPORTED_EXPORT_HINT}
+                    aria-disabled={!mdExportSupported || !mdExportUrl}
+                    className="lb-settings__btn lb-settings__btn--ghost"
+                  >
+                    Export
+                  </button>
+                </Row>
+              </Section>
 
             </div>
 

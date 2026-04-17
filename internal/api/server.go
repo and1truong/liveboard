@@ -3,7 +3,6 @@ package api
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"fmt"
 	"io"
 	"log"
@@ -14,7 +13,6 @@ import (
 	"net/url"
 	"os"
 	"strconv"
-	"time"
 
 	"io/fs"
 	"path/filepath"
@@ -25,134 +23,47 @@ import (
 
 	apiv1 "github.com/and1truong/liveboard/internal/api/v1"
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/export"
 	livemcp "github.com/and1truong/liveboard/internal/mcp"
-	"github.com/and1truong/liveboard/internal/reminder"
 	"github.com/and1truong/liveboard/internal/search"
 	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
-	"github.com/and1truong/liveboard/pkg/models"
-	staticweb "github.com/and1truong/liveboard/web"
 	renderer "github.com/and1truong/liveboard/web/renderer/default"
 	shell "github.com/and1truong/liveboard/web/shell"
 )
 
 // Server is the REST API server for LiveBoard.
 type Server struct {
-	ws                *workspace.Workspace
-	eng               *board.Engine
-	webHandler        *web.Handler
-	mcpServer         *livemcp.Server
-	reminderScheduler *reminder.Scheduler
-	router            chi.Router
-	httpServer        *http.Server
-	noCache           bool
-	readOnly          bool
-	appShell          bool
-	basicAuthUser     string
-	basicAuthPass     string
+	ws            *workspace.Workspace
+	eng           *board.Engine
+	sse           *web.SSEBroker
+	mcpServer     *livemcp.Server
+	router        chi.Router
+	httpServer    *http.Server
+	noCache       bool
+	readOnly      bool
+	basicAuthUser string
+	basicAuthPass string
 }
 
 // NewServer creates a Server with all routes registered.
-func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, isDesktop bool, version string, basicAuthUser, basicAuthPass string) *Server {
-	h := web.NewHandler(ws, eng, version, readOnly, isDesktop)
+//
+// The isDesktop parameter is retained for call-site compatibility with
+// cmd/liveboard-desktop and mobile/gobridge; it has no effect now that the
+// shell is always mounted and the reminder scheduler has been removed.
+func NewServer(ws *workspace.Workspace, eng *board.Engine, noCache, readOnly, _ bool, version string, basicAuthUser, basicAuthPass string) *Server {
 	s := &Server{
 		ws:            ws,
 		eng:           eng,
-		webHandler:    h,
+		sse:           web.NewSSEBroker(),
 		mcpServer:     livemcp.New(ws, eng, version),
 		noCache:       noCache,
 		readOnly:      readOnly,
-		appShell:      isDesktop || os.Getenv("LIVEBOARD_APP_SHELL") == "1",
 		basicAuthUser: basicAuthUser,
 		basicAuthPass: basicAuthPass,
 	}
-
-	// Initialize reminder scheduler if enabled
-	settings := web.LoadSettingsFromDir(ws.Dir)
-	if settings.ReminderEnabled {
-		s.startReminderScheduler(ws, h.ReminderStore(), isDesktop, settings)
-	}
-
 	s.router = s.buildRouter()
 	return s
-}
-
-func makeReminderNotifyFn(sse *web.SSEBroker, isDesktop bool) reminder.NotifyFunc {
-	return func(r reminder.Reminder, cardTitle string, stats *reminder.BoardStats) {
-		payload := map[string]any{
-			"id":         r.ID,
-			"type":       r.Type,
-			"board_slug": r.BoardSlug,
-			"card_id":    r.CardID,
-			"card_title": cardTitle,
-		}
-		if stats != nil {
-			payload["message"] = fmt.Sprintf("%d open, %d overdue, %d due this week", stats.TotalOpen, stats.Overdue, stats.DueThisWeek)
-		}
-		data, _ := json.Marshal(payload)
-		sse.PublishGlobal(web.SSEEvent{Type: "reminder-fire", Payload: string(data)})
-
-		if isDesktop {
-			sendDesktopReminderNotification(r, cardTitle, stats)
-		}
-	}
-}
-
-func sendDesktopReminderNotification(r reminder.Reminder, cardTitle string, stats *reminder.BoardStats) {
-	title := "Reminder"
-	body := cardTitle
-	if r.Type == reminder.ReminderTypeBoard {
-		title = "Board Reminder"
-		body = r.BoardSlug
-		if stats != nil {
-			body = fmt.Sprintf("%s: %d open, %d overdue", r.BoardSlug, stats.TotalOpen, stats.Overdue)
-		}
-	}
-	_ = reminder.SendSystemNotification(title, body, "")
-}
-
-func computeBoardStats(b *models.Board) reminder.BoardStats {
-	var bs reminder.BoardStats
-	now := time.Now()
-	today := now.Format("2006-01-02")
-	weekEnd := now.AddDate(0, 0, 7-int(now.Weekday()))
-	weekEndStr := weekEnd.Format("2006-01-02")
-
-	for _, col := range b.Columns {
-		for _, card := range col.Cards {
-			if card.Completed {
-				continue
-			}
-			bs.TotalOpen++
-			if card.Due != "" && card.Due < today {
-				bs.Overdue++
-			}
-			if card.Due != "" && card.Due >= today && card.Due <= weekEndStr {
-				bs.DueThisWeek++
-			}
-		}
-	}
-	return bs
-}
-
-func makeBoardStatsFn(ws *workspace.Workspace) reminder.BoardStatsFunc {
-	return func(slug string) reminder.BoardStats {
-		b, err := ws.LoadBoard(slug)
-		if err != nil {
-			return reminder.BoardStats{}
-		}
-		return computeBoardStats(b)
-	}
-}
-
-func (s *Server) startReminderScheduler(ws *workspace.Workspace, store *reminder.Store, isDesktop bool, _ web.AppSettings) {
-	s.reminderScheduler = reminder.NewScheduler(
-		store, time.Minute,
-		makeReminderNotifyFn(s.webHandler.SSE, isDesktop),
-		makeBoardStatsFn(ws),
-	)
-	s.reminderScheduler.Start()
-	log.Println("reminder scheduler started")
 }
 
 // Router returns the http.Handler for use with httptest.
@@ -186,10 +97,7 @@ func (s *Server) ListenAndServe(addr string) (net.Addr, error) {
 // It first closes all SSE connections so long-lived streams don't block the
 // HTTP server's graceful drain.
 func (s *Server) Shutdown(ctx context.Context) error {
-	if s.reminderScheduler != nil {
-		s.reminderScheduler.Stop()
-	}
-	s.webHandler.SSE.Shutdown()
+	s.sse.Shutdown()
 	if s.httpServer != nil {
 		return s.httpServer.Shutdown(ctx)
 	}
@@ -220,23 +128,14 @@ func (s *Server) buildRouter() chi.Router {
 		})
 	}
 
-	// Serve static assets (handler allocated once, not per-request)
-	staticHandler := http.StripPrefix("/static/", http.FileServer(http.FS(staticweb.FS)))
-	r.Get("/static/*", func(w http.ResponseWriter, req *http.Request) {
-		if s.noCache {
-			w.Header().Set("Cache-Control", "no-cache, no-store")
-		} else {
-			w.Header().Set("Cache-Control", "public, max-age=3600")
-		}
-		staticHandler.ServeHTTP(w, req)
+	s.mountShellRoutes(r)
+
+	r.Get("/", func(w http.ResponseWriter, req *http.Request) {
+		http.Redirect(w, req, "/app/", http.StatusFound)
 	})
 
-	if s.appShell {
-		s.mountShellRoutes(r)
-		log.Println("shell mounted at /app/")
-	}
+	r.Get("/api/export", s.exportHandler)
 
-	s.mountWebRoutes(r)
 	s.mountAPIRoutes(r)
 
 	if os.Getenv("LIVEBOARD_PPROF") != "" {
@@ -250,60 +149,6 @@ func (s *Server) buildRouter() chi.Router {
 	}
 
 	return r
-}
-
-func (s *Server) mountWebRoutes(r chi.Router) {
-	h := s.webHandler
-
-	// Board list routes
-	r.Get("/", h.BoardList.BoardListPage)
-	r.Post("/boards/new", h.BoardList.HandleCreateBoard)
-	r.Post("/boards/{slug}/delete", h.BoardList.HandleDeleteBoard)
-	r.Post("/boards/{slug}/icon", h.BoardList.HandleSetBoardIconList)
-
-	// Board view + mutation routes
-	r.Get("/board/{slug}", h.BoardView.BoardViewPage)
-	r.Get("/board/{slug}/content", h.BoardView.BoardContent)
-	r.Get("/board/{slug}/events", h.SSE.ServeHTTP)
-	r.Post("/board/{slug}/cards", h.BoardView.HandleCreateCard)
-	r.Post("/board/{slug}/cards/move", h.BoardView.HandleMoveCard)
-	r.Post("/board/{slug}/cards/move-to-board", h.BoardView.HandleMoveCardToBoard)
-	r.Post("/board/{slug}/cards/reorder", h.BoardView.HandleReorderCard)
-	r.Post("/board/{slug}/cards/delete", h.BoardView.HandleDeleteCard)
-	r.Post("/board/{slug}/cards/complete", h.BoardView.HandleToggleComplete)
-	r.Post("/board/{slug}/cards/edit", h.BoardView.HandleEditCard)
-	r.Post("/board/{slug}/columns", h.BoardView.HandleCreateColumn)
-	r.Post("/board/{slug}/columns/rename", h.BoardView.HandleRenameColumn)
-	r.Post("/board/{slug}/columns/delete", h.BoardView.HandleDeleteColumn)
-	r.Post("/board/{slug}/columns/collapse", h.BoardView.HandleToggleColumnCollapse)
-	r.Post("/board/{slug}/columns/sort", h.BoardView.HandleSortColumn)
-	r.Post("/board/{slug}/columns/move", h.BoardView.HandleMoveColumn)
-	r.Post("/board/{slug}/meta", h.BoardView.HandleUpdateBoardMeta)
-	r.Post("/board/{slug}/settings", h.BoardView.HandleUpdateBoardSettings)
-	r.Post("/board/{slug}/icon", h.BoardView.HandleSetBoardIcon)
-
-	// Board API routes
-	r.Post("/api/boards/pin", h.BoardList.HandleTogglePin)
-	r.Get("/api/boards/sidebar", h.BoardList.HandleSidebarBoards)
-	r.Get("/api/boards/list-lite", h.BoardList.HandleBoardsListLite)
-
-	// Settings routes
-	r.Handle("/settings", h.Settings.SettingsHandler())
-	r.Handle("/api/settings", h.Settings.SettingsAPIHandler())
-	r.Get("/api/export", h.ExportHandler().ServeHTTP)
-
-	// Global SSE events (reminders, notifications)
-	r.Get("/events/global", h.SSE.ServeGlobalSSE)
-
-	// Reminder routes
-	r.Get("/reminders", h.Reminders.RemindersPage)
-	r.Post("/reminders/set", h.Reminders.HandleSetReminder)
-	r.Post("/reminders/dismiss/{id}", h.Reminders.HandleDismissReminder)
-	r.Post("/reminders/snooze/{id}", h.Reminders.HandleSnoozeReminder)
-	r.Delete("/reminders/{id}", h.Reminders.HandleDeleteReminder)
-	r.Post("/reminders/clear-fired", h.Reminders.HandleClearFired)
-	r.Post("/reminders/clear-history", h.Reminders.HandleClearHistory)
-	r.Post("/reminders/settings", h.Reminders.HandleUpdateReminderSettings)
 }
 
 func (s *Server) mountAPIRoutes(r chi.Router) {
@@ -327,7 +172,7 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 		Dir:       s.ws.Dir,
 		Workspace: s.ws,
 		Engine:    s.eng,
-		SSE:       s.webHandler.SSE,
+		SSE:       s.sse,
 		Search:    idx,
 	}))
 	r.Method(http.MethodGet, "/api/versions", apiv1.VersionsHandler())
@@ -375,6 +220,35 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 	r.Get("/events/ws", s.stubHandler)
 }
 
+// exportHandler streams a workspace ZIP. ?format=md returns raw markdown;
+// ?format=html (default) renders a static HTML site using settings.json for
+// theme, color-theme, and site-name.
+func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
+	format := r.URL.Query().Get("format")
+	w.Header().Set("Content-Type", "application/zip")
+
+	switch format {
+	case "md", "markdown":
+		w.Header().Set("Content-Disposition", `attachment; filename="liveboard-export-md.zip"`)
+		if err := export.WriteMarkdownZipTo(w, s.ws); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	case "", "html":
+		settings := web.LoadSettingsFromDir(s.ws.Dir)
+		opts := export.Options{
+			Theme:      settings.Theme,
+			ColorTheme: settings.ColorTheme,
+			SiteName:   settings.SiteName,
+		}
+		w.Header().Set("Content-Disposition", `attachment; filename="liveboard-export.zip"`)
+		if err := export.WriteZipTo(w, s.ws, opts); err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+		}
+	default:
+		http.Error(w, "unknown format: "+format, http.StatusBadRequest)
+	}
+}
+
 const liveboardConfigMarker = `/*__LIVEBOARD_CONFIG__*/ { adapter: 'local' }`
 const liveboardConfigServer = `{ adapter: 'server', baseUrl: '/api/v1' }`
 
@@ -384,7 +258,7 @@ func injectLiveboardConfig(html []byte) []byte {
 
 func (s *Server) mountShellRoutes(r chi.Router) {
 	// Dev mode: proxy to Vite dev servers instead of serving embedded bundles.
-	// Enables HMR for TS/CSS without rebuild. See Makefile dev-adapter-test.
+	// Enables HMR for TS/CSS without rebuild. See Makefile adapter-test.
 	if shellURL, rendererURL := os.Getenv("LIVEBOARD_SHELL_DEV_URL"), os.Getenv("LIVEBOARD_RENDERER_DEV_URL"); shellURL != "" && rendererURL != "" {
 		s.mountShellDevProxy(r, shellURL, rendererURL)
 		return

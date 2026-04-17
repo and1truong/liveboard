@@ -147,7 +147,7 @@ func (a *App) buildMenu() *menu.Menu {
 	// App menu (macOS standard)
 	appSubmenu := appMenu.AddSubmenu("LiveBoard")
 	appSubmenu.AddText("Settings...", keys.CmdOrCtrl(","), func(_ *menu.CallbackData) {
-		runtime.WindowExecJS(a.ctx, `window.location.href = "/settings"`)
+		runtime.WindowExecJS(a.ctx, `window.location.href = "/app/"`)
 	})
 	appSubmenu.AddSeparator()
 	appSubmenu.Append(menu.AppMenu())

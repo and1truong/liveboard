@@ -4,6 +4,7 @@ import type {
   BoardListLiteEntry,
   BoardSummary,
   BoardUpdateHandler,
+  ExportFormat,
   ResolvedSettings,
   SearchHit,
   Subscription,
@@ -333,8 +334,12 @@ export class LocalAdapter implements BackendAdapter {
     return hits
   }
 
-  getExportUrl(): string | null {
+  getExportUrl(_format: ExportFormat): string | null {
     return null
+  }
+
+  capabilities(): string[] {
+    return ['local-storage', 'realtime']
   }
 
   async backlinks(cardId: string): Promise<BacklinkHit[]> {

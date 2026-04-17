@@ -5,6 +5,7 @@ import type {
   BoardListLiteEntry,
   BoardSummary,
   BoardUpdateHandler,
+  ExportFormat,
   ResolvedSettings,
   SearchHit,
   Subscription,
@@ -32,8 +33,13 @@ export class ServerAdapter implements BackendAdapter {
     this.exportPath = opts.exportPath ?? '/api/export'
   }
 
-  getExportUrl(): string | null {
-    return this.exportPath
+  getExportUrl(format: ExportFormat): string | null {
+    const qs = format === 'markdown' ? '?format=md' : '?format=html'
+    return this.exportPath + qs
+  }
+
+  capabilities(): string[] {
+    return ['realtime', 'export:html', 'export:markdown']
   }
 
   private async request(

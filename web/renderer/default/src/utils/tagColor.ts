@@ -1,5 +1,3 @@
-// Keep the palette in sync with web/js/liveboard.board-settings.js so colors
-// look identical across the htmx UI and the shell/renderer.
 export const TAG_PALETTE = [
   '#e05252',
   '#d4722c',
@@ -13,7 +11,6 @@ export const TAG_PALETTE = [
   '#a07040',
 ] as const
 
-// WCAG relative luminance, matching LB.colorLuminance in web/js/liveboard.core.js.
 export function colorLuminance(hex: string): number {
   const r = parseInt(hex.slice(1, 3), 16) / 255
   const g = parseInt(hex.slice(3, 5), 16) / 255

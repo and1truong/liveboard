@@ -39,7 +39,7 @@ export type Request =
       params: { patch: Partial<AppSettings> }
     }
   | { id: string; kind: 'request'; method: 'board.pin'; params: { boardId: string } }
-  | { id: string; kind: 'request'; method: 'workspace.exportUrl'; params?: undefined }
+  | { id: string; kind: 'request'; method: 'workspace.exportUrl'; params: { format: 'html' | 'markdown' } }
 
 export type ErrorCode =
   | 'NOT_FOUND'

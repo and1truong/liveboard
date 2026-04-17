@@ -34,6 +34,8 @@ export interface Subscription {
 
 export type BoardUpdateHandler = (payload: { boardId: string; version: number }) => void
 
+export type ExportFormat = 'html' | 'markdown'
+
 export interface BoardListLiteEntry {
   slug: string
   name: string
@@ -60,7 +62,11 @@ export interface BackendAdapter {
   backlinks(cardId: string): Promise<BacklinkHit[]>
   // Absolute/same-origin URL that, when navigated to, downloads the workspace as a ZIP.
   // Returns null when the adapter has no backing server to produce an export.
-  getExportUrl(): string | null
+  getExportUrl(format: ExportFormat): string | null
+  // Feature flags the adapter supports. Surfaced through the welcome handshake
+  // so the renderer can enable/disable UI affordances up front. Known values:
+  //   'local-storage', 'realtime', 'export:html', 'export:markdown'
+  capabilities(): string[]
 }
 
 export interface SearchHit {

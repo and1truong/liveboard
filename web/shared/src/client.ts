@@ -1,5 +1,5 @@
 import type { AppSettings, Board, BoardSettings } from './types.js'
-import type { BacklinkHit, BoardListLiteEntry, BoardSummary, ResolvedSettings, SearchHit, WorkspaceInfo } from './adapter.js'
+import type { BacklinkHit, BoardListLiteEntry, BoardSummary, ExportFormat, ResolvedSettings, SearchHit, WorkspaceInfo } from './adapter.js'
 import type { MutationOp } from './types.js'
 import type { Event as ProtoEvent, Message, Request, Welcome } from './protocol.js'
 import { ProtocolError, PROTOCOL_VERSION } from './protocol.js'
@@ -56,6 +56,17 @@ export class Client {
 
   ready(): Promise<Welcome> {
     return this.welcomePromise
+  }
+
+  // Synchronous snapshot of capabilities negotiated in the welcome handshake.
+  // Returns an empty list before the handshake completes — callers that need
+  // it up-front should await ready() first.
+  capabilities(): string[] {
+    return this.welcome?.capabilities ?? []
+  }
+
+  hasCapability(name: string): boolean {
+    return this.capabilities().includes(name)
   }
 
   private handle(msg: Message): void {
@@ -178,7 +189,7 @@ export class Client {
   backlinks(cardId: string): Promise<BacklinkHit[]> {
     return this.request({ kind: 'request', method: 'backlinks', params: { cardId } })
   }
-  getExportUrl(): Promise<{ url: string | null }> {
-    return this.request({ kind: 'request', method: 'workspace.exportUrl' })
+  getExportUrl(format: ExportFormat): Promise<{ url: string | null }> {
+    return this.request({ kind: 'request', method: 'workspace.exportUrl', params: { format } })
   }
 }
