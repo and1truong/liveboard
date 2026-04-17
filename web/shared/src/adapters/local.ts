@@ -333,6 +333,10 @@ export class LocalAdapter implements BackendAdapter {
     return hits
   }
 
+  getExportUrl(): string | null {
+    return null
+  }
+
   async backlinks(cardId: string): Promise<BacklinkHit[]> {
     if (!cardId) return []
     const ws = this.loadWorkspace()

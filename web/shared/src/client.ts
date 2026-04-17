@@ -178,4 +178,7 @@ export class Client {
   backlinks(cardId: string): Promise<BacklinkHit[]> {
     return this.request({ kind: 'request', method: 'backlinks', params: { cardId } })
   }
+  getExportUrl(): Promise<{ url: string | null }> {
+    return this.request({ kind: 'request', method: 'workspace.exportUrl' })
+  }
 }

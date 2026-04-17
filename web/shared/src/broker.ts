@@ -141,6 +141,8 @@ export class Broker {
         return this.adapter.search(req.params.query, req.params.limit)
       case 'backlinks':
         return this.adapter.backlinks(req.params.cardId)
+      case 'workspace.exportUrl':
+        return { url: this.adapter.getExportUrl() }
     }
   }
 

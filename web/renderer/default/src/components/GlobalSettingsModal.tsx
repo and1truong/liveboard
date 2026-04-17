@@ -1,6 +1,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useAppSettings, useUpdateAppSettings } from '../queries/useAppSettings.js'
+import { useExportUrl } from '../queries/useExportUrl.js'
 import { useTheme, type Mode, type ThemeName, THEME_NAMES } from '../contexts/ThemeContext.js'
 
 const THEMES = [
@@ -55,7 +56,14 @@ export function GlobalSettingsModal({
 }): JSX.Element {
   const settings = useAppSettings()
   const mutation = useUpdateAppSettings()
+  const exportUrl = useExportUrl()
   const { setMode, setTheme: setColorTheme } = useTheme()
+
+  const triggerExport = (): void => {
+    if (!exportUrl) return
+    const top = window.top ?? window
+    top.location.href = exportUrl
+  }
 
   const submit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault()
@@ -178,6 +186,20 @@ export function GlobalSettingsModal({
                   hint="Enable vim-style navigation keys."
                 />
               </Section>
+
+              {exportUrl && (
+                <Section label="Data">
+                  <Row label="Export to HTML" hint="Download all boards as a static HTML site (ZIP).">
+                    <button
+                      type="button"
+                      onClick={triggerExport}
+                      className="lb-settings__btn lb-settings__btn--ghost"
+                    >
+                      Export
+                    </button>
+                  </Row>
+                </Section>
+              )}
 
             </div>
 

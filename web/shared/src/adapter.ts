@@ -58,6 +58,9 @@ export interface BackendAdapter {
   onBoardListUpdate(handler: () => void): Subscription
   search(query: string, limit?: number): Promise<SearchHit[]>
   backlinks(cardId: string): Promise<BacklinkHit[]>
+  // Absolute/same-origin URL that, when navigated to, downloads the workspace as a ZIP.
+  // Returns null when the adapter has no backing server to produce an export.
+  getExportUrl(): string | null
 }
 
 export interface SearchHit {

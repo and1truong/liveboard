@@ -15,11 +15,13 @@ import { ProtocolError, type ErrorCode } from '../protocol.js'
 export interface ServerAdapterOptions {
   baseUrl: string
   fetch?: typeof globalThis.fetch
+  exportPath?: string
 }
 
 export class ServerAdapter implements BackendAdapter {
   private readonly baseUrl: string
   private readonly fetchFn: typeof globalThis.fetch
+  private readonly exportPath: string
   private es: EventSource | null = null
   private readonly perBoard = new Map<string, Set<BoardUpdateHandler>>()
   private readonly listHandlers = new Set<() => void>()
@@ -27,6 +29,11 @@ export class ServerAdapter implements BackendAdapter {
   constructor(opts: ServerAdapterOptions) {
     this.baseUrl = opts.baseUrl.replace(/\/$/, '')
     this.fetchFn = opts.fetch ?? globalThis.fetch.bind(globalThis)
+    this.exportPath = opts.exportPath ?? '/api/export'
+  }
+
+  getExportUrl(): string | null {
+    return this.exportPath
   }
 
   private async request(
