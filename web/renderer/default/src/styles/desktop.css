@@ -1,0 +1,48 @@
+/* Desktop (Wails) overrides. All rules gated by `.desktop-app` on <html>,
+   added at runtime by cmd/liveboard-desktop/app.go. The webview sets the
+   custom property `--wails-draggable: drag` on a region to make mousedown
+   on that region initiate a native window drag (see app.go domReady). */
+
+/* Traffic-light clearance for TitleBarHiddenInset — the macOS traffic
+   lights float over the top-left of the window, so the sidebar needs
+   to start below them. */
+.desktop-app .lb-sidebar {
+  padding-top: 38px;
+  --wails-draggable: drag;
+}
+
+.desktop-app .lb-sidebar__header {
+  --wails-draggable: drag;
+}
+
+/* Interactive children must cancel the drag so clicks still land. */
+.desktop-app .lb-sidebar__body,
+.desktop-app .lb-sidebar__footer,
+.desktop-app .lb-row,
+.desktop-app .lb-iconbtn,
+.desktop-app .lb-sidebar button,
+.desktop-app .lb-sidebar a,
+.desktop-app .lb-sidebar input,
+.desktop-app .lb-sidebar [role='menuitem'],
+.desktop-app .lb-sidebar__count {
+  --wails-draggable: none;
+}
+
+/* Board header (the top bar in the main content area). */
+.desktop-app .lb-board-header {
+  --wails-draggable: drag;
+}
+
+.desktop-app .lb-board-header button,
+.desktop-app .lb-board-header a,
+.desktop-app .lb-board-header input,
+.desktop-app .lb-board-header [role='menuitem'] {
+  --wails-draggable: none;
+}
+
+/* When the sidebar is collapsed, the traffic lights overlap the main
+   content. Push the board header rightward so the sidebar-toggle and
+   board title clear them. */
+.desktop-app .lb-sidebar--collapsed + main .lb-board-header {
+  padding-left: 80px;
+}

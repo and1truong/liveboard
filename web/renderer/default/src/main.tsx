@@ -4,6 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { App } from './App.js'
 import { ClientProvider } from './queries.js'
 import { createClient, queryClient } from './client.js'
+import { initDesktopMode } from './desktop.js'
 import './styles/tailwind.css'
 
 async function boot(): Promise<void> {
@@ -35,4 +36,5 @@ async function boot(): Promise<void> {
   )
 }
 
+initDesktopMode()
 void boot()

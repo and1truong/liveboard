@@ -2,6 +2,7 @@
 @import "./themes.css";
 @import "./sidebar.css";
 @import "./settings-modal.css";
+@import "./desktop.css";
 
 @custom-variant dark (&:where(.dark, .dark *));
 

@@ -30,7 +30,7 @@ export function BoardHeader({
   }
 
   return (
-    <header className="relative flex h-12 shrink-0 items-center gap-2 border-b border-[color:var(--header-border)] bg-[color:var(--header-bg)] px-3 backdrop-blur-md">
+    <header className="lb-board-header relative flex h-12 shrink-0 items-center gap-2 border-b border-[color:var(--header-border)] bg-[color:var(--header-bg)] px-3 backdrop-blur-md">
       <button
         type="button"
         onClick={onToggleSidebar}

@@ -1,10 +1,12 @@
 PORT ?= 7070
 DEMO ?= indie-dev
+DEMOS     := indie-dev sre ops-infra agency family prompt-eng student-y7 tutorial
+DEMO_ARG  := $(filter $(DEMOS), $(MAKECMDGOALS))
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo-indie demo-ops demo-agency demo-sre demo-family demo-prompt-eng release-port build-desktop-universal bundle-desktop-release release-desktop ipad-framework ipad-project ipad shell renderer frontend
+.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo $(DEMOS) release-port build-desktop-universal bundle-desktop-release release-desktop ipad-framework ipad-project ipad shell renderer frontend
 
 # Build CLI binary (no CGO, single arch)
 build: frontend
@@ -149,23 +151,36 @@ dev: release-port
 		NO_CACHE=1 go run ./cmd/liveboard/... serve --dir=demo/$(DEMO)/ --port $(PORT); \
 	fi
 
-demo-indie: DEMO=indie-dev
-demo-indie: dev
+$(DEMOS):
+	@:
 
-demo-ops: DEMO=ops-infra
-demo-ops: dev
-
-demo-agency: DEMO=agency
-demo-agency: dev
-
-demo-sre: DEMO=sre
-demo-sre: dev
-
-demo-family: DEMO=family
-demo-family: dev
-
-demo-prompt-eng: DEMO=prompt-eng
-demo-prompt-eng: dev
+demo: release-port
+	@bash -c '\
+		demos=(indie-dev sre ops-infra agency family prompt-eng student-y7 tutorial); \
+		selected="$(DEMO_ARG)"; \
+		if [ -z "$$selected" ]; then \
+			echo "Available demos:"; \
+			for i in "$${!demos[@]}"; do \
+				d="$${demos[$$i]}"; \
+				label=$$(grep -o "\"site-name\"[^,}]*" demo/$$d/settings.json 2>/dev/null | sed "s/.*: *\"//;s/\".*//"); \
+				printf "  %d) %-16s %s\n" "$$((i+1))" "$$d" "$$label"; \
+			done; \
+			printf "Select [1-$${#demos[@]}] or name: "; \
+			read -r choice; \
+			if [[ "$$choice" =~ ^[0-9]+$$ ]] && [ "$$choice" -ge 1 ] && [ "$$choice" -le "$${#demos[@]}" ]; then \
+				selected="$${demos[$$((choice-1))]}"; \
+			else \
+				selected="$$choice"; \
+			fi; \
+		fi; \
+		echo "Starting demo: $$selected (port $(PORT))"; \
+		if command -v air >/dev/null 2>&1; then \
+			NO_CACHE=1 air -- serve --dir=demo/$$selected/ --port $(PORT); \
+		else \
+			echo "Tip: install air for live reload: go install github.com/air-verse/air@latest"; \
+			NO_CACHE=1 go run ./cmd/liveboard/... serve --dir=demo/$$selected/ --port $(PORT); \
+		fi \
+	'
 
 # Build Go xcframework for iPad (requires gomobile: go install golang.org/x/mobile/cmd/gomobile@latest && gomobile init)
 ipad-framework: frontend
