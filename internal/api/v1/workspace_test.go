@@ -27,6 +27,7 @@ func newTestDeps(t *testing.T) v1.Deps {
 	}
 	ws := workspace.Open(dir)
 	return v1.Deps{
+		Dir:       dir,
 		Workspace: ws,
 		Engine:    board.New(),
 	}
@@ -43,7 +44,7 @@ func newTestDepsEmpty(t *testing.T) v1.Deps { //nolint:unused
 	t.Helper()
 	dir := t.TempDir()
 	ws := workspace.Open(dir)
-	return v1.Deps{Workspace: ws, Engine: board.New()}
+	return v1.Deps{Dir: dir, Workspace: ws, Engine: board.New()}
 }
 
 func TestGetWorkspace(t *testing.T) {

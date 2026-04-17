@@ -261,3 +261,87 @@ func TestMutationOpRoundTrip(t *testing.T) {
 }
 
 func boolPtr(b bool) *bool { return &b }
+
+func TestMutationOpMarshalJSON_allVariants(t *testing.T) {
+	cases := []v1.MutationOp{
+		{Type: "add_card", AddCard: &v1.AddCardOp{Column: "Todo", Title: "x", Prepend: true}},
+		{Type: "move_card", MoveCard: &v1.MoveCardOp{ColIdx: 0, CardIdx: 1, TargetColumn: "Done"}},
+		{Type: "reorder_card", ReorderCard: &v1.ReorderCardOp{ColIdx: 0, CardIdx: 1, BeforeIdx: 0, TargetColumn: "Todo"}},
+		{Type: "edit_card", EditCard: &v1.EditCardOp{ColIdx: 0, CardIdx: 0, Title: "t", Priority: "high"}},
+		{Type: "delete_card", DeleteCard: &v1.DeleteCardOp{ColIdx: 0, CardIdx: 0}},
+		{Type: "complete_card", CompleteCard: &v1.CompleteCardOp{ColIdx: 0, CardIdx: 0}},
+		{Type: "tag_card", TagCard: &v1.TagCardOp{ColIdx: 0, CardIdx: 0, Tags: []string{"x"}}},
+		{Type: "add_column", AddColumn: &v1.AddColumnOp{Name: "Backlog"}},
+		{Type: "rename_column", RenameColumn: &v1.RenameColumnOp{OldName: "Todo", NewName: "Doing"}},
+		{Type: "delete_column", DeleteColumn: &v1.DeleteColumnOp{Name: "Done"}},
+		{Type: "move_column", MoveColumn: &v1.MoveColumnOp{Name: "Done", AfterCol: "Todo"}},
+		{Type: "sort_column", SortColumn: &v1.SortColumnOp{ColIdx: 0, SortBy: "priority"}},
+		{Type: "toggle_column_collapse", ToggleColumnCollapse: &v1.ToggleColumnCollapseOp{ColIdx: 1}},
+		{Type: "update_board_meta", UpdateBoardMeta: &v1.UpdateBoardMetaOp{Name: "X", Tags: []string{"q1"}}},
+		{Type: "update_board_members", UpdateBoardMembers: &v1.UpdateBoardMembersOp{Members: []string{"alice"}}},
+		{Type: "update_board_icon", UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: "🎯"}},
+		{Type: "update_board_settings", UpdateBoardSettings: &v1.UpdateBoardSettingsOp{Settings: models.BoardSettings{ShowCheckbox: boolPtr(true)}}},
+		{Type: "update_tag_colors", UpdateTagColors: &v1.UpdateTagColorsOp{TagColors: map[string]string{"go": "#00ff00"}}},
+		{Type: "move_card_to_board", MoveCardToBoard: &v1.MoveCardToBoardOp{ColIdx: 0, CardIdx: 0, DstBoard: "other", DstColumn: "Inbox"}},
+	}
+	for _, op := range cases {
+		t.Run(op.Type, func(t *testing.T) {
+			data, err := json.Marshal(op)
+			if err != nil {
+				t.Fatalf("marshal %q: %v", op.Type, err)
+			}
+			var got v1.MutationOp
+			if err := json.Unmarshal(data, &got); err != nil {
+				t.Fatalf("unmarshal %q: %v", op.Type, err)
+			}
+			if got.Type != op.Type {
+				t.Errorf("type mismatch: want %q got %q", op.Type, got.Type)
+			}
+		})
+	}
+}
+
+func TestMutationOpMarshalJSON_nilPayload(t *testing.T) {
+	nilOps := []v1.MutationOp{
+		{Type: "add_card"},
+		{Type: "move_card"},
+		{Type: "reorder_card"},
+		{Type: "edit_card"},
+		{Type: "delete_card"},
+		{Type: "complete_card"},
+		{Type: "tag_card"},
+		{Type: "add_column"},
+		{Type: "rename_column"},
+		{Type: "delete_column"},
+		{Type: "move_column"},
+		{Type: "sort_column"},
+		{Type: "toggle_column_collapse"},
+		{Type: "update_board_meta"},
+		{Type: "update_board_members"},
+		{Type: "update_board_icon"},
+		{Type: "update_board_settings"},
+		{Type: "update_tag_colors"},
+		{Type: "move_card_to_board"},
+	}
+	for _, op := range nilOps {
+		t.Run(op.Type, func(t *testing.T) {
+			if _, err := json.Marshal(op); err == nil {
+				t.Errorf("want error marshaling %q with nil payload, got nil", op.Type)
+			}
+		})
+	}
+}
+
+func TestMutationOpMarshalJSON_unknownType(t *testing.T) {
+	op := v1.MutationOp{Type: "bogus_op"}
+	if _, err := json.Marshal(op); err == nil {
+		t.Error("want error for unknown type, got nil")
+	}
+}
+
+func TestMutationOpUnmarshalJSON_invalidJSON(t *testing.T) {
+	var op v1.MutationOp
+	if err := json.Unmarshal([]byte("{invalid json"), &op); err == nil {
+		t.Error("want error for invalid JSON, got nil")
+	}
+}

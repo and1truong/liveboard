@@ -1,9 +1,12 @@
 package v1_test
 
 import (
+	"bytes"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -122,5 +125,60 @@ func TestSearch_DeletedBoardGone(t *testing.T) {
 	r.ServeHTTP(rec, req)
 	if strings.TrimSpace(rec.Body.String()) != "[]" {
 		t.Errorf("expected [], got %q", rec.Body.String())
+	}
+}
+
+func TestCreateBoard_withSearch(t *testing.T) {
+	deps := newDepsWithSearch(t)
+	r := routerFor(t, deps)
+	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"SearchBoard"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("create: %d %s", rec.Code, body)
+	}
+	// Index should include the new board (no error path needed — just cover the branch).
+	_ = r
+}
+
+func TestRenameBoard_withSearch(t *testing.T) {
+	deps := newDepsWithSearch(t)
+	r := routerFor(t, deps)
+
+	// Index a card so search has something for "demo".
+	addCard(t, r, "demo", "findme-token")
+
+	// Rename demo → new-name; slug != b.Name triggers DeleteBoard + UpdateBoard.
+	body := `{"new_name":"new-name"}`
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/boards/demo", strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("rename: %d %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestPostMutationMoveCardToBoard_withSearch(t *testing.T) {
+	deps := newDepsWithSearch(t)
+	other := "---\nversion: 1\nname: Other\n---\n\n## Inbox\n"
+	if err := os.WriteFile(filepath.Join(deps.Workspace.Dir, "other.md"), []byte(other), 0o644); err != nil {
+		t.Fatalf("seed other: %v", err)
+	}
+	r := routerFor(t, deps)
+	addCard(t, r, "demo", "moveable-card")
+
+	body := map[string]any{
+		"client_version": -1,
+		"op": map[string]any{
+			"type": "move_card_to_board", "col_idx": 0, "card_idx": 0,
+			"dst_board": "other", "dst_column": "Inbox",
+		},
+	}
+	buf, _ := json.Marshal(body)
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/demo/mutations", bytes.NewReader(buf))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("move: %d %s", rec.Code, rec.Body.String())
 	}
 }

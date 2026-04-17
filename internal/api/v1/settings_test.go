@@ -67,3 +67,35 @@ func TestPutBoardSettings(t *testing.T) {
 		t.Errorf("view_mode not persisted: %+v", b.Settings.ViewMode)
 	}
 }
+
+func TestGetBoardSettings_notFound(t *testing.T) {
+	deps := newTestDeps(t)
+	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards/nope/settings", "")
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("want 404, got %d: %s", rec.Code, body)
+	}
+}
+
+func TestPutBoardSettings_notFound(t *testing.T) {
+	deps := newTestDeps(t)
+	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/nope/settings", `{"view_mode":"board"}`)
+	if rec.Code != http.StatusNotFound {
+		t.Errorf("want 404, got %d: %s", rec.Code, body)
+	}
+}
+
+func TestPutBoardSettings_badJSON(t *testing.T) {
+	deps := newTestDeps(t)
+	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/demo/settings", "not json")
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("want 400, got %d: %s", rec.Code, body)
+	}
+}
+
+func TestPutBoardSettings_withSSE(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/demo/settings", `{"view_mode":"list"}`)
+	if rec.Code != http.StatusNoContent {
+		t.Errorf("want 204, got %d: %s", rec.Code, body)
+	}
+}

@@ -2,6 +2,7 @@ package v1
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
@@ -37,7 +38,7 @@ func (d Deps) putBoardSettings(w http.ResponseWriter, r *http.Request) {
 	}
 	var patch models.BoardSettings
 	if err := decodeJSON(r, &patch); err != nil {
-		writeError(w, err)
+		writeError(w, fmt.Errorf("%w: %v", errInvalid, err))
 		return
 	}
 	if err := d.Engine.UpdateBoardSettings(path, patch); err != nil {

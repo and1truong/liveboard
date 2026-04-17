@@ -4,6 +4,7 @@
 /liveboard
 LiveBoard.app/
 /tmp/
+/coverage.out
 web/css/liveboard.css
 dist/
 dist-npm/

@@ -322,3 +322,155 @@ func TestDeleteBoard_notFound(t *testing.T) {
 		t.Errorf("status = %d", rec.Code)
 	}
 }
+
+func TestToggleBoardPin(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+
+	// Pin demo.
+	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/pin", "")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("pin: want 204, got %d: %s", rec.Code, body)
+	}
+
+	// listBoards should show demo as pinned.
+	rec2, body2 := doReq(t, deps, http.MethodGet, "/api/v1/boards", "")
+	if rec2.Code != http.StatusOK {
+		t.Fatalf("list after pin: %d %s", rec2.Code, body2)
+	}
+	var rows []struct {
+		ID     string `json:"id"`
+		Pinned bool   `json:"pinned"`
+	}
+	if err := json.Unmarshal([]byte(body2), &rows); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(rows) != 1 || !rows[0].Pinned {
+		t.Errorf("expected demo pinned, got %+v", rows)
+	}
+
+	// Unpin demo.
+	rec3, _ := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/pin", "")
+	if rec3.Code != http.StatusNoContent {
+		t.Fatalf("unpin: want 204, got %d", rec3.Code)
+	}
+
+	// listBoards should show demo as unpinned.
+	rec4, body4 := doReq(t, deps, http.MethodGet, "/api/v1/boards", "")
+	var rows2 []struct {
+		Pinned bool `json:"pinned"`
+	}
+	_ = json.Unmarshal([]byte(body4), &rows2)
+	if len(rows2) != 1 || rows2[0].Pinned {
+		t.Errorf("expected demo unpinned after toggle, code=%d body=%s", rec4.Code, body4)
+	}
+}
+
+func TestRenameBoard_malformedJSON(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/demo", "not json")
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("want 400, got %d", rec.Code)
+	}
+}
+
+func TestListBoards_nameSort(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"zebra", "apple", "mango"} {
+		seed := "---\nversion: 1\nname: " + name + "\n---\n\n## Todo\n\n"
+		if err := os.WriteFile(filepath.Join(dir, name+".md"), []byte(seed), 0o644); err != nil {
+			t.Fatalf("seed %s: %v", name, err)
+		}
+	}
+	deps := v1.Deps{Dir: dir, Workspace: workspace.Open(dir), Engine: board.New()}
+	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("list: %d %s", rec.Code, body)
+	}
+	var rows []struct {
+		ID string `json:"id"`
+	}
+	if err := json.Unmarshal([]byte(body), &rows); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("want 3 rows, got %d", len(rows))
+	}
+	if rows[0].ID != "apple" || rows[1].ID != "mango" || rows[2].ID != "zebra" {
+		t.Errorf("want alpha sort [apple, mango, zebra], got %v", func() []string {
+			ids := make([]string, len(rows))
+			for i, r := range rows {
+				ids[i] = r.ID
+			}
+			return ids
+		}())
+	}
+}
+
+func TestListBoards_withCompletedCard(t *testing.T) {
+	dir := t.TempDir()
+	seed := "---\nversion: 1\nname: Demo\n---\n\n## Todo\n\n- [x] Done\n- [ ] Still todo\n"
+	if err := os.WriteFile(filepath.Join(dir, "demo.md"), []byte(seed), 0o644); err != nil {
+		t.Fatalf("seed: %v", err)
+	}
+	deps := v1.Deps{Dir: dir, Workspace: workspace.Open(dir), Engine: board.New()}
+	_, body := doReq(t, deps, http.MethodGet, "/api/v1/boards", "")
+	var rows []struct {
+		CardCount int `json:"cardCount"`
+		DoneCount int `json:"doneCount"`
+	}
+	if err := json.Unmarshal([]byte(body), &rows); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(rows) != 1 || rows[0].CardCount != 2 || rows[0].DoneCount != 1 {
+		t.Errorf("want cardCount=2 doneCount=1, got %+v", rows)
+	}
+}
+
+func TestListBoards_pinSorting(t *testing.T) {
+	dir := t.TempDir()
+	for _, name := range []string{"alpha", "beta", "gamma"} {
+		seed := "---\nversion: 1\nname: " + name + "\n---\n\n## Todo\n\n"
+		if err := os.WriteFile(filepath.Join(dir, name+".md"), []byte(seed), 0o644); err != nil {
+			t.Fatalf("seed %s: %v", name, err)
+		}
+	}
+	deps := newTestDepsEmpty(t)
+	// Replace the empty deps with multi-board ones sharing Dir.
+	deps.Workspace = workspace.Open(dir)
+	deps.Dir = dir
+
+	// Pin gamma first, then alpha.
+	doReq(t, deps, http.MethodPost, "/api/v1/boards/gamma/pin", "")
+	doReq(t, deps, http.MethodPost, "/api/v1/boards/alpha/pin", "")
+
+	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("list: %d %s", rec.Code, body)
+	}
+	var rows []struct {
+		ID     string `json:"id"`
+		Pinned bool   `json:"pinned"`
+	}
+	if err := json.Unmarshal([]byte(body), &rows); err != nil {
+		t.Fatalf("decode: %v", err)
+	}
+	if len(rows) != 3 {
+		t.Fatalf("want 3 boards, got %d", len(rows))
+	}
+	// Pinned boards come first in pin order, then alpha-sorted unpinned.
+	if rows[0].ID != "gamma" {
+		t.Errorf("want gamma first (pinned first), got %q", rows[0].ID)
+	}
+	if rows[1].ID != "alpha" {
+		t.Errorf("want alpha second (pinned second), got %q", rows[1].ID)
+	}
+	if rows[2].ID != "beta" {
+		t.Errorf("want beta last (unpinned, alpha-sorted), got %q", rows[2].ID)
+	}
+	if !rows[0].Pinned || !rows[1].Pinned {
+		t.Errorf("expected gamma and alpha marked pinned")
+	}
+	if rows[2].Pinned {
+		t.Errorf("expected beta not pinned")
+	}
+}

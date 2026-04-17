@@ -158,3 +158,135 @@ func TestListBoardsLite(t *testing.T) {
 		t.Errorf("entry missing slug/columns: %+v", entries[0])
 	}
 }
+
+func TestPostMutation_slugNotFound(t *testing.T) {
+	deps := newTestDeps(t)
+	body := map[string]any{
+		"client_version": 1,
+		"op":             map[string]any{"type": "add_card", "column": "Todo", "title": "x"},
+	}
+	buf, _ := json.Marshal(body)
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/no-such-board/mutations", string(buf))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("want 404, got %d: %s", rec.Code, respBody)
+	}
+}
+
+func TestPostMutation_malformedJSON(t *testing.T) {
+	deps := newTestDeps(t)
+	r := chi.NewRouter()
+	r.Mount("/api/v1", v1.Router(deps))
+
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/demo/mutations",
+		bytes.NewReader([]byte("not json")))
+	req.Header.Set("Content-Type", "application/json")
+	rec := httptest.NewRecorder()
+	r.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Errorf("want 400, got %d: %s", rec.Code, rec.Body.String())
+	}
+}
+
+func TestPostMutationMoveCardToBoard_withSSE(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	other := "---\nversion: 1\nname: Other\n---\n\n## Inbox\n"
+	if err := os.WriteFile(filepath.Join(deps.Workspace.Dir, "other.md"), []byte(other), 0o644); err != nil {
+		t.Fatalf("seed other: %v", err)
+	}
+
+	body := map[string]any{
+		"client_version": 1,
+		"op": map[string]any{
+			"type": "move_card_to_board", "col_idx": 0, "card_idx": 0,
+			"dst_board": "other", "dst_column": "Inbox",
+		},
+	}
+	buf, _ := json.Marshal(body)
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d: %s", rec.Code, respBody)
+	}
+}
+
+func TestPostMutationMoveCardToBoard_engineError(t *testing.T) {
+	deps := newTestDeps(t)
+	other := "---\nversion: 1\nname: Other\n---\n\n## Inbox\n"
+	if err := os.WriteFile(filepath.Join(deps.Workspace.Dir, "other.md"), []byte(other), 0o644); err != nil {
+		t.Fatalf("seed other: %v", err)
+	}
+	body := map[string]any{
+		"client_version": 1,
+		"op": map[string]any{
+			"type": "move_card_to_board", "col_idx": 0, "card_idx": 99,
+			"dst_board": "other", "dst_column": "Inbox",
+		},
+	}
+	buf, _ := json.Marshal(body)
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	if rec.Code == http.StatusOK {
+		t.Fatalf("want error status, got 200: %s", respBody)
+	}
+}
+
+func TestPostMutation_withSSE(t *testing.T) {
+	deps := newTestDepsWithSSE(t)
+	body := map[string]any{
+		"client_version": -1,
+		"op":             map[string]any{"type": "add_card", "column": "Todo", "title": "sse-card"},
+	}
+	buf, _ := json.Marshal(body)
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d: %s", rec.Code, respBody)
+	}
+}
+
+func TestPostMutation_invalidSlug(t *testing.T) {
+	deps := newTestDeps(t)
+	body := map[string]any{
+		"client_version": -1,
+		"op":             map[string]any{"type": "add_card", "column": "Todo", "title": "x"},
+	}
+	buf, _ := json.Marshal(body)
+	// slug "foo!bar" contains '!' which fails ValidateBoardName -> 400
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/foo!bar/mutations", string(buf))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("want 400, got %d: %s", rec.Code, respBody)
+	}
+}
+
+func TestPostMutationMoveCardToBoard_invalidDst(t *testing.T) {
+	deps := newTestDeps(t)
+	body := map[string]any{
+		"client_version": 1,
+		"op": map[string]any{
+			"type": "move_card_to_board", "col_idx": 0, "card_idx": 0,
+			"dst_board": "foo!bar", "dst_column": "Inbox",
+		},
+	}
+	buf, _ := json.Marshal(body)
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("want 400, got %d: %s", rec.Code, respBody)
+	}
+}
+
+func TestPostMutationMoveCardToBoard_dstNotFound(t *testing.T) {
+	deps := newTestDeps(t)
+	body := map[string]any{
+		"client_version": 1,
+		"op": map[string]any{
+			"type":       "move_card_to_board",
+			"col_idx":    0,
+			"card_idx":   0,
+			"dst_board":  "nonexistent",
+			"dst_column": "Inbox",
+		},
+	}
+	buf, _ := json.Marshal(body)
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	if rec.Code != http.StatusNotFound {
+		t.Fatalf("want 404, got %d: %s", rec.Code, respBody)
+	}
+}
