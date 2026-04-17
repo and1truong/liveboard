@@ -13,6 +13,7 @@ import { encodeCardId, encodeColumnId, encodeColumnEndId } from './cardId.js'
 import { useDragState } from './BoardDndContext.js'
 import { useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { filterCard } from '../utils/cardFilter.js'
+import { useAppSettings } from '../queries/useAppSettings.js'
 
 export function SortableListSection({
   column,
@@ -264,12 +265,13 @@ function ListQuickAdd({
   boardId: string
 }): JSX.Element {
   const mutation = useBoardMutation(boardId)
+  const { card_position } = useAppSettings()
   const inputRef = useRef<HTMLInputElement>(null)
 
   const commit = (): void => {
     const title = (inputRef.current?.value ?? '').trim()
     if (!title) return
-    mutation.mutate({ type: 'add_card', column: columnName, title })
+    mutation.mutate({ type: 'add_card', column: columnName, title, prepend: card_position === 'prepend' })
     if (inputRef.current) inputRef.current.value = ''
   }
 

@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
+import { useAppSettings } from '../queries/useAppSettings.js'
 
 export function AddCardButton({
   columnName,
@@ -11,6 +12,7 @@ export function AddCardButton({
   const [open, setOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const mutation = useBoardMutation(boardId)
+  const { card_position } = useAppSettings()
   const committedRef = useRef(false)
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export function AddCardButton({
     committedRef.current = true
     const title = (inputRef.current?.value ?? '').trim()
     if (title) {
-      mutation.mutate({ type: 'add_card', column: columnName, title })
+      mutation.mutate({ type: 'add_card', column: columnName, title, prepend: card_position === 'prepend' })
     }
     Promise.resolve().then(() => setOpen(false))
   }
