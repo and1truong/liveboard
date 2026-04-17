@@ -9,23 +9,33 @@ function code(err: unknown): string {
   return err instanceof ProtocolError ? err.code : 'INTERNAL'
 }
 
-export function useCreateBoard(): UseMutationResult<BoardSummary, Error, string> {
+export interface CreateBoardVars {
+  name: string
+  folder?: string
+}
+
+export function useCreateBoard(): UseMutationResult<BoardSummary, Error, CreateBoardVars | string> {
   const client = useClient()
   const qc = useQueryClient()
   const { setActive } = useActiveBoard()
-  return useMutation<BoardSummary, Error, string>({
-    mutationFn: (name) => client.createBoard(name),
+  return useMutation<BoardSummary, Error, CreateBoardVars | string>({
+    mutationFn: (vars) => {
+      if (typeof vars === 'string') return client.createBoard(vars)
+      return client.createBoard(vars.name, vars.folder)
+    },
     onSuccess: (summary) => {
       void qc.invalidateQueries({ queryKey: ['boards'] })
+      void qc.invalidateQueries({ queryKey: ['folders'] })
       setActive(summary.id)
     },
     onError: (err) => errorToast(code(err)),
   })
 }
 
-interface RenameVars {
+export interface RenameVars {
   boardId: string
   newName: string
+  folder?: string
 }
 
 export function useRenameBoard(): UseMutationResult<BoardSummary, Error, RenameVars> {
@@ -33,9 +43,37 @@ export function useRenameBoard(): UseMutationResult<BoardSummary, Error, RenameV
   const qc = useQueryClient()
   const { active, setActive } = useActiveBoard()
   return useMutation<BoardSummary, Error, RenameVars>({
-    mutationFn: ({ boardId, newName }) => client.renameBoard(boardId, newName),
+    mutationFn: ({ boardId, newName, folder }) => client.renameBoard(boardId, newName, folder),
     onSuccess: (summary, { boardId }) => {
       void qc.invalidateQueries({ queryKey: ['boards'] })
+      void qc.invalidateQueries({ queryKey: ['folders'] })
+      if (active === boardId) setActive(summary.id)
+    },
+    onError: (err) => errorToast(code(err)),
+  })
+}
+
+export interface MoveVars {
+  boardId: string
+  folder: string
+}
+
+// useMoveBoard is a thin wrapper that keeps the current display name but
+// moves the board to a different folder ('' = root).
+export function useMoveBoard(): UseMutationResult<BoardSummary, Error, MoveVars> {
+  const client = useClient()
+  const qc = useQueryClient()
+  const { active, setActive } = useActiveBoard()
+  return useMutation<BoardSummary, Error, MoveVars>({
+    mutationFn: async ({ boardId, folder }) => {
+      // Preserve the board's existing display name.
+      const board = await client.getBoard(boardId)
+      const name = board.name ?? boardId.split('/').pop() ?? boardId
+      return client.renameBoard(boardId, name, folder)
+    },
+    onSuccess: (summary, { boardId }) => {
+      void qc.invalidateQueries({ queryKey: ['boards'] })
+      void qc.invalidateQueries({ queryKey: ['folders'] })
       if (active === boardId) setActive(summary.id)
     },
     onError: (err) => errorToast(code(err)),
@@ -69,6 +107,7 @@ export function useDeleteBoard(): UseMutationResult<void, Error, string, DeleteC
     },
     onSuccess: (_void, boardId, ctx) => {
       void qc.invalidateQueries({ queryKey: ['boards'] })
+      void qc.invalidateQueries({ queryKey: ['folders'] })
       if (active === boardId) setActive(ctx?.fallbackActive ?? null)
     },
     onError: (err) => errorToast(code(err)),

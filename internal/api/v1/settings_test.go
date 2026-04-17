@@ -17,7 +17,7 @@ func TestGetBoardSettings(t *testing.T) {
 	r := chi.NewRouter()
 	r.Mount("/api/v1", v1.Router(deps))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/demo/settings", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/settings/demo", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -42,7 +42,7 @@ func TestPutBoardSettings(t *testing.T) {
 	r.Mount("/api/v1", v1.Router(deps))
 
 	patch := `{"view_mode":"calendar"}`
-	req := httptest.NewRequest(http.MethodPut, "/api/v1/boards/demo/settings",
+	req := httptest.NewRequest(http.MethodPut, "/api/v1/boards/settings/demo",
 		bytes.NewReader([]byte(patch)))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -53,7 +53,7 @@ func TestPutBoardSettings(t *testing.T) {
 	}
 
 	// Verify persistence: GET the board and check settings.
-	req2 := httptest.NewRequest(http.MethodGet, "/api/v1/boards/demo", nil)
+	req2 := httptest.NewRequest(http.MethodGet, "/api/v1/boards/board/demo", nil)
 	rec2 := httptest.NewRecorder()
 	r.ServeHTTP(rec2, req2)
 
@@ -70,7 +70,7 @@ func TestPutBoardSettings(t *testing.T) {
 
 func TestGetBoardSettings_notFound(t *testing.T) {
 	deps := newTestDeps(t)
-	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards/nope/settings", "")
+	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards/settings/nope", "")
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("want 404, got %d: %s", rec.Code, body)
 	}
@@ -78,7 +78,7 @@ func TestGetBoardSettings_notFound(t *testing.T) {
 
 func TestPutBoardSettings_notFound(t *testing.T) {
 	deps := newTestDeps(t)
-	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/nope/settings", `{"view_mode":"board"}`)
+	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/settings/nope", `{"view_mode":"board"}`)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("want 404, got %d: %s", rec.Code, body)
 	}
@@ -86,7 +86,7 @@ func TestPutBoardSettings_notFound(t *testing.T) {
 
 func TestPutBoardSettings_badJSON(t *testing.T) {
 	deps := newTestDeps(t)
-	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/demo/settings", "not json")
+	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/settings/demo", "not json")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("want 400, got %d: %s", rec.Code, body)
 	}
@@ -94,7 +94,7 @@ func TestPutBoardSettings_badJSON(t *testing.T) {
 
 func TestPutBoardSettings_withSSE(t *testing.T) {
 	deps := newTestDepsWithSSE(t)
-	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/demo/settings", `{"view_mode":"list"}`)
+	rec, body := doReq(t, deps, http.MethodPut, "/api/v1/boards/settings/demo", `{"view_mode":"list"}`)
 	if rec.Code != http.StatusNoContent {
 		t.Errorf("want 204, got %d: %s", rec.Code, body)
 	}

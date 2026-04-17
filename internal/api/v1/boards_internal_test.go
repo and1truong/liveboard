@@ -103,9 +103,25 @@ func TestRelativeTime_pluralDays(t *testing.T) {
 
 func TestBoardFileSlug_noFilePath(t *testing.T) {
 	b := &models.Board{Name: "My Board"}
-	got := boardFileSlug(b)
+	got := boardFileSlug("/tmp/ws", b)
 	if got != "My Board" {
 		t.Errorf("want %q, got %q", "My Board", got)
+	}
+}
+
+func TestBoardFileSlug_nestedRelativePath(t *testing.T) {
+	b := &models.Board{Name: "ideas", FilePath: "/tmp/ws/Work/ideas.md"}
+	got := boardFileSlug("/tmp/ws", b)
+	if got != "Work/ideas" {
+		t.Errorf("want %q, got %q", "Work/ideas", got)
+	}
+}
+
+func TestBoardFileSlug_rootFilePath(t *testing.T) {
+	b := &models.Board{Name: "ideas", FilePath: "/tmp/ws/ideas.md"}
+	got := boardFileSlug("/tmp/ws", b)
+	if got != "ideas" {
+		t.Errorf("want %q, got %q", "ideas", got)
 	}
 }
 

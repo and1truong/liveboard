@@ -19,7 +19,7 @@ type mutationRequest struct {
 func (d Deps) postMutation(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
-	slug := chi.URLParam(r, "slug")
+	slug := chi.URLParam(r, "*")
 
 	boardPath, pathErr := d.Workspace.BoardPath(slug)
 	if pathErr != nil {

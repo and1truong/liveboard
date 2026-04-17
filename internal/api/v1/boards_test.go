@@ -13,6 +13,7 @@ import (
 
 	v1 "github.com/and1truong/liveboard/internal/api/v1"
 	"github.com/and1truong/liveboard/internal/board"
+	"github.com/and1truong/liveboard/internal/web"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
 
@@ -88,7 +89,7 @@ func TestGetBoard(t *testing.T) {
 	r := chi.NewRouter()
 	r.Mount("/api/v1", v1.Router(deps))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/demo", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/board/demo", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -121,7 +122,7 @@ func TestGetBoard(t *testing.T) {
 // Regression: when a board's filename differs from its frontmatter name
 // (e.g. demo file oss-project.md with `name: OSS Tracker`), listBoards must
 // expose `id` as the filename stem so getBoard can round-trip it. Otherwise
-// clicking the row issues GET /api/v1/boards/OSS Tracker → 404.
+// clicking the row issues GET /api/v1/boards/board/OSS Tracker → 404.
 func TestListBoards_idIsFileSlugNotName(t *testing.T) {
 	dir := t.TempDir()
 	seed := "---\nversion: 1\nname: OSS Tracker\n---\n\n## Todo\n\n- [ ] Seed\n"
@@ -147,7 +148,7 @@ func TestListBoards_idIsFileSlugNotName(t *testing.T) {
 	}
 
 	// Round-trip: getBoard must accept the id from listBoards.
-	rec2, body2 := doReq(t, deps, http.MethodGet, "/api/v1/boards/"+id, "")
+	rec2, body2 := doReq(t, deps, http.MethodGet, "/api/v1/boards/board/"+id, "")
 	if rec2.Code != http.StatusOK {
 		t.Fatalf("getBoard(%q): %d %s", id, rec2.Code, body2)
 	}
@@ -158,7 +159,7 @@ func TestGetBoardNotFound(t *testing.T) {
 	r := chi.NewRouter()
 	r.Mount("/api/v1", v1.Router(deps))
 
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/does-not-exist", nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/board/does-not-exist", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -245,7 +246,7 @@ func TestRenameBoard(t *testing.T) {
 	if rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`); rec.Code != http.StatusCreated {
 		t.Fatalf("setup: %d %s", rec.Code, body)
 	}
-	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/Foo", `{"new_name":"Bar"}`)
+	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/board/Foo", `{"new_name":"Bar"}`)
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, body = %s", rec.Code, body)
 	}
@@ -262,12 +263,12 @@ func TestRenameBoard(t *testing.T) {
 	}
 
 	// Old slug 404.
-	rec2, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/Foo", "")
+	rec2, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/board/Foo", "")
 	if rec2.Code != http.StatusNotFound {
 		t.Errorf("old slug: want 404, got %d", rec2.Code)
 	}
 	// New slug 200.
-	rec3, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/Bar", "")
+	rec3, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/board/Bar", "")
 	if rec3.Code != http.StatusOK {
 		t.Errorf("new slug: want 200, got %d", rec3.Code)
 	}
@@ -277,7 +278,7 @@ func TestRenameBoard_collision(t *testing.T) {
 	deps := newTestDepsWithSSE(t)
 	doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`)
 	doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Bar"}`)
-	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/Foo", `{"new_name":"Bar"}`)
+	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/board/Foo", `{"new_name":"Bar"}`)
 	if rec.Code != http.StatusConflict {
 		t.Errorf("status = %d, body = %s", rec.Code, body)
 	}
@@ -285,7 +286,7 @@ func TestRenameBoard_collision(t *testing.T) {
 
 func TestRenameBoard_notFound(t *testing.T) {
 	deps := newTestDepsWithSSE(t)
-	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/nope", `{"new_name":"X"}`)
+	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/board/nope", `{"new_name":"X"}`)
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("status = %d", rec.Code)
 	}
@@ -294,7 +295,7 @@ func TestRenameBoard_notFound(t *testing.T) {
 func TestRenameBoard_invalidName(t *testing.T) {
 	deps := newTestDepsWithSSE(t)
 	doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`)
-	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/Foo", `{"new_name":""}`)
+	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/board/Foo", `{"new_name":""}`)
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("status = %d", rec.Code)
 	}
@@ -305,11 +306,11 @@ func TestDeleteBoard(t *testing.T) {
 	if rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"Foo"}`); rec.Code != http.StatusCreated {
 		t.Fatalf("setup: %d %s", rec.Code, body)
 	}
-	rec, body := doReq(t, deps, http.MethodDelete, "/api/v1/boards/Foo", "")
+	rec, body := doReq(t, deps, http.MethodDelete, "/api/v1/boards/board/Foo", "")
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("status = %d, body = %s", rec.Code, body)
 	}
-	rec2, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/Foo", "")
+	rec2, _ := doReq(t, deps, http.MethodGet, "/api/v1/boards/board/Foo", "")
 	if rec2.Code != http.StatusNotFound {
 		t.Errorf("expected 404 after delete, got %d", rec2.Code)
 	}
@@ -317,7 +318,7 @@ func TestDeleteBoard(t *testing.T) {
 
 func TestDeleteBoard_notFound(t *testing.T) {
 	deps := newTestDepsWithSSE(t)
-	rec, _ := doReq(t, deps, http.MethodDelete, "/api/v1/boards/nope", "")
+	rec, _ := doReq(t, deps, http.MethodDelete, "/api/v1/boards/board/nope", "")
 	if rec.Code != http.StatusNotFound {
 		t.Errorf("status = %d", rec.Code)
 	}
@@ -327,7 +328,7 @@ func TestToggleBoardPin(t *testing.T) {
 	deps := newTestDepsWithSSE(t)
 
 	// Pin demo.
-	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/pin", "")
+	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards/pin/demo", "")
 	if rec.Code != http.StatusNoContent {
 		t.Fatalf("pin: want 204, got %d: %s", rec.Code, body)
 	}
@@ -349,7 +350,7 @@ func TestToggleBoardPin(t *testing.T) {
 	}
 
 	// Unpin demo.
-	rec3, _ := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/pin", "")
+	rec3, _ := doReq(t, deps, http.MethodPost, "/api/v1/boards/pin/demo", "")
 	if rec3.Code != http.StatusNoContent {
 		t.Fatalf("unpin: want 204, got %d", rec3.Code)
 	}
@@ -367,7 +368,7 @@ func TestToggleBoardPin(t *testing.T) {
 
 func TestRenameBoard_malformedJSON(t *testing.T) {
 	deps := newTestDepsWithSSE(t)
-	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/demo", "not json")
+	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/board/demo", "not json")
 	if rec.Code != http.StatusBadRequest {
 		t.Errorf("want 400, got %d", rec.Code)
 	}
@@ -440,8 +441,8 @@ func TestListBoards_pinSorting(t *testing.T) {
 	deps.Dir = dir
 
 	// Pin gamma first, then alpha.
-	doReq(t, deps, http.MethodPost, "/api/v1/boards/gamma/pin", "")
-	doReq(t, deps, http.MethodPost, "/api/v1/boards/alpha/pin", "")
+	doReq(t, deps, http.MethodPost, "/api/v1/boards/pin/gamma", "")
+	doReq(t, deps, http.MethodPost, "/api/v1/boards/pin/alpha", "")
 
 	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards", "")
 	if rec.Code != http.StatusOK {
@@ -472,5 +473,142 @@ func TestListBoards_pinSorting(t *testing.T) {
 	}
 	if rows[2].Pinned {
 		t.Errorf("expected beta not pinned")
+	}
+}
+
+// --- Folder CRUD & nested boards ---
+
+func TestCreateFolder(t *testing.T) {
+	deps := newTestDeps(t)
+	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards/folders", `{"name":"Work"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("want 201, got %d: %s", rec.Code, body)
+	}
+	if _, err := os.Stat(filepath.Join(deps.Dir, "Work")); err != nil {
+		t.Errorf("folder not on disk: %v", err)
+	}
+}
+
+func TestListFolders(t *testing.T) {
+	deps := newTestDeps(t)
+	if err := os.Mkdir(filepath.Join(deps.Dir, "Work"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards/folders", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d", rec.Code)
+	}
+	var folders []string
+	if err := json.Unmarshal([]byte(body), &folders); err != nil {
+		t.Fatal(err)
+	}
+	if len(folders) != 1 || folders[0] != "Work" {
+		t.Errorf("want [Work], got %v", folders)
+	}
+}
+
+func TestRenameFolder(t *testing.T) {
+	deps := newTestDeps(t)
+	if err := os.Mkdir(filepath.Join(deps.Dir, "Work"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/folders/Work", `{"new_name":"Job"}`)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("want 204, got %d: %s", rec.Code, body)
+	}
+	if _, err := os.Stat(filepath.Join(deps.Dir, "Job")); err != nil {
+		t.Errorf("renamed folder missing: %v", err)
+	}
+}
+
+func TestDeleteFolder(t *testing.T) {
+	deps := newTestDeps(t)
+	if err := os.Mkdir(filepath.Join(deps.Dir, "Work"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	rec, body := doReq(t, deps, http.MethodDelete, "/api/v1/boards/folders/Work", "")
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("want 204, got %d: %s", rec.Code, body)
+	}
+}
+
+func TestCreateBoard_InFolder(t *testing.T) {
+	deps := newTestDeps(t)
+	if err := os.Mkdir(filepath.Join(deps.Dir, "Work"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	rec, body := doReq(t, deps, http.MethodPost, "/api/v1/boards", `{"name":"ideas","folder":"Work"}`)
+	if rec.Code != http.StatusCreated {
+		t.Fatalf("want 201, got %d: %s", rec.Code, body)
+	}
+	var summary map[string]any
+	if err := json.Unmarshal([]byte(body), &summary); err != nil {
+		t.Fatal(err)
+	}
+	if summary["id"] != "Work/ideas" {
+		t.Errorf("want id=Work/ideas, got %v", summary["id"])
+	}
+	if summary["folder"] != "Work" {
+		t.Errorf("want folder=Work, got %v", summary["folder"])
+	}
+	if _, err := os.Stat(filepath.Join(deps.Dir, "Work", "ideas.md")); err != nil {
+		t.Errorf("nested file missing: %v", err)
+	}
+}
+
+func TestGetBoard_Nested(t *testing.T) {
+	deps := newTestDeps(t)
+	if err := os.Mkdir(filepath.Join(deps.Dir, "Work"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	seed := "---\nversion: 1\nname: Nested\n---\n\n## Todo\n"
+	if err := os.WriteFile(filepath.Join(deps.Dir, "Work", "ideas.md"), []byte(seed), 0644); err != nil {
+		t.Fatal(err)
+	}
+	rec, body := doReq(t, deps, http.MethodGet, "/api/v1/boards/board/Work/ideas", "")
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d: %s", rec.Code, body)
+	}
+	var b map[string]any
+	if err := json.Unmarshal([]byte(body), &b); err != nil {
+		t.Fatal(err)
+	}
+	if b["name"] != "Nested" {
+		t.Errorf("want name=Nested, got %v", b["name"])
+	}
+}
+
+func TestRenameBoard_MovesAcrossFolders(t *testing.T) {
+	deps := newTestDeps(t)
+	// Start: demo.md at root. Move to Work/demo.
+	rec, body := doReq(t, deps, http.MethodPatch, "/api/v1/boards/board/demo",
+		`{"new_name":"demo","folder":"Work"}`)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("want 200, got %d: %s", rec.Code, body)
+	}
+	if _, err := os.Stat(filepath.Join(deps.Dir, "Work", "demo.md")); err != nil {
+		t.Errorf("moved file missing: %v", err)
+	}
+	if _, err := os.Stat(filepath.Join(deps.Dir, "demo.md")); !os.IsNotExist(err) {
+		t.Errorf("source file should be gone")
+	}
+}
+
+func TestRenameFolder_RewritesPins(t *testing.T) {
+	deps := newTestDeps(t)
+	if err := os.Mkdir(filepath.Join(deps.Dir, "Work"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	// Pin Work/ideas (doesn't need to exist for pin operation).
+	_ = web.MutateSettings(deps.Dir, func(s *web.AppSettings) {
+		s.PinnedBoards = []string{"Work/ideas"}
+	})
+	rec, _ := doReq(t, deps, http.MethodPatch, "/api/v1/boards/folders/Work", `{"new_name":"Job"}`)
+	if rec.Code != http.StatusNoContent {
+		t.Fatalf("want 204, got %d", rec.Code)
+	}
+	s := web.LoadSettingsFromDir(deps.Dir)
+	if len(s.PinnedBoards) != 1 || s.PinnedBoards[0] != "Job/ideas" {
+		t.Errorf("pins not rewritten: %v", s.PinnedBoards)
 	}
 }

@@ -98,39 +98,58 @@ export class ServerAdapter implements BackendAdapter {
     await this.request('DELETE', path)
   }
 
-  // === BackendAdapter — stubbed; filled in Tasks 2–5 ===
+  // Board ids may contain a single "/" (folder/name). The server routes
+  // per-board endpoints under action-prefixed catch-alls (see v1/router.go).
+  private boardPath(id: string): string {
+    return id.split('/').map(encodeURIComponent).join('/')
+  }
+
   listBoards(): Promise<BoardSummary[]> {
     return this.getJSON<BoardSummary[]>('/boards')
   }
   listBoardsLite(): Promise<BoardListLiteEntry[]> {
     return this.getJSON<BoardListLiteEntry[]>('/boards/list-lite')
   }
-  createBoard(name: string): Promise<BoardSummary> {
-    return this.postJSON<BoardSummary>('/boards', { name })
+  createBoard(name: string, folder?: string): Promise<BoardSummary> {
+    return this.postJSON<BoardSummary>('/boards', { name, folder })
   }
-  renameBoard(boardId: string, newName: string): Promise<BoardSummary> {
-    return this.patchJSON<BoardSummary>(`/boards/${encodeURIComponent(boardId)}`, { new_name: newName })
+  renameBoard(boardId: string, newName: string, folder?: string): Promise<BoardSummary> {
+    const body: { new_name: string; folder?: string } = { new_name: newName }
+    if (folder !== undefined) body.folder = folder
+    return this.patchJSON<BoardSummary>(`/boards/board/${this.boardPath(boardId)}`, body)
   }
   deleteBoard(boardId: string): Promise<void> {
-    return this.deleteEmpty(`/boards/${encodeURIComponent(boardId)}`)
+    return this.deleteEmpty(`/boards/board/${this.boardPath(boardId)}`)
   }
   async togglePin(boardId: string): Promise<void> {
-    await this.request('POST', `/boards/${encodeURIComponent(boardId)}/pin`)
+    await this.request('POST', `/boards/pin/${this.boardPath(boardId)}`)
   }
   getBoard(boardId: string): Promise<Board> {
-    return this.getJSON<Board>(`/boards/${encodeURIComponent(boardId)}`)
+    return this.getJSON<Board>(`/boards/board/${this.boardPath(boardId)}`)
   }
   mutateBoard(boardId: string, clientVersion: number, op: MutationOp): Promise<Board> {
     return this.postJSON<Board>(
-      `/boards/${encodeURIComponent(boardId)}/mutations`,
+      `/boards/mutate/${this.boardPath(boardId)}`,
       { client_version: clientVersion, op },
     )
   }
   getSettings(boardId: string): Promise<ResolvedSettings> {
-    return this.getJSON<ResolvedSettings>(`/boards/${encodeURIComponent(boardId)}/settings`)
+    return this.getJSON<ResolvedSettings>(`/boards/settings/${this.boardPath(boardId)}`)
   }
   putBoardSettings(boardId: string, patch: Partial<BoardSettings>): Promise<void> {
-    return this.putEmpty(`/boards/${encodeURIComponent(boardId)}/settings`, patch)
+    return this.putEmpty(`/boards/settings/${this.boardPath(boardId)}`, patch)
+  }
+  listFolders(): Promise<string[]> {
+    return this.getJSON<string[]>('/boards/folders')
+  }
+  async createFolder(name: string): Promise<void> {
+    await this.request('POST', '/boards/folders', { name })
+  }
+  async renameFolder(oldName: string, newName: string): Promise<void> {
+    await this.request('PATCH', `/boards/folders/${encodeURIComponent(oldName)}`, { new_name: newName })
+  }
+  async deleteFolder(name: string): Promise<void> {
+    await this.request('DELETE', `/boards/folders/${encodeURIComponent(name)}`)
   }
   getAppSettings(): Promise<AppSettings> {
     return this.getJSON<AppSettings>('/settings')

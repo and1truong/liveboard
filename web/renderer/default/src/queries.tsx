@@ -53,3 +53,11 @@ export function useWorkspaceInfo(): UseQueryResult<WorkspaceInfo> {
     queryFn: () => client.workspaceInfo(),
   })
 }
+
+export function useFolderList(): UseQueryResult<string[]> {
+  const client = useClient()
+  return useQuery({
+    queryKey: ['folders'],
+    queryFn: () => client.listFolders(),
+  })
+}

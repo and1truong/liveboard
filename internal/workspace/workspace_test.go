@@ -514,13 +514,13 @@ func TestRenameBoard(t *testing.T) {
 		t.Errorf("name = %q, want Bar", b.Name)
 	}
 
-	if _, err := os.Stat(filepath.Join(ws.Dir, "Foo.md")); !os.IsNotExist(err) {
-		t.Errorf("old file still present: err=%v", err)
+	if _, statErr := os.Stat(filepath.Join(ws.Dir, "Foo.md")); !os.IsNotExist(statErr) {
+		t.Errorf("old file still present: err=%v", statErr)
 	}
-	if _, err := os.Stat(filepath.Join(ws.Dir, "Bar.md")); err != nil {
-		t.Errorf("new file missing: %v", err)
+	if _, statErr := os.Stat(filepath.Join(ws.Dir, "Bar.md")); statErr != nil {
+		t.Errorf("new file missing: %v", statErr)
 	}
-	if _, err := ws.LoadBoard("Foo"); err == nil {
+	if _, loadErr := ws.LoadBoard("Foo"); loadErr == nil {
 		t.Errorf("expected error loading old name")
 	}
 	loaded, err := ws.LoadBoard("Bar")
@@ -559,5 +559,238 @@ func TestRenameBoard_invalidName(t *testing.T) {
 	}
 	if _, err := ws.RenameBoard("Foo", ""); !errors.Is(err, ErrInvalidBoardName) {
 		t.Errorf("expected ErrInvalidBoardName, got %v", err)
+	}
+}
+
+// --- folder support (depth 1) ---
+
+func TestListBoards_FindsNested(t *testing.T) {
+	ws := setupWorkspace(t)
+	createBoardFile(t, ws.Dir, "root")
+	work := filepath.Join(ws.Dir, "Work")
+	if err := os.Mkdir(work, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createBoardFile(t, work, "ideas")
+
+	boards, err := ws.ListBoards()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(boards) != 2 {
+		t.Fatalf("expected 2 boards (root + Work/ideas), got %d", len(boards))
+	}
+}
+
+func TestListBoards_IgnoresDepth2(t *testing.T) {
+	ws := setupWorkspace(t)
+	deep := filepath.Join(ws.Dir, "Work", "Q1")
+	if err := os.MkdirAll(deep, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createBoardFile(t, deep, "sprint")
+
+	boards, err := ws.ListBoards()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(boards) != 0 {
+		t.Errorf("expected 0 boards at depth 2, got %d", len(boards))
+	}
+}
+
+func TestListBoards_SkipsHiddenDirs(t *testing.T) {
+	ws := setupWorkspace(t)
+	hidden := filepath.Join(ws.Dir, ".secret")
+	if err := os.Mkdir(hidden, 0755); err != nil {
+		t.Fatal(err)
+	}
+	createBoardFile(t, hidden, "private")
+
+	boards, err := ws.ListBoards()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(boards) != 0 {
+		t.Errorf("expected 0 boards (hidden dir skipped), got %d", len(boards))
+	}
+}
+
+func TestValidateBoardID(t *testing.T) {
+	valid := []string{"roadmap", "work/ideas", "Work/My Board", "日本語/plan"}
+	for _, id := range valid {
+		if err := ValidateBoardID(id); err != nil {
+			t.Errorf("ValidateBoardID(%q) = %v, want nil", id, err)
+		}
+	}
+	invalid := []string{"", "a/b/c", "../escape", "a//b", "/abs"}
+	for _, id := range invalid {
+		if err := ValidateBoardID(id); err == nil {
+			t.Errorf("ValidateBoardID(%q) = nil, want error", id)
+		}
+	}
+}
+
+func TestBoardPath_Nested(t *testing.T) {
+	ws := setupWorkspace(t)
+	got, err := ws.BoardPath("Work/ideas")
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := filepath.Join(ws.Dir, "Work", "ideas.md")
+	if got != want {
+		t.Errorf("BoardPath = %q, want %q", got, want)
+	}
+}
+
+func TestCreateBoard_Nested_AutoMkdir(t *testing.T) {
+	ws := setupWorkspace(t)
+	b, err := ws.CreateBoard("Work/ideas")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if b.Name != "ideas" {
+		t.Errorf("Name = %q, want %q (stem, not full id)", b.Name, "ideas")
+	}
+	if _, err := os.Stat(filepath.Join(ws.Dir, "Work", "ideas.md")); err != nil {
+		t.Errorf("nested file missing: %v", err)
+	}
+}
+
+func TestRenameBoard_MovesAcrossFolders(t *testing.T) {
+	ws := setupWorkspace(t)
+	if _, err := ws.CreateBoard("ideas"); err != nil {
+		t.Fatal(err)
+	}
+	b, err := ws.RenameBoard("ideas", "Work/ideas")
+	if err != nil {
+		t.Fatalf("rename across folders: %v", err)
+	}
+	if b.Name != "ideas" {
+		t.Errorf("Name = %q, want %q", b.Name, "ideas")
+	}
+	if _, err := os.Stat(filepath.Join(ws.Dir, "ideas.md")); !os.IsNotExist(err) {
+		t.Error("source file should be gone")
+	}
+	if _, err := os.Stat(filepath.Join(ws.Dir, "Work", "ideas.md")); err != nil {
+		t.Errorf("dest file missing: %v", err)
+	}
+	if _, err := ws.LoadBoard("Work/ideas"); err != nil {
+		t.Errorf("LoadBoard nested: %v", err)
+	}
+}
+
+func TestListFolders(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := os.Mkdir(filepath.Join(ws.Dir, "Work"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(ws.Dir, "Personal"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Mkdir(filepath.Join(ws.Dir, ".git"), 0755); err != nil {
+		t.Fatal(err)
+	}
+	folders, err := ws.ListFolders()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(folders) != 2 {
+		t.Errorf("expected 2 folders (hidden skipped), got %d: %v", len(folders), folders)
+	}
+}
+
+func TestCreateFolder(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := ws.CreateFolder("Work"); err != nil {
+		t.Fatal(err)
+	}
+	fi, err := os.Stat(filepath.Join(ws.Dir, "Work"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !fi.IsDir() {
+		t.Error("Work should be a directory")
+	}
+	if err := ws.CreateFolder("Work"); !errors.Is(err, ErrAlreadyExists) {
+		t.Errorf("expected ErrAlreadyExists, got %v", err)
+	}
+	if err := ws.CreateFolder("../escape"); !errors.Is(err, ErrInvalidBoardName) {
+		t.Errorf("expected ErrInvalidBoardName, got %v", err)
+	}
+}
+
+func TestCreateFolder_CollidesWithBoard(t *testing.T) {
+	ws := setupWorkspace(t)
+	createBoardFile(t, ws.Dir, "Foo")
+	if err := ws.CreateFolder("Foo"); !errors.Is(err, ErrAlreadyExists) {
+		t.Errorf("expected ErrAlreadyExists, got %v", err)
+	}
+}
+
+func TestRenameFolder(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := ws.CreateFolder("Work"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.RenameFolder("Work", "Job"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(ws.Dir, "Work")); !os.IsNotExist(err) {
+		t.Error("old folder still exists")
+	}
+	if _, err := os.Stat(filepath.Join(ws.Dir, "Job")); err != nil {
+		t.Errorf("new folder missing: %v", err)
+	}
+}
+
+func TestRenameFolder_notFound(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := ws.RenameFolder("Missing", "X"); !errors.Is(err, board.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
+	}
+}
+
+func TestRenameFolder_collision(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := ws.CreateFolder("Work"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.CreateFolder("Job"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.RenameFolder("Work", "Job"); !errors.Is(err, ErrAlreadyExists) {
+		t.Errorf("expected ErrAlreadyExists, got %v", err)
+	}
+}
+
+func TestDeleteFolder(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := ws.CreateFolder("Work"); err != nil {
+		t.Fatal(err)
+	}
+	if err := ws.DeleteFolder("Work"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := os.Stat(filepath.Join(ws.Dir, "Work")); !os.IsNotExist(err) {
+		t.Error("folder should be gone")
+	}
+}
+
+func TestDeleteFolder_NotEmpty(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := ws.CreateFolder("Work"); err != nil {
+		t.Fatal(err)
+	}
+	createBoardFile(t, filepath.Join(ws.Dir, "Work"), "ideas")
+	if err := ws.DeleteFolder("Work"); !errors.Is(err, ErrFolderNotEmpty) {
+		t.Errorf("expected ErrFolderNotEmpty, got %v", err)
+	}
+}
+
+func TestDeleteFolder_NotFound(t *testing.T) {
+	ws := setupWorkspace(t)
+	if err := ws.DeleteFolder("Missing"); !errors.Is(err, board.ErrNotFound) {
+		t.Errorf("expected ErrNotFound, got %v", err)
 	}
 }

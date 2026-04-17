@@ -109,6 +109,37 @@ func MutateSettings(dir string, fn func(*AppSettings)) error {
 	return SaveSettingsToDir(dir, s)
 }
 
+// RewritePinsOnRename updates pinned-board entries in settings.json when a
+// board id changes (rename or move across folders).
+func RewritePinsOnRename(dir, oldID, newID string) error {
+	if oldID == newID {
+		return nil
+	}
+	return MutateSettings(dir, func(s *AppSettings) {
+		for i, p := range s.PinnedBoards {
+			if p == oldID {
+				s.PinnedBoards[i] = newID
+			}
+		}
+	})
+}
+
+// RewritePinsOnFolderRename updates pinned-board entries when a folder is
+// renamed: every pin starting with "oldFolder/" gets rewritten to "newFolder/".
+func RewritePinsOnFolderRename(dir, oldFolder, newFolder string) error {
+	if oldFolder == newFolder {
+		return nil
+	}
+	prefix := oldFolder + "/"
+	return MutateSettings(dir, func(s *AppSettings) {
+		for i, p := range s.PinnedBoards {
+			if strings.HasPrefix(p, prefix) {
+				s.PinnedBoards[i] = newFolder + "/" + p[len(prefix):]
+			}
+		}
+	})
+}
+
 // SanitizeSettings clamps and normalizes settings values to valid ranges.
 func SanitizeSettings(s *AppSettings) {
 	if s.ColumnWidth < 180 || s.ColumnWidth > 600 {

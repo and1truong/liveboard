@@ -131,14 +131,25 @@ export class Broker {
         this.subs.delete(req.params.boardId)
         return null
       case 'board.create':
-        return this.adapter.createBoard(req.params.name)
+        return this.adapter.createBoard(req.params.name, req.params.folder)
       case 'board.rename':
-        return this.adapter.renameBoard(req.params.boardId, req.params.newName)
+        return this.adapter.renameBoard(req.params.boardId, req.params.newName, req.params.folder)
       case 'board.delete':
         await this.adapter.deleteBoard(req.params.boardId)
         return null
       case 'board.pin':
         await this.adapter.togglePin(req.params.boardId)
+        return null
+      case 'folder.list':
+        return this.adapter.listFolders()
+      case 'folder.create':
+        await this.adapter.createFolder(req.params.name)
+        return null
+      case 'folder.rename':
+        await this.adapter.renameFolder(req.params.oldName, req.params.newName)
+        return null
+      case 'folder.delete':
+        await this.adapter.deleteFolder(req.params.name)
         return null
       case 'search':
         return this.adapter.search(req.params.query, req.params.limit)

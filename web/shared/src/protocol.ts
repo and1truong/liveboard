@@ -25,9 +25,18 @@ export type Request =
     }
   | { id: string; kind: 'request'; method: 'subscribe'; params: { boardId: string } }
   | { id: string; kind: 'request'; method: 'unsubscribe'; params: { boardId: string } }
-  | { id: string; kind: 'request'; method: 'board.create'; params: { name: string } }
-  | { id: string; kind: 'request'; method: 'board.rename'; params: { boardId: string; newName: string } }
+  | { id: string; kind: 'request'; method: 'board.create'; params: { name: string; folder?: string } }
+  | {
+      id: string
+      kind: 'request'
+      method: 'board.rename'
+      params: { boardId: string; newName: string; folder?: string }
+    }
   | { id: string; kind: 'request'; method: 'board.delete'; params: { boardId: string } }
+  | { id: string; kind: 'request'; method: 'folder.list'; params?: undefined }
+  | { id: string; kind: 'request'; method: 'folder.create'; params: { name: string } }
+  | { id: string; kind: 'request'; method: 'folder.rename'; params: { oldName: string; newName: string } }
+  | { id: string; kind: 'request'; method: 'folder.delete'; params: { name: string } }
   | { id: string; kind: 'request'; method: 'search'; params: { query: string; limit?: number } }
   | { id: string; kind: 'request'; method: 'backlinks'; params: { cardId: string } }
   | { id: string; kind: 'request'; method: 'board.listLite'; params?: undefined }

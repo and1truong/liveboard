@@ -47,4 +47,41 @@ describe('BoardSidebar', () => {
     )
     await findByText('+ New board')
   })
+
+  it('renders + New folder affordance', async () => {
+    const client = await setup()
+    const { findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ThemeProvider>
+          <ActiveBoardProvider>
+            <BoardSidebar />
+          </ActiveBoardProvider>
+        </ThemeProvider>
+      </ClientProvider>,
+    )
+    await findByText('+ New folder')
+  })
+
+  it('groups nested boards under a folder header', async () => {
+    const [iframeT, shellT] = createMemoryPair()
+    const adapter = new LocalAdapter(new MemoryStorage())
+    await adapter.createBoard('Ideas', 'Work')
+    new Broker(shellT, adapter, { shellVersion: 't' })
+    const client = new Client(iframeT, { rendererId: 't', rendererVersion: '0' })
+    await client.ready()
+
+    const { findByText, getByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ThemeProvider>
+          <ActiveBoardProvider>
+            <BoardSidebar />
+          </ActiveBoardProvider>
+        </ThemeProvider>
+      </ClientProvider>,
+    )
+    // The folder header shows the folder name.
+    await findByText('Work')
+    // And the nested board shows its display name.
+    await waitFor(() => expect(getByText('Ideas')).toBeDefined())
+  })
 })

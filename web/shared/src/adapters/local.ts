@@ -25,6 +25,15 @@ const workspaceKey = (): string => `${KEY_PREFIX}workspace`
 interface StoredWorkspace {
   name: string
   boardIds: string[]
+  // Folders that exist in the workspace even if empty. Populated on folder
+  // CRUD and kept in sync when boards move/rename.
+  folders?: string[]
+}
+
+function parseFolder(id: string): { folder: string; name: string } {
+  const i = id.lastIndexOf('/')
+  if (i < 0) return { folder: '', name: id }
+  return { folder: id.slice(0, i), name: id.slice(i + 1) }
 }
 
 export class LocalAdapter implements BackendAdapter {
@@ -75,8 +84,10 @@ export class LocalAdapter implements BackendAdapter {
 
     const summaries: BoardSummary[] = ws.boardIds.map((id) => {
       const b = this.loadBoard(id)
+      const { folder } = parseFolder(id)
       return {
         id,
+        folder: folder || undefined,
         name: b.name ?? id,
         icon: b.icon,
         version: b.version ?? 0,
@@ -90,6 +101,9 @@ export class LocalAdapter implements BackendAdapter {
       if (pi !== undefined && pj !== undefined) return pi - pj
       if (pi !== undefined) return -1
       if (pj !== undefined) return 1
+      const fa = a.folder ?? ''
+      const fb = b.folder ?? ''
+      if (fa !== fb) return fa.localeCompare(fb)
       return a.name.localeCompare(b.name)
     })
 
@@ -247,11 +261,13 @@ export class LocalAdapter implements BackendAdapter {
     this.channel?.postMessage({ type: 'board.list.updated' })
   }
 
-  async createBoard(name: string): Promise<BoardSummary> {
+  async createBoard(name: string, folder?: string): Promise<BoardSummary> {
     const trimmed = name.trim()
     if (!trimmed) throw new ProtocolError('INVALID', 'name required')
-    const id = slugify(trimmed)
-    if (!id) throw new ProtocolError('INVALID', 'name has no usable characters')
+    const slug = slugify(trimmed)
+    if (!slug) throw new ProtocolError('INVALID', 'name has no usable characters')
+    const normFolder = (folder ?? '').trim().replace(/^\/+|\/+$/g, '')
+    const id = normFolder ? `${normFolder}/${slug}` : slug
     const ws = this.loadWorkspace()
     if (ws.boardIds.includes(id)) {
       throw new ProtocolError('ALREADY_EXISTS', `board ${id} exists`)
@@ -263,16 +279,23 @@ export class LocalAdapter implements BackendAdapter {
     }
     this.storage.set(boardKey(id), JSON.stringify(board))
     ws.boardIds.push(id)
+    if (normFolder && !(ws.folders ?? []).includes(normFolder)) {
+      ws.folders = [...(ws.folders ?? []), normFolder]
+    }
     this.storage.set(workspaceKey(), JSON.stringify(ws))
     this.publishBoardListUpdate()
-    return { id, name: trimmed, version: 1 }
+    return { id, folder: normFolder || undefined, name: trimmed, version: 1 }
   }
 
-  async renameBoard(boardId: string, newName: string): Promise<BoardSummary> {
+  async renameBoard(boardId: string, newName: string, folder?: string): Promise<BoardSummary> {
     const trimmed = newName.trim()
     if (!trimmed) throw new ProtocolError('INVALID', 'name required')
-    const newId = slugify(trimmed)
-    if (!newId) throw new ProtocolError('INVALID', 'name has no usable characters')
+    const slug = slugify(trimmed)
+    if (!slug) throw new ProtocolError('INVALID', 'name has no usable characters')
+    const currentFolder = parseFolder(boardId).folder
+    const normFolder =
+      folder !== undefined ? folder.trim().replace(/^\/+|\/+$/g, '') : currentFolder
+    const newId = normFolder ? `${normFolder}/${slug}` : slug
     const board = this.loadBoard(boardId)
     const ws = this.loadWorkspace()
     if (newId !== boardId && ws.boardIds.includes(newId)) {
@@ -287,10 +310,90 @@ export class LocalAdapter implements BackendAdapter {
       this.storage.remove(boardKey(boardId))
       const idx = ws.boardIds.indexOf(boardId)
       if (idx >= 0) ws.boardIds[idx] = newId
+      if (normFolder && !(ws.folders ?? []).includes(normFolder)) {
+        ws.folders = [...(ws.folders ?? []), normFolder]
+      }
       this.storage.set(workspaceKey(), JSON.stringify(ws))
     }
     this.publishBoardListUpdate()
-    return { id: newId, name: trimmed, version: board.version }
+    return { id: newId, folder: normFolder || undefined, name: trimmed, version: board.version }
+  }
+
+  async listFolders(): Promise<string[]> {
+    const ws = this.loadWorkspace()
+    // Union of registered folders and any folder present in a boardId.
+    const set = new Set<string>(ws.folders ?? [])
+    for (const id of ws.boardIds) {
+      const { folder } = parseFolder(id)
+      if (folder) set.add(folder)
+    }
+    return [...set].sort()
+  }
+
+  async createFolder(name: string): Promise<void> {
+    const trimmed = name.trim()
+    if (!trimmed) throw new ProtocolError('INVALID', 'name required')
+    if (trimmed.includes('/')) throw new ProtocolError('INVALID', 'folder name cannot contain /')
+    const ws = this.loadWorkspace()
+    const existing = await this.listFolders()
+    if (existing.includes(trimmed)) {
+      throw new ProtocolError('ALREADY_EXISTS', `folder ${trimmed} exists`)
+    }
+    ws.folders = [...(ws.folders ?? []), trimmed]
+    this.storage.set(workspaceKey(), JSON.stringify(ws))
+    this.publishBoardListUpdate()
+  }
+
+  async renameFolder(oldName: string, newName: string): Promise<void> {
+    const from = oldName.trim()
+    const to = newName.trim()
+    if (!from || !to) throw new ProtocolError('INVALID', 'names required')
+    if (to.includes('/')) throw new ProtocolError('INVALID', 'folder name cannot contain /')
+    const ws = this.loadWorkspace()
+    const prefix = from + '/'
+    const folders = new Set(ws.folders ?? [])
+    if (!folders.has(from) && !ws.boardIds.some((id) => id.startsWith(prefix))) {
+      throw new ProtocolError('NOT_FOUND', `folder ${from}`)
+    }
+    const existingFolders = await this.listFolders()
+    if (existingFolders.includes(to)) {
+      throw new ProtocolError('ALREADY_EXISTS', `folder ${to} exists`)
+    }
+    // Rewrite every board id.
+    ws.boardIds = ws.boardIds.map((id) => {
+      if (!id.startsWith(prefix)) return id
+      const next = to + '/' + id.slice(prefix.length)
+      const raw = this.storage.get(boardKey(id))
+      if (raw !== null) {
+        this.storage.set(boardKey(next), raw)
+        this.storage.remove(boardKey(id))
+      }
+      return next
+    })
+    folders.delete(from)
+    folders.add(to)
+    ws.folders = [...folders]
+    this.storage.set(workspaceKey(), JSON.stringify(ws))
+    // Rewrite pin ids pointing into the old folder.
+    const settings = await this.getAppSettings()
+    const pins = settings.pinned_boards.map((p) =>
+      p.startsWith(prefix) ? to + '/' + p.slice(prefix.length) : p,
+    )
+    await this.putAppSettings({ pinned_boards: pins })
+    this.publishBoardListUpdate()
+  }
+
+  async deleteFolder(name: string): Promise<void> {
+    const trimmed = name.trim()
+    if (!trimmed) throw new ProtocolError('INVALID', 'name required')
+    const ws = this.loadWorkspace()
+    const prefix = trimmed + '/'
+    if (ws.boardIds.some((id) => id.startsWith(prefix))) {
+      throw new ProtocolError('INVALID', 'folder not empty')
+    }
+    ws.folders = (ws.folders ?? []).filter((f) => f !== trimmed)
+    this.storage.set(workspaceKey(), JSON.stringify(ws))
+    this.publishBoardListUpdate()
   }
 
   async deleteBoard(boardId: string): Promise<void> {

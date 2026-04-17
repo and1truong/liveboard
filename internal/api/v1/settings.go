@@ -12,7 +12,7 @@ import (
 )
 
 func (d Deps) getBoardSettings(w http.ResponseWriter, r *http.Request) {
-	slug := chi.URLParam(r, "slug")
+	slug := chi.URLParam(r, "*")
 	board, err := d.Workspace.LoadBoard(slug)
 	if err != nil {
 		writeError(w, err)
@@ -30,7 +30,7 @@ func (d Deps) getBoardSettings(w http.ResponseWriter, r *http.Request) {
 func (d Deps) putBoardSettings(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
-	slug := chi.URLParam(r, "slug")
+	slug := chi.URLParam(r, "*")
 	path, err := d.Workspace.BoardPath(slug)
 	if err != nil {
 		writeError(w, err)

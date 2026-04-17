@@ -1,21 +1,70 @@
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useMemo } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
-import { useBoardList, useWorkspaceInfo } from '../queries.js'
+import type { BoardSummary } from '@shared/adapter.js'
+import { useBoardList, useFolderList, useWorkspaceInfo } from '../queries.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { EmptyState } from './EmptyState.js'
 import { BoardRow } from './BoardRow.js'
+import { BoardFolderGroup } from './BoardFolderGroup.js'
 import { AddBoardButton } from './AddBoardButton.js'
 import { ThemePicker } from './ThemePicker.js'
 import { useGlobalSettingsContext } from '../contexts/GlobalSettingsContext.js'
+import { useFolderCollapse } from '../hooks/useFolderCollapse.js'
+import { useCreateFolder } from '../mutations/useFolderCrud.js'
+
+interface Grouped {
+  pinned: BoardSummary[]
+  rootBoards: BoardSummary[]
+  folderOrder: string[]
+  byFolder: Map<string, BoardSummary[]>
+}
+
+// groupBoards partitions the board list into: pinned (cross-cutting), root
+// boards, and per-folder groups. The server already sorts the list by
+// pinned-first then folder then name, so we preserve relative order within
+// each bucket.
+function groupBoards(boards: BoardSummary[], knownFolders: string[]): Grouped {
+  const pinned: BoardSummary[] = []
+  const rootBoards: BoardSummary[] = []
+  const byFolder = new Map<string, BoardSummary[]>()
+  for (const b of boards) {
+    if (b.pinned) {
+      pinned.push(b)
+      continue
+    }
+    const folder = b.folder ?? ''
+    if (folder === '') {
+      rootBoards.push(b)
+      continue
+    }
+    let list = byFolder.get(folder)
+    if (!list) {
+      list = []
+      byFolder.set(folder, list)
+    }
+    list.push(b)
+  }
+  // Ensure every known folder (including empty ones) shows up.
+  for (const f of knownFolders) {
+    if (!byFolder.has(f)) byFolder.set(f, [])
+  }
+  const folderOrder = [...byFolder.keys()].sort((a, b) => a.localeCompare(b))
+  return { pinned, rootBoards, folderOrder, byFolder }
+}
 
 export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JSX.Element {
   const boards = useBoardList()
+  const folders = useFolderList()
   const ws = useWorkspaceInfo()
   const { active, setActive } = useActiveBoard()
   const activeBoard = boards.data?.find((b) => b.id === active)
   const [menuOpen, setMenuOpen] = useState(false)
   const { openSettings: openGlobalSettings } = useGlobalSettingsContext()
   const menuRef = useRef<HTMLDivElement>(null)
+  const { isCollapsed, toggle } = useFolderCollapse()
+  const createFolder = useCreateFolder()
+  const [newFolderOpen, setNewFolderOpen] = useState(false)
+  const newFolderInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (!menuOpen) return
@@ -28,7 +77,22 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
     return () => document.removeEventListener('mousedown', handler)
   }, [menuOpen])
 
+  useEffect(() => {
+    if (newFolderOpen) newFolderInputRef.current?.focus()
+  }, [newFolderOpen])
+
+  const allFolders = folders.data ?? []
+  const groups = useMemo(
+    () => groupBoards(boards.data ?? [], allFolders),
+    [boards.data, allFolders],
+  )
   const count = boards.data?.length ?? 0
+
+  const commitNewFolder = (): void => {
+    const name = (newFolderInputRef.current?.value ?? '').trim()
+    setNewFolderOpen(false)
+    if (name) createFolder.mutate(name)
+  }
 
   return (
     <aside
@@ -54,13 +118,50 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
           <EmptyState title="No boards yet" />
         ) : (
           <ul className="lb-sidebar__list">
-            {boards.data.map((b) => (
-              <BoardRow key={b.id} board={b} />
+            {groups.pinned.map((b) => (
+              <BoardRow key={b.id} board={b} folders={allFolders} />
+            ))}
+            {groups.rootBoards.map((b) => (
+              <BoardRow key={b.id} board={b} folders={allFolders} />
+            ))}
+            {groups.folderOrder.map((f) => (
+              <BoardFolderGroup
+                key={f}
+                folder={f}
+                boards={groups.byFolder.get(f) ?? []}
+                collapsed={isCollapsed(f)}
+                allFolders={allFolders}
+                onToggle={() => toggle(f)}
+              />
             ))}
           </ul>
         )}
         <hr className="lb-sidebar__sep" />
-        <AddBoardButton />
+        <AddBoardButton folders={allFolders} />
+        {newFolderOpen ? (
+          <div className="lb-row lb-row--add-input">
+            <input
+              ref={newFolderInputRef}
+              aria-label="new folder name"
+              placeholder="Folder name…"
+              className="lb-row__input"
+              onBlur={commitNewFolder}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); commitNewFolder() }
+                else if (e.key === 'Escape') { e.preventDefault(); setNewFolderOpen(false) }
+              }}
+            />
+          </div>
+        ) : (
+          <button
+            type="button"
+            onClick={() => setNewFolderOpen(true)}
+            className="lb-row lb-row--add"
+          >
+            <span className="lb-row__plus" aria-hidden>+</span>
+            <span className="lb-row__label">+ New folder</span>
+          </button>
+        )}
       </div>
       <div className="lb-sidebar__mobile-dropdown">
         <DropdownMenu.Root>

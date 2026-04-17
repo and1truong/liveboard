@@ -16,7 +16,7 @@ import (
 
 // openEventStream connects to /api/v1/events (workspace-wide) and returns the
 // response; caller must close Body.
-func openEventStream(t *testing.T, srv *httptest.Server, ctx context.Context) *http.Response {
+func openEventStream(ctx context.Context, t *testing.T, srv *httptest.Server) *http.Response {
 	t.Helper()
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, srv.URL+"/api/v1/events", nil)
 	if err != nil {
@@ -53,7 +53,7 @@ func TestEvents_BoardUpdated(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	resp := openEventStream(t, srv, ctx)
+	resp := openEventStream(ctx, t, srv)
 	defer resp.Body.Close() //nolint:errcheck
 
 	done := make(chan struct{})
@@ -86,7 +86,7 @@ func TestEvents_BoardListUpdated(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
 	defer cancel()
 
-	resp := openEventStream(t, srv, ctx)
+	resp := openEventStream(ctx, t, srv)
 	defer resp.Body.Close() //nolint:errcheck
 
 	done := make(chan struct{})
@@ -120,7 +120,7 @@ func TestEvents_NoQueryParamRequired(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 500*time.Millisecond)
 	defer cancel()
 
-	resp := openEventStream(t, srv, ctx)
+	resp := openEventStream(ctx, t, srv)
 	defer resp.Body.Close() //nolint:errcheck
 	if resp.StatusCode != http.StatusOK {
 		t.Fatalf("status = %d", resp.StatusCode)

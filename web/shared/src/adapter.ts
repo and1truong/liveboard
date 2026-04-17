@@ -2,6 +2,10 @@ import type { AppSettings, Board, BoardSettings, MutationOp } from './types.js'
 
 export interface BoardSummary {
   id: string
+  // folder is the first path segment of `id` for boards nested one level deep,
+  // or empty/undefined for root-level boards. The server populates it; the
+  // sidebar groups by this field.
+  folder?: string
   name: string
   description?: string
   icon?: string
@@ -53,10 +57,17 @@ export interface BackendAdapter {
   getAppSettings(): Promise<AppSettings>
   putAppSettings(patch: Partial<AppSettings>): Promise<void>
   subscribe(boardId: string, onUpdate: BoardUpdateHandler): Subscription
-  createBoard(name: string): Promise<BoardSummary>
-  renameBoard(boardId: string, newName: string): Promise<BoardSummary>
+  // createBoard / renameBoard accept an optional `folder` so boards can be
+  // created or moved into a first-level subdirectory. Empty / undefined means
+  // workspace root.
+  createBoard(name: string, folder?: string): Promise<BoardSummary>
+  renameBoard(boardId: string, newName: string, folder?: string): Promise<BoardSummary>
   deleteBoard(boardId: string): Promise<void>
   togglePin(boardId: string): Promise<void>
+  listFolders(): Promise<string[]>
+  createFolder(name: string): Promise<void>
+  renameFolder(oldName: string, newName: string): Promise<void>
+  deleteFolder(name: string): Promise<void>
   onBoardListUpdate(handler: () => void): Subscription
   search(query: string, limit?: number): Promise<SearchHit[]>
   backlinks(cardId: string): Promise<BacklinkHit[]>

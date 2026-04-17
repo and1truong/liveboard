@@ -45,7 +45,7 @@ func newDepsWithTwoBoards(t *testing.T) v1.Deps {
 func addCardToBoard(t *testing.T, r chi.Router, slug, title string) {
 	t.Helper()
 	body := `{"client_version":-1,"op":{"type":"add_card","column":"Todo","title":"` + title + `"}}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/"+slug+"/mutations", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/"+slug, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -56,7 +56,7 @@ func addCardToBoard(t *testing.T, r chi.Router, slug, title string) {
 
 func getBoardCardID(t *testing.T, r chi.Router, slug string, colIdx, cardIdx int) string {
 	t.Helper()
-	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/"+slug, nil)
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/boards/board/"+slug, nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 	if rec.Code != http.StatusOK {
@@ -92,7 +92,7 @@ func editCardLinks(t *testing.T, r chi.Router, slug string, colIdx, cardIdx int,
 		`{"client_version":-1,"op":{"type":"edit_card","col_idx":%d,"card_idx":%d,"title":"","body":"","tags":[],"priority":"","due":"","assignee":"","links":%s}}`,
 		colIdx, cardIdx, string(linksJSON),
 	)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/"+slug+"/mutations", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/"+slug, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)

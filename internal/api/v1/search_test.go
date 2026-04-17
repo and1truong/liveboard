@@ -47,7 +47,7 @@ func routerFor(t *testing.T, deps v1.Deps) chi.Router {
 func addCard(t *testing.T, r chi.Router, slug, title string) {
 	t.Helper()
 	body := `{"client_version":-1,"op":{"type":"add_card","column":"Todo","title":"` + title + `"}}`
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/"+slug+"/mutations", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/"+slug, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -113,7 +113,7 @@ func TestSearch_DeletedBoardGone(t *testing.T) {
 	r := routerFor(t, deps)
 	addCard(t, r, "demo", "unique-token")
 
-	req := httptest.NewRequest(http.MethodDelete, "/api/v1/boards/demo", nil)
+	req := httptest.NewRequest(http.MethodDelete, "/api/v1/boards/board/demo", nil)
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 	if rec.Code != http.StatusNoContent {
@@ -148,7 +148,7 @@ func TestRenameBoard_withSearch(t *testing.T) {
 
 	// Rename demo → new-name; slug != b.Name triggers DeleteBoard + UpdateBoard.
 	body := `{"new_name":"new-name"}`
-	req := httptest.NewRequest(http.MethodPatch, "/api/v1/boards/demo", strings.NewReader(body))
+	req := httptest.NewRequest(http.MethodPatch, "/api/v1/boards/board/demo", strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -174,7 +174,7 @@ func TestPostMutationMoveCardToBoard_withSearch(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/demo/mutations", bytes.NewReader(buf))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/demo", bytes.NewReader(buf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)

@@ -28,7 +28,7 @@ func TestPostMutationAddCard(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/demo/mutations", bytes.NewReader(buf))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/demo", bytes.NewReader(buf))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
@@ -58,7 +58,7 @@ func TestPostMutationVersionConflict(t *testing.T) {
 		"op":             map[string]any{"type": "add_card", "column": "Todo", "title": "stale"},
 	}
 	buf, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/demo/mutations", bytes.NewReader(buf))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/demo", bytes.NewReader(buf))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -97,7 +97,7 @@ func TestPostMutationMoveCardToBoard(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(body)
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/demo/mutations", bytes.NewReader(buf))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/demo", bytes.NewReader(buf))
 	rec := httptest.NewRecorder()
 	r.ServeHTTP(rec, req)
 
@@ -166,7 +166,7 @@ func TestPostMutation_slugNotFound(t *testing.T) {
 		"op":             map[string]any{"type": "add_card", "column": "Todo", "title": "x"},
 	}
 	buf, _ := json.Marshal(body)
-	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/no-such-board/mutations", string(buf))
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/mutate/no-such-board", string(buf))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("want 404, got %d: %s", rec.Code, respBody)
 	}
@@ -177,7 +177,7 @@ func TestPostMutation_malformedJSON(t *testing.T) {
 	r := chi.NewRouter()
 	r.Mount("/api/v1", v1.Router(deps))
 
-	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/demo/mutations",
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/boards/mutate/demo",
 		bytes.NewReader([]byte("not json")))
 	req.Header.Set("Content-Type", "application/json")
 	rec := httptest.NewRecorder()
@@ -203,7 +203,7 @@ func TestPostMutationMoveCardToBoard_withSSE(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(body)
-	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/mutate/demo", string(buf))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("want 200, got %d: %s", rec.Code, respBody)
 	}
@@ -223,7 +223,7 @@ func TestPostMutationMoveCardToBoard_engineError(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(body)
-	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/mutate/demo", string(buf))
 	if rec.Code == http.StatusOK {
 		t.Fatalf("want error status, got 200: %s", respBody)
 	}
@@ -236,7 +236,7 @@ func TestPostMutation_withSSE(t *testing.T) {
 		"op":             map[string]any{"type": "add_card", "column": "Todo", "title": "sse-card"},
 	}
 	buf, _ := json.Marshal(body)
-	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/mutate/demo", string(buf))
 	if rec.Code != http.StatusOK {
 		t.Fatalf("want 200, got %d: %s", rec.Code, respBody)
 	}
@@ -250,7 +250,7 @@ func TestPostMutation_invalidSlug(t *testing.T) {
 	}
 	buf, _ := json.Marshal(body)
 	// slug "foo!bar" contains '!' which fails ValidateBoardName -> 400
-	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/foo!bar/mutations", string(buf))
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/mutate/foo!bar", string(buf))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("want 400, got %d: %s", rec.Code, respBody)
 	}
@@ -266,7 +266,7 @@ func TestPostMutationMoveCardToBoard_invalidDst(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(body)
-	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/mutate/demo", string(buf))
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("want 400, got %d: %s", rec.Code, respBody)
 	}
@@ -285,7 +285,7 @@ func TestPostMutationMoveCardToBoard_dstNotFound(t *testing.T) {
 		},
 	}
 	buf, _ := json.Marshal(body)
-	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/demo/mutations", string(buf))
+	rec, respBody := doReq(t, deps, http.MethodPost, "/api/v1/boards/mutate/demo", string(buf))
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("want 404, got %d: %s", rec.Code, respBody)
 	}

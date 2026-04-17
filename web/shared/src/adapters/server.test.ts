@@ -145,7 +145,7 @@ describe('ServerAdapter CRUD', () => {
     })
     const b = await a.getBoard('welcome')
     expect(b.name).toBe('Welcome')
-    expect(log[0].url).toBe('/api/v1/boards/welcome')
+    expect(log[0].url).toBe('/api/v1/boards/board/welcome')
   })
 
   it('renameBoard PATCHes new_name and returns new summary', async () => {
@@ -161,7 +161,7 @@ describe('ServerAdapter CRUD', () => {
     expect(s).toEqual({ id: 'bar', name: 'Bar', version: 2 })
     expect(log[0]).toEqual({
       method: 'PATCH',
-      url: '/api/v1/boards/foo',
+      url: '/api/v1/boards/board/foo',
       body: JSON.stringify({ new_name: 'Bar' }),
     })
   })
@@ -173,7 +173,7 @@ describe('ServerAdapter CRUD', () => {
       fetch: mockFetch(() => new Response(null, { status: 204 }), log),
     })
     await a.deleteBoard('foo')
-    expect(log[0]).toEqual({ method: 'DELETE', url: '/api/v1/boards/foo', body: null })
+    expect(log[0]).toEqual({ method: 'DELETE', url: '/api/v1/boards/board/foo', body: null })
   })
 
   it('deleteBoard NOT_FOUND throws ProtocolError', async () => {
@@ -201,7 +201,7 @@ describe('ServerAdapter mutate + settings', () => {
     const out = await a.mutateBoard('foo', 1, { type: 'add_card', column: 'Todo', title: 'x' })
     expect(out).toEqual(board)
     expect(log[0].method).toBe('POST')
-    expect(log[0].url).toBe('/api/v1/boards/foo/mutations')
+    expect(log[0].url).toBe('/api/v1/boards/mutate/foo')
     expect(JSON.parse(log[0].body!)).toEqual({
       client_version: 1,
       op: { type: 'add_card', column: 'Todo', title: 'x' },
@@ -249,7 +249,7 @@ describe('ServerAdapter mutate + settings', () => {
     await a.putBoardSettings('foo', { show_checkbox: false })
     expect(log[0]).toEqual({
       method: 'PUT',
-      url: '/api/v1/boards/foo/settings',
+      url: '/api/v1/boards/settings/foo',
       body: JSON.stringify({ show_checkbox: false }),
     })
   })

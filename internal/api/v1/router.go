@@ -22,6 +22,11 @@ type Deps struct {
 }
 
 // Router returns a chi subrouter with all /api/v1 routes registered.
+//
+// Board ids may contain a single "/" separating a folder from the file stem
+// (e.g. "work/ideas"). chi cannot match "/" inside a single {param}, so all
+// per-board endpoints place the id as a trailing catch-all ("*") after a
+// fixed discriminator segment ("board", "mutate", "pin", "settings").
 func Router(d Deps) chi.Router {
 	r := chi.NewRouter()
 	r.Use(jsonContentType)
@@ -33,15 +38,23 @@ func Router(d Deps) chi.Router {
 	r.Get("/cards/{cardId}/backlinks", d.getBacklinks)
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
-		r.Get("/list-lite", d.listBoardsLite)
 		r.Post("/", d.createBoard)
-		r.Get("/{slug}", d.getBoard)
-		r.Patch("/{slug}", d.renameBoard)
-		r.Delete("/{slug}", d.deleteBoard)
-		r.Post("/{slug}/mutations", d.postMutation)
-		r.Post("/{slug}/pin", d.toggleBoardPin)
-		r.Get("/{slug}/settings", d.getBoardSettings)
-		r.Put("/{slug}/settings", d.putBoardSettings)
+		r.Get("/list-lite", d.listBoardsLite)
+
+		// Folder CRUD (fixed prefix — no ambiguity with wildcards below).
+		r.Get("/folders", d.listFolders)
+		r.Post("/folders", d.createFolder)
+		r.Patch("/folders/*", d.renameFolder)
+		r.Delete("/folders/*", d.deleteFolder)
+
+		// Per-board endpoints — id at the tail as catch-all "*".
+		r.Get("/board/*", d.getBoard)
+		r.Patch("/board/*", d.renameBoard)
+		r.Delete("/board/*", d.deleteBoard)
+		r.Post("/mutate/*", d.postMutation)
+		r.Post("/pin/*", d.toggleBoardPin)
+		r.Get("/settings/*", d.getBoardSettings)
+		r.Put("/settings/*", d.putBoardSettings)
 	})
 	return r
 }

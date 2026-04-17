@@ -167,14 +167,14 @@ export class Client {
   unsubscribe(boardId: string): Promise<void> {
     return this.request({ kind: 'request', method: 'unsubscribe', params: { boardId } })
   }
-  createBoard(name: string): Promise<BoardSummary> {
-    return this.request({ kind: 'request', method: 'board.create', params: { name } })
+  createBoard(name: string, folder?: string): Promise<BoardSummary> {
+    return this.request({ kind: 'request', method: 'board.create', params: { name, folder } })
   }
-  renameBoard(boardId: string, newName: string): Promise<BoardSummary> {
+  renameBoard(boardId: string, newName: string, folder?: string): Promise<BoardSummary> {
     return this.request({
       kind: 'request',
       method: 'board.rename',
-      params: { boardId, newName },
+      params: { boardId, newName, folder },
     })
   }
   deleteBoard(boardId: string): Promise<void> {
@@ -182,6 +182,18 @@ export class Client {
   }
   togglePin(boardId: string): Promise<void> {
     return this.request({ kind: 'request', method: 'board.pin', params: { boardId } })
+  }
+  listFolders(): Promise<string[]> {
+    return this.request({ kind: 'request', method: 'folder.list' })
+  }
+  createFolder(name: string): Promise<void> {
+    return this.request({ kind: 'request', method: 'folder.create', params: { name } })
+  }
+  renameFolder(oldName: string, newName: string): Promise<void> {
+    return this.request({ kind: 'request', method: 'folder.rename', params: { oldName, newName } })
+  }
+  deleteFolder(name: string): Promise<void> {
+    return this.request({ kind: 'request', method: 'folder.delete', params: { name } })
   }
   search(query: string, limit?: number): Promise<SearchHit[]> {
     return this.request({ kind: 'request', method: 'search', params: { query, limit } })
