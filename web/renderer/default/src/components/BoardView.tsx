@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
 import { ProtocolError } from '@shared/protocol.js'
@@ -20,9 +20,7 @@ import { FocusedColumnProvider, useFocusedColumn } from '../contexts/FocusedColu
 import { FocusExitBar } from './FocusExitBar.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
 import { useAvailableTags } from '../queries/useAvailableTags.js'
-const BoardSettingsModal = lazy(() =>
-  import('./BoardSettingsModal.js').then((m) => ({ default: m.BoardSettingsModal })),
-)
+import { useBoardSettingsContext } from '../contexts/BoardSettingsContext.js'
 
 function BoardColumns({
   data,
@@ -81,7 +79,7 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
   const { active, setActive } = useActiveBoard()
   const { data, isLoading, error } = useBoard(active)
   const settings = useBoardSettings(active)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const { openSettings } = useBoardSettingsContext()
   const availableTags = useAvailableTags(data)
 
   useEffect(() => {
@@ -127,7 +125,7 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
                 data={data}
                 availableTags={availableTags}
                 onToggleSidebar={onToggleSidebar}
-                onOpenSettings={() => setSettingsOpen(true)}
+                onOpenSettings={openSettings}
               />
               {settings.view_mode === 'calendar' ? (
                 <BoardCalendarView data={data} active={active} columns={columns} />
@@ -138,14 +136,6 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
               )}
             </div>
           </BoardDndContext>
-          <Suspense fallback={null}>
-            <BoardSettingsModal
-              boardId={active!}
-              boardName={data.name ?? active!}
-              open={settingsOpen}
-              onOpenChange={setSettingsOpen}
-            />
-          </Suspense>
         </FocusedColumnProvider>
       </BoardFocusProvider>
     </BoardFilterProvider>
