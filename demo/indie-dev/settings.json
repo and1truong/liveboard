@@ -3,7 +3,7 @@
   "theme": "light",
   "color_theme": "aqua",
   "font_family": "system",
-  "column_width": 512,
+  "column_width": 510,
   "sidebar_position": "left",
   "default_columns": [
     "backlog",
@@ -13,7 +13,7 @@
   ],
   "show_checkbox": true,
   "newline_trigger": "shift-enter",
-  "card_position": "append",
+  "card_position": "prepend",
   "card_display_mode": "full",
   "keyboard_shortcuts": true
 }

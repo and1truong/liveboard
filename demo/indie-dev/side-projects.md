@@ -1,5 +1,5 @@
 ---
-version: 2
+version: 4
 name: Side Projects
 description: Personal dev stuff and learning goals
 icon: "\U0001F6E0️"
@@ -14,6 +14,9 @@ settings:
 
 ## This Week
 
+- [ ] there
+  id: jIuYkTOgvE
+
 - [ ] Renew domain names
   priority: high
   due: 2026-03-22
@@ -25,6 +28,9 @@ settings:
   tags: marketing
   priority: medium
   Review the host's previous episodes and prepare talking points about LiveBoard's origin story. Prep a quick demo script in case they want a live walkthrough.
+
+- [ ] hi
+  id: UjCSSDlqRk
 
 ## Someday
 
