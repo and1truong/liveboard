@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="web/img/liveboard-logo.svg" alt="LiveBoard" width="320">
+  <img src="web/img/liveboard-icon-macos.svg" alt="LiveBoard" width="120">
 </p>
 
 <p align="center">

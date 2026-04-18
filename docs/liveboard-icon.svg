@@ -11,10 +11,10 @@
   <rect x="19" y="44" width="22" height="26" rx="4" fill="#4285F4"/>
   <rect x="19" y="74" width="22" height="14" rx="4" fill="#4285F4"/>
 
-  <!-- Column 2 — Red -->
-  <rect x="50" y="16" width="28" height="96" rx="6" fill="#EA4335" opacity="0.15"/>
-  <rect x="53" y="22" width="22" height="14" rx="4" fill="#EA4335"/>
-  <rect x="53" y="40" width="22" height="22" rx="4" fill="#EA4335"/>
+  <!-- Column 2 — Amber -->
+  <rect x="50" y="16" width="28" height="96" rx="6" fill="#F9AB00" opacity="0.15"/>
+  <rect x="53" y="22" width="22" height="14" rx="4" fill="#F9AB00"/>
+  <rect x="53" y="40" width="22" height="22" rx="4" fill="#F9AB00"/>
 
   <!-- Column 3 — Green -->
   <rect x="84" y="16" width="28" height="96" rx="6" fill="#34A853" opacity="0.15"/>
