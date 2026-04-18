@@ -38,7 +38,7 @@ function NewBoardInline({ onDone }: { onDone: () => void }): JSX.Element {
         else if (e.key === 'Escape') { e.preventDefault(); cancel() }
       }}
       placeholder="Board name…"
-      className="rounded bg-white px-3 py-1.5 text-sm font-medium outline-none ring-1 ring-slate-200 focus:ring-[color:var(--accent-500)] dark:bg-slate-700 dark:text-slate-100 dark:ring-slate-600 dark:placeholder:text-slate-400"
+      className="rounded bg-[color:var(--color-surface)] px-3 py-1.5 text-sm font-medium outline-none ring-1 ring-[color:var(--color-border)] focus:ring-[color:var(--accent-500)] dark:text-slate-100 dark:placeholder:text-slate-400"
     />
   )
 }
@@ -53,7 +53,7 @@ function BoardCard({ board }: { board: BoardSummary }): JSX.Element {
     <button
       type="button"
       onClick={() => setActive(board.id)}
-      className="flex flex-col rounded-xl border border-slate-200 bg-white p-5 text-left transition-shadow hover:shadow-md dark:border-slate-700 dark:bg-slate-800"
+      className="flex flex-col rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5 text-left transition-shadow hover:shadow-md"
     >
       <div className="mb-2 flex items-center gap-2">
         {board.icon && <span className="text-2xl leading-none" aria-hidden>{board.icon}</span>}
@@ -68,7 +68,7 @@ function BoardCard({ board }: { board: BoardSummary }): JSX.Element {
         <div className="mb-3 flex items-center gap-2">
           <div className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
             <div
-              className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--accent,#3b82f6)]"
+              className="absolute inset-y-0 left-0 rounded-full bg-[color:var(--accent-600)]"
               style={{ width: `${pct}%` }}
             />
           </div>
@@ -97,7 +97,7 @@ export function BoardsGrid(): JSX.Element {
   const [adding, setAdding] = useState(false)
 
   return (
-    <div className="flex h-full flex-col overflow-y-auto bg-slate-50 dark:bg-slate-900">
+    <div className="flex h-full flex-col overflow-y-auto bg-[color:var(--color-bg)]">
       <div className="flex items-center justify-between px-8 py-6">
         <h1 className="text-2xl font-bold text-slate-800 dark:text-slate-100">My Boards</h1>
         {adding ? (
@@ -106,7 +106,7 @@ export function BoardsGrid(): JSX.Element {
           <button
             type="button"
             onClick={() => setAdding(true)}
-            className="rounded-lg bg-[color:var(--accent,#3b82f6)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
+            className="rounded-lg bg-[color:var(--accent-600)] px-4 py-2 text-sm font-medium text-white hover:opacity-90"
           >
             + New Board
           </button>
