@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import { THEME_NAMES, useTheme, type Mode, type ThemeName } from '../contexts/ThemeContext.js'
 
@@ -9,20 +10,22 @@ const SWATCH_COLOR: Record<ThemeName, string> = {
 
 export function ThemePicker(): JSX.Element {
   const { mode, theme, setMode, setTheme } = useTheme()
+  const [open, setOpen] = useState(false)
   return (
-    <DropdownMenu.Root>
+    <DropdownMenu.Root open={open} onOpenChange={setOpen}>
       <DropdownMenu.Trigger aria-label="Theme picker" className="lb-iconbtn">
         <span aria-hidden style={{ fontSize: 14, lineHeight: 1 }}>🎨</span>
       </DropdownMenu.Trigger>
       <DropdownMenu.Portal>
         <DropdownMenu.Content sideOffset={6} className="lb-popover" style={{ minWidth: 200 }}>
           <DropdownMenu.Label className="lb-popover__label">Mode</DropdownMenu.Label>
-          <DropdownMenu.RadioGroup value={mode} onValueChange={(v) => setMode(v as Mode)}>
+          <DropdownMenu.RadioGroup value={mode} onValueChange={(v) => { setMode(v as Mode) }}>
             {(['light', 'dark', 'system'] as Mode[]).map((m) => (
               <DropdownMenu.RadioItem
                 key={m}
                 value={m}
                 className="lb-popover__item"
+                onSelect={(e) => e.preventDefault()}
               >
                 <span className="lb-popover__icon" aria-hidden>
                   {m === 'light' ? '☀' : m === 'dark' ? '☾' : '◐'}
