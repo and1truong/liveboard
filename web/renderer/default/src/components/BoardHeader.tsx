@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'react'
 import type { Board } from '@shared/types.js'
 import { useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { tagChipStyle } from '../utils/tagColor.js'
@@ -31,6 +32,19 @@ export function BoardHeader({
   const tagColors = data.tag_colors ?? {}
   const count = activeFilterCount(filter)
   const trimmedQuery = filter.query.trim()
+  const searchRef = useRef<HTMLInputElement>(null)
+
+  useEffect(() => {
+    const handler = (e: KeyboardEvent): void => {
+      if (e.key === 'f' && (e.metaKey || e.ctrlKey)) {
+        e.preventDefault()
+        searchRef.current?.focus()
+        searchRef.current?.select()
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [])
 
   return (
     <header className="lb-board-header relative flex h-12 shrink-0 items-center gap-2 border-b border-[color:var(--header-border)] bg-[color:var(--header-bg)] px-3 backdrop-blur-md">
@@ -137,6 +151,7 @@ export function BoardHeader({
             <line x1="10" y1="10" x2="14.5" y2="14.5" />
           </svg>
           <input
+            ref={searchRef}
             type="text"
             value={filter.query}
             onChange={(e) => setQuery(e.target.value)}
