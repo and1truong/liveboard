@@ -1,23 +1,23 @@
 # LiveBoard
 
-Markdown-powered Kanban board with real-time collaboration.
+Markdown-powered Kanban board, real-time collaboration.
 
 ## Tech Stack
 
 - **Backend**: Go 1.24, chi/v5 router, cobra CLI
-- **Frontend**: React shell + renderer (TypeScript) mounted at `/app/`, served as embedded Vite bundles. `web/shell/` is the iframe host; `web/renderer/default/` is the UI; `web/shared/` is the backend-adapter protocol. Browser talks to Go via `/api/v1/*` JSON + SSE at `/api/v1/events`.
-  - tools: use bun if we can, instead of node/npm/pnpm
-- **Storage**: Markdown files with YAML frontmatter — no database
-- **Dev**: `make dev` (Go + air live reload, port 7070). `make adapter-test` for renderer HMR. `make frontend` to rebuild the embedded shell+renderer bundles.
+- **Frontend**: React shell + renderer (TypeScript) mounted at `/app/`, served as embedded Vite bundles. `web/shell/` = iframe host; `web/renderer/default/` = UI; `web/shared/` = backend-adapter protocol. Browser talks to Go via `/api/v1/*` JSON + SSE at `/api/v1/events`.
+  - tools: use bun, not node/npm/pnpm
+- **Storage**: Markdown files w/ YAML frontmatter — no database
+- **Dev**: `make dev` (Go + air live reload, port 7070). `make adapter-test` for renderer HMR. `make frontend` to rebuild embedded shell+renderer bundles.
 
 ## Domain Concepts
 
-- **Workspace**: A directory of `.md` files — the root container for all boards
-- **Board**: A single `.md` file. YAML frontmatter holds metadata (name, description, icon, tags, members, settings). Versioned for optimistic concurrency control
-- **Column**: An H2 heading (`##`) in the markdown. Contains cards. Can be collapsed, reordered, sorted
-- **Card**: A markdown list item (`- [ ]` or `- `). Has: title, body, tags, priority (critical/high/medium/low), due date, assignee, completed state
-- **Settings**: Two-tier hierarchy — global (`settings.json` in workspace) with per-board overrides (in YAML frontmatter). Includes: theme, color theme, site name, column width, sidebar position, card display mode, default columns
-- **Command Palette**: Cmd+K / Ctrl+K — navigates between boards and pages
+- **Workspace**: Directory of `.md` files — root container for all boards
+- **Board**: Single `.md` file. YAML frontmatter holds metadata (name, description, icon, tags, members, settings). Versioned for optimistic concurrency
+- **Column**: H2 heading (`##`). Contains cards. Can collapse, reorder, sort
+- **Card**: Markdown list item (`- [ ]` or `- `). Has: title, body, tags, priority (critical/high/medium/low), due date, assignee, completed state
+- **Settings**: Two-tier — global (`settings.json` in workspace) w/ per-board overrides (YAML frontmatter). Includes: theme, color theme, site name, column width, sidebar position, card display mode, default columns
+- **Command Palette**: Cmd+K / Ctrl+K — navigate between boards and pages
 - **Parser/Writer**: Roundtrips between markdown text and Go structs (`pkg/models/models.go`)
 
 ## Board File Format
@@ -52,13 +52,13 @@ settings:                         # per-board setting overrides
 - [x] Completed card              # [x] or [X] = done
 ```
 
-**Parsing rules**: metadata lines match `^  (\w+): (.+)$` (exactly 2-space indent). Non-matching indented lines become body. HTML comments are skipped. Inline `#tags` in title are stripped after extraction.
+**Parsing rules**: metadata lines match `^  (\w+): (.+)$` (exactly 2-space indent). Non-matching indented lines become body. HTML comments skipped. Inline `#tags` in title stripped after extraction.
 
 ## Architecture
 
 - `cmd/liveboard/` — CLI entrypoint (cobra)
 - `internal/api/` — chi router, middleware, shell/renderer mount, `/api/export`, legacy REST
-- `internal/api/v1/` — JSON API consumed by the renderer (boards, mutations, settings, search, SSE events)
+- `internal/api/v1/` — JSON API for renderer (boards, mutations, settings, search, SSE events)
 - `internal/web/` — settings persistence (`settings.go`) and SSE broker (`sse.go`); no HTTP handlers
 - `internal/board/` — CRUD engine, mutex-per-board, optimistic locking
 - `internal/parser/` — markdown + YAML frontmatter parsing
@@ -66,10 +66,10 @@ settings:                         # per-board setting overrides
 - `internal/workspace/` — directory scanning, board listing
 - `internal/templates/` — Go HTML templates for static export only (`export_*.html`)
 - `internal/export/` — workspace → static HTML/ZIP export
-- `web/shell/`, `web/renderer/default/`, `web/shared/` — TypeScript SPA (shell iframe-hosts the renderer; shared defines the BackendAdapter protocol)
-- `web/img/` — logos / icons used by desktop bundle (`make generate-icon`)
+- `web/shell/`, `web/renderer/default/`, `web/shared/` — TypeScript SPA (shell iframe-hosts renderer; shared defines BackendAdapter protocol)
+- `web/img/` — logos / icons for desktop bundle (`make generate-icon`)
 - `pkg/models/` — shared data structs
 
 ## On commit
 
-`make lint` to check & fix for lint errors
+`make lint` to check & fix lint errors
