@@ -54,10 +54,11 @@ export function useWorkspaceInfo(): UseQueryResult<WorkspaceInfo> {
   })
 }
 
-export function useFolderList(): UseQueryResult<string[]> {
+export function useFolderList(options?: { enabled?: boolean }): UseQueryResult<string[]> {
   const client = useClient()
   return useQuery({
     queryKey: ['folders'],
     queryFn: () => client.listFolders(),
+    enabled: options?.enabled ?? true,
   })
 }

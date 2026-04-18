@@ -39,7 +39,7 @@ export class ServerAdapter implements BackendAdapter {
   }
 
   capabilities(): string[] {
-    return ['realtime', 'export:html', 'export:markdown']
+    return ['realtime', 'export:html', 'export:markdown', 'folders']
   }
 
   private async request(

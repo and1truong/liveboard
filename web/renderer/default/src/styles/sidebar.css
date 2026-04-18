@@ -74,6 +74,80 @@
   color: color-mix(in srgb, var(--accent-500) 40%, #fff);
 }
 
+/* -------- Toolbar (Board / Folder pills) ---------------------------------- */
+
+.lb-sidebar__toolbar {
+  display: flex;
+  gap: 6px;
+  padding: 8px 10px 4px;
+  flex-shrink: 0;
+}
+
+.lb-sidebar__pill {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  border: 1px solid var(--sb-border);
+  background: var(--sb-popover-bg);
+  color: var(--sb-text-secondary);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition:
+    background-color 120ms var(--sb-ease),
+    border-color 120ms var(--sb-ease),
+    color 120ms var(--sb-ease);
+}
+
+.lb-sidebar__pill:hover {
+  background: var(--sb-row-hover);
+  color: var(--sb-text-primary);
+}
+
+.lb-sidebar__pill:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px var(--sb-focus-ring);
+}
+
+.lb-sidebar__pill svg { flex-shrink: 0; color: var(--sb-text-secondary); }
+.lb-sidebar__pill:hover svg { color: var(--sb-text-primary); }
+
+.lb-sidebar__pill-label {
+  flex: 1;
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lb-sidebar__kbd {
+  font-family: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  line-height: 1;
+  color: var(--sb-text-tertiary);
+  padding: 2px 5px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--sb-text-tertiary) 10%, transparent);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Icon inside an inline create input row (folder icon preceding input) */
+.lb-row__input-icon {
+  flex-shrink: 0;
+  color: var(--sb-text-tertiary);
+  margin-left: 2px;
+}
+
 /* -------- Body / list ----------------------------------------------------- */
 
 .lb-sidebar__body {
@@ -383,6 +457,47 @@
   border: 0;
 }
 
+/* -------- Archived row (mock) -------------------------------------------- */
+
+.lb-sidebar__archived {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  height: 36px;
+  padding: 0 14px;
+  border-top: 1px solid var(--sb-divider);
+  color: var(--sb-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: background-color 120ms var(--sb-ease), color 120ms var(--sb-ease);
+  outline: none;
+}
+
+.lb-sidebar__archived:hover {
+  background: var(--sb-row-hover);
+  color: var(--sb-text-primary);
+}
+
+.lb-sidebar__archived:focus-visible {
+  background: var(--sb-row-hover);
+  color: var(--sb-text-primary);
+}
+
+.lb-sidebar__archived svg {
+  color: var(--sb-text-tertiary);
+  flex-shrink: 0;
+}
+
+.lb-sidebar__archived:hover svg { color: var(--sb-text-primary); }
+
+.lb-sidebar__archived-label { flex: 1; }
+
+.lb-sidebar__archived-count {
+  color: var(--sb-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
 /* -------- Footer ---------------------------------------------------------- */
 
 .lb-sidebar__footer {
@@ -657,6 +772,8 @@
 
   .lb-sidebar__header,
   .lb-sidebar__body,
+  .lb-sidebar__toolbar,
+  .lb-sidebar__archived,
   .lb-sidebar__sep { display: none; }
 
   .lb-sidebar__footer {

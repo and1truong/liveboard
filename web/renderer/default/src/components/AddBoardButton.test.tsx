@@ -22,31 +22,29 @@ async function setup() {
 }
 
 describe('AddBoardButton', () => {
-  it('click reveals input', async () => {
+  it('renders input on mount', async () => {
     const { client, qc } = await setup()
-    const { getByText, getByLabelText } = renderWithQuery(
+    const { getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
         <ActiveBoardProvider>
-          <AddBoardButton />
+          <AddBoardButton onClose={() => {}} />
         </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
     )
-    fireEvent.click(getByText('+ New board'))
     await waitFor(() => expect(getByLabelText('new board name')).toBeDefined())
   })
 
   it('blur with text creates a new board (sidebar list grows)', async () => {
     const { client, qc } = await setup()
-    const { getByText, getByLabelText } = renderWithQuery(
+    const { getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
         <ActiveBoardProvider>
-          <AddBoardButton />
+          <AddBoardButton onClose={() => {}} />
         </ActiveBoardProvider>
       </ClientProvider>,
       { queryClient: qc },
     )
-    fireEvent.click(getByText('+ New board'))
     const input = await waitFor(() => getByLabelText('new board name')) as HTMLInputElement
     fireEvent.change(input, { target: { value: 'Foo' } })
     fireEvent.blur(input)
