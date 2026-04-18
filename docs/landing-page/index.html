@@ -9,7 +9,10 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <script>
-        // Resolve theme before paint to avoid FOUC.
+        // Resolve theme before paint to avoid FOUC. Landing stores its own
+        // tri-state (dark/light/system) under liveboard:landing:mode, and
+        // mirrors the resolved light/dark into liveboard:mode so the renderer
+        // picks up the same appearance.
         (function () {
             var sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
             try {
@@ -17,12 +20,117 @@
                 var dark = stored === 'dark' || (stored === 'system' && sysDark);
                 document.documentElement.classList.add(dark ? 'dark' : 'light');
                 document.documentElement.dataset.theme = stored;
+                localStorage.setItem('liveboard:mode', dark ? 'dark' : 'light');
+                var t = localStorage.getItem('liveboard:theme') || 'aqua';
+                document.documentElement.classList.add('theme-' + t);
             } catch {
                 document.documentElement.classList.add(sysDark ? 'dark' : 'light');
                 document.documentElement.dataset.theme = 'system';
             }
         })();
     </script>
+
+    <script>
+        // Seed three demo boards before the renderer boots. Idempotent: only
+        // runs once per browser; user edits afterward persist.
+        (function seedDemo() {
+            try {
+                if (localStorage.getItem('liveboard:demo:seeded')) return;
+                const KP = 'liveboard:v1:';
+                const today = new Date();
+                const ymd = (offsetDays) => {
+                    const d = new Date(today);
+                    d.setDate(d.getDate() + offsetDays);
+                    return d.toISOString().slice(0, 10);
+                };
+                const boards = {
+                    welcome: {
+                        version: 1,
+                        name: 'Welcome',
+                        description: 'Drag cards, edit anything. Data stays in your browser.',
+                        icon: '👋',
+                        tags: ['demo'],
+                        settings: { view_mode: 'board' },
+                        columns: [
+                            { name: 'Try this', cards: [
+                                { title: 'Drag this card to "Done"' },
+                                { title: 'Click the title to rename it' },
+                                { title: 'Open the sidebar — switch boards' },
+                            ]},
+                            { name: 'In progress', cards: [
+                                { title: 'Build something awesome', priority: 'high', tags: ['build'] },
+                            ]},
+                            { name: 'Done', cards: [
+                                { title: 'Read the intro', completed: true },
+                            ]},
+                        ],
+                    },
+                    'sprint-backlog': {
+                        version: 1,
+                        name: 'Sprint Backlog',
+                        description: 'A flat list of tasks — Apple Reminders style.',
+                        icon: '📋',
+                        tags: ['sprint', 'engineering'],
+                        settings: { view_mode: 'list', card_display_mode: 'compact' },
+                        columns: [
+                            { name: 'Today', cards: [
+                                { title: 'Review PR #482 — auth middleware', priority: 'high', assignee: 'hong', tags: ['review'] },
+                                { title: 'Fix flaky test in users_test.go', priority: 'medium', tags: ['bug'] },
+                                { title: 'Pair on the SSE retry logic', assignee: 'alice', tags: ['pairing'] },
+                            ]},
+                            { name: 'This week', cards: [
+                                { title: 'Document the markdown format', due: ymd(2), tags: ['docs'] },
+                                { title: 'Migrate workspace API to v1 endpoints', priority: 'high', due: ymd(3), tags: ['api'] },
+                                { title: 'Add keyboard shortcut for column reorder', due: ymd(4), tags: ['ux'] },
+                                { title: 'Profile the parser on 1MB boards', due: ymd(5), tags: ['perf'] },
+                            ]},
+                            { name: 'Backlog', cards: [
+                                { title: 'Investigate webdav sync compatibility', tags: ['sync'] },
+                                { title: 'Plugin system RFC', priority: 'low', tags: ['rfc'] },
+                                { title: 'Dark mode for the export template', tags: ['export'] },
+                            ]},
+                            { name: 'Shipped', cards: [
+                                { title: 'Cmd+F focuses search input', completed: true, tags: ['ux'] },
+                                { title: 'Color theme picker — 7 themes', completed: true, tags: ['ux'] },
+                            ]},
+                        ],
+                    },
+                    'q2-roadmap': {
+                        version: 1,
+                        name: 'Q2 Roadmap',
+                        description: 'Calendar view — drop deadlines onto the month grid.',
+                        icon: '📅',
+                        tags: ['roadmap', 'q2'],
+                        settings: { view_mode: 'calendar' },
+                        columns: [
+                            { name: 'Milestones', cards: [
+                                { title: 'v1.0 release candidate', due: ymd(-7), priority: 'critical', tags: ['release'] },
+                                { title: 'Beta feedback session', due: ymd(-3), assignee: 'alice', tags: ['meeting'] },
+                                { title: 'Public docs site live', due: ymd(0), priority: 'high', tags: ['docs'] },
+                                { title: 'Mobile renderer alpha', due: ymd(2), tags: ['mobile'] },
+                                { title: 'Plugin marketplace RFC due', due: ymd(5), priority: 'medium', tags: ['rfc'] },
+                                { title: 'v1.1 feature freeze', due: ymd(9), priority: 'high', tags: ['release'] },
+                                { title: 'Quarterly retro', due: ymd(12), assignee: 'team', tags: ['meeting'] },
+                                { title: 'Marketing site refresh', due: ymd(16), tags: ['marketing'] },
+                                { title: 'v1.1 ship', due: ymd(20), priority: 'critical', tags: ['release'] },
+                            ]},
+                            { name: 'Stretch', cards: [
+                                { title: 'Conference talk submission', due: ymd(25), tags: ['talk'] },
+                                { title: 'OSS sponsorship onboarding', due: ymd(28), tags: ['ops'] },
+                            ]},
+                        ],
+                    },
+                };
+                const ws = { name: 'Demo', boardIds: ['welcome', 'sprint-backlog', 'q2-roadmap'] };
+                localStorage.setItem(KP + 'workspace', JSON.stringify(ws));
+                for (const id in boards) {
+                    localStorage.setItem(KP + 'board:' + id, JSON.stringify(boards[id]));
+                }
+                localStorage.setItem('liveboard:demo:seeded', '1');
+            } catch (e) { console.warn('demo seed failed', e); }
+        })();
+    </script>
+
     <style>
         *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
         html.dark {
@@ -395,6 +503,8 @@
             font-size: 12px;
             color: var(--text-dim);
         }
+        /* Renderer iframe — isolates the renderer's CSS (Tailwind preflight,
+           fonts, h1/h2 defaults) from the landing page cascade. */
         .demo-iframe {
             width: 100%;
             height: 720px;
@@ -577,7 +687,7 @@
                     </div>
                     <div class="url-bar">liveboard · localStorage adapter</div>
                 </div>
-                <iframe class="demo-iframe" src="./shell.html" title="LiveBoard live demo"></iframe>
+                <iframe id="renderer" class="demo-iframe" title="LiveBoard live demo"></iframe>
             </div>
         </div>
     </section>
@@ -587,10 +697,10 @@
             <div class="embed-card">
                 <details>
                     <summary>
-                        <span>Embed LiveBoard on your own site<span class="summary-sub">2 files, ~20 lines total</span></span>
+                        <span>Embed LiveBoard on your own site<span class="summary-sub">single file, ~20 lines</span></span>
                     </summary>
                     <div class="embed-body">
-                        <p>Same-origin is required: shell and renderer postMessage validates against <code>window.location.origin</code>. Your <code>index.html</code> <em>is</em> the shell — drop it next to <code>renderer.html</code> and serve from any static host.</p>
+                        <p>This page hosts the shell role inline — <code>@wriven/liveboard-shared</code> provides the broker and localStorage adapter, talking to the renderer iframe through postMessage. The iframe is just for CSS isolation; origin validation requires same-origin, so drop both files next to each other on any static host.</p>
                         <div class="embed-files">
                             <div class="embed-file">
                                 <div class="embed-file-header">
@@ -598,13 +708,18 @@
                                     index.html <span style="color:var(--text-dim);margin-left:6px">(the shell)</span>
                                 </div>
 <pre><span class="tag">&lt;!doctype html&gt;</span>
-<span class="tag">&lt;html&gt;&lt;head&gt;&lt;meta</span> <span class="kw">charset</span>=<span class="st">"utf-8"</span><span class="tag">&gt;</span>
-  <span class="tag">&lt;script</span> <span class="kw">type</span>=<span class="st">"module"</span> <span class="kw">crossorigin</span>
-    <span class="kw">src</span>=<span class="st">"https://cdn.jsdelivr.net/npm/@wriven/liveboard-shell@0.20.1/dist-npm/assets/shell-DlF2Z-Xd.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
-<span class="tag">&lt;/head&gt;&lt;body</span> <span class="kw">style</span>=<span class="st">"margin:0"</span><span class="tag">&gt;</span>
-  <span class="tag">&lt;iframe</span> <span class="kw">id</span>=<span class="st">"renderer"</span> <span class="kw">style</span>=<span class="st">"width:100vw;height:100vh;border:0"</span><span class="tag">&gt;&lt;/iframe&gt;</span>
-  <span class="tag">&lt;script&gt;</span>
-    <span class="kw">window</span>.__LIVEBOARD_CONFIG__ = { <span class="at">adapter</span>: <span class="st">'local'</span>, <span class="at">rendererUrl</span>: <span class="st">'./renderer.html'</span> };
+<span class="tag">&lt;html&gt;&lt;head&gt;&lt;meta</span> <span class="kw">charset</span>=<span class="st">"utf-8"</span><span class="tag">&gt;&lt;/head&gt;</span>
+<span class="tag">&lt;body</span> <span class="kw">style</span>=<span class="st">"margin:0"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;iframe</span> <span class="kw">id</span>=<span class="st">"renderer"</span>
+    <span class="kw">style</span>=<span class="st">"width:100vw;height:100vh;border:0"</span><span class="tag">&gt;&lt;/iframe&gt;</span>
+  <span class="tag">&lt;script</span> <span class="kw">type</span>=<span class="st">"module"</span><span class="tag">&gt;</span>
+    <span class="kw">import</span> { Broker, LocalAdapter, BrowserStorage, shellTransport }
+      <span class="kw">from</span> <span class="st">'https://cdn.jsdelivr.net/npm/@wriven/liveboard-shared@0.20.1/dist/index.js'</span>;
+    <span class="kw">const</span> iframe = document.getElementById(<span class="st">'renderer'</span>);
+    <span class="kw">const</span> transport = shellTransport(iframe, location.origin);
+    <span class="kw">new</span> Broker(transport, <span class="kw">new</span> LocalAdapter(<span class="kw">new</span> BrowserStorage()),
+      { <span class="at">shellVersion</span>: <span class="st">'0.20.1'</span> });
+    iframe.src = <span class="st">'./renderer.html'</span>; <span class="kw">// load renderer only after broker is ready</span>
   <span class="tag">&lt;/script&gt;</span>
 <span class="tag">&lt;/body&gt;&lt;/html&gt;</span></pre>
                             </div>
@@ -648,15 +763,9 @@
                 localStorage.setItem('liveboard:landing:mode', next);
                 localStorage.setItem('liveboard:mode', dark ? 'dark' : 'light');
             } catch {}
-            const iframe = document.querySelector('.demo-iframe');
-            if (iframe) iframe.src = iframe.src;
+            const iframe = document.getElementById('renderer');
+            if (iframe && iframe.src) iframe.src = iframe.src;
         }
-        // Initial sync of the embedded renderer's theme to match landing.
-        try {
-            const stored = localStorage.getItem('liveboard:landing:mode') || 'system';
-            const dark = stored === 'dark' || (stored === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
-            localStorage.setItem('liveboard:mode', dark ? 'dark' : 'light');
-        } catch {}
 
         function copyInstall(cmd) {
             navigator.clipboard.writeText(cmd).then(() => {
@@ -667,6 +776,27 @@
                 setTimeout(() => btn.textContent = orig, 2000);
             });
         }
+    </script>
+
+    <!-- Shell role, inline: wire the broker (localStorage adapter) to the
+         renderer iframe via postMessage. The iframe exists only for CSS
+         isolation — the shell lives in this page, not in a separate frame. -->
+    <script type="module">
+        import { Broker, LocalAdapter, BrowserStorage, shellTransport }
+            from 'https://cdn.jsdelivr.net/npm/@wriven/liveboard-shared@0.20.1/dist/index.js';
+
+        const iframe = document.getElementById('renderer');
+        const transport = shellTransport(iframe, window.location.origin);
+        const broker = new Broker(transport, new LocalAdapter(new BrowserStorage()), {
+            shellVersion: '0.20.1',
+            initialBoardId: 'welcome',
+            initialCardPos: null,
+            initialFocusedColumn: null,
+        });
+        window.addEventListener('beforeunload', () => broker.close());
+        broker.onEvent('title.changed', () => {});
+        broker.onEvent('active.changed', () => {});
+        iframe.src = './renderer.html';
     </script>
 </body>
 </html>
