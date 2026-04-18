@@ -1,6 +1,6 @@
-import { useRef, useState, useEffect, type ReactNode } from 'react'
+import { useRef, useState, useEffect, type DragEvent, type ReactNode } from 'react'
 import type { BoardSummary } from '@shared/adapter.js'
-import { BoardRow } from './BoardRow.js'
+import { BoardRow, BOARD_DRAG_MIME } from './BoardRow.js'
 import { useRenameFolder, useDeleteFolder } from '../mutations/useFolderCrud.js'
 import { errorToast } from '../toast.js'
 
@@ -8,8 +8,8 @@ export interface BoardFolderGroupProps {
   folder: string
   boards: BoardSummary[]
   collapsed: boolean
-  allFolders: string[]
   onToggle(): void
+  onBoardDrop(boardId: string): void
 }
 
 // BoardFolderGroup renders a collapsible section of boards sharing the same
@@ -18,11 +18,12 @@ export function BoardFolderGroup({
   folder,
   boards,
   collapsed,
-  allFolders,
   onToggle,
+  onBoardDrop,
 }: BoardFolderGroupProps): JSX.Element {
   const [menuOpen, setMenuOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
+  const [dragOver, setDragOver] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const renameFolder = useRenameFolder()
@@ -55,6 +56,31 @@ export function BoardFolderGroup({
       return
     }
     deleteFolder.mutate(folder)
+  }
+
+  const hasBoardPayload = (e: DragEvent): boolean =>
+    e.dataTransfer.types.includes(BOARD_DRAG_MIME)
+
+  const onDragOver = (e: DragEvent<HTMLLIElement>): void => {
+    if (!hasBoardPayload(e)) return
+    e.preventDefault()
+    e.stopPropagation()
+    e.dataTransfer.dropEffect = 'move'
+    if (!dragOver) setDragOver(true)
+  }
+
+  const onDragLeave = (e: DragEvent<HTMLLIElement>): void => {
+    if (e.currentTarget.contains(e.relatedTarget as Node | null)) return
+    setDragOver(false)
+  }
+
+  const onDrop = (e: DragEvent<HTMLLIElement>): void => {
+    const boardId = e.dataTransfer.getData(BOARD_DRAG_MIME)
+    setDragOver(false)
+    if (!boardId) return
+    e.preventDefault()
+    e.stopPropagation()
+    onBoardDrop(boardId)
   }
 
   let header: ReactNode
@@ -135,7 +161,12 @@ export function BoardFolderGroup({
   }
 
   return (
-    <li className="lb-folder">
+    <li
+      className={`lb-folder${dragOver ? ' lb-folder--drop-target' : ''}`}
+      onDragOver={onDragOver}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
       {header}
       {!collapsed && !renaming && (
         <ul
@@ -143,7 +174,7 @@ export function BoardFolderGroup({
           className="lb-folder__children"
         >
           {boards.map((b) => (
-            <BoardRow key={b.id} board={b} folders={allFolders} />
+            <BoardRow key={b.id} board={b} />
           ))}
         </ul>
       )}
