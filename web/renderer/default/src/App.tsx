@@ -74,7 +74,7 @@ export function App({ client, initialBoardId, initialCardPos, initialFocusedColu
           <ListEventsBridge />
           <div className="lb-app-shell flex h-screen w-screen flex-col md:flex-row">
             <BoardSidebar collapsed={sidebarCollapsed} />
-            <main className="flex-1 overflow-hidden bg-[color:var(--color-bg)]">
+            <main className="flex-1 min-w-80 overflow-hidden bg-[color:var(--color-bg)]">
               <BoardView client={client} onToggleSidebar={toggleSidebar} />
             </main>
             <CommandPaletteHost />
