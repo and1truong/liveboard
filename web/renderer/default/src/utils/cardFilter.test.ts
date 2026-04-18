@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import type { Card } from '@shared/types.js'
-import { activeFilterCount, EMPTY_FILTER, filterCard } from './cardFilter.js'
+import { activeFilterCount, EMPTY_FILTER, filterCard, type BoardFilter } from './cardFilter.js'
 
 const card = (overrides: Partial<Card> = {}): Card => ({
   title: 'Buy milk',
@@ -44,11 +44,20 @@ describe('filterCard', () => {
   })
 
   it('combines all three predicates', () => {
-    const f = { query: 'milk', tags: ['groceries'], hideCompleted: true }
+    const f = { ...EMPTY_FILTER, query: 'milk', tags: ['groceries'], hideCompleted: true }
     expect(filterCard(card({ title: 'milk', tags: ['groceries'] }), f)).toBe(true)
     expect(filterCard(card({ title: 'milk', tags: ['groceries'], completed: true }), f)).toBe(false)
     expect(filterCard(card({ title: 'milk', tags: [] }), f)).toBe(false)
     expect(filterCard(card({ title: 'beer', tags: ['groceries'] }), f)).toBe(false)
+  })
+
+  it('matches priorities (any-of) case-insensitively', () => {
+    const f: BoardFilter = { ...EMPTY_FILTER, priorities: ['high', 'critical'] }
+    expect(filterCard(card({ priority: 'high' }), f)).toBe(true)
+    expect(filterCard(card({ priority: 'Critical' }), f)).toBe(true)
+    expect(filterCard(card({ priority: 'low' }), f)).toBe(false)
+    expect(filterCard(card({ priority: '' }), f)).toBe(false)
+    expect(filterCard(card({}), f)).toBe(false)
   })
 })
 
@@ -57,8 +66,11 @@ describe('activeFilterCount', () => {
     expect(activeFilterCount(EMPTY_FILTER)).toBe(0)
     expect(activeFilterCount({ ...EMPTY_FILTER, query: 'x' })).toBe(1)
     expect(activeFilterCount({ ...EMPTY_FILTER, tags: ['a', 'b'] })).toBe(2)
+    expect(activeFilterCount({ ...EMPTY_FILTER, priorities: ['high', 'low'] })).toBe(2)
     expect(activeFilterCount({ ...EMPTY_FILTER, hideCompleted: true })).toBe(1)
-    expect(activeFilterCount({ query: 'x', tags: ['a'], hideCompleted: true })).toBe(3)
+    expect(
+      activeFilterCount({ query: 'x', tags: ['a'], priorities: ['high'], hideCompleted: true }),
+    ).toBe(4)
   })
 
   it('ignores whitespace-only query', () => {

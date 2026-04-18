@@ -8,10 +8,11 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import type { BoardFilter } from '../utils/cardFilter.js'
+import { PRIORITIES, type BoardFilter, type Priority } from '../utils/cardFilter.js'
 
 interface PersistedFilter {
   tags: string[]
+  priorities: Priority[]
   hideCompleted: boolean
 }
 
@@ -20,6 +21,8 @@ export interface BoardFilterCtx {
   setQuery: (q: string) => void
   toggleTag: (tag: string) => void
   setTags: (tags: string[]) => void
+  togglePriority: (p: Priority) => void
+  setPriorities: (next: Priority[]) => void
   setHideCompleted: (next: boolean) => void
   reset: () => void
 }
@@ -34,8 +37,14 @@ function loadPersisted(boardId: string): PersistedFilter {
     const raw = localStorage.getItem(keyFor(boardId))
     if (raw) {
       const parsed = JSON.parse(raw) as Partial<PersistedFilter>
+      const priorityAllow = new Set<string>(PRIORITIES)
       return {
         tags: Array.isArray(parsed.tags) ? parsed.tags.filter((t) => typeof t === 'string') : [],
+        priorities: Array.isArray(parsed.priorities)
+          ? (parsed.priorities.filter(
+              (p) => typeof p === 'string' && priorityAllow.has(p),
+            ) as Priority[])
+          : [],
         hideCompleted: !!parsed.hideCompleted,
       }
     }
@@ -44,7 +53,7 @@ function loadPersisted(boardId: string): PersistedFilter {
   }
   // Lazy migration from legacy global key.
   const legacy = localStorage.getItem(LEGACY_HIDE_COMPLETED)
-  return { tags: [], hideCompleted: legacy === 'true' }
+  return { tags: [], priorities: [], hideCompleted: legacy === 'true' }
 }
 
 function persist(boardId: string, value: PersistedFilter): void {
@@ -68,6 +77,7 @@ export function BoardFilterProvider({
   const initial = useRef<PersistedFilter | null>(null)
   if (initial.current === null) initial.current = loadPersisted(boardId)
   const [tags, _setTags] = useState<string[]>(initial.current.tags)
+  const [priorities, _setPriorities] = useState<Priority[]>(initial.current.priorities)
   const [hideCompleted, _setHideCompleted] = useState(initial.current.hideCompleted)
 
   // When the active board changes, reload persisted state for it and clear search.
@@ -77,6 +87,7 @@ export function BoardFilterProvider({
     lastBoardRef.current = boardId
     const next = loadPersisted(boardId)
     _setTags(next.tags)
+    _setPriorities(next.priorities)
     _setHideCompleted(next.hideCompleted)
     _setQuery('')
   }, [boardId])
@@ -89,31 +100,54 @@ export function BoardFilterProvider({
     if (pruned.length !== tags.length) _setTags(pruned)
   }, [availableTags, tags])
 
-  // Persist tags + hideCompleted whenever they change (search is intentionally not persisted).
+  // Persist tags + priorities + hideCompleted whenever they change (search is intentionally not persisted).
   useEffect(() => {
-    persist(boardId, { tags, hideCompleted })
-  }, [boardId, tags, hideCompleted])
+    persist(boardId, { tags, priorities, hideCompleted })
+  }, [boardId, tags, priorities, hideCompleted])
 
   const setQuery = useCallback((q: string) => _setQuery(q), [])
   const setTags = useCallback((next: string[]) => _setTags(next), [])
   const toggleTag = useCallback((tag: string) => {
     _setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]))
   }, [])
+  const setPriorities = useCallback((next: Priority[]) => _setPriorities(next), [])
+  const togglePriority = useCallback((p: Priority) => {
+    _setPriorities((prev) => (prev.includes(p) ? prev.filter((x) => x !== p) : [...prev, p]))
+  }, [])
   const setHideCompleted = useCallback((next: boolean) => _setHideCompleted(next), [])
   const reset = useCallback(() => {
     _setQuery('')
     _setTags([])
+    _setPriorities([])
     _setHideCompleted(false)
   }, [])
 
   const filter = useMemo<BoardFilter>(
-    () => ({ query, tags, hideCompleted }),
-    [query, tags, hideCompleted],
+    () => ({ query, tags, priorities, hideCompleted }),
+    [query, tags, priorities, hideCompleted],
   )
 
   const value = useMemo<BoardFilterCtx>(
-    () => ({ filter, setQuery, toggleTag, setTags, setHideCompleted, reset }),
-    [filter, setQuery, toggleTag, setTags, setHideCompleted, reset],
+    () => ({
+      filter,
+      setQuery,
+      toggleTag,
+      setTags,
+      togglePriority,
+      setPriorities,
+      setHideCompleted,
+      reset,
+    }),
+    [
+      filter,
+      setQuery,
+      toggleTag,
+      setTags,
+      togglePriority,
+      setPriorities,
+      setHideCompleted,
+      reset,
+    ],
   )
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
