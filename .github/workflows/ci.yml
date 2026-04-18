@@ -131,7 +131,7 @@ jobs:
         run: nilaway ./...
 
   ts-parity:
-    name: TS Parity Vectors
+    name: TypeScript
     runs-on: ubuntu-latest
 
     steps:
