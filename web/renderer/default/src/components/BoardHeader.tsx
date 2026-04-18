@@ -1,33 +1,35 @@
-import { useState } from 'react'
 import type { Board } from '@shared/types.js'
 import { useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { tagChipStyle } from '../utils/tagColor.js'
-import { activeFilterCount } from '../utils/cardFilter.js'
+import { activeFilterCount, type Priority } from '../utils/cardFilter.js'
 import { FilterChip } from './FilterChip.js'
-import { FilterPopover } from './FilterPopover.js'
+
+const PRIORITY_LABEL: Record<Priority, string> = {
+  critical: 'Critical',
+  high: 'High',
+  medium: 'Medium',
+  low: 'Low',
+}
 
 export function BoardHeader({
   data,
-  availableTags,
   onToggleSidebar,
   onOpenSettings,
+  filterOpen,
+  onOpenFilter,
+  onOpenSearch,
 }: {
   data: Board
-  availableTags: string[]
   onToggleSidebar: () => void
   onOpenSettings: () => void
+  filterOpen: boolean
+  onOpenFilter: () => void
+  onOpenSearch: () => void
 }): JSX.Element {
-  const { filter, setQuery, toggleTag, setHideCompleted } = useBoardFilter()
-  const [open, setOpen] = useState(false)
-  const [initialFocus, setInitialFocus] = useState<'search' | null>(null)
+  const { filter, setQuery, toggleTag, togglePriority, setHideCompleted } = useBoardFilter()
   const tagColors = data.tag_colors ?? {}
   const count = activeFilterCount(filter)
   const trimmedQuery = filter.query.trim()
-
-  const openWith = (focus: 'search' | null): void => {
-    setInitialFocus(focus)
-    setOpen(true)
-  }
 
   return (
     <header className="lb-board-header relative flex h-12 shrink-0 items-center gap-2 border-b border-[color:var(--header-border)] bg-[color:var(--header-bg)] px-3 backdrop-blur-md">
@@ -73,19 +75,15 @@ export function BoardHeader({
 
       <div className="ml-auto flex min-w-0 items-center gap-1.5">
         {count > 0 && (
-          <ul className="flex min-w-0 items-center gap-1 overflow-x-auto pr-1">
+          <ul className="hidden min-w-0 items-center gap-1 overflow-x-auto pr-1 md:flex">
             {trimmedQuery && (
               <li>
                 <FilterChip
                   variant="accent"
                   label={
-                    <button
-                      type="button"
-                      onClick={() => openWith('search')}
-                      className="cursor-pointer bg-transparent p-0 text-current"
-                    >
+                    <span>
                       Search: <span className="font-semibold">{trimmedQuery}</span>
-                    </button>
+                    </span>
                   }
                   onRemove={() => setQuery('')}
                   removeAriaLabel={`Clear search "${trimmedQuery}"`}
@@ -103,6 +101,16 @@ export function BoardHeader({
                 />
               </li>
             ))}
+            {filter.priorities.map((p) => (
+              <li key={p}>
+                <FilterChip
+                  variant="neutral"
+                  label={PRIORITY_LABEL[p]}
+                  onRemove={() => togglePriority(p)}
+                  removeAriaLabel={`Remove priority ${PRIORITY_LABEL[p]}`}
+                />
+              </li>
+            ))}
             {filter.hideCompleted && (
               <li>
                 <FilterChip
@@ -116,16 +124,71 @@ export function BoardHeader({
           </ul>
         )}
 
-        <FilterPopover
-          board={data}
-          availableTags={availableTags}
-          open={open}
-          onOpenChange={(next) => {
-            setOpen(next)
-            if (!next) setInitialFocus(null)
-          }}
-          initialFocus={initialFocus}
-        />
+        {/* Desktop: inline search input */}
+        <div className="relative hidden md:block">
+          <svg
+            className="pointer-events-none absolute left-2.5 top-1/2 -translate-y-1/2 text-[color:var(--color-text-muted)]"
+            width="12"
+            height="12"
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden
+          >
+            <circle cx="6.5" cy="6.5" r="5" />
+            <line x1="10" y1="10" x2="14.5" y2="14.5" />
+          </svg>
+          <input
+            type="text"
+            value={filter.query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Escape' && filter.query) {
+                e.stopPropagation()
+                setQuery('')
+              }
+            }}
+            placeholder="Search cards…"
+            aria-label="Search cards"
+            className="h-8 w-[220px] rounded-lg border border-[color:var(--header-border)] bg-[color:var(--color-surface)]/60 py-1 pl-7 pr-2 text-xs text-[color:var(--color-text-primary)] placeholder-[color:var(--color-text-muted)] focus:border-[color:var(--accent-500)] focus:outline-none focus:ring-2 focus:ring-[color:var(--sb-focus-ring)]"
+          />
+        </div>
+
+        {/* Mobile: search icon opens drawer with search focused */}
+        <button
+          type="button"
+          aria-label="Search cards"
+          onClick={onOpenSearch}
+          className="flex h-8 w-8 items-center justify-center rounded-lg border border-[color:var(--header-border)] bg-[color:var(--color-surface)]/60 text-[color:var(--color-text-secondary)] transition-colors hover:bg-[color:var(--color-hover)] md:hidden"
+        >
+          <svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden>
+            <circle cx="6.5" cy="6.5" r="5" />
+            <line x1="10" y1="10" x2="14.5" y2="14.5" strokeLinecap="round" />
+          </svg>
+        </button>
+
+        <button
+          type="button"
+          aria-label={count > 0 ? `Filter (${count} active)` : 'Filter'}
+          aria-pressed={filterOpen}
+          onClick={onOpenFilter}
+          className={`group flex h-8 items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium leading-none transition-colors ${
+            filterOpen || count > 0
+              ? 'border-[color:var(--accent-500)]/40 bg-[color:var(--accent-500)]/10 text-[color:var(--accent-600)] dark:text-[color:var(--accent-500)]'
+              : 'border-[color:var(--header-border)] bg-[color:var(--color-surface)]/60 text-[color:var(--color-text-secondary)] hover:bg-[color:var(--color-hover)]'
+          }`}
+        >
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="M2 3h12M4 8h8M6 13h4" />
+          </svg>
+          <span>Filter</span>
+          {count > 0 && (
+            <span className="ml-0.5 inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[color:var(--accent-500)] px-1 text-[10px] font-semibold text-white">
+              {count}
+            </span>
+          )}
+        </button>
       </div>
     </header>
   )

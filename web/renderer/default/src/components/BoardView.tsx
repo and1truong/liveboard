@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
 import { ProtocolError } from '@shared/protocol.js'
@@ -16,11 +16,13 @@ import { BoardsGrid } from './BoardsGrid.js'
 import { BoardListView } from './BoardListView.js'
 import { BoardCalendarView } from './BoardCalendarView.js'
 import { BoardHeader } from './BoardHeader.js'
+import { FilterSidePanel, FilterDrawer } from './FilterPopover.js'
 import { FocusedColumnProvider, useFocusedColumn } from '../contexts/FocusedColumnContext.js'
 import { FocusExitBar } from './FocusExitBar.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
-import { useAvailableTags } from '../queries/useAvailableTags.js'
+import { useAvailableTags, useTagCounts } from '../queries/useAvailableTags.js'
 import { useBoardSettingsContext } from '../contexts/BoardSettingsContext.js'
+import { useMediaQuery } from '../hooks/useMediaQuery.js'
 
 function BoardColumns({
   data,
@@ -81,6 +83,18 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
   const settings = useBoardSettings(active)
   const { openSettings } = useBoardSettingsContext()
   const availableTags = useAvailableTags(data)
+  const tagCounts = useTagCounts(data)
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const [filterOpen, setFilterOpen] = useState(false)
+  const [filterFocus, setFilterFocus] = useState<'search' | null>(null)
+  const toggleFilter = (): void => {
+    setFilterFocus(null)
+    setFilterOpen((prev) => !prev)
+  }
+  const openSearch = (): void => {
+    setFilterFocus('search')
+    setFilterOpen(true)
+  }
 
   useEffect(() => {
     if (!active) return
@@ -115,6 +129,15 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
     )
   }
 
+  const view =
+    settings.view_mode === 'calendar' ? (
+      <BoardCalendarView data={data} active={active} columns={columns} />
+    ) : settings.view_mode === 'list' ? (
+      <BoardListView data={data} active={active} columns={columns} />
+    ) : (
+      <BoardColumns data={data} active={active} columns={columns} />
+    )
+
   return (
     <BoardFilterProvider boardId={active} availableTags={availableTags}>
       <BoardFocusProvider columns={columns}>
@@ -123,16 +146,36 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
             <div className="flex h-full flex-col">
               <BoardHeader
                 data={data}
-                availableTags={availableTags}
                 onToggleSidebar={onToggleSidebar}
                 onOpenSettings={openSettings}
+                filterOpen={filterOpen}
+                onOpenFilter={toggleFilter}
+                onOpenSearch={openSearch}
               />
-              {settings.view_mode === 'calendar' ? (
-                <BoardCalendarView data={data} active={active} columns={columns} />
-              ) : settings.view_mode === 'list' ? (
-                <BoardListView data={data} active={active} columns={columns} />
-              ) : (
-                <BoardColumns data={data} active={active} columns={columns} />
+              <div className="flex min-h-0 flex-1">
+                <div className="flex min-w-0 flex-1 flex-col">{view}</div>
+                {isDesktop && (
+                  <FilterSidePanel
+                    board={data}
+                    availableTags={availableTags}
+                    tagCounts={tagCounts}
+                    open={filterOpen}
+                    onOpenChange={setFilterOpen}
+                  />
+                )}
+              </div>
+              {!isDesktop && (
+                <FilterDrawer
+                  board={data}
+                  availableTags={availableTags}
+                  tagCounts={tagCounts}
+                  open={filterOpen}
+                  onOpenChange={(next) => {
+                    setFilterOpen(next)
+                    if (!next) setFilterFocus(null)
+                  }}
+                  initialFocus={filterFocus}
+                />
               )}
             </div>
           </BoardDndContext>
