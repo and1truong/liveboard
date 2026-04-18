@@ -11,11 +11,16 @@
     <script>
         // Resolve theme before paint to avoid FOUC.
         (function () {
+            var sysDark = matchMedia('(prefers-color-scheme: dark)').matches;
             try {
-                const stored = localStorage.getItem('liveboard:landing:mode') || 'system';
-                const dark = stored === 'dark' || (stored === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+                var stored = localStorage.getItem('liveboard:landing:mode') || 'system';
+                var dark = stored === 'dark' || (stored === 'system' && sysDark);
                 document.documentElement.classList.add(dark ? 'dark' : 'light');
-            } catch { document.documentElement.classList.add('dark'); }
+                document.documentElement.dataset.theme = stored;
+            } catch {
+                document.documentElement.classList.add(sysDark ? 'dark' : 'light');
+                document.documentElement.dataset.theme = 'system';
+            }
         })();
     </script>
     <style>
@@ -184,10 +189,15 @@
             color: var(--accent);
         }
         .theme-toggle svg { width: 16px; height: 16px }
-        html.dark .theme-toggle .icon-sun { display: block }
-        html.dark .theme-toggle .icon-moon { display: none }
-        html.light .theme-toggle .icon-sun { display: none }
-        html.light .theme-toggle .icon-moon { display: block }
+        html[data-theme="dark"] .theme-toggle .icon-moon { display: block }
+        html[data-theme="dark"] .theme-toggle .icon-sun { display: none }
+        html[data-theme="dark"] .theme-toggle .icon-system { display: none }
+        html[data-theme="light"] .theme-toggle .icon-sun { display: block }
+        html[data-theme="light"] .theme-toggle .icon-moon { display: none }
+        html[data-theme="light"] .theme-toggle .icon-system { display: none }
+        html[data-theme="system"] .theme-toggle .icon-system { display: block }
+        html[data-theme="system"] .theme-toggle .icon-sun { display: none }
+        html[data-theme="system"] .theme-toggle .icon-moon { display: none }
 
         /* Hero */
         .hero {
@@ -523,6 +533,7 @@
                 <button class="theme-toggle" type="button" aria-label="Toggle theme" onclick="toggleTheme()">
                     <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
                     <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <svg class="icon-system" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
                 </button>
                 <a href="https://github.com/and1truong/liveboard" class="gh">GitHub ↗</a>
                 <a href="#demo" class="try">Try Demo ↓</a>
@@ -534,7 +545,7 @@
         <div class="container">
             <div class="hero-badge">
                 <span class="dot"></span>
-                Runs entirely in your browser · No server
+                Runs entirely in your browser · No server · Mac desktop app with full-text search
             </div>
             <h1>Try LiveBoard <em>live</em>,<br/>right in this page</h1>
             <p>The full Kanban UI, loaded from a CDN, persisted in your browser's localStorage. No installs, no accounts — just play with it.</p>
@@ -626,13 +637,16 @@
     <script>
         function toggleTheme() {
             const root = document.documentElement;
-            const next = root.classList.contains('dark') ? 'light' : 'dark';
+            const modes = ['dark', 'light', 'system'];
+            const current = root.dataset.theme || 'system';
+            const next = modes[(modes.indexOf(current) + 1) % modes.length];
+            const dark = next === 'dark' || (next === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
             root.classList.remove('dark', 'light');
-            root.classList.add(next);
+            root.classList.add(dark ? 'dark' : 'light');
+            root.dataset.theme = next;
             try {
                 localStorage.setItem('liveboard:landing:mode', next);
-                // Sync the embedded LiveBoard renderer (same-origin localStorage).
-                localStorage.setItem('liveboard:mode', next);
+                localStorage.setItem('liveboard:mode', dark ? 'dark' : 'light');
             } catch {}
             const iframe = document.querySelector('.demo-iframe');
             if (iframe) iframe.src = iframe.src;
