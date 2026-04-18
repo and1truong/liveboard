@@ -189,7 +189,8 @@ export function applyOp(board: Board, op: MutationOp): Board {
       return b
     }
     case 'update_board_icon': {
-      b.icon = op.icon
+      if (op.icon !== undefined) b.icon = op.icon ?? undefined
+      if (op.icon_color !== undefined) b.icon_color = op.icon_color ?? undefined
       return b
     }
     case 'update_board_settings': {

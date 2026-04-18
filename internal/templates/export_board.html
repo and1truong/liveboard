@@ -45,14 +45,14 @@ a{color:inherit;text-decoration:none}
   <div class="sidebar-title">{{.SiteName}}</div>
   {{range .Boards}}
   <a href="{{.Slug}}.html"{{if eq .Slug $.Slug}} class="active"{{end}}>
-    <span class="sidebar-icon">{{if .Icon}}{{.Icon}}{{else}}📋{{end}}</span>
+    {{boardIcon .Icon .IconColor}}
     <span class="sidebar-name">{{.Name}}</span>
   </a>
   {{end}}
 </nav>
 <div class="main">
 <div class="header">
-  {{if .Board.Icon}}<span class="icon">{{.Board.Icon}}</span>{{end}}
+  {{if .Board.Icon}}{{boardIcon .Board.Icon .Board.IconColor}}{{end}}
   <h1>{{.Board.Name}}</h1>
 </div>
 {{if .Board.Description}}<p class="desc">{{.Board.Description}}</p>{{end}}

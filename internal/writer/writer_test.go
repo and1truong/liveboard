@@ -482,6 +482,62 @@ func TestRenderRoundTripID(t *testing.T) {
 	}
 }
 
+func TestRoundTripIconAndIconColor(t *testing.T) {
+	original := `---
+version: 1
+name: Icon Board
+icon: bookmark
+icon-color: blue
+---
+
+## Todo
+`
+
+	board, err := parser.Parse(original)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board.Icon != "bookmark" {
+		t.Errorf("parsed icon = %q, want bookmark", board.Icon)
+	}
+	if board.IconColor != "blue" {
+		t.Errorf("parsed icon-color = %q, want blue", board.IconColor)
+	}
+
+	rendered, err := Render(board)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(rendered, "icon: bookmark") {
+		t.Errorf("rendered missing icon:\n%s", rendered)
+	}
+	if !strings.Contains(rendered, "icon-color: blue") {
+		t.Errorf("rendered missing icon-color:\n%s", rendered)
+	}
+
+	board2, err := parser.Parse(rendered)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if board2.Icon != "bookmark" {
+		t.Errorf("roundtrip icon = %q", board2.Icon)
+	}
+	if board2.IconColor != "blue" {
+		t.Errorf("roundtrip icon-color = %q", board2.IconColor)
+	}
+}
+
+func TestIconColorOmittedWhenEmpty(t *testing.T) {
+	board := &models.Board{Name: "No Color", Icon: "list"}
+	rendered, err := Render(board)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if strings.Contains(rendered, "icon-color") {
+		t.Errorf("empty icon-color should be omitted:\n%s", rendered)
+	}
+}
+
 func TestWriteCard_Links(t *testing.T) {
 	b := &models.Board{
 		Columns: []models.Column{{

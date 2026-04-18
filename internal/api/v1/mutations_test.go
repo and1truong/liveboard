@@ -260,7 +260,8 @@ func TestMutationOpRoundTrip(t *testing.T) {
 	}
 }
 
-func boolPtr(b bool) *bool { return &b }
+func boolPtr(b bool) *bool    { return &b }
+func strPtr(s string) *string { return &s }
 
 func TestMutationOpMarshalJSON_allVariants(t *testing.T) {
 	cases := []v1.MutationOp{
@@ -279,7 +280,7 @@ func TestMutationOpMarshalJSON_allVariants(t *testing.T) {
 		{Type: "toggle_column_collapse", ToggleColumnCollapse: &v1.ToggleColumnCollapseOp{ColIdx: 1}},
 		{Type: "update_board_meta", UpdateBoardMeta: &v1.UpdateBoardMetaOp{Name: "X", Tags: []string{"q1"}}},
 		{Type: "update_board_members", UpdateBoardMembers: &v1.UpdateBoardMembersOp{Members: []string{"alice"}}},
-		{Type: "update_board_icon", UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: "🎯"}},
+		{Type: "update_board_icon", UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: strPtr("🎯")}},
 		{Type: "update_board_settings", UpdateBoardSettings: &v1.UpdateBoardSettingsOp{Settings: models.BoardSettings{ShowCheckbox: boolPtr(true)}}},
 		{Type: "update_tag_colors", UpdateTagColors: &v1.UpdateTagColorsOp{TagColors: map[string]string{"go": "#00ff00"}}},
 		{Type: "move_card_to_board", MoveCardToBoard: &v1.MoveCardToBoardOp{ColIdx: 0, CardIdx: 0, DstBoard: "other", DstColumn: "Inbox"}},

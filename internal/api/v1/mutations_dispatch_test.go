@@ -280,7 +280,7 @@ func TestDispatchAllVariants(t *testing.T) {
 			op: func(_ string) v1.MutationOp {
 				return v1.MutationOp{
 					Type:            "update_board_icon",
-					UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: "🚀"},
+					UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: strPtr("🚀")},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {

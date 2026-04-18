@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { buildFaviconHref } from '../icons/favicon.js'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
 import { ProtocolError } from '@shared/protocol.js'
@@ -112,8 +113,9 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
 
   useEffect(() => {
     const title = data?.name ? `${data.name} — LiveBoard` : 'LiveBoard'
-    client.emit('title.changed', { title, icon: data?.icon ?? null })
-  }, [client, data?.name, data?.icon])
+    const faviconHref = buildFaviconHref(data?.icon, data?.icon_color)
+    client.emit('title.changed', { title, faviconHref })
+  }, [client, data?.name, data?.icon, data?.icon_color])
 
   if (!active) return <BoardsGrid />
   if (isLoading) return <EmptyState title="Loading…" />

@@ -220,8 +220,10 @@ type UpdateBoardMembersOp struct {
 }
 
 // UpdateBoardIconOp are the params for an "update_board_icon" mutation.
+// Pointer fields distinguish "leave unchanged" (nil) from "clear" ("") or set.
 type UpdateBoardIconOp struct {
-	Icon string `json:"icon"`
+	Icon      *string `json:"icon,omitempty"`
+	IconColor *string `json:"icon_color,omitempty"`
 }
 
 // UpdateBoardSettingsOp are the params for an "update_board_settings" mutation.
@@ -537,7 +539,7 @@ func Apply(b *models.Board, op MutationOp) error {
 		if op.UpdateBoardIcon == nil {
 			return fmt.Errorf("update_board_icon: missing params")
 		}
-		return board.ApplyUpdateBoardIcon(b, op.UpdateBoardIcon.Icon)
+		return board.ApplyUpdateBoardIcon(b, op.UpdateBoardIcon.Icon, op.UpdateBoardIcon.IconColor)
 	case "update_board_settings":
 		if op.UpdateBoardSettings == nil {
 			return fmt.Errorf("update_board_settings: missing params")

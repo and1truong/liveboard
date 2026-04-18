@@ -1,0 +1,105 @@
+/* BoardIcon primitive: tinted chip + lucide SVG (or emoji fallback). */
+
+.lb-bicon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  background: var(--lb-icon-bg, transparent);
+  color: var(--lb-icon-fg, currentColor);
+}
+
+.lb-bicon--rounded { border-radius: 6px; }
+.lb-bicon--circle  { border-radius: 999px; }
+
+.lb-bicon--sm { width: 20px; height: 20px; }
+.lb-bicon--md { width: 24px; height: 24px; }
+.lb-bicon--lg { width: 36px; height: 36px; }
+
+/* Emoji renders as centered text with no tinted bg — emoji already carries its colour. */
+.lb-bicon--emoji { background: transparent; }
+.lb-bicon--sm.lb-bicon--emoji { font-size: 15px; }
+.lb-bicon--md.lb-bicon--emoji { font-size: 18px; }
+.lb-bicon--lg.lb-bicon--emoji { font-size: 26px; }
+
+.lb-bicon--placeholder {
+  background: transparent;
+  color: var(--sb-text-tertiary);
+}
+
+/* Swatch classes pick the palette vars from themes.css. */
+.lb-bicon--c-slate   { --lb-icon-bg: var(--lb-icon-bg-slate);   --lb-icon-fg: var(--lb-icon-fg-slate); }
+.lb-bicon--c-red     { --lb-icon-bg: var(--lb-icon-bg-red);     --lb-icon-fg: var(--lb-icon-fg-red); }
+.lb-bicon--c-orange  { --lb-icon-bg: var(--lb-icon-bg-orange);  --lb-icon-fg: var(--lb-icon-fg-orange); }
+.lb-bicon--c-amber   { --lb-icon-bg: var(--lb-icon-bg-amber);   --lb-icon-fg: var(--lb-icon-fg-amber); }
+.lb-bicon--c-yellow  { --lb-icon-bg: var(--lb-icon-bg-yellow);  --lb-icon-fg: var(--lb-icon-fg-yellow); }
+.lb-bicon--c-lime    { --lb-icon-bg: var(--lb-icon-bg-lime);    --lb-icon-fg: var(--lb-icon-fg-lime); }
+.lb-bicon--c-green   { --lb-icon-bg: var(--lb-icon-bg-green);   --lb-icon-fg: var(--lb-icon-fg-green); }
+.lb-bicon--c-teal    { --lb-icon-bg: var(--lb-icon-bg-teal);    --lb-icon-fg: var(--lb-icon-fg-teal); }
+.lb-bicon--c-cyan    { --lb-icon-bg: var(--lb-icon-bg-cyan);    --lb-icon-fg: var(--lb-icon-fg-cyan); }
+.lb-bicon--c-blue    { --lb-icon-bg: var(--lb-icon-bg-blue);    --lb-icon-fg: var(--lb-icon-fg-blue); }
+.lb-bicon--c-indigo  { --lb-icon-bg: var(--lb-icon-bg-indigo);  --lb-icon-fg: var(--lb-icon-fg-indigo); }
+.lb-bicon--c-violet  { --lb-icon-bg: var(--lb-icon-bg-violet);  --lb-icon-fg: var(--lb-icon-fg-violet); }
+.lb-bicon--c-fuchsia { --lb-icon-bg: var(--lb-icon-bg-fuchsia); --lb-icon-fg: var(--lb-icon-fg-fuchsia); }
+.lb-bicon--c-pink    { --lb-icon-bg: var(--lb-icon-bg-pink);    --lb-icon-fg: var(--lb-icon-fg-pink); }
+
+/* Swatch cell used in the icon picker colour row. Grid controls width. */
+.lb-iconpicker-swatch {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  min-width: 0;
+  border-radius: 999px;
+  border: 1px solid var(--sb-border);
+  cursor: pointer;
+  padding: 0;
+  transition: transform 120ms var(--sb-ease, ease);
+}
+.lb-iconpicker-swatch:hover { transform: scale(1.08); }
+.lb-iconpicker-swatch[aria-pressed="true"] {
+  outline: 2px solid var(--accent-500);
+  outline-offset: 2px;
+}
+
+/* Popover modifier for the icon+swatch grid layout. */
+.lb-popover--icons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  width: 320px;
+}
+.lb-popover--icons .lb-iconpicker-swatches {
+  display: grid;
+  grid-template-columns: repeat(14, 1fr);
+  gap: 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--sb-divider);
+}
+.lb-popover--icons .lb-iconpicker-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+.lb-popover--icons .lb-iconpicker-cell {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  border-radius: 8px;
+  cursor: pointer;
+  color: var(--sb-text-secondary);
+}
+.lb-popover--icons .lb-iconpicker-cell:hover { background: var(--sb-row-hover); }
+.lb-popover--icons .lb-iconpicker-cell[aria-pressed="true"] {
+  outline: 2px solid var(--accent-500);
+  outline-offset: -2px;
+}
+.lb-popover--icons .lb-iconpicker-cell--clear {
+  color: var(--sb-text-tertiary);
+  font-size: 14px;
+}

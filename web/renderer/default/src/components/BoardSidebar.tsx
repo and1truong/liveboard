@@ -5,6 +5,7 @@ import { useBoardList, useFolderList, useWorkspaceInfo } from '../queries.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { EmptyState } from './EmptyState.js'
 import { BoardRow, BOARD_DRAG_MIME } from './BoardRow.js'
+import { BoardIcon } from './BoardIcon.js'
 import { BoardFolderGroup } from './BoardFolderGroup.js'
 import { AddBoardButton } from './AddBoardButton.js'
 import { ThemePicker } from './ThemePicker.js'
@@ -300,7 +301,7 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
                   onSelect={() => setActive(b.id)}
                   className={`lb-popover__item${b.id === active ? ' lb-popover__item--active' : ''}`}
                 >
-                  <span className="lb-popover__icon" aria-hidden>{b.icon || '\u25A6'}</span>
+                  <BoardIcon icon={b.icon} color={b.icon_color} size="sm" className="lb-popover__icon" />
                   <span>{b.name}</span>
                 </DropdownMenu.Item>
               ))}

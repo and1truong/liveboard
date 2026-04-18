@@ -20,6 +20,7 @@ type Board struct {
 	Name         string            `yaml:"name" json:"name"`
 	Description  string            `yaml:"description,omitempty" json:"description,omitempty"`
 	Icon         string            `yaml:"icon,omitempty" json:"icon,omitempty"`
+	IconColor    string            `yaml:"icon-color,omitempty" json:"icon_color,omitempty"`
 	Tags         []string          `yaml:"tags,omitempty" json:"tags,omitempty"`
 	TagColors    map[string]string `yaml:"tag-colors,omitempty" json:"tag_colors,omitempty"`
 	Members      []string          `yaml:"members,omitempty" json:"members,omitempty"`

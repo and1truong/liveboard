@@ -16,6 +16,7 @@ import { stageDelete } from '../mutations/undoable.js'
 import { useBoardSettings, useUpdateSettings } from '../queries/useBoardSettings.js'
 import { useBoardSettingsContext } from '../contexts/BoardSettingsContext.js'
 import { useGlobalSettingsContext } from '../contexts/GlobalSettingsContext.js'
+import { BoardIcon } from './BoardIcon.js'
 
 const VIEW_MODES: { value: 'board' | 'list' | 'calendar'; label: string }[] = [
   { value: 'board', label: 'Board' },
@@ -179,8 +180,8 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                         }}
                         className={ITEM_BASE}
                       >
-                        <span className="flex-1 min-w-0">
-                          {b.icon && <span aria-hidden className="mr-2">{b.icon}</span>}
+                        <span className="flex-1 min-w-0 flex items-center gap-2">
+                          {b.icon && <BoardIcon icon={b.icon} color={b.icon_color} size="sm" />}
                           {b.name}
                         </span>
                         {ARROW}

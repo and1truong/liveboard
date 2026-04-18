@@ -9,6 +9,7 @@ export interface BoardSummary {
   name: string
   description?: string
   icon?: string
+  icon_color?: string
   version: number
   tags?: string[]
   updatedAgo?: string

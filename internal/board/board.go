@@ -567,16 +567,22 @@ func (e *Engine) UpdateBoardMembers(boardPath string, members []string) error {
 	})
 }
 
-// ApplyUpdateBoardIcon sets the emoji icon within b.
-func ApplyUpdateBoardIcon(b *models.Board, icon string) error {
-	b.Icon = icon
+// ApplyUpdateBoardIcon sets the icon slug/emoji and/or icon background color within b.
+// nil args leave the corresponding field untouched; empty strings clear it.
+func ApplyUpdateBoardIcon(b *models.Board, icon, iconColor *string) error {
+	if icon != nil {
+		b.Icon = *icon
+	}
+	if iconColor != nil {
+		b.IconColor = *iconColor
+	}
 	return nil
 }
 
-// UpdateBoardIcon sets the emoji icon for a board.
+// UpdateBoardIcon sets the icon slug/emoji for a board. Does not touch IconColor.
 func (e *Engine) UpdateBoardIcon(boardPath, icon string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyUpdateBoardIcon(b, icon)
+		return ApplyUpdateBoardIcon(b, &icon, nil)
 	})
 }
 

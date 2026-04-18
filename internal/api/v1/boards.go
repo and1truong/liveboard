@@ -23,6 +23,7 @@ type boardSummary struct {
 	Name        string   `json:"name"`
 	Description string   `json:"description,omitempty"`
 	Icon        string   `json:"icon,omitempty"`
+	IconColor   string   `json:"icon_color,omitempty"`
 	Version     int      `json:"version"`
 	Tags        []string `json:"tags,omitempty"`
 	UpdatedAgo  string   `json:"updatedAgo,omitempty"`
@@ -110,6 +111,7 @@ func (d Deps) toBoardSummary(b *models.Board) boardSummary {
 		Name:        b.Name,
 		Description: b.Description,
 		Icon:        b.Icon,
+		IconColor:   b.IconColor,
 		Version:     b.Version,
 		Tags:        b.Tags,
 		UpdatedAgo:  relativeTime(b.UpdatedAt),

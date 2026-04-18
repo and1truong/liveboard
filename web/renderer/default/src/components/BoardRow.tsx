@@ -29,7 +29,7 @@ export function BoardRow({ board }: BoardRowProps): JSX.Element {
       onDragStart={onDragStart}
       aria-grabbed="false"
     >
-      <BoardIconPicker boardId={board.id} icon={board.icon} />
+      <BoardIconPicker boardId={board.id} icon={board.icon} iconColor={board.icon_color} />
       <button
         type="button"
         onClick={() => setActive(board.id)}

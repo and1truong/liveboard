@@ -6,6 +6,7 @@ export interface Board {
   name?: string
   description?: string
   icon?: string
+  icon_color?: string
   tags?: string[]
   tag_colors?: Record<string, string>
   members?: string[]
@@ -99,7 +100,7 @@ export type MutationOp =
   | { type: 'toggle_column_collapse'; col_idx: number }
   | { type: 'update_board_meta'; name: string; description: string; tags: string[] }
   | { type: 'update_board_members'; members: string[] }
-  | { type: 'update_board_icon'; icon: string }
+  | { type: 'update_board_icon'; icon?: string | null; icon_color?: string | null }
   | { type: 'update_board_settings'; settings: BoardSettings }
   | { type: 'update_tag_colors'; tag_colors: Record<string, string> }
   | {

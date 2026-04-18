@@ -148,6 +148,42 @@
   --header-bg:          rgb(30 30 32 / 0.82);
 }
 
+/* Board icon palette — tinted bg + foreground glyph per swatch key.
+   Keys match ICON_COLORS in src/icons/iconColors.ts. Light values use
+   Tailwind 100/700, dark values use 900/300 for legible contrast on tint. */
+:root {
+  --lb-icon-bg-slate:   #e2e8f0; --lb-icon-fg-slate:   #334155;
+  --lb-icon-bg-red:     #fee2e2; --lb-icon-fg-red:     #b91c1c;
+  --lb-icon-bg-orange:  #ffedd5; --lb-icon-fg-orange:  #c2410c;
+  --lb-icon-bg-amber:   #fef3c7; --lb-icon-fg-amber:   #b45309;
+  --lb-icon-bg-yellow:  #fef9c3; --lb-icon-fg-yellow:  #a16207;
+  --lb-icon-bg-lime:    #ecfccb; --lb-icon-fg-lime:    #4d7c0f;
+  --lb-icon-bg-green:   #dcfce7; --lb-icon-fg-green:   #15803d;
+  --lb-icon-bg-teal:    #ccfbf1; --lb-icon-fg-teal:    #0f766e;
+  --lb-icon-bg-cyan:    #cffafe; --lb-icon-fg-cyan:    #0e7490;
+  --lb-icon-bg-blue:    #dbeafe; --lb-icon-fg-blue:    #1d4ed8;
+  --lb-icon-bg-indigo:  #e0e7ff; --lb-icon-fg-indigo:  #4338ca;
+  --lb-icon-bg-violet:  #ede9fe; --lb-icon-fg-violet:  #6d28d9;
+  --lb-icon-bg-fuchsia: #fae8ff; --lb-icon-fg-fuchsia: #a21caf;
+  --lb-icon-bg-pink:    #fce7f3; --lb-icon-fg-pink:    #be185d;
+}
+.dark {
+  --lb-icon-bg-slate:   #334155; --lb-icon-fg-slate:   #cbd5e1;
+  --lb-icon-bg-red:     #450a0a; --lb-icon-fg-red:     #fca5a5;
+  --lb-icon-bg-orange:  #431407; --lb-icon-fg-orange:  #fdba74;
+  --lb-icon-bg-amber:   #451a03; --lb-icon-fg-amber:   #fcd34d;
+  --lb-icon-bg-yellow:  #422006; --lb-icon-fg-yellow:  #fde047;
+  --lb-icon-bg-lime:    #1a2e05; --lb-icon-fg-lime:    #bef264;
+  --lb-icon-bg-green:   #052e16; --lb-icon-fg-green:   #86efac;
+  --lb-icon-bg-teal:    #042f2e; --lb-icon-fg-teal:    #5eead4;
+  --lb-icon-bg-cyan:    #083344; --lb-icon-fg-cyan:    #67e8f9;
+  --lb-icon-bg-blue:    #172554; --lb-icon-fg-blue:    #93c5fd;
+  --lb-icon-bg-indigo:  #1e1b4b; --lb-icon-fg-indigo:  #a5b4fc;
+  --lb-icon-bg-violet:  #2e1065; --lb-icon-fg-violet:  #c4b5fd;
+  --lb-icon-bg-fuchsia: #4a044e; --lb-icon-fg-fuchsia: #f0abfc;
+  --lb-icon-bg-pink:    #500724; --lb-icon-fg-pink:    #f9a8d4;
+}
+
 /* Filter popover open animation — matches macOS HIG menu spring. */
 @keyframes lb-filter-popover-in {
   from { opacity: 0; transform: translateY(-2px) scale(0.97); }

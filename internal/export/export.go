@@ -40,6 +40,7 @@ type boardSummary struct {
 	Slug        string
 	Description string
 	Icon        string
+	IconColor   string
 	Tags        []string
 	CardCount   int
 	DoneCount   int
@@ -83,6 +84,7 @@ func buildSummaries(boards []models.Board) []boardSummary {
 			Slug:        slug,
 			Description: b.Description,
 			Icon:        b.Icon,
+			IconColor:   b.IconColor,
 			Tags:        b.Tags,
 			CardCount:   cards,
 			DoneCount:   done,
@@ -113,6 +115,7 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 			}
 			return template.HTML(buf.String()) //nolint:gosec
 		},
+		"boardIcon": tmplfs.BoardIconChip,
 	}
 
 	exportTemplates := []string{"export_styles.html"}

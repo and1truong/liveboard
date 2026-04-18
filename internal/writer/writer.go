@@ -21,6 +21,7 @@ func Render(board *models.Board) (string, error) {
 		Name         string               `yaml:"name"`
 		Description  string               `yaml:"description,omitempty"`
 		Icon         string               `yaml:"icon,omitempty"`
+		IconColor    string               `yaml:"icon-color,omitempty"`
 		Tags         []string             `yaml:"tags,omitempty"`
 		TagColors    map[string]string    `yaml:"tag-colors,omitempty"`
 		Members      []string             `yaml:"members,omitempty"`
@@ -31,6 +32,7 @@ func Render(board *models.Board) (string, error) {
 		Name:         board.Name,
 		Description:  board.Description,
 		Icon:         board.Icon,
+		IconColor:    board.IconColor,
 		Tags:         board.Tags,
 		TagColors:    board.TagColors,
 		Members:      board.Members,

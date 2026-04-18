@@ -6,6 +6,7 @@ import { useDeleteBoard } from '../mutations/useBoardCrud.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { useBoard } from '../queries.js'
+import { BoardIcon } from './BoardIcon.js'
 import { TAG_PALETTE, tagChipStyle } from '../utils/tagColor.js'
 
 type ViewMode = 'board' | 'list' | 'calendar'
@@ -129,9 +130,12 @@ export function BoardSettingsModal({
         >
           <header className="lb-settings__header">
             <div className="lb-settings__heading">
-              <span className="lb-settings__icon" aria-hidden="true">
-                {board?.icon ?? '⚙'}
-              </span>
+              <BoardIcon
+                icon={board?.icon}
+                color={board?.icon_color}
+                size="lg"
+                className="lb-settings__icon"
+              />
               <div className="lb-settings__heading-text">
                 <Dialog.Title className="lb-settings__title">{boardName}</Dialog.Title>
                 <p className="lb-settings__subtitle">Board preferences</p>

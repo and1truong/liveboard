@@ -70,7 +70,7 @@ export type Event =
   | { kind: 'event'; type: 'board.list.updated'; data: null }
   | { kind: 'event'; type: 'active.changed'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null; focusedColumn?: string | null } }
   | { kind: 'event'; type: 'active.set'; data: { boardId: string | null; cardPos?: { colIdx: number; cardIdx: number } | null; focusedColumn?: string | null } }
-  | { kind: 'event'; type: 'title.changed'; data: { title: string; icon?: string | null } }
+  | { kind: 'event'; type: 'title.changed'; data: { title: string; faviconHref?: string | null } }
   | { kind: 'event'; type: 'key.forward'; data: { key: string; code: string; keyCode: number; charCode: number; metaKey: boolean; ctrlKey: boolean; altKey: boolean; shiftKey: boolean; repeat: boolean } }
 
 export interface Hello {

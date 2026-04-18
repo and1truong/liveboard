@@ -77,7 +77,7 @@ function bootstrap(): void {
     }
   })
 
-  broker.onEvent('title.changed', ({ title, icon }) => {
+  broker.onEvent('title.changed', ({ title, faviconHref }) => {
     document.title = title
     let link = document.querySelector<HTMLLinkElement>('link[rel="icon"]')
     if (!link) {
@@ -85,8 +85,8 @@ function bootstrap(): void {
       link.rel = 'icon'
       document.head.appendChild(link)
     }
-    if (icon) {
-      link.href = `data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">${icon}</text></svg>`
+    if (faviconHref) {
+      link.href = faviconHref
     } else {
       link.removeAttribute('href')
     }
