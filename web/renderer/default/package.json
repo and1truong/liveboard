@@ -1,6 +1,6 @@
 {
   "name": "@wriven/liveboard-renderer-default",
-  "version": "0.20.0",
+  "version": "0.20.1",
   "type": "module",
   "files": ["dist-npm"],
   "scripts": {
