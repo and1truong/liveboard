@@ -399,6 +399,9 @@ func (w *Workspace) BoardPath(id string) (string, error) {
 		return "", err
 	}
 	segs := strings.Split(id, "/")
+	if len(segs) == 0 {
+		return "", fmt.Errorf("%w: empty board id", ErrInvalidBoardName)
+	}
 	segs[len(segs)-1] += ".md"
 	p := filepath.Join(append([]string{w.Dir}, segs...)...)
 	// Belt-and-suspenders: ensure resolved path is inside workspace.

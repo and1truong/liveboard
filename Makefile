@@ -6,7 +6,7 @@ VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev
 COMMIT  ?= $(shell git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 LDFLAGS  = -s -w -X main.version=$(VERSION) -X main.commit=$(COMMIT)
 
-.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo $(DEMOS) release-port build-desktop-universal bundle-desktop-release release-desktop ipad-framework ipad-project ipad shell renderer frontend
+.PHONY: build build-desktop bundle-desktop generate-icon dev lint demo $(DEMOS) release-port build-desktop-universal bundle-desktop-release release-desktop ipad-framework ipad-project ipad shell renderer frontend css
 
 # Build CLI binary (no CGO, single arch)
 build: frontend
@@ -87,6 +87,9 @@ bundle-check:
 
 .PHONY: frontend
 frontend: shell renderer
+
+css:
+	tailwindcss -i web/renderer/default/src/styles/tailwind.css -o web/renderer/default/dist/tailwind.css
 
 .PHONY: renderer-dev
 renderer-dev:

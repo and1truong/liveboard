@@ -76,7 +76,7 @@ describe('ServerAdapter HTTP', () => {
   it('network failure throws ProtocolError INTERNAL', async () => {
     const a = new ServerAdapter({
       baseUrl: '/api/v1',
-      fetch: () => { throw new Error('boom') },
+      fetch: (() => { throw new Error('boom') }) as unknown as typeof fetch,
     })
     try {
       await a.listBoards()
@@ -145,7 +145,7 @@ describe('ServerAdapter CRUD', () => {
     })
     const b = await a.getBoard('welcome')
     expect(b.name).toBe('Welcome')
-    expect(log[0].url).toBe('/api/v1/boards/board/welcome')
+    expect(log[0]!.url).toBe('/api/v1/boards/board/welcome')
   })
 
   it('renameBoard PATCHes new_name and returns new summary', async () => {
@@ -200,9 +200,9 @@ describe('ServerAdapter mutate + settings', () => {
     })
     const out = await a.mutateBoard('foo', 1, { type: 'add_card', column: 'Todo', title: 'x' })
     expect(out).toEqual(board)
-    expect(log[0].method).toBe('POST')
-    expect(log[0].url).toBe('/api/v1/boards/mutate/foo')
-    expect(JSON.parse(log[0].body!)).toEqual({
+    expect(log[0]!.method).toBe('POST')
+    expect(log[0]!.url).toBe('/api/v1/boards/mutate/foo')
+    expect(JSON.parse(log[0]!.body!)).toEqual({
       client_version: 1,
       op: { type: 'add_card', column: 'Todo', title: 'x' },
     })
@@ -284,7 +284,7 @@ describe('ServerAdapter mutate + settings', () => {
       cardTitle: 'hi',
       snippet: 'hi <mark>match</mark>',
     })
-    expect(log[0].url).toBe('/api/v1/search?q=match&limit=5')
+    expect(log[0]!.url).toBe('/api/v1/search?q=match&limit=5')
   })
 
   it('search returns cardId in mapped hit', async () => {
@@ -296,7 +296,7 @@ describe('ServerAdapter mutate + settings', () => {
       }])),
     })
     const hits = await a.search('hi')
-    expect(hits[0].cardId).toBe('AbCdEfGhIj')
+    expect(hits[0]!.cardId).toBe('AbCdEfGhIj')
   })
 
   it('backlinks GETs /cards/{id}/backlinks and maps DTO', async () => {
@@ -310,6 +310,6 @@ describe('ServerAdapter mutate + settings', () => {
     })
     const hits = await a.backlinks('TGT0000001')
     expect(hits).toEqual([{ boardId: 'src', boardName: 'Src', colIdx: 0, cardIdx: 2, cardTitle: 'source' }])
-    expect(log[0].url).toBe('/api/v1/cards/TGT0000001/backlinks')
+    expect(log[0]!.url).toBe('/api/v1/cards/TGT0000001/backlinks')
   })
 })
