@@ -1,6 +1,6 @@
 {
-  "name": "@liveboard/shell",
-  "version": "0.1.0",
+  "name": "@wriven/liveboard-shell",
+  "version": "0.20.0",
   "type": "module",
   "files": ["dist-npm"],
   "scripts": {

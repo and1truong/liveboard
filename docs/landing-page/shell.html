@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LiveBoard Shell</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { margin: 0; font-family: system-ui, sans-serif; background: #0a0a10; }
+    #renderer { width: 100vw; height: 100vh; border: 0; display: block; }
+  </style>
+  <script>
+    // Seed three demo boards before the shell module loads.
+    // Idempotent: only runs once per browser; user edits afterward persist.
+    (function seedDemo() {
+      try {
+        if (localStorage.getItem('liveboard:demo:seeded')) return;
+        const KP = 'liveboard:v1:';
+        const today = new Date();
+        const ymd = (offsetDays) => {
+          const d = new Date(today);
+          d.setDate(d.getDate() + offsetDays);
+          return d.toISOString().slice(0, 10);
+        };
+        const boards = {
+          welcome: {
+            version: 1,
+            name: 'Welcome',
+            description: 'Drag cards, edit anything. Data stays in your browser.',
+            icon: '👋',
+            tags: ['demo'],
+            settings: { view_mode: 'board' },
+            columns: [
+              { name: 'Try this', cards: [
+                { title: 'Drag this card to "Done"' },
+                { title: 'Click the title to rename it' },
+                { title: 'Open the sidebar — switch boards' },
+              ]},
+              { name: 'In progress', cards: [
+                { title: 'Build something awesome', priority: 'high', tags: ['build'] },
+              ]},
+              { name: 'Done', cards: [
+                { title: 'Read the intro', completed: true },
+              ]},
+            ],
+          },
+          'sprint-backlog': {
+            version: 1,
+            name: 'Sprint Backlog',
+            description: 'A flat list of tasks — Apple Reminders style.',
+            icon: '📋',
+            tags: ['sprint', 'engineering'],
+            settings: { view_mode: 'list', card_display_mode: 'compact' },
+            columns: [
+              { name: 'Today', cards: [
+                { title: 'Review PR #482 — auth middleware', priority: 'high', assignee: 'hong', tags: ['review'] },
+                { title: 'Fix flaky test in users_test.go', priority: 'medium', tags: ['bug'] },
+                { title: 'Pair on the SSE retry logic', assignee: 'alice', tags: ['pairing'] },
+              ]},
+              { name: 'This week', cards: [
+                { title: 'Document the markdown format', due: ymd(2), tags: ['docs'] },
+                { title: 'Migrate workspace API to v1 endpoints', priority: 'high', due: ymd(3), tags: ['api'] },
+                { title: 'Add keyboard shortcut for column reorder', due: ymd(4), tags: ['ux'] },
+                { title: 'Profile the parser on 1MB boards', due: ymd(5), tags: ['perf'] },
+              ]},
+              { name: 'Backlog', cards: [
+                { title: 'Investigate webdav sync compatibility', tags: ['sync'] },
+                { title: 'Plugin system RFC', priority: 'low', tags: ['rfc'] },
+                { title: 'Dark mode for the export template', tags: ['export'] },
+              ]},
+              { name: 'Shipped', cards: [
+                { title: 'Cmd+F focuses search input', completed: true, tags: ['ux'] },
+                { title: 'Color theme picker — 7 themes', completed: true, tags: ['ux'] },
+              ]},
+            ],
+          },
+          'q2-roadmap': {
+            version: 1,
+            name: 'Q2 Roadmap',
+            description: 'Calendar view — drop deadlines onto the month grid.',
+            icon: '📅',
+            tags: ['roadmap', 'q2'],
+            settings: { view_mode: 'calendar' },
+            columns: [
+              { name: 'Milestones', cards: [
+                { title: 'v1.0 release candidate', due: ymd(-7), priority: 'critical', tags: ['release'] },
+                { title: 'Beta feedback session', due: ymd(-3), assignee: 'alice', tags: ['meeting'] },
+                { title: 'Public docs site live', due: ymd(0), priority: 'high', tags: ['docs'] },
+                { title: 'Mobile renderer alpha', due: ymd(2), tags: ['mobile'] },
+                { title: 'Plugin marketplace RFC due', due: ymd(5), priority: 'medium', tags: ['rfc'] },
+                { title: 'v1.1 feature freeze', due: ymd(9), priority: 'high', tags: ['release'] },
+                { title: 'Quarterly retro', due: ymd(12), assignee: 'team', tags: ['meeting'] },
+                { title: 'Marketing site refresh', due: ymd(16), tags: ['marketing'] },
+                { title: 'v1.1 ship', due: ymd(20), priority: 'critical', tags: ['release'] },
+              ]},
+              { name: 'Stretch', cards: [
+                { title: 'Conference talk submission', due: ymd(25), tags: ['talk'] },
+                { title: 'OSS sponsorship onboarding', due: ymd(28), tags: ['ops'] },
+              ]},
+            ],
+          },
+        };
+        const ws = { name: 'Demo', boardIds: ['welcome', 'sprint-backlog', 'q2-roadmap'] };
+        localStorage.setItem(KP + 'workspace', JSON.stringify(ws));
+        for (const id in boards) {
+          localStorage.setItem(KP + 'board:' + id, JSON.stringify(boards[id]));
+        }
+        localStorage.setItem('liveboard:demo:seeded', '1');
+      } catch (e) { console.warn('demo seed failed', e); }
+    })();
+  </script>
+  <script type="module" crossorigin src="https://cdn.jsdelivr.net/npm/@wriven/liveboard-shell@0.20.0/dist-npm/assets/shell-DlF2Z-Xd.js"></script>
+  <link rel="modulepreload" crossorigin href="https://cdn.jsdelivr.net/npm/@wriven/liveboard-shell@0.20.0/dist-npm/assets/post-message-NAf1XZ3P.js">
+</head>
+<body>
+  <iframe id="renderer" title="LiveBoard renderer"></iframe>
+  <script>window.__LIVEBOARD_CONFIG__ = { adapter: 'local', rendererUrl: './renderer.html' };</script>
+</body>
+</html>

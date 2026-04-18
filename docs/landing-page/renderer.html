@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>LiveBoard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script>
+    try {
+      const m = localStorage.getItem('liveboard:mode') || 'system';
+      const t = localStorage.getItem('liveboard:theme') || 'aqua';
+      const dark = m === 'dark' || (m === 'system' && matchMedia('(prefers-color-scheme: dark)').matches);
+      document.documentElement.classList.toggle('dark', dark);
+      document.documentElement.classList.add('theme-' + t);
+    } catch {}
+  </script>
+  <script type="module" crossorigin src="https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.0/dist-npm/assets/index-DDm5cpOH.js"></script>
+  <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.0/dist-npm/assets/index-Bid1c-4T.css">
+  <style>
+    /* Patch: some renderer buttons use var(--accent,...), but the theme system
+       defines --accent-500/600. Alias so accent-color picker actually applies. */
+    :root { --accent: var(--accent-600); }
+  </style>
+</head>
+<body class="bg-[color:var(--color-bg)] text-slate-900 antialiased dark:text-slate-100">
+  <div id="root"></div>
+</body>
+</html>
