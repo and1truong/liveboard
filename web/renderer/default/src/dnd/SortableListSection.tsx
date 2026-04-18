@@ -12,7 +12,7 @@ import { SortableListRow } from './SortableListRow.js'
 import { encodeCardId, encodeColumnId, encodeColumnEndId } from './cardId.js'
 import { useDragState } from './BoardDndContext.js'
 import { useBoardFilter } from '../contexts/BoardFilterContext.js'
-import { filterCard } from '../utils/cardFilter.js'
+import { activeFilterCount, filterCard } from '../utils/cardFilter.js'
 import { useAppSettings } from '../queries/useAppSettings.js'
 
 export function SortableListSection({
@@ -97,6 +97,8 @@ export function SortableListSection({
 
   const doneCount = visibleCards.filter(({ card }) => card.completed).length
   const totalCount = visibleCards.length
+  const filtersActive = activeFilterCount(filter) > 0
+  const highlightMatches = collapsed && filtersActive && totalCount > 0
 
   return (
     <section
@@ -137,7 +139,13 @@ export function SortableListSection({
               <h2 className="truncate text-[17px] font-extrabold lowercase tracking-[-0.2px] text-slate-900 dark:text-slate-100">
                 {column.name}
               </h2>
-              <span className="text-sm font-medium text-slate-400 dark:text-slate-500">
+              <span
+                className={
+                  highlightMatches
+                    ? 'inline-flex h-5 min-w-[1.25rem] items-center justify-center rounded-full bg-[color:var(--accent-500)] px-1.5 text-xs font-semibold text-white'
+                    : 'text-sm font-medium text-slate-400 dark:text-slate-500'
+                }
+              >
                 {totalCount}
               </span>
             </button>

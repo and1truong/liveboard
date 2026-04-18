@@ -10,7 +10,7 @@ import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { useBoardSettings } from '../queries/useBoardSettings.js'
 import { useDragState } from './BoardDndContext.js'
 import { useBoardFilter } from '../contexts/BoardFilterContext.js'
-import { filterCard } from '../utils/cardFilter.js'
+import { activeFilterCount, filterCard } from '../utils/cardFilter.js'
 
 export function SortableColumn({
   column,
@@ -51,13 +51,18 @@ export function SortableColumn({
     mutation.mutate({ type: 'toggle_column_collapse', col_idx: colIdx })
   }
 
+  const filtersActive = activeFilterCount(filter) > 0
+  const hasMatches = filtersActive && visibleCards.length > 0
+
   if (collapsed && !isFocusMode) {
     return (
       <section
         ref={setNodeRef}
         style={style}
-        aria-label={`collapsed column ${column.name}`}
-        className="flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-[color:var(--color-column-bg)] p-3"
+        aria-label={`collapsed column ${column.name}${hasMatches ? ` (${visibleCards.length} match)` : ''}`}
+        className={`flex w-12 shrink-0 cursor-pointer flex-col items-center rounded-lg bg-[color:var(--color-column-bg)] p-3 ${
+          hasMatches ? 'ring-2 ring-[color:var(--accent-500)]/60' : ''
+        }`}
         onClick={toggleCollapse}
       >
         <button
@@ -76,7 +81,15 @@ export function SortableColumn({
         >
           {column.name}
         </h2>
-        <span className="mt-2 text-xs text-slate-500">{visibleCards.length}</span>
+        <span
+          className={`mt-2 text-xs ${
+            hasMatches
+              ? 'inline-flex h-4 min-w-[1rem] items-center justify-center rounded-full bg-[color:var(--accent-500)] px-1 font-semibold text-white'
+              : 'text-slate-500'
+          }`}
+        >
+          {visibleCards.length}
+        </span>
       </section>
     )
   }
