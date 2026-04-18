@@ -21,12 +21,14 @@ export function SortableListSection({
   allColumnNames,
   boardId,
   collapsed = false,
+  showFocus = true,
 }: {
   column: ColumnModel
   colIdx: number
   allColumnNames: string[]
   boardId: string
   collapsed?: boolean
+  showFocus?: boolean
 }): JSX.Element {
   const id = encodeColumnId(column.name)
   const cards = column.cards ?? []
@@ -93,127 +95,138 @@ export function SortableListSection({
     mutation.mutate({ type: 'move_column', name: column.name, after_col: target })
   }
 
+  const doneCount = visibleCards.filter(({ card }) => card.completed).length
+  const totalCount = visibleCards.length
+
   return (
     <section
       ref={setNodeRef}
       style={style}
       aria-label={`section ${column.name}`}
-      className="overflow-hidden rounded-xl bg-[color:var(--color-surface)] border border-[color:var(--color-border)] shadow-[var(--shadow-card)]"
     >
-      <header className="group flex items-center gap-2 px-3 py-2">
-        <button
-          type="button"
-          aria-label={`drag section ${column.name}`}
-          {...attributes}
-          {...listeners}
-          onClick={(e) => e.stopPropagation()}
-          className="cursor-grab text-slate-300 opacity-0 group-hover:opacity-100 active:cursor-grabbing dark:text-slate-600"
-        >
-          ⋮⋮
-        </button>
-        <button
-          type="button"
-          aria-label={collapsed ? `expand section ${column.name}` : `collapse section ${column.name}`}
-          onClick={toggleCollapse}
-          className="flex h-5 w-5 shrink-0 items-center justify-center rounded text-slate-500 hover:bg-[color:var(--color-column-bg)] dark:text-slate-400"
-        >
-          <svg
-            width="10"
-            height="10"
-            viewBox="0 0 10 10"
-            fill="none"
-            className={`transition-transform ${collapsed ? '' : 'rotate-90'}`}
-          >
-            <path d="M3 1L7 5L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-        {renaming ? (
-          <input
-            ref={renameRef}
-            aria-label={`rename column ${column.name}`}
-            defaultValue={column.name}
-            onBlur={commitRename}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') { e.preventDefault(); commitRename() }
-              else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
-            }}
-            className="flex-1 rounded bg-[color:var(--color-column-bg)] px-1 text-sm font-semibold outline-none ring-1 ring-[color:var(--accent-500)] dark:text-slate-100"
-          />
-        ) : (
+      <header className="group flex items-center justify-between gap-2 pt-[18px] pb-2 border-b border-dashed border-[color:var(--color-border-dashed)]">
+        <div className="flex min-w-0 flex-1 items-center gap-2">
           <button
             type="button"
-            onClick={toggleCollapse}
-            className="flex min-w-0 flex-1 items-center gap-2 text-left"
+            aria-label={`drag section ${column.name}`}
+            {...attributes}
+            {...listeners}
+            onClick={(e) => e.stopPropagation()}
+            className="cursor-grab text-slate-300 opacity-0 group-hover:opacity-100 active:cursor-grabbing dark:text-slate-600"
           >
-            <h2 className="truncate text-sm font-semibold uppercase tracking-wide text-slate-700 dark:text-slate-200">
-              {column.name}
-            </h2>
-            <span className="rounded-full bg-[color:var(--color-column-bg)] px-2 py-0.5 text-xs text-slate-500 dark:text-slate-400">
-              {visibleCards.length}
-            </span>
+            ⋮⋮
           </button>
-        )}
-        <DropdownMenu.Root>
-          <DropdownMenu.Trigger
-            aria-label={`section menu ${column.name}`}
-            className="rounded p-1 text-slate-400 opacity-0 hover:bg-[color:var(--color-column-bg)] hover:text-slate-600 group-hover:opacity-100"
-          >
-            ⋮
-          </DropdownMenu.Trigger>
-          <DropdownMenu.Portal>
-            <DropdownMenu.Content
-              sideOffset={4}
-              className="z-50 min-w-40 rounded-md bg-[color:var(--color-surface)] p-1 shadow-[var(--shadow-raised)] border border-[color:var(--color-border)] dark:text-slate-100"
+          {renaming ? (
+            <input
+              ref={renameRef}
+              aria-label={`rename column ${column.name}`}
+              defaultValue={column.name}
+              onBlur={commitRename}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') { e.preventDefault(); commitRename() }
+                else if (e.key === 'Escape') { e.preventDefault(); cancelRename() }
+              }}
+              className="flex-1 rounded bg-[color:var(--color-column-bg)] px-1 text-[17px] font-extrabold outline-none ring-1 ring-[color:var(--accent-500)] dark:text-slate-100"
+            />
+          ) : (
+            <button
+              type="button"
+              onClick={toggleCollapse}
+              className="flex min-w-0 flex-1 items-baseline gap-2 text-left"
             >
-              {focusCtx && !isFocused && (
+              <h2 className="truncate text-[17px] font-extrabold lowercase tracking-[-0.2px] text-slate-900 dark:text-slate-100">
+                {column.name}
+              </h2>
+              <span className="text-sm font-medium text-slate-400 dark:text-slate-500">
+                {totalCount}
+              </span>
+            </button>
+          )}
+        </div>
+        <div className="flex items-center gap-1">
+          {doneCount > 0 && (
+            <span className="text-xs text-[color:var(--color-text-subtle)]">
+              {doneCount}/{totalCount} done
+            </span>
+          )}
+          <button
+            type="button"
+            aria-label={collapsed ? `expand section ${column.name}` : `collapse section ${column.name}`}
+            onClick={toggleCollapse}
+            className="flex h-6 w-6 shrink-0 items-center justify-center rounded text-slate-500 hover:bg-[color:var(--color-column-bg)] dark:text-slate-400"
+          >
+            <svg
+              width="10"
+              height="10"
+              viewBox="0 0 10 10"
+              fill="none"
+              className={`transition-transform ${collapsed ? '' : 'rotate-90'}`}
+            >
+              <path d="M3 1L7 5L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          <DropdownMenu.Root>
+            <DropdownMenu.Trigger
+              aria-label={`section menu ${column.name}`}
+              className="rounded p-1 text-slate-400 opacity-0 hover:bg-[color:var(--color-column-bg)] hover:text-slate-600 group-hover:opacity-100 focus:opacity-100 data-[state=open]:opacity-100"
+            >
+              ⋮
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Portal>
+              <DropdownMenu.Content
+                sideOffset={4}
+                className="z-50 min-w-40 rounded-md bg-[color:var(--color-surface)] p-1 shadow-[var(--shadow-raised)] border border-[color:var(--color-border)] dark:text-slate-100"
+              >
+                {showFocus && focusCtx && !isFocused && (
+                  <DropdownMenu.Item
+                    onSelect={() => focusCtx.setFocused(column.name)}
+                    className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
+                  >
+                    Focus
+                  </DropdownMenu.Item>
+                )}
                 <DropdownMenu.Item
-                  onSelect={() => focusCtx.setFocused(column.name)}
+                  onSelect={() => setRenaming(true)}
                   className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
                 >
-                  Focus
+                  Rename
                 </DropdownMenu.Item>
-              )}
-              <DropdownMenu.Item
-                onSelect={() => setRenaming(true)}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
-              >
-                Rename
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                disabled={leftDisabled}
-                onSelect={() => move('left')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)] data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
-              >
-                Move up
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                disabled={rightDisabled}
-                onSelect={() => move('right')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)] data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
-              >
-                Move down
-              </DropdownMenu.Item>
-              <DropdownMenu.Item
-                onSelect={toggleCollapse}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
-              >
-                {collapsed ? 'Expand' : 'Collapse'}
-              </DropdownMenu.Item>
-              <DropdownMenu.Separator className="my-1 h-px bg-[color:var(--color-border)]" />
-              <DropdownMenu.Item
-                onSelect={() =>
-                  stageDelete(
-                    () => mutation.mutate({ type: 'delete_column', name: column.name }),
-                    column.name,
-                  )
-                }
-                className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-              >
-                Delete
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Portal>
-        </DropdownMenu.Root>
+                <DropdownMenu.Item
+                  disabled={leftDisabled}
+                  onSelect={() => move('left')}
+                  className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)] data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
+                >
+                  Move up
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  disabled={rightDisabled}
+                  onSelect={() => move('right')}
+                  className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)] data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600"
+                >
+                  Move down
+                </DropdownMenu.Item>
+                <DropdownMenu.Item
+                  onSelect={toggleCollapse}
+                  className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]"
+                >
+                  {collapsed ? 'Expand' : 'Collapse'}
+                </DropdownMenu.Item>
+                <DropdownMenu.Separator className="my-1 h-px bg-[color:var(--color-border)]" />
+                <DropdownMenu.Item
+                  onSelect={() =>
+                    stageDelete(
+                      () => mutation.mutate({ type: 'delete_column', name: column.name }),
+                      column.name,
+                    )
+                  }
+                  className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                >
+                  Delete
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Portal>
+          </DropdownMenu.Root>
+        </div>
       </header>
       {!collapsed && (
         <>
@@ -267,6 +280,7 @@ function ListQuickAdd({
   const mutation = useBoardMutation(boardId)
   const { card_position } = useAppSettings()
   const inputRef = useRef<HTMLInputElement>(null)
+  const [focused, setFocused] = useState(false)
 
   const commit = (): void => {
     const title = (inputRef.current?.value ?? '').trim()
@@ -281,16 +295,29 @@ function ListQuickAdd({
         e.preventDefault()
         commit()
       }}
-      className="flex items-center gap-2 border-t border-[color:var(--color-border-dashed)] px-3 py-2"
+      className="group/add flex items-center gap-3 py-2"
     >
-      <span aria-hidden className="text-slate-300 dark:text-slate-600">+</span>
+      <span
+        aria-hidden
+        className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-dashed transition-colors ${
+          focused
+            ? 'border-[color:var(--accent-500)] text-[color:var(--accent-500)]'
+            : 'border-[color:var(--color-text-subtle)] text-[color:var(--color-text-subtle)]'
+        }`}
+      >
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+          <path d="M5 1.5V8.5M1.5 5H8.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        </svg>
+      </span>
       <input
         ref={inputRef}
         type="text"
         aria-label={`new item in ${columnName}`}
         placeholder="New item"
         autoComplete="off"
-        className="flex-1 bg-transparent text-sm text-slate-700 outline-none placeholder:text-slate-400 dark:text-slate-200"
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        className="flex-1 bg-transparent text-sm text-slate-800 outline-none placeholder:text-[color:var(--color-text-subtle)] dark:text-slate-100"
       />
     </form>
   )

@@ -14,6 +14,9 @@
   --color-column-bg:      #ecedf0;
   --color-border:         #e2e3e8;
   --color-border-dashed:  #c8cad3;
+  --color-text-subtle:    #94a3b8;
+  --color-due-overdue:        #e11d48;
+  --color-due-overdue-soft:   rgba(225, 29, 72, 0.08);
   --shadow-card:          0 1px 2px rgba(0,0,0,0.08), 0 2px 6px rgba(0,0,0,0.06);
   --shadow-raised:        0 4px 12px rgba(0,0,0,0.12), 0 1px 4px rgba(0,0,0,0.06);
   --shadow-sidebar:       2px 0 8px rgba(0,0,0,0.06);
@@ -27,6 +30,9 @@
   --color-column-bg:      #22232d;
   --color-border:         #2e3042;
   --color-border-dashed:  #3d3f56;
+  --color-text-subtle:    #6b7280;
+  --color-due-overdue:        #fb7185;
+  --color-due-overdue-soft:   rgba(251, 113, 133, 0.14);
   --shadow-card:          0 1px 2px rgba(0,0,0,0.3);
   --shadow-raised:        0 4px 12px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
   --shadow-sidebar:       2px 0 8px rgba(0,0,0,0.4);

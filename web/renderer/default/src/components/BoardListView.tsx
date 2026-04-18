@@ -22,7 +22,7 @@ export function BoardListView({
   const visibleColumns = focused !== null ? columns.filter((c) => c.name === focused) : columns
 
   const body = (
-    <div className="flex w-full flex-col gap-3 p-4">
+    <div className="mx-auto flex w-full flex-col px-7 pb-16">
       {visibleColumns.map((col) => {
         const i = columns.indexOf(col)
         return (
@@ -33,6 +33,7 @@ export function BoardListView({
             allColumnNames={names}
             boardId={active}
             collapsed={data.list_collapse?.[i] ?? false}
+            showFocus={false}
           />
         )
       })}
@@ -43,7 +44,7 @@ export function BoardListView({
   return (
     <div className="flex flex-1 flex-col overflow-y-auto">
       {focused !== null && (
-        <div className="px-4 pt-4">
+        <div className="mx-auto w-full px-7 pt-4">
           <FocusExitBar />
         </div>
       )}
@@ -106,7 +107,7 @@ function AddListInline({ boardId }: { boardId: string }): JSX.Element {
     <button
       type="button"
       onClick={() => setOpen(true)}
-      className="self-start rounded px-2 py-1 text-sm text-slate-500 hover:bg-[color:var(--color-column-bg)] dark:text-slate-400"
+      className="mt-6 self-start rounded px-2 py-1 text-sm text-slate-500 hover:bg-[color:var(--color-column-bg)] dark:text-slate-400"
     >
       + Add list
     </button>
