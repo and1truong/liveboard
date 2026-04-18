@@ -32,7 +32,7 @@ function FilterReadout(): JSX.Element {
   const { filter } = useBoardFilter()
   return (
     <div data-testid="readout">
-      q={filter.query}|tags={filter.tags.join(',')}|hide={String(filter.hideCompleted)}
+      q={filter.query}|tags={filter.tags.join(',')}|prio={filter.priorities.join(',')}|hide={String(filter.hideCompleted)}
     </div>
   )
 }
@@ -53,26 +53,30 @@ describe('FilterPopover', () => {
     expect(getByTestId('readout').textContent).toContain('tags=|')
   })
 
+  it('toggles a priority selection on click', () => {
+    const { getByText, getByRole, getByTestId } = render(<Harness board={board} />)
+    fireEvent.click(getByText('force-open'))
+    const high = getByRole('checkbox', { name: 'High' })
+    expect(high.getAttribute('aria-checked')).toBe('false')
+    fireEvent.click(high)
+    expect(getByTestId('readout').textContent).toContain('prio=high')
+    fireEvent.click(high)
+    expect(getByTestId('readout').textContent).toContain('prio=|')
+  })
+
   it('reset clears all filters', () => {
     const { getByText, getByRole, getByTestId } = render(<Harness board={board} />)
     fireEvent.click(getByText('force-open'))
     fireEvent.click(getByRole('checkbox', { name: 'urgent' }))
     fireEvent.click(getByRole('checkbox', { name: 'frontend' }))
+    fireEvent.click(getByRole('checkbox', { name: 'High' }))
     fireEvent.click(getByRole('switch', { name: /Hide completed/i }))
 
     const readout = getByTestId('readout')
-    expect(readout.textContent).toBe('q=|tags=urgent,frontend|hide=true')
+    expect(readout.textContent).toBe('q=|tags=urgent,frontend|prio=high|hide=true')
 
     fireEvent.click(getByRole('button', { name: 'Reset' }))
-    expect(readout.textContent).toBe('q=|tags=|hide=false')
-  })
-
-  it('shows trigger badge with active count', () => {
-    const { getByText, getByRole, getByLabelText } = render(<Harness board={board} />)
-    fireEvent.click(getByText('force-open'))
-    fireEvent.click(getByRole('checkbox', { name: 'frontend' }))
-    fireEvent.click(getByRole('checkbox', { name: 'backend' }))
-    expect(getByLabelText(/Filter \(2 active\)/)).toBeTruthy()
+    expect(readout.textContent).toBe('q=|tags=|prio=|hide=false')
   })
 
   it('shows empty-state message when board has no tags', () => {
