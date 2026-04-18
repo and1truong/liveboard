@@ -14,9 +14,13 @@ const THEMES = [
 ]
 
 const COLOR_THEMES = [
-  { value: 'aqua', label: 'Aqua' },
-  { value: 'emerald', label: 'Emerald' },
-  { value: 'rose', label: 'Rose' },
+  { value: 'aqua',   label: 'Aqua' },
+  { value: 'green',  label: 'Green' },
+  { value: 'red',    label: 'Red' },
+  { value: 'orange', label: 'Orange' },
+  { value: 'purple', label: 'Purple' },
+  { value: 'pink',   label: 'Pink' },
+  { value: 'black',  label: 'Black' },
 ]
 
 const FONTS = [

@@ -3,9 +3,13 @@
   --accent-500: #6366f1;
   --accent-600: #4f46e5;
 }
-:root.theme-aqua    { --accent-500: #007AFF; --accent-600: #0062CC; }
-:root.theme-emerald { --accent-500: #10b981; --accent-600: #059669; }
-:root.theme-rose    { --accent-500: #f43f5e; --accent-600: #e11d48; }
+:root.theme-aqua   { --accent-500: #007AFF; --accent-600: #0062CC; }
+:root.theme-green  { --accent-500: #34C759; --accent-600: #28A847; }
+:root.theme-red    { --accent-500: #FF3B30; --accent-600: #D93025; }
+:root.theme-orange { --accent-500: #FF9500; --accent-600: #E08600; }
+:root.theme-purple { --accent-500: #AF52DE; --accent-600: #9340C5; }
+:root.theme-pink   { --accent-500: #FF375F; --accent-600: #E82B52; }
+:root.theme-black  { --accent-500: #1C1C1E; --accent-600: #000000; }
 
 /* Semantic color tokens — light mode defaults (indigo / neutral). */
 :root {
@@ -39,21 +43,7 @@
   --color-hover:          rgba(255,255,255,0.06);
 }
 
-/* Per-theme light overrides — matching HTMLx web/css/themes.css values. */
-:root.theme-emerald {
-  --color-bg:             #f5f7f5;
-  --color-column-bg:      #e8ece8;
-  --color-border:         #d4dbd4;
-  --color-border-dashed:  #b8c4b8;
-}
-
-:root.theme-rose {
-  --color-bg:             #fdf5f6;
-  --color-column-bg:      #f2e8ea;
-  --color-border:         #e8d5d8;
-  --color-border-dashed:  #d4b8be;
-}
-
+/* Per-theme light overrides. */
 :root.theme-aqua {
   --color-bg:             #ECECEC;
   --color-surface:        #FFFFFF;
@@ -62,6 +52,48 @@
   --color-border-dashed:  #AEAEB2;
   --sb-bg:                rgb(255 255 255 / 0.82);
   --sb-bg-solid:          #ffffff;
+}
+
+:root.theme-green {
+  --color-bg:             #f0faf2;
+  --color-column-bg:      #dff2e5;
+  --color-border:         #c0e0cc;
+  --color-border-dashed:  #9acaac;
+}
+
+:root.theme-red {
+  --color-bg:             #fff5f5;
+  --color-column-bg:      #ffe8e8;
+  --color-border:         #f5cccc;
+  --color-border-dashed:  #e8aaaa;
+}
+
+:root.theme-orange {
+  --color-bg:             #fff7f0;
+  --color-column-bg:      #f5e8d8;
+  --color-border:         #e8d4bc;
+  --color-border-dashed:  #d4b898;
+}
+
+:root.theme-purple {
+  --color-bg:             #faf5ff;
+  --color-column-bg:      #f0e6ff;
+  --color-border:         #dccdf5;
+  --color-border-dashed:  #c4aae8;
+}
+
+:root.theme-pink {
+  --color-bg:             #fff5f8;
+  --color-column-bg:      #ffe8f0;
+  --color-border:         #f5ccda;
+  --color-border-dashed:  #e8aabf;
+}
+
+:root.theme-black {
+  --color-bg:             #f4f4f6;
+  --color-column-bg:      #e8e8ec;
+  --color-border:         #d4d4da;
+  --color-border-dashed:  #b8b8c0;
 }
 
 /* Dark overrides for themed variants.
@@ -77,20 +109,20 @@
   --sb-bg-solid:          #1e1e20;
 }
 
-:root.dark.theme-emerald {
-  --color-bg:             #0c1410;
-  --color-surface:        #141f1a;
-  --color-column-bg:      #1a2820;
-  --color-border:         #274030;
-  --color-border-dashed:  #3a5a48;
+:root.dark.theme-green {
+  --color-bg:             #071510;
+  --color-surface:        #0f2018;
+  --color-column-bg:      #172a20;
+  --color-border:         #20402e;
+  --color-border-dashed:  #2e5840;
 }
 
-:root.dark.theme-rose {
-  --color-bg:             #150a0e;
-  --color-surface:        #1f1218;
-  --color-column-bg:      #29171e;
-  --color-border:         #40242e;
-  --color-border-dashed:  #5c3542;
+:root.dark.theme-red {
+  --color-bg:             #180808;
+  --color-surface:        #241010;
+  --color-column-bg:      #2e1515;
+  --color-border:         #461e1e;
+  --color-border-dashed:  #602a2a;
 }
 
 /* Sidebar tokens — macOS HIG Source List vocabulary.
@@ -139,6 +171,40 @@
 
   --header-bg:          rgb(26 27 35 / 0.78);
   --header-border:      rgba(255, 255, 255, 0.06);
+}
+
+:root.dark.theme-orange {
+  --color-bg:             #140a00;
+  --color-surface:        #201208;
+  --color-column-bg:      #2a1810;
+  --color-border:         #3e2414;
+  --color-border-dashed:  #58341e;
+}
+
+:root.dark.theme-purple {
+  --color-bg:             #0f0820;
+  --color-surface:        #1a1033;
+  --color-column-bg:      #221540;
+  --color-border:         #352060;
+  --color-border-dashed:  #4a2e80;
+}
+
+:root.dark.theme-pink {
+  --color-bg:             #180510;
+  --color-surface:        #250d1c;
+  --color-column-bg:      #301525;
+  --color-border:         #481e38;
+  --color-border-dashed:  #622a4e;
+}
+
+:root.dark.theme-black {
+  --accent-500:           #8E8E93;
+  --accent-600:           #636366;
+  --color-bg:             #0f1015;
+  --color-surface:        #1a1b23;
+  --color-column-bg:      #22232d;
+  --color-border:         #2e3042;
+  --color-border-dashed:  #3d3f56;
 }
 
 :root.theme-aqua {
