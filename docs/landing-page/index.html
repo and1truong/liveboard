@@ -492,7 +492,19 @@
         .demo-chrome .dot-r { width: 12px; height: 12px; border-radius: 50% }
         .dot-red { background: #ff605c }
         .dot-yellow { background: #ffbd44 }
-        .dot-green { background: #00ca4e }
+        .dot-green { background: #00ca4e; cursor: pointer; transition: filter 0.15s; }
+        .dot-green:hover { filter: brightness(1.25) saturate(1.2); }
+        .demo-frame.fullscreen {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            border-radius: 0;
+            box-shadow: none;
+            display: flex;
+            flex-direction: column;
+        }
+        .demo-frame.fullscreen .demo-chrome { flex-shrink: 0; }
+        .demo-frame.fullscreen .demo-iframe { flex: 1; height: 100%; }
         .demo-chrome .url-bar {
             flex: 1;
             margin: 0 60px 0 12px;
@@ -700,12 +712,12 @@
                         <span>Embed LiveBoard on your own site<span class="summary-sub">single file, ~20 lines</span></span>
                     </summary>
                     <div class="embed-body">
-                        <p>This page hosts the shell role inline — <code>@wriven/liveboard-shared</code> provides the broker and localStorage adapter, talking to the renderer iframe through postMessage. The iframe is just for CSS isolation; origin validation requires same-origin, so drop both files next to each other on any static host.</p>
+                        <p>The shell lives inline in your page — <code>@wriven/liveboard-shared</code> wires the broker and localStorage adapter to the renderer iframe via postMessage. The renderer HTML is generated as a blob URL (same origin as the shell), so everything works from a single static file.</p>
                         <div class="embed-files">
                             <div class="embed-file">
                                 <div class="embed-file-header">
                                     <span class="file-dot"></span>
-                                    index.html <span style="color:var(--text-dim);margin-left:6px">(the shell)</span>
+                                    index.html
                                 </div>
 <pre><span class="tag">&lt;!doctype html&gt;</span>
 <span class="tag">&lt;html&gt;&lt;head&gt;&lt;meta</span> <span class="kw">charset</span>=<span class="st">"utf-8"</span><span class="tag">&gt;&lt;/head&gt;</span>
@@ -715,26 +727,19 @@
   <span class="tag">&lt;script</span> <span class="kw">type</span>=<span class="st">"module"</span><span class="tag">&gt;</span>
     <span class="kw">import</span> { Broker, LocalAdapter, BrowserStorage, shellTransport }
       <span class="kw">from</span> <span class="st">'https://cdn.jsdelivr.net/npm/@wriven/liveboard-shared@0.20.1/dist/index.js'</span>;
+    <span class="kw">const</span> R = `<span class="tag">&lt;!doctype html&gt;&lt;html&gt;&lt;head&gt;&lt;meta</span> <span class="kw">charset</span>=<span class="st">"utf-8"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;link</span> <span class="kw">rel</span>=<span class="st">"stylesheet"</span> <span class="kw">crossorigin</span>
+    <span class="kw">href</span>=<span class="st">"https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.1/dist-npm/assets/index-CPdgbPiy.css"</span><span class="tag">&gt;</span>
+  <span class="tag">&lt;script</span> <span class="kw">type</span>=<span class="st">"module"</span> <span class="kw">crossorigin</span>
+    <span class="kw">src</span>=<span class="st">"https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.1/dist-npm/assets/index-BLfiSS1m.js"</span><span class="tag">&gt;&lt;\/script&gt;</span>
+<span class="tag">&lt;/head&gt;&lt;body&gt;&lt;div</span> <span class="kw">id</span>=<span class="st">"root"</span><span class="tag">&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;</span>`;
     <span class="kw">const</span> iframe = document.getElementById(<span class="st">'renderer'</span>);
     <span class="kw">const</span> transport = shellTransport(iframe, location.origin);
     <span class="kw">new</span> Broker(transport, <span class="kw">new</span> LocalAdapter(<span class="kw">new</span> BrowserStorage()),
       { <span class="at">shellVersion</span>: <span class="st">'0.20.1'</span> });
-    iframe.src = <span class="st">'./renderer.html'</span>; <span class="kw">// load renderer only after broker is ready</span>
+    iframe.src = URL.createObjectURL(<span class="kw">new</span> Blob([R], {<span class="at">type</span>:<span class="st">'text/html'</span>}));
   <span class="tag">&lt;/script&gt;</span>
 <span class="tag">&lt;/body&gt;&lt;/html&gt;</span></pre>
-                            </div>
-                            <div class="embed-file">
-                                <div class="embed-file-header">
-                                    <span class="file-dot"></span>
-                                    renderer.html
-                                </div>
-<pre><span class="tag">&lt;!doctype html&gt;</span>
-<span class="tag">&lt;html&gt;&lt;head&gt;&lt;meta</span> <span class="kw">charset</span>=<span class="st">"utf-8"</span><span class="tag">&gt;</span>
-  <span class="tag">&lt;link</span> <span class="kw">rel</span>=<span class="st">"stylesheet"</span> <span class="kw">crossorigin</span>
-    <span class="kw">href</span>=<span class="st">"https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.1/dist-npm/assets/index-CPdgbPiy.css"</span><span class="tag">&gt;</span>
-  <span class="tag">&lt;script</span> <span class="kw">type</span>=<span class="st">"module"</span> <span class="kw">crossorigin</span>
-    <span class="kw">src</span>=<span class="st">"https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.1/dist-npm/assets/index-BLfiSS1m.js"</span><span class="tag">&gt;&lt;/script&gt;</span>
-<span class="tag">&lt;/head&gt;&lt;body&gt;&lt;div</span> <span class="kw">id</span>=<span class="st">"root"</span><span class="tag">&gt;&lt;/div&gt;&lt;/body&gt;&lt;/html&gt;</span></pre>
                             </div>
                         </div>
                     </div>
@@ -764,7 +769,7 @@
                 localStorage.setItem('liveboard:mode', dark ? 'dark' : 'light');
             } catch {}
             const iframe = document.getElementById('renderer');
-            if (iframe && iframe.src) iframe.src = iframe.src;
+            if (iframe && iframe.contentWindow) iframe.contentWindow.location.reload();
         }
 
         function copyInstall(cmd) {
@@ -780,10 +785,24 @@
 
     <!-- Shell role, inline: wire the broker (localStorage adapter) to the
          renderer iframe via postMessage. The iframe exists only for CSS
-         isolation — the shell lives in this page, not in a separate frame. -->
+         isolation — the shell lives in this page, not in a separate frame.
+         Renderer HTML is injected as a blob URL (same origin) so no separate
+         renderer.html file is needed. -->
     <script type="module">
         import { Broker, LocalAdapter, BrowserStorage, shellTransport }
             from 'https://cdn.jsdelivr.net/npm/@wriven/liveboard-shared@0.20.1/dist/index.js';
+
+        const RENDERER_HTML = `<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>try{const m=localStorage.getItem('liveboard:mode')||'system',t=localStorage.getItem('liveboard:theme')||'aqua',d=m==='dark'||(m==='system'&&matchMedia('(prefers-color-scheme:dark)').matches);document.documentElement.classList.toggle('dark',d);document.documentElement.classList.add('theme-'+t)}catch{}<\/script>
+<script type="module" crossorigin src="https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.1/dist-npm/assets/index-BLfiSS1m.js"><\/script>
+<link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/npm/@wriven/liveboard-renderer-default@0.20.1/dist-npm/assets/index-CPdgbPiy.css">
+</head>
+<body class="bg-[color:var(--color-bg)] text-slate-900 antialiased dark:text-slate-100">
+<div id="root"></div>
+</body></html>`;
 
         const iframe = document.getElementById('renderer');
         const transport = shellTransport(iframe, window.location.origin);
@@ -796,7 +815,14 @@
         window.addEventListener('beforeunload', () => broker.close());
         broker.onEvent('title.changed', () => {});
         broker.onEvent('active.changed', () => {});
-        iframe.src = './renderer.html';
+        iframe.src = URL.createObjectURL(new Blob([RENDERER_HTML], { type: 'text/html' }));
+
+        const greenDot = document.querySelector('.dot-green');
+        const demoFrame = document.querySelector('.demo-frame');
+        greenDot.addEventListener('click', () => demoFrame.classList.toggle('fullscreen'));
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') demoFrame.classList.remove('fullscreen');
+        });
     </script>
 </body>
 </html>
