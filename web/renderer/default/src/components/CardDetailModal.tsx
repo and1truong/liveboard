@@ -9,6 +9,16 @@ import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
 import { LinkChip } from './LinkChip.js'
 import { LinkPicker } from './LinkPicker.js'
 
+export interface CreateCardParams {
+  title: string
+  body: string
+  tags: string[]
+  links: string[]
+  priority: string
+  due: string
+  assignee: string
+}
+
 export function CardDetailModal({
   card,
   colIdx,
@@ -16,6 +26,9 @@ export function CardDetailModal({
   boardId,
   open,
   onOpenChange,
+  initialDue,
+  isNew,
+  onCreateCard,
 }: {
   card: CardModel
   colIdx: number
@@ -23,6 +36,9 @@ export function CardDetailModal({
   boardId: string
   open: boolean
   onOpenChange: (next: boolean) => void
+  initialDue?: string
+  isNew?: boolean
+  onCreateCard?: (params: CreateCardParams) => void
 }): JSX.Element {
   const titleRef = useRef<HTMLInputElement>(null)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
@@ -85,11 +101,8 @@ export function CardDetailModal({
       .split(',')
       .map((t) => t.trim())
       .filter(Boolean)
-    mutation.mutate(
-      {
-        type: 'edit_card',
-        col_idx: colIdx,
-        card_idx: cardIdx,
+    if (onCreateCard) {
+      onCreateCard({
         title,
         body: bodyRef.current?.value ?? '',
         tags,
@@ -97,11 +110,27 @@ export function CardDetailModal({
         priority: priorityRef.current?.value ?? '',
         due: dueRef.current?.value ?? '',
         assignee: assigneeRef.current?.value ?? '',
-      },
-      {
-        onSuccess: () => onOpenChange(false),
-      },
-    )
+      })
+      onOpenChange(false)
+    } else {
+      mutation.mutate(
+        {
+          type: 'edit_card',
+          col_idx: colIdx,
+          card_idx: cardIdx,
+          title,
+          body: bodyRef.current?.value ?? '',
+          tags,
+          links,
+          priority: priorityRef.current?.value ?? '',
+          due: dueRef.current?.value ?? '',
+          assignee: assigneeRef.current?.value ?? '',
+        },
+        {
+          onSuccess: () => onOpenChange(false),
+        },
+      )
+    }
   }
 
   return (
@@ -114,13 +143,15 @@ export function CardDetailModal({
           aria-describedby={undefined}
           className="fixed left-1/2 top-1/2 z-50 w-full max-w-lg -translate-x-1/2 -translate-y-1/2 rounded-lg border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-6 shadow-[var(--shadow-raised)]"
         >
-          <Dialog.Title className="text-lg font-semibold text-slate-800 dark:text-slate-100">Edit card</Dialog.Title>
+          <Dialog.Title className="text-lg font-semibold text-slate-800 dark:text-slate-100">{isNew ? 'New card' : 'Edit card'}</Dialog.Title>
           <form onSubmit={submit} className="mt-4 space-y-3">
             <label className="block">
               <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Title</span>
               <input
                 ref={titleRef}
                 aria-label="card title"
+                autoFocus={isNew}
+                placeholder={isNew ? 'Card title' : undefined}
                 defaultValue={card.title ?? ''}
                 onInput={(e) => setTitleValid((e.currentTarget.value ?? '').trim().length > 0)}
                 className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
@@ -213,7 +244,7 @@ export function CardDetailModal({
                   ref={dueRef}
                   aria-label="card due"
                   type="date"
-                  defaultValue={card.due ?? ''}
+                  defaultValue={card.due ?? initialDue ?? ''}
                   className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)] dark:[color-scheme:dark] dark:text-slate-100"
                 />
               </label>

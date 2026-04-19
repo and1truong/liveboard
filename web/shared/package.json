@@ -1,6 +1,6 @@
 {
   "name": "@wriven/liveboard-shared",
-  "version": "0.20.1",
+  "version": "0.20.3",
   "type": "module",
   "files": ["dist"],
   "main": "./dist/index.js",

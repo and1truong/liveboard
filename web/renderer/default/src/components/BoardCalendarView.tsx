@@ -1,5 +1,6 @@
 import { Suspense, lazy, useCallback, useMemo, useState, type DragEvent } from 'react'
 import type { Board, Card as CardModel, Column } from '@shared/types.js'
+import type { CreateCardParams } from './CardDetailModal.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
@@ -73,6 +74,7 @@ export function BoardCalendarView({
   const [viewMonth, setViewMonth] = useState(now.getMonth())
   const [viewDay, setViewDay] = useState(now.getDate())
   const [unschedOpen, setUnschedOpen] = useState(true)
+  const [pendingCard, setPendingCard] = useState<{ dateStr: string } | null>(null)
 
   const { cardsByDate, unscheduled } = useMemo(() => {
     const byDate: Record<string, FlatCard[]> = {}
@@ -228,6 +230,46 @@ export function BoardCalendarView({
   }
 
   const mutation = useBoardMutation(active)
+  const editAfterCreateMutation = useBoardMutation(active)
+
+  const handleAddCardForDate = useCallback(
+    (dateStr: string) => {
+      if (!columns[0]) return
+      setPendingCard({ dateStr })
+    },
+    [columns],
+  )
+
+  const handleCreateCard = useCallback(
+    (params: CreateCardParams) => {
+      const firstCol = columns[0]
+      if (!firstCol) return
+      const prepend = settings.card_position === 'prepend'
+      mutation.mutate(
+        { type: 'add_card', column: firstCol.name, title: params.title, prepend },
+        {
+          onSuccess: (board) => {
+            const col = board.columns?.[0]
+            if (!col) return
+            const cardIdx = prepend ? 0 : col.cards.length - 1
+            editAfterCreateMutation.mutate({
+              type: 'edit_card',
+              col_idx: 0,
+              card_idx: cardIdx,
+              title: params.title,
+              body: params.body,
+              tags: params.tags,
+              links: params.links,
+              priority: params.priority,
+              due: params.due,
+              assignee: params.assignee,
+            })
+          },
+        },
+      )
+    },
+    [columns, mutation, editAfterCreateMutation, settings.card_position],
+  )
 
   const onDropOnDay = (dateStr: string) => (ev: DragEvent<HTMLElement>): void => {
     ev.preventDefault()
@@ -271,6 +313,7 @@ export function BoardCalendarView({
           cardsForDate={cardsForDate}
           onSelectDay={selectDay}
           onDropOnDay={onDropOnDay}
+          onAddCard={handleAddCardForDate}
           boardId={active}
         />
       )}
@@ -281,6 +324,7 @@ export function BoardCalendarView({
           cardsForDate={cardsForDate}
           onSelectDay={selectDay}
           onDropOnDay={onDropOnDay}
+          onAddCard={handleAddCardForDate}
           boardId={active}
         />
       )}
@@ -294,6 +338,21 @@ export function BoardCalendarView({
         onToggle={() => setUnschedOpen((v) => !v)}
         boardId={active}
       />
+      {pendingCard && (
+        <Suspense fallback={null}>
+          <CardDetailModal
+            card={{ title: '' }}
+            colIdx={0}
+            cardIdx={0}
+            boardId={active}
+            open
+            onOpenChange={(next) => { if (!next) setPendingCard(null) }}
+            initialDue={pendingCard.dateStr}
+            isNew
+            onCreateCard={(params) => { handleCreateCard(params); setPendingCard(null) }}
+          />
+        </Suspense>
+      )}
     </div>
   )
 }
@@ -362,13 +421,14 @@ function Toolbar({
 }
 
 function MonthGrid({
-  days, weekdayLabels, cardsForDate, onSelectDay, onDropOnDay, boardId,
+  days, weekdayLabels, cardsForDate, onSelectDay, onDropOnDay, onAddCard, boardId,
 }: {
   days: DayCell[]
   weekdayLabels: string[]
   cardsForDate: (d: string) => FlatCard[]
   onSelectDay: (d: string) => void
   onDropOnDay: (d: string) => (ev: DragEvent<HTMLElement>) => void
+  onAddCard: (d: string) => void
   boardId: string
 }): JSX.Element {
   return (
@@ -388,6 +448,7 @@ function MonthGrid({
             cards={cardsForDate(day.dateStr)}
             onSelectDay={onSelectDay}
             onDropOnDay={onDropOnDay}
+            onAddCard={onAddCard}
             boardId={boardId}
             minHeight="min-h-[96px]"
           />
@@ -398,13 +459,14 @@ function MonthGrid({
 }
 
 function WeekGrid({
-  days, weekdayLabels, cardsForDate, onSelectDay, onDropOnDay, boardId,
+  days, weekdayLabels, cardsForDate, onSelectDay, onDropOnDay, onAddCard, boardId,
 }: {
   days: DayCell[]
   weekdayLabels: string[]
   cardsForDate: (d: string) => FlatCard[]
   onSelectDay: (d: string) => void
   onDropOnDay: (d: string) => (ev: DragEvent<HTMLElement>) => void
+  onAddCard: (d: string) => void
   boardId: string
 }): JSX.Element {
   return (
@@ -420,6 +482,7 @@ function WeekGrid({
             cards={cardsForDate(day.dateStr)}
             onSelectDay={onSelectDay}
             onDropOnDay={onDropOnDay}
+            onAddCard={onAddCard}
             boardId={boardId}
             minHeight="min-h-[200px]"
             showMonthLabel
@@ -431,12 +494,13 @@ function WeekGrid({
 }
 
 function DayCellView({
-  day, cards, onSelectDay, onDropOnDay, boardId, minHeight, showMonthLabel,
+  day, cards, onSelectDay, onDropOnDay, onAddCard, boardId, minHeight, showMonthLabel,
 }: {
   day: DayCell
   cards: FlatCard[]
   onSelectDay: (d: string) => void
   onDropOnDay: (d: string) => (ev: DragEvent<HTMLElement>) => void
+  onAddCard: (d: string) => void
   boardId: string
   minHeight: string
   showMonthLabel?: boolean
@@ -446,16 +510,17 @@ function DayCellView({
     <div
       role="gridcell"
       aria-label={`day ${day.dateStr}`}
+      onClick={() => onAddCard(day.dateStr)}
       onDragOver={(e) => { e.preventDefault(); setOver(true) }}
       onDragLeave={() => setOver(false)}
       onDrop={(e) => { setOver(false); onDropOnDay(day.dateStr)(e) }}
-      className={`flex flex-col border-b border-r border-[color:var(--color-border)] p-1 ${minHeight} ${
+      className={`flex cursor-pointer flex-col border-b border-r border-[color:var(--color-border)] p-1 ${minHeight} ${
         day.isOtherMonth ? 'opacity-40' : ''
       } ${over ? 'bg-[color:var(--color-column-bg)] outline outline-2 outline-dashed outline-[color:var(--accent-500)]' : ''}`}
     >
       <button
         type="button"
-        onClick={() => onSelectDay(day.dateStr)}
+        onClick={(e) => { e.stopPropagation(); onSelectDay(day.dateStr) }}
         className="flex items-center gap-1 self-start text-xs text-[color:var(--color-text-secondary)] hover:text-[color:var(--color-text-primary)]"
       >
         {showMonthLabel && day.monthLabel && (
@@ -471,7 +536,7 @@ function DayCellView({
           {day.date}
         </span>
       </button>
-      <div className="mt-1 flex min-h-0 flex-col gap-0.5 overflow-hidden">
+      <div className="mt-1 flex min-h-0 flex-col gap-0.5 overflow-hidden" onClick={(e) => e.stopPropagation()}>
         {cards.map((fc) => (
           <CardChip key={`${fc.colIdx}-${fc.cardIdx}`} fc={fc} boardId={boardId} />
         ))}

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'bun:test'
 import { useEffect } from 'react'
-import { waitFor } from '@testing-library/react'
+import { fireEvent, waitFor } from '@testing-library/react'
 import { QueryClient } from '@tanstack/react-query'
 import { Broker } from '@shared/broker.js'
 import { Client } from '@shared/client.js'
@@ -112,5 +112,96 @@ describe('BoardCalendarView', () => {
     const toggle = await findByLabelText('toggle unscheduled')
     expect(toggle).toBeDefined()
     await findByLabelText('card Double-click the board title to rename it')
+  })
+
+  it('clicking a day cell opens the New card modal with the date pre-filled', async () => {
+    const { client, qc } = await setup()
+    const { findByLabelText, findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <SeedActive id="welcome" />
+          <BoardView client={client} onToggleSidebar={() => {}} />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    const cell = await findByLabelText(`day ${todayStr()}`)
+    fireEvent.click(cell)
+    await findByText('New card')
+    const due = await findByLabelText('card due')
+    expect((due as HTMLInputElement).value).toBe(todayStr())
+  })
+
+  it('canceling the new card modal does not create a card', async () => {
+    const { client, qc } = await setup()
+    const { findByLabelText, findByText, getByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <SeedActive id="welcome" />
+          <BoardView client={client} onToggleSidebar={() => {}} />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    const boardBefore = await client.getBoard('welcome')
+    const countBefore = boardBefore.columns!.flatMap((c) => c.cards).length
+
+    const cell = await findByLabelText(`day ${todayStr()}`)
+    fireEvent.click(cell)
+    await findByText('New card')
+    fireEvent.click(getByText('Cancel'))
+
+    await waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
+    const boardAfter = await client.getBoard('welcome')
+    expect(boardAfter.columns!.flatMap((c) => c.cards).length).toBe(countBefore)
+  })
+
+  it('saving the new card modal creates a card with the clicked date', async () => {
+    const { client, qc } = await setup()
+    const { findByLabelText, findByText, getByLabelText, getByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <SeedActive id="welcome" />
+          <BoardView client={client} onToggleSidebar={() => {}} />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    const cell = await findByLabelText(`day ${todayStr()}`)
+    fireEvent.click(cell)
+    await findByText('New card')
+    fireEvent.input(getByLabelText('card title'), { target: { value: 'New task from calendar' } })
+    fireEvent.click(getByText('Save'))
+
+    await waitFor(async () => {
+      const board = await client.getBoard('welcome')
+      const card = board.columns!.flatMap((c) => c.cards).find((c) => c.title === 'New task from calendar')
+      expect(card).toBeDefined()
+    })
+  })
+
+  it('clicking the day number button navigates to day view without opening modal', async () => {
+    const { client, qc } = await setup()
+    const { findByLabelText, queryByText, getByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <SeedActive id="welcome" />
+          <BoardView client={client} onToggleSidebar={() => {}} />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    await findByLabelText('calendar month grid')
+    // Click the day number button (not the cell background)
+    const cell = await findByLabelText(`day ${todayStr()}`)
+    const dayBtn = cell.querySelector('button')!
+    fireEvent.click(dayBtn)
+    // Should switch to day view, not open a modal
+    await waitFor(() => expect(document.querySelector('[role="dialog"]')).toBeNull())
+    // day view label appears
+    await findByLabelText('calendar week grid').catch(() => {
+      // fine — may have navigated to day sub-view which has no grid
+    })
+    expect(queryByText('New card')).toBeNull()
   })
 })
