@@ -105,7 +105,6 @@ type MutationOp struct {
 	UpdateBoardMembers   *UpdateBoardMembersOp   `json:"-"`
 	UpdateBoardIcon      *UpdateBoardIconOp      `json:"-"`
 	UpdateBoardSettings  *UpdateBoardSettingsOp  `json:"-"`
-	UpdateTagColors      *UpdateTagColorsOp      `json:"-"`
 	MoveCardToBoard      *MoveCardToBoardOp      `json:"-"`
 }
 
@@ -209,9 +208,8 @@ type ToggleColumnCollapseOp struct {
 
 // UpdateBoardMetaOp are the params for an "update_board_meta" mutation.
 type UpdateBoardMetaOp struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description"`
-	Tags        []string `json:"tags"`
+	Name        string `json:"name"`
+	Description string `json:"description"`
 }
 
 // UpdateBoardMembersOp are the params for an "update_board_members" mutation.
@@ -229,11 +227,6 @@ type UpdateBoardIconOp struct {
 // UpdateBoardSettingsOp are the params for an "update_board_settings" mutation.
 type UpdateBoardSettingsOp struct {
 	Settings models.BoardSettings `json:"settings"`
-}
-
-// UpdateTagColorsOp are the params for an "update_tag_colors" mutation.
-type UpdateTagColorsOp struct {
-	TagColors map[string]string `json:"tag_colors"`
 }
 
 // MarshalJSON encodes the active variant merged with the "type" discriminator.
@@ -327,11 +320,6 @@ func (m MutationOp) MarshalJSON() ([]byte, error) {
 			return nil, fmt.Errorf("MutationOp type=%q but UpdateBoardSettings is nil", m.Type)
 		}
 		variant = m.UpdateBoardSettings
-	case "update_tag_colors":
-		if m.UpdateTagColors == nil {
-			return nil, fmt.Errorf("MutationOp type=%q but UpdateTagColors is nil", m.Type)
-		}
-		variant = m.UpdateTagColors
 	case "move_card_to_board":
 		if m.MoveCardToBoard == nil {
 			return nil, fmt.Errorf("MutationOp type=%q but MoveCardToBoard is nil", m.Type)
@@ -421,9 +409,6 @@ func (m *MutationOp) UnmarshalJSON(data []byte) error {
 	case "update_board_settings":
 		m.UpdateBoardSettings = &UpdateBoardSettingsOp{}
 		return json.Unmarshal(data, m.UpdateBoardSettings)
-	case "update_tag_colors":
-		m.UpdateTagColors = &UpdateTagColorsOp{}
-		return json.Unmarshal(data, m.UpdateTagColors)
 	case "move_card_to_board":
 		m.MoveCardToBoard = &MoveCardToBoardOp{}
 		return json.Unmarshal(data, m.MoveCardToBoard)
@@ -529,7 +514,7 @@ func Apply(b *models.Board, op MutationOp) error {
 			return fmt.Errorf("update_board_meta: missing params")
 		}
 		p := op.UpdateBoardMeta
-		return board.ApplyUpdateBoardMeta(b, p.Name, p.Description, p.Tags)
+		return board.ApplyUpdateBoardMeta(b, p.Name, p.Description)
 	case "update_board_members":
 		if op.UpdateBoardMembers == nil {
 			return fmt.Errorf("update_board_members: missing params")
@@ -545,11 +530,6 @@ func Apply(b *models.Board, op MutationOp) error {
 			return fmt.Errorf("update_board_settings: missing params")
 		}
 		return board.ApplyUpdateBoardSettings(b, op.UpdateBoardSettings.Settings)
-	case "update_tag_colors":
-		if op.UpdateTagColors == nil {
-			return fmt.Errorf("update_tag_colors: missing params")
-		}
-		return board.ApplyUpdateTagColors(b, op.UpdateTagColors.TagColors)
 	case "move_card_to_board":
 		if op.MoveCardToBoard == nil {
 			return fmt.Errorf("move_card_to_board: missing params")

@@ -1,12 +1,17 @@
 import { useMemo } from 'react'
 import type { Board } from '@shared/types.js'
+import { useAppSettings } from './useAppSettings.js'
 
 export function useAvailableTags(board: Board | null | undefined): string[] {
-  return useMemo(() => collectTags(board), [board])
+  const workspaceTags = useAppSettings().tags ?? []
+  return useMemo(() => collectTags(board, workspaceTags), [board, workspaceTags])
 }
 
-export function collectTags(board: Board | null | undefined): string[] {
-  const set = new Set<string>(board?.tags ?? [])
+export function collectTags(
+  board: Board | null | undefined,
+  workspaceTags: string[] = [],
+): string[] {
+  const set = new Set<string>(workspaceTags)
   for (const col of board?.columns ?? []) {
     for (const card of col.cards ?? []) {
       for (const t of card.tags ?? []) set.add(t)

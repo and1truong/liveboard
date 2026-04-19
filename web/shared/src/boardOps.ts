@@ -181,7 +181,6 @@ export function applyOp(board: Board, op: MutationOp): Board {
     case 'update_board_meta': {
       if (op.name !== '') b.name = op.name
       b.description = op.description
-      b.tags = op.tags
       return b
     }
     case 'update_board_members': {
@@ -195,10 +194,6 @@ export function applyOp(board: Board, op: MutationOp): Board {
     }
     case 'update_board_settings': {
       b.settings = op.settings
-      return b
-    }
-    case 'update_tag_colors': {
-      b.tag_colors = Object.keys(op.tag_colors).length > 0 ? op.tag_colors : undefined
       return b
     }
     case 'move_card_to_board': {

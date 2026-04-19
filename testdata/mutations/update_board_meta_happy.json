@@ -1,24 +1,21 @@
 {
   "name": "update_board_meta_happy",
-  "description": "update_board_meta sets name (only if non-empty), description, tags.",
+  "description": "update_board_meta sets name (only if non-empty) and description.",
   "board_before": {
     "version": 1,
     "name": "Old",
     "description": "olddesc",
-    "tags": ["x"],
     "columns": []
   },
   "op": {
     "type": "update_board_meta",
     "name": "New",
-    "description": "newdesc",
-    "tags": ["a", "b"]
+    "description": "newdesc"
   },
   "board_after": {
     "version": 1,
     "name": "New",
     "description": "newdesc",
-    "tags": ["a", "b"],
     "columns": []
   }
 }

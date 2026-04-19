@@ -35,7 +35,7 @@ export function CardEditable({
   const inputRef = useRef<HTMLInputElement>(null)
   const mutation = useBoardMutation(boardId)
   const settings = useBoardSettings(boardId)
-  const tagColors = useTagColors(boardId)
+  const tagColors = useTagColors()
   const showCheckbox = settings.show_checkbox
   const compact = settings.card_display_mode === 'compact'
   const committedRef = useRef(false)

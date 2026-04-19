@@ -34,6 +34,8 @@ func Start(workspaceDir, version string) (string, error) {
 	ws := workspace.Open(workspaceDir)
 	eng := board.New()
 
+	_ = ws.MigrateBoardTagsToWorkspace()
+
 	srv = api.NewServer(ws, eng, false, false, true, version, "", "")
 
 	addr, err := srv.ListenAndServe("127.0.0.1:0")

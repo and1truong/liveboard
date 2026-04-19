@@ -13,7 +13,7 @@ export interface BoardRowProps {
 export function BoardRow({ board }: BoardRowProps): JSX.Element {
   const { active, setActive } = useActiveBoard()
   const isActive = active === board.id
-  const hasSub = Boolean(board.updatedAgo) || Boolean(board.tags?.length)
+  const hasSub = Boolean(board.updatedAgo)
   const togglePin = useTogglePin()
 
   const onDragStart = (e: DragEvent<HTMLLIElement>): void => {
@@ -41,15 +41,6 @@ export function BoardRow({ board }: BoardRowProps): JSX.Element {
             {board.updatedAgo && (
               <span className="lb-row__meta">{board.updatedAgo}</span>
             )}
-            {board.tags?.length ? (
-              <span className="lb-row__tags">
-                {board.tags.map((t) => (
-                  <span key={t} className="lb-row__tag">
-                    {t}
-                  </span>
-                ))}
-              </span>
-            ) : null}
           </span>
         )}
       </button>

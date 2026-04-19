@@ -76,18 +76,11 @@ function BoardCard({ board }: { board: BoardSummary }): JSX.Element {
         </div>
       ) : null}
 
-      <div className="mt-auto flex items-center gap-2">
-        <div className="flex flex-1 flex-wrap gap-1">
-          {board.tags?.map((t) => (
-            <span key={t} className="rounded bg-slate-100 px-1.5 py-0.5 text-[11px] text-slate-500 dark:bg-slate-700 dark:text-slate-400">
-              {t}
-            </span>
-          ))}
-        </div>
-        {board.updatedAgo && (
+      {board.updatedAgo && (
+        <div className="mt-auto flex items-center justify-end">
           <span className="shrink-0 text-xs text-slate-400 dark:text-slate-500">{board.updatedAgo}</span>
-        )}
-      </div>
+        </div>
+      )}
     </button>
   )
 }

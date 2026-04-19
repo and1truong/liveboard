@@ -253,7 +253,6 @@ func TestDispatchAllVariants(t *testing.T) {
 					UpdateBoardMeta: &v1.UpdateBoardMetaOp{
 						Name:        "Renamed",
 						Description: "desc",
-						Tags:        []string{"q1"},
 					},
 				}
 			},
@@ -281,21 +280,6 @@ func TestDispatchAllVariants(t *testing.T) {
 				return v1.MutationOp{
 					Type:            "update_board_icon",
 					UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: strPtr("🚀")},
-				}
-			},
-			deps: func(t *testing.T) (v1.Deps, string) {
-				deps := newTestDeps(t)
-				return deps, filepath.Join(deps.Workspace.Dir, "demo.md")
-			},
-		},
-		{
-			name: "update_tag_colors",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
-					Type: "update_tag_colors",
-					UpdateTagColors: &v1.UpdateTagColorsOp{
-						TagColors: map[string]string{"go": "#00ff00", "api": "#4080c4"},
-					},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {

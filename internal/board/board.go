@@ -205,7 +205,6 @@ func (e *Engine) MoveCardToBoard(srcPath string, srcVersion, srcColIdx, cardIdx 
 		for i := range b.Columns {
 			if b.Columns[i].Name == dstColumn {
 				b.Columns[i].Cards = append([]models.Card{cardCopy}, b.Columns[i].Cards...)
-				mergeMissing(&b.Tags, cardCopy.Tags)
 				if cardCopy.Assignee != "" {
 					mergeMissing(&b.Members, []string{cardCopy.Assignee})
 				}
@@ -526,32 +525,20 @@ func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
 	})
 }
 
-// ApplyUpdateBoardMeta updates a board's name, description, and tags within b.
-func ApplyUpdateBoardMeta(b *models.Board, name, description string, tags []string) error {
+// ApplyUpdateBoardMeta updates a board's name and description within b.
+func ApplyUpdateBoardMeta(b *models.Board, name, description string) error {
 	if name != "" {
 		b.Name = name
 	}
 	b.Description = description
-	b.Tags = tags
 	return nil
 }
 
-// UpdateBoardMeta updates a board's name, description, and tags.
-func (e *Engine) UpdateBoardMeta(boardPath, name, description string, tags []string) error {
+// UpdateBoardMeta updates a board's name and description.
+func (e *Engine) UpdateBoardMeta(boardPath, name, description string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyUpdateBoardMeta(b, name, description, tags)
+		return ApplyUpdateBoardMeta(b, name, description)
 	})
-}
-
-// ApplyUpdateTagColors sets a board's per-tag color map within b.
-// An empty map clears the field so it's omitted from YAML output.
-func ApplyUpdateTagColors(b *models.Board, tagColors map[string]string) error {
-	if len(tagColors) == 0 {
-		b.TagColors = nil
-	} else {
-		b.TagColors = tagColors
-	}
-	return nil
 }
 
 // ApplyUpdateBoardMembers sets the member list within b.

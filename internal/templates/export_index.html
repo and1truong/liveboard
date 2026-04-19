@@ -29,7 +29,6 @@ h1{margin-bottom:1.5rem;font-size:1.5rem}
   <div class="card-name">{{.Name}}</div>
   {{if .Description}}<div class="card-desc">{{.Description}}</div>{{end}}
   <div class="card-stats">{{.CardCount}} cards · {{.DoneCount}} done · {{.ColumnCount}} columns</div>
-  {{if .Tags}}<div class="mt-2">{{range .Tags}}<span class="tag">{{.}}</span>{{end}}</div>{{end}}
 </a>
 {{end}}
 </div>

@@ -41,7 +41,6 @@ type boardSummary struct {
 	Description string
 	Icon        string
 	IconColor   string
-	Tags        []string
 	CardCount   int
 	DoneCount   int
 	ColumnCount int
@@ -85,7 +84,6 @@ func buildSummaries(boards []models.Board) []boardSummary {
 			Description: b.Description,
 			Icon:        b.Icon,
 			IconColor:   b.IconColor,
-			Tags:        b.Tags,
 			CardCount:   cards,
 			DoneCount:   done,
 			ColumnCount: len(b.Columns),

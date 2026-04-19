@@ -42,9 +42,6 @@ func TestParseFrontmatter(t *testing.T) {
 	if board.Description != "Planning upcoming features" {
 		t.Errorf("description = %q", board.Description)
 	}
-	if len(board.Tags) != 2 || board.Tags[0] != "product" {
-		t.Errorf("tags = %v", board.Tags)
-	}
 }
 
 func TestParseColumns(t *testing.T) {

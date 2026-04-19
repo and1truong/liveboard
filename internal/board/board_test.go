@@ -431,7 +431,7 @@ func TestMoveColumnNotFound(t *testing.T) {
 func TestUpdateBoardMeta(t *testing.T) {
 	path, eng := setupTestBoard(t)
 
-	err := eng.UpdateBoardMeta(path, "New Name", "A description", []string{"tag1", "tag2"})
+	err := eng.UpdateBoardMeta(path, "New Name", "A description")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -446,16 +446,13 @@ func TestUpdateBoardMeta(t *testing.T) {
 	if board.Description != "A description" {
 		t.Errorf("description = %q", board.Description)
 	}
-	if len(board.Tags) != 2 {
-		t.Errorf("tags = %v", board.Tags)
-	}
 }
 
 func TestUpdateBoardMetaEmptyName(t *testing.T) {
 	path, eng := setupTestBoard(t)
 
 	// Empty name means keep existing
-	err := eng.UpdateBoardMeta(path, "", "desc", nil)
+	err := eng.UpdateBoardMeta(path, "", "desc")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -967,12 +964,12 @@ func TestMoveCardToBoard_HappyPath(t *testing.T) {
 	}
 }
 
-func TestMoveCardToBoard_MergesTagsAndMembers(t *testing.T) {
+func TestMoveCardToBoard_MergesMembers(t *testing.T) {
 	dir := t.TempDir()
 	srcPath := filepath.Join(dir, "src.md")
 	dstPath := filepath.Join(dir, "dst.md")
-	srcMD := "---\nversion: 1\nname: Src\ntags: [urgent, legal]\nmembers: [carol]\n---\n\n## Todo\n\n- [ ] Task\n  tags: urgent, legal\n  assignee: carol\n"
-	dstMD := "---\nversion: 1\nname: Dst\ntags: [urgent]\nmembers: []\n---\n\n## Inbox\n"
+	srcMD := "---\nversion: 1\nname: Src\nmembers: [carol]\n---\n\n## Todo\n\n- [ ] Task\n  tags: urgent, legal\n  assignee: carol\n"
+	dstMD := "---\nversion: 1\nname: Dst\nmembers: []\n---\n\n## Inbox\n"
 	_ = os.WriteFile(srcPath, []byte(srcMD), 0644)
 	_ = os.WriteFile(dstPath, []byte(dstMD), 0644)
 	e := New()
@@ -982,9 +979,6 @@ func TestMoveCardToBoard_MergesTagsAndMembers(t *testing.T) {
 	dst, err := e.LoadBoard(dstPath)
 	if err != nil || dst == nil {
 		t.Fatalf("LoadBoard: %v", err)
-	}
-	if !slices.Contains(dst.Tags, "legal") {
-		t.Errorf("dst.Tags = %v, want contains legal", dst.Tags)
 	}
 	if !slices.Contains(dst.Members, "carol") {
 		t.Errorf("dst.Members = %v, want contains carol", dst.Members)

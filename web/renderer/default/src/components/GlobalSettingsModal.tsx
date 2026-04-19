@@ -1,9 +1,10 @@
-import { useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useAppSettings, useUpdateAppSettings } from '../queries/useAppSettings.js'
 import { useExportUrl } from '../queries/useExportUrl.js'
 import { useHasCapability } from '../queries/useCapabilities.js'
 import { useTheme, type Mode, type ThemeName, THEME_NAMES } from '../contexts/ThemeContext.js'
+import { TAG_PALETTE, tagChipStyle } from '../utils/tagColor.js'
 
 const UNSUPPORTED_EXPORT_HINT = 'Not available in browser-only mode — connect to a workspace server to enable.'
 
@@ -69,6 +70,58 @@ export function GlobalSettingsModal({
   const mdExportUrl = useExportUrl('markdown')
   const { setMode, setTheme: setColorTheme } = useTheme()
 
+  const savedTags = settings.tags ?? []
+  const savedTagColors = settings.tag_colors ?? {}
+  const [tags, setTags] = useState<string[]>(savedTags)
+  const [tagColors, setTagColors] = useState<Record<string, string>>(savedTagColors)
+  const [newTag, setNewTag] = useState('')
+
+  useEffect(() => {
+    if (open) {
+      setTags(settings.tags ?? [])
+      setTagColors(settings.tag_colors ?? {})
+      setNewTag('')
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open])
+
+  const tagList = Array.from(new Set([...tags, ...Object.keys(tagColors)])).sort()
+
+  const addTag = (): void => {
+    const t = newTag.trim()
+    if (!t) return
+    setTags((prev) => (prev.includes(t) ? prev : [...prev, t]))
+    setNewTag('')
+  }
+
+  const removeTag = (t: string): void => {
+    setTags((prev) => prev.filter((x) => x !== t))
+    setTagColors((prev) => {
+      if (!(t in prev)) return prev
+      const next = { ...prev }
+      delete next[t]
+      return next
+    })
+  }
+
+  const setTagColor = (tag: string, color: string): void => {
+    setTagColors((prev) => {
+      const next = { ...prev }
+      if (next[tag] === color) delete next[tag]
+      else next[tag] = color
+      return next
+    })
+  }
+
+  const clearTagColor = (tag: string): void => {
+    setTagColors((prev) => {
+      if (!(tag in prev)) return prev
+      const next = { ...prev }
+      delete next[tag]
+      return next
+    })
+  }
+
   const triggerExport = (url: string | null): void => {
     if (!url) return
     const top = window.top ?? window
@@ -92,6 +145,8 @@ export function GlobalSettingsModal({
       card_display_mode: String(data.get('card_display_mode') ?? 'full'),
       keyboard_shortcuts: data.get('keyboard_shortcuts') === 'on',
       week_start: String(data.get('week_start') ?? 'monday'),
+      tags,
+      tag_colors: tagColors,
     }
     mutation.mutate(patch, {
       onSuccess: () => {
@@ -195,6 +250,83 @@ export function GlobalSettingsModal({
                   title="Keyboard shortcuts"
                   hint="Enable vim-style navigation keys."
                 />
+              </Section>
+
+              <Section label="Tag colors">
+                {tagList.length === 0 ? (
+                  <div className="lb-settings__empty">No tags yet. Add one below.</div>
+                ) : (
+                  <ul className="lb-settings__tags">
+                    {tagList.map((tag) => {
+                      const current = tagColors[tag]
+                      return (
+                        <li key={tag} className="lb-settings__tag-row">
+                          <span
+                            style={tagChipStyle(current)}
+                            className={`lb-settings__tag-chip${current ? ' lb-settings__tag-chip--colored' : ''}`}
+                          >
+                            {tag}
+                          </span>
+                          <div
+                            className="lb-settings__swatches"
+                            role="group"
+                            aria-label={`color swatches for ${tag}`}
+                          >
+                            {TAG_PALETTE.map((c) => (
+                              <button
+                                key={c}
+                                type="button"
+                                onClick={() => setTagColor(tag, c)}
+                                aria-label={`set ${tag} color ${c}`}
+                                aria-pressed={current === c}
+                                className={`lb-settings__swatch${current === c ? ' lb-settings__swatch--active' : ''}`}
+                                style={{ backgroundColor: c }}
+                              />
+                            ))}
+                            <button
+                              type="button"
+                              onClick={() => clearTagColor(tag)}
+                              aria-label={`clear ${tag} color`}
+                              disabled={!current}
+                              className="lb-settings__swatch-clear"
+                            >
+                              ×
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => removeTag(tag)}
+                              aria-label={`remove tag ${tag}`}
+                              className="lb-settings__swatch-clear"
+                            >
+                              ✕
+                            </button>
+                          </div>
+                        </li>
+                      )
+                    })}
+                  </ul>
+                )}
+                <div className="lb-settings__row">
+                  <input
+                    type="text"
+                    value={newTag}
+                    onChange={(e) => setNewTag(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') { e.preventDefault(); addTag() }
+                    }}
+                    placeholder="New tag…"
+                    aria-label="new tag"
+                    className="lb-input"
+                  />
+                  <button
+                    type="button"
+                    onClick={addTag}
+                    disabled={!newTag.trim()}
+                    className="lb-settings__btn lb-settings__btn--ghost"
+                  >
+                    Add
+                  </button>
+                </div>
               </Section>
 
               <Section label="Data">

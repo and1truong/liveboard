@@ -1,24 +1,25 @@
 import { describe, expect, it, beforeEach } from 'bun:test'
 import { useState } from 'react'
-import { fireEvent, render } from '@testing-library/react'
-import type { Board } from '@shared/types.js'
+import { fireEvent } from '@testing-library/react'
+import { Broker } from '@shared/broker.js'
+import { Client } from '@shared/client.js'
+import { LocalAdapter } from '@shared/adapters/local.js'
+import { MemoryStorage } from '@shared/adapters/local-storage-driver.js'
+import { createMemoryPair } from '@shared/transport.js'
+import { QueryClient } from '@tanstack/react-query'
 import { BoardFilterProvider, useBoardFilter } from '../contexts/BoardFilterContext.js'
+import { ClientProvider } from '../queries.js'
+import { renderWithQuery } from '../test-utils.js'
 import { FilterPopover } from './FilterPopover.js'
 
-const board: Board = {
-  name: 'Test',
-  tags: ['frontend', 'backend', 'urgent'],
-  tag_colors: { urgent: '#e05252' },
-  columns: [],
-}
+const BOARD_TAGS = ['frontend', 'backend', 'urgent']
 
-function Harness({ board }: { board: Board }): JSX.Element {
+function Harness({ availableTags }: { availableTags: string[] }): JSX.Element {
   const [open, setOpen] = useState(false)
   return (
-    <BoardFilterProvider boardId="test" availableTags={board.tags ?? []}>
+    <BoardFilterProvider boardId="test" availableTags={availableTags}>
       <FilterPopover
-        board={board}
-        availableTags={board.tags ?? []}
+        availableTags={availableTags}
         open={open}
         onOpenChange={setOpen}
       />
@@ -37,13 +38,36 @@ function FilterReadout(): JSX.Element {
   )
 }
 
+async function setup(): Promise<{ client: Client; qc: QueryClient }> {
+  const [iframeT, shellT] = createMemoryPair()
+  new Broker(shellT, new LocalAdapter(new MemoryStorage()), { shellVersion: 't' })
+  const client = new Client(iframeT, { rendererId: 't', rendererVersion: '0' })
+  await client.ready()
+  const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return { client, qc }
+}
+
+function renderHarness(
+  client: Client,
+  qc: QueryClient,
+  availableTags: string[],
+): ReturnType<typeof renderWithQuery> {
+  return renderWithQuery(
+    <ClientProvider client={client}>
+      <Harness availableTags={availableTags} />
+    </ClientProvider>,
+    { queryClient: qc },
+  )
+}
+
 describe('FilterPopover', () => {
   beforeEach(() => {
     localStorage.clear()
   })
 
-  it('toggles a tag selection on click', () => {
-    const { getByText, getByRole, getByTestId } = render(<Harness board={board} />)
+  it('toggles a tag selection on click', async () => {
+    const { client, qc } = await setup()
+    const { getByText, getByRole, getByTestId } = renderHarness(client, qc, BOARD_TAGS)
     fireEvent.click(getByText('force-open'))
     const frontend = getByRole('checkbox', { name: 'frontend' })
     expect(frontend.getAttribute('aria-checked')).toBe('false')
@@ -53,8 +77,9 @@ describe('FilterPopover', () => {
     expect(getByTestId('readout').textContent).toContain('tags=|')
   })
 
-  it('toggles a priority selection on click', () => {
-    const { getByText, getByRole, getByTestId } = render(<Harness board={board} />)
+  it('toggles a priority selection on click', async () => {
+    const { client, qc } = await setup()
+    const { getByText, getByRole, getByTestId } = renderHarness(client, qc, BOARD_TAGS)
     fireEvent.click(getByText('force-open'))
     const high = getByRole('checkbox', { name: 'High' })
     expect(high.getAttribute('aria-checked')).toBe('false')
@@ -64,8 +89,9 @@ describe('FilterPopover', () => {
     expect(getByTestId('readout').textContent).toContain('prio=|')
   })
 
-  it('reset clears all filters', () => {
-    const { getByText, getByRole, getByTestId } = render(<Harness board={board} />)
+  it('reset clears all filters', async () => {
+    const { client, qc } = await setup()
+    const { getByText, getByRole, getByTestId } = renderHarness(client, qc, BOARD_TAGS)
     fireEvent.click(getByText('force-open'))
     fireEvent.click(getByRole('checkbox', { name: 'urgent' }))
     fireEvent.click(getByRole('checkbox', { name: 'frontend' }))
@@ -79,9 +105,9 @@ describe('FilterPopover', () => {
     expect(readout.textContent).toBe('q=|tags=|prio=|hide=false')
   })
 
-  it('shows empty-state message when board has no tags', () => {
-    const empty: Board = { ...board, tags: [], tag_colors: {} }
-    const { getByText } = render(<Harness board={empty} />)
+  it('shows empty-state message when there are no tags', async () => {
+    const { client, qc } = await setup()
+    const { getByText } = renderHarness(client, qc, [])
     fireEvent.click(getByText('force-open'))
     expect(getByText('No tags on this board yet.')).toBeTruthy()
   })

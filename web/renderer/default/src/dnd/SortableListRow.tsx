@@ -54,7 +54,7 @@ export function SortableListRow({
   )
   const [quickOpen, setQuickOpen] = useState(false)
   const mutation = useBoardMutation(boardId)
-  const tagColors = useTagColors(boardId)
+  const tagColors = useTagColors()
   const { drop } = useDragState()
   const showDropLine =
     !isDragging &&

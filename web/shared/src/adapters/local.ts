@@ -226,6 +226,8 @@ export class LocalAdapter implements BackendAdapter {
       keyboard_shortcuts: saved.keyboard_shortcuts ?? false,
       week_start: saved.week_start ?? 'sunday',
       pinned_boards: saved.pinned_boards ?? [],
+      tags: saved.tags ?? [],
+      tag_colors: saved.tag_colors ?? {},
     }
   }
 

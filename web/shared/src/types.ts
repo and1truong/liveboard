@@ -7,8 +7,6 @@ export interface Board {
   description?: string
   icon?: string
   icon_color?: string
-  tags?: string[]
-  tag_colors?: Record<string, string>
   members?: string[]
   list_collapse?: boolean[]
   settings?: BoardSettings
@@ -64,6 +62,8 @@ export interface AppSettings {
   keyboard_shortcuts: boolean
   week_start: string
   pinned_boards: string[]
+  tags: string[]
+  tag_colors: Record<string, string>
 }
 
 // Tagged union — discriminator is `type`.
@@ -98,11 +98,10 @@ export type MutationOp =
   | { type: 'move_column'; name: string; after_col: string }
   | { type: 'sort_column'; col_idx: number; sort_by: string }
   | { type: 'toggle_column_collapse'; col_idx: number }
-  | { type: 'update_board_meta'; name: string; description: string; tags: string[] }
+  | { type: 'update_board_meta'; name: string; description: string }
   | { type: 'update_board_members'; members: string[] }
   | { type: 'update_board_icon'; icon?: string | null; icon_color?: string | null }
   | { type: 'update_board_settings'; settings: BoardSettings }
-  | { type: 'update_tag_colors'; tag_colors: Record<string, string> }
   | {
       type: 'move_card_to_board'
       col_idx: number

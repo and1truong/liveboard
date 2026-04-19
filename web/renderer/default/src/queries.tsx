@@ -3,6 +3,7 @@ import type { Client } from '@shared/client.js'
 import type { Board } from '@shared/types.js'
 import type { BoardSummary, WorkspaceInfo } from '@shared/adapter.js'
 import { createContext, useContext, type ReactNode } from 'react'
+import { useAppSettings } from './queries/useAppSettings.js'
 
 const ClientContext = createContext<Client | null>(null)
 
@@ -42,8 +43,8 @@ export function useBoard(boardId: string | null): UseQueryResult<Board> {
   })
 }
 
-export function useTagColors(boardId: string | null): Record<string, string> {
-  return useBoard(boardId).data?.tag_colors ?? {}
+export function useTagColors(): Record<string, string> {
+  return useAppSettings().tag_colors ?? {}
 }
 
 export function useWorkspaceInfo(): UseQueryResult<WorkspaceInfo> {

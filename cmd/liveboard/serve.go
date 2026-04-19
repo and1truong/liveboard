@@ -25,6 +25,9 @@ func serveCmd() *cobra.Command {
 		Short: "Start the REST API and Web UI server",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			noCache := os.Getenv("NO_CACHE") != ""
+			if err := ws.MigrateBoardTagsToWorkspace(); err != nil {
+				fmt.Fprintf(os.Stderr, "tag migration: %v\n", err)
+			}
 			srv := api.NewServer(ws, ws.Engine, noCache, readOnly, false, version, cfg.BasicAuthUser, cfg.BasicAuthPass)
 			addr := fmt.Sprintf("%s:%d", host, port)
 			fmt.Printf("LiveBoard Web UI: http://%s:%d\n", host, port)

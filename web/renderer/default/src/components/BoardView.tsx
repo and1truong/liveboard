@@ -158,7 +158,6 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
                 <div className="flex min-w-0 flex-1 flex-col">{view}</div>
                 {isDesktop && (
                   <FilterSidePanel
-                    board={data}
                     availableTags={availableTags}
                     tagCounts={tagCounts}
                     open={filterOpen}
@@ -168,7 +167,6 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
               </div>
               {!isDesktop && (
                 <FilterDrawer
-                  board={data}
                   availableTags={availableTags}
                   tagCounts={tagCounts}
                   open={filterOpen}

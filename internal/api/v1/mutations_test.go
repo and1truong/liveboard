@@ -134,7 +134,7 @@ func TestMutationOpUnmarshalAllVariants(t *testing.T) {
 		},
 		{
 			name:        "update_board_meta",
-			jsonStr:     `{"type":"update_board_meta","name":"X","description":"","tags":[]}`,
+			jsonStr:     `{"type":"update_board_meta","name":"X","description":""}`,
 			wantType:    "update_board_meta",
 			nonNilField: func(m *v1.MutationOp) bool { return m.UpdateBoardMeta != nil },
 		},
@@ -155,12 +155,6 @@ func TestMutationOpUnmarshalAllVariants(t *testing.T) {
 			jsonStr:     `{"type":"update_board_settings","settings":{}}`,
 			wantType:    "update_board_settings",
 			nonNilField: func(m *v1.MutationOp) bool { return m.UpdateBoardSettings != nil },
-		},
-		{
-			name:        "update_tag_colors",
-			jsonStr:     `{"type":"update_tag_colors","tag_colors":{"go":"#00ff00"}}`,
-			wantType:    "update_tag_colors",
-			nonNilField: func(m *v1.MutationOp) bool { return m.UpdateTagColors != nil },
 		},
 	}
 
@@ -278,11 +272,10 @@ func TestMutationOpMarshalJSON_allVariants(t *testing.T) {
 		{Type: "move_column", MoveColumn: &v1.MoveColumnOp{Name: "Done", AfterCol: "Todo"}},
 		{Type: "sort_column", SortColumn: &v1.SortColumnOp{ColIdx: 0, SortBy: "priority"}},
 		{Type: "toggle_column_collapse", ToggleColumnCollapse: &v1.ToggleColumnCollapseOp{ColIdx: 1}},
-		{Type: "update_board_meta", UpdateBoardMeta: &v1.UpdateBoardMetaOp{Name: "X", Tags: []string{"q1"}}},
+		{Type: "update_board_meta", UpdateBoardMeta: &v1.UpdateBoardMetaOp{Name: "X"}},
 		{Type: "update_board_members", UpdateBoardMembers: &v1.UpdateBoardMembersOp{Members: []string{"alice"}}},
 		{Type: "update_board_icon", UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: strPtr("🎯")}},
 		{Type: "update_board_settings", UpdateBoardSettings: &v1.UpdateBoardSettingsOp{Settings: models.BoardSettings{ShowCheckbox: boolPtr(true)}}},
-		{Type: "update_tag_colors", UpdateTagColors: &v1.UpdateTagColorsOp{TagColors: map[string]string{"go": "#00ff00"}}},
 		{Type: "move_card_to_board", MoveCardToBoard: &v1.MoveCardToBoardOp{ColIdx: 0, CardIdx: 0, DstBoard: "other", DstColumn: "Inbox"}},
 	}
 	for _, op := range cases {

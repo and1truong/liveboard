@@ -1,13 +1,10 @@
 import { forwardRef, useEffect, useRef, useState, type FormEvent, type ReactNode, type Ref, type SelectHTMLAttributes } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useBoardSettings, useUpdateSettings } from '../queries/useBoardSettings.js'
-import { useAvailableTags } from '../queries/useAvailableTags.js'
 import { useDeleteBoard } from '../mutations/useBoardCrud.js'
-import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { useBoard } from '../queries.js'
 import { BoardIcon } from './BoardIcon.js'
-import { TAG_PALETTE, tagChipStyle } from '../utils/tagColor.js'
 
 type ViewMode = 'board' | 'list' | 'calendar'
 const VIEW_MODES: { value: ViewMode; label: string; glyph: string }[] = [
@@ -47,47 +44,18 @@ export function BoardSettingsModal({
   const deleteMut = useDeleteBoard()
   const boardQuery = useBoard(boardId)
   const board = boardQuery.data
-  const boardMut = useBoardMutation(boardId)
   const checkboxRef = useRef<HTMLInputElement>(null)
   const expandRef = useRef<HTMLInputElement>(null)
   const modeRef = useRef<HTMLSelectElement>(null)
   const [viewMode, setViewMode] = useState<ViewMode>(() => normalizeViewMode(settings.view_mode))
   const [weekStart, setWeekStart] = useState<WeekStart>(() => normalizeWeekStart(settings.week_start))
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const savedTagColors = board?.tag_colors ?? {}
-  const [tagColors, setTagColors] = useState<Record<string, string>>(savedTagColors)
-  // When the modal reopens for a board, reset all drafts from the latest saved state.
   useEffect(() => {
     if (open) {
-      setTagColors(board?.tag_colors ?? {})
       setViewMode(normalizeViewMode(settings.view_mode))
       setWeekStart(normalizeWeekStart(settings.week_start))
     }
-  }, [open, board?.tag_colors, settings.view_mode, settings.week_start])
-
-  const availableTags = useAvailableTags(board)
-
-  const setTagColor = (tag: string, color: string): void => {
-    setTagColors((prev) => {
-      const next = { ...prev }
-      if (next[tag] === color) delete next[tag]
-      else next[tag] = color
-      return next
-    })
-  }
-  const clearTagColor = (tag: string): void => {
-    setTagColors((prev) => {
-      if (!(tag in prev)) return prev
-      const next = { ...prev }
-      delete next[tag]
-      return next
-    })
-  }
-  const tagColorsChanged = (): boolean => {
-    const keys = new Set([...Object.keys(savedTagColors), ...Object.keys(tagColors)])
-    for (const k of keys) if (savedTagColors[k] !== tagColors[k]) return true
-    return false
-  }
+  }, [open, settings.view_mode, settings.week_start])
 
   const requestDelete = (): void => {
     if (!confirmDelete) {
@@ -101,9 +69,6 @@ export function BoardSettingsModal({
 
   const submit = (e: FormEvent): void => {
     e.preventDefault()
-    if (tagColorsChanged()) {
-      boardMut.mutate({ type: 'update_tag_colors', tag_colors: tagColors })
-    }
     mutation.mutate(
       {
         show_checkbox: checkboxRef.current?.checked ?? true,
@@ -198,58 +163,6 @@ export function BoardSettingsModal({
                   title="Expand columns"
                   hint="Stretch columns to fill the available width."
                 />
-              </Section>
-
-              {/* Tag colors */}
-              <Section
-                label="Tag colors"
-                aside={availableTags.length > 0 ? `${availableTags.length}` : undefined}
-              >
-                {availableTags.length === 0 ? (
-                  <div className="lb-settings__empty">No tags on this board yet.</div>
-                ) : (
-                  <ul className="lb-settings__tags">
-                    {availableTags.map((tag) => {
-                      const current = tagColors[tag]
-                      return (
-                        <li key={tag} className="lb-settings__tag-row">
-                          <span
-                            style={tagChipStyle(current)}
-                            className={`lb-settings__tag-chip${current ? ' lb-settings__tag-chip--colored' : ''}`}
-                          >
-                            {tag}
-                          </span>
-                          <div
-                            className="lb-settings__swatches"
-                            role="group"
-                            aria-label={`color swatches for ${tag}`}
-                          >
-                            {TAG_PALETTE.map((c) => (
-                              <button
-                                key={c}
-                                type="button"
-                                onClick={() => setTagColor(tag, c)}
-                                aria-label={`set ${tag} color ${c}`}
-                                aria-pressed={current === c}
-                                className={`lb-settings__swatch${current === c ? ' lb-settings__swatch--active' : ''}`}
-                                style={{ backgroundColor: c }}
-                              />
-                            ))}
-                            <button
-                              type="button"
-                              onClick={() => clearTagColor(tag)}
-                              aria-label={`clear ${tag} color`}
-                              disabled={!current}
-                              className="lb-settings__swatch-clear"
-                            >
-                              ×
-                            </button>
-                          </div>
-                        </li>
-                      )
-                    })}
-                  </ul>
-                )}
               </Section>
 
               {/* Danger zone */}

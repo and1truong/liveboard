@@ -1,9 +1,9 @@
 import { useEffect, useRef } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
-import type { Board } from '@shared/types.js'
 import { useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { activeFilterCount, PRIORITIES, type Priority } from '../utils/cardFilter.js'
 import { tagChipStyle } from '../utils/tagColor.js'
+import { useAppSettings } from '../queries/useAppSettings.js'
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   critical: 'Critical',
@@ -20,14 +20,12 @@ const PRIORITY_DOT: Record<Priority, string> = {
 }
 
 export function FilterPanelBody({
-  board,
   availableTags,
   tagCounts,
   showSearch,
   onClose,
   initialFocus,
 }: {
-  board: Board
   availableTags: string[]
   tagCounts?: Record<string, number>
   showSearch: boolean
@@ -43,7 +41,7 @@ export function FilterPanelBody({
     reset,
   } = useBoardFilter()
   const count = activeFilterCount(filter)
-  const tagColors = board.tag_colors ?? {}
+  const tagColors = useAppSettings().tag_colors ?? {}
   const searchRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -213,13 +211,11 @@ export function FilterPanelBody({
 }
 
 export function FilterSidePanel({
-  board,
   availableTags,
   tagCounts,
   open,
   onOpenChange,
 }: {
-  board: Board
   availableTags: string[]
   tagCounts?: Record<string, number>
   open: boolean
@@ -229,7 +225,6 @@ export function FilterSidePanel({
   return (
     <aside className="lb-filter-panel flex h-full w-[320px] shrink-0 flex-col border-l border-[color:var(--sb-popover-ring)] bg-[color:var(--sb-popover-bg)]">
       <FilterPanelBody
-        board={board}
         availableTags={availableTags}
         tagCounts={tagCounts}
         showSearch={false}
@@ -240,14 +235,12 @@ export function FilterSidePanel({
 }
 
 export function FilterDrawer({
-  board,
   availableTags,
   tagCounts,
   open,
   onOpenChange,
   initialFocus,
 }: {
-  board: Board
   availableTags: string[]
   tagCounts?: Record<string, number>
   open: boolean
@@ -268,7 +261,6 @@ export function FilterDrawer({
         >
           <Dialog.Title className="sr-only">Filter cards</Dialog.Title>
           <FilterPanelBody
-            board={board}
             availableTags={availableTags}
             tagCounts={tagCounts}
             showSearch
@@ -284,13 +276,11 @@ export function FilterDrawer({
 // Back-compat shim — kept so existing tests continue to exercise the panel contents.
 // New code should use FilterSidePanel (desktop) or FilterDrawer (mobile).
 export function FilterPopover({
-  board,
   availableTags,
   open,
   onOpenChange,
   initialFocus,
 }: {
-  board: Board
   availableTags: string[]
   open: boolean
   onOpenChange: (next: boolean) => void
@@ -298,7 +288,6 @@ export function FilterPopover({
 }): JSX.Element {
   return (
     <FilterDrawer
-      board={board}
       availableTags={availableTags}
       open={open}
       onOpenChange={onOpenChange}

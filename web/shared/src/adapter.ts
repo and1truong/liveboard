@@ -11,7 +11,6 @@ export interface BoardSummary {
   icon?: string
   icon_color?: string
   version: number
-  tags?: string[]
   updatedAgo?: string
   cardCount?: number
   doneCount?: number

@@ -18,18 +18,17 @@ import (
 // boardSummary is the v1 JSON shape for a board identity returned by
 // create/rename. Keys match the renderer's BoardSummary type.
 type boardSummary struct {
-	ID          string   `json:"id"`
-	Folder      string   `json:"folder,omitempty"`
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	Icon        string   `json:"icon,omitempty"`
-	IconColor   string   `json:"icon_color,omitempty"`
-	Version     int      `json:"version"`
-	Tags        []string `json:"tags,omitempty"`
-	UpdatedAgo  string   `json:"updatedAgo,omitempty"`
-	CardCount   int      `json:"cardCount,omitempty"`
-	DoneCount   int      `json:"doneCount,omitempty"`
-	Pinned      bool     `json:"pinned,omitempty"`
+	ID          string `json:"id"`
+	Folder      string `json:"folder,omitempty"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Icon        string `json:"icon,omitempty"`
+	IconColor   string `json:"icon_color,omitempty"`
+	Version     int    `json:"version"`
+	UpdatedAgo  string `json:"updatedAgo,omitempty"`
+	CardCount   int    `json:"cardCount,omitempty"`
+	DoneCount   int    `json:"doneCount,omitempty"`
+	Pinned      bool   `json:"pinned,omitempty"`
 }
 
 // relativeTime returns a human-readable relative time string.
@@ -113,7 +112,6 @@ func (d Deps) toBoardSummary(b *models.Board) boardSummary {
 		Icon:        b.Icon,
 		IconColor:   b.IconColor,
 		Version:     b.Version,
-		Tags:        b.Tags,
 		UpdatedAgo:  relativeTime(b.UpdatedAt),
 		CardCount:   cardCount,
 		DoneCount:   doneCount,

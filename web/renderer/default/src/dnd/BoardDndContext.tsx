@@ -19,6 +19,7 @@ import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { Card } from '../components/Card.js'
 import { dispatchDrop } from './dispatchDrop.js'
 import { decodeCardId, decodeColumnId, decodeColumnEndId } from './cardId.js'
+import { useAppSettings } from '../queries/useAppSettings.js'
 
 export type DropTarget =
   | { type: 'card'; colIdx: number; cardIdx: number }
@@ -89,7 +90,8 @@ export function BoardDndContext({
   }
 
   const board = qc.getQueryData<Board>(['board', boardId])
-  const overlay = renderOverlay(activeId, board)
+  const tagColors = useAppSettings().tag_colors ?? {}
+  const overlay = renderOverlay(activeId, board, tagColors)
 
   return (
     <DragStateContext.Provider value={{ drop, isDragActive: activeId != null }}>
@@ -108,7 +110,11 @@ export function BoardDndContext({
   )
 }
 
-function renderOverlay(activeId: string | null, board: Board | undefined): JSX.Element | null {
+function renderOverlay(
+  activeId: string | null,
+  board: Board | undefined,
+  tagColors: Record<string, string>,
+): JSX.Element | null {
   if (!activeId || !board) return null
   const cardId = decodeCardId(activeId)
   if (cardId) {
@@ -116,7 +122,7 @@ function renderOverlay(activeId: string | null, board: Board | undefined): JSX.E
     if (!card) return null
     return (
       <div className="w-72">
-        <Card card={card} tagColors={board.tag_colors} />
+        <Card card={card} tagColors={tagColors} />
       </div>
     )
   }

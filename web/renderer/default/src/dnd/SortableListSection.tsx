@@ -303,8 +303,9 @@ function ListQuickAdd({
         e.preventDefault()
         commit()
       }}
-      className="group/add flex items-center gap-3 py-2"
+      className="group/add grid grid-cols-[auto_auto_1fr] items-center gap-3 py-2"
     >
+      <span aria-hidden className="invisible cursor-grab select-none">⋮⋮</span>
       <span
         aria-hidden
         className={`flex h-[18px] w-[18px] shrink-0 items-center justify-center rounded-full border-[1.5px] border-dashed transition-colors ${

@@ -79,6 +79,10 @@ func (a *App) startServer(dir string) error {
 	ws := workspace.Open(dir)
 	eng := board.New()
 
+	if err := ws.MigrateBoardTagsToWorkspace(); err != nil {
+		log.Printf("tag migration: %v", err)
+	}
+
 	a.srv = api.NewServer(ws, eng, false, false, true, a.version, "", "")
 
 	addr, err := a.srv.ListenAndServe("127.0.0.1:0")

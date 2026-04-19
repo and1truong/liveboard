@@ -5,7 +5,6 @@ export const WELCOME_BOARD: Board = {
   name: 'Welcome',
   description: 'This is your demo board. Data stays in this browser.',
   icon: '👋',
-  tags: ['demo'],
   columns: [
     {
       name: 'Todo',

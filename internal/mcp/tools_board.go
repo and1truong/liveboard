@@ -23,12 +23,11 @@ type deleteBoardInput struct {
 
 // boardSummary is a lightweight view returned by list_boards.
 type boardSummary struct {
-	Name        string   `json:"name"`
-	Description string   `json:"description,omitempty"`
-	Icon        string   `json:"icon,omitempty"`
-	Tags        []string `json:"tags,omitempty"`
-	Columns     int      `json:"columns"`
-	Cards       int      `json:"cards"`
+	Name        string `json:"name"`
+	Description string `json:"description,omitempty"`
+	Icon        string `json:"icon,omitempty"`
+	Columns     int    `json:"columns"`
+	Cards       int    `json:"cards"`
 }
 
 // indexedBoard adds explicit indices so the LLM can address items.
@@ -36,7 +35,6 @@ type indexedBoard struct {
 	Name        string          `json:"name"`
 	Description string          `json:"description,omitempty"`
 	Icon        string          `json:"icon,omitempty"`
-	Tags        []string        `json:"tags,omitempty"`
 	Members     []string        `json:"members,omitempty"`
 	Version     int             `json:"version"`
 	Columns     []indexedColumn `json:"columns"`
@@ -84,7 +82,6 @@ func (m *Server) registerBoardReadTools() {
 				Name:        b.Name,
 				Description: b.Description,
 				Icon:        b.Icon,
-				Tags:        b.Tags,
 				Columns:     len(b.Columns),
 				Cards:       total,
 			}
@@ -105,7 +102,6 @@ func (m *Server) registerBoardReadTools() {
 			Name:        b.Name,
 			Description: b.Description,
 			Icon:        b.Icon,
-			Tags:        b.Tags,
 			Members:     b.Members,
 			Version:     b.Version,
 			Columns:     make([]indexedColumn, len(b.Columns)),

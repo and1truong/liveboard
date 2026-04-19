@@ -23,6 +23,8 @@ export const APP_SETTINGS_DEFAULTS: AppSettings = {
   keyboard_shortcuts: false,
   week_start: 'sunday',
   pinned_boards: [],
+  tags: [],
+  tag_colors: {},
 }
 
 export function useAppSettings(): AppSettings {

@@ -5,6 +5,7 @@ import { tagChipStyle } from '../utils/tagColor.js'
 import { activeFilterCount, type Priority } from '../utils/cardFilter.js'
 import { FilterChip } from './FilterChip.js'
 import { BoardIcon } from './BoardIcon.js'
+import { useAppSettings } from '../queries/useAppSettings.js'
 
 const PRIORITY_LABEL: Record<Priority, string> = {
   critical: 'Critical',
@@ -29,7 +30,7 @@ export function BoardHeader({
   onOpenSearch: () => void
 }): JSX.Element {
   const { filter, setQuery, toggleTag, togglePriority, setHideCompleted } = useBoardFilter()
-  const tagColors = data.tag_colors ?? {}
+  const tagColors = useAppSettings().tag_colors ?? {}
   const count = activeFilterCount(filter)
   const trimmedQuery = filter.query.trim()
   const searchRef = useRef<HTMLInputElement>(null)

@@ -16,23 +16,25 @@ import (
 
 // AppSettings holds persisted user preferences (workspace-global).
 type AppSettings struct {
-	SiteName          string   `json:"site_name"`
-	Theme             string   `json:"theme"`
-	ColorTheme        string   `json:"color_theme"`
-	FontFamily        string   `json:"font_family"`
-	ColumnWidth       int      `json:"column_width"`
-	SidebarPosition   string   `json:"sidebar_position"`
-	DefaultColumns    []string `json:"default_columns,omitempty"`
-	ShowCheckbox      bool     `json:"show_checkbox"`
-	NewLineTrigger    string   `json:"newline_trigger"`
-	CardPosition      string   `json:"card_position"`
-	CardDisplayMode   string   `json:"card_display_mode"`
-	PinnedBoards      []string `json:"pinned_boards,omitempty"`
-	KeyboardShortcuts bool     `json:"keyboard_shortcuts"`
-	WeekStart         string   `json:"week_start,omitempty"`
-	LastBoard         string   `json:"last_board,omitempty"`
-	ReminderEnabled   bool     `json:"reminder_enabled,omitempty"`
-	ReminderTimezone  string   `json:"reminder_timezone,omitempty"`
+	SiteName          string            `json:"site_name"`
+	Theme             string            `json:"theme"`
+	ColorTheme        string            `json:"color_theme"`
+	FontFamily        string            `json:"font_family"`
+	ColumnWidth       int               `json:"column_width"`
+	SidebarPosition   string            `json:"sidebar_position"`
+	DefaultColumns    []string          `json:"default_columns,omitempty"`
+	ShowCheckbox      bool              `json:"show_checkbox"`
+	NewLineTrigger    string            `json:"newline_trigger"`
+	CardPosition      string            `json:"card_position"`
+	CardDisplayMode   string            `json:"card_display_mode"`
+	PinnedBoards      []string          `json:"pinned_boards,omitempty"`
+	KeyboardShortcuts bool              `json:"keyboard_shortcuts"`
+	WeekStart         string            `json:"week_start,omitempty"`
+	LastBoard         string            `json:"last_board,omitempty"`
+	ReminderEnabled   bool              `json:"reminder_enabled,omitempty"`
+	ReminderTimezone  string            `json:"reminder_timezone,omitempty"`
+	Tags              []string          `json:"tags,omitempty"`
+	TagColors         map[string]string `json:"tag_colors,omitempty"`
 }
 
 // ResolvedSettings holds the effective settings for a board view,
@@ -166,6 +168,66 @@ func SanitizeSettings(s *AppSettings) {
 	if len([]rune(s.SiteName)) > 50 {
 		s.SiteName = string([]rune(s.SiteName)[:50])
 	}
+	s.Tags = sanitizeTagList(s.Tags)
+	s.TagColors = sanitizeTagColors(s.TagColors)
+}
+
+func sanitizeTagList(tags []string) []string {
+	if len(tags) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(tags))
+	out := make([]string, 0, len(tags))
+	for _, t := range tags {
+		t = strings.TrimSpace(t)
+		if t == "" {
+			continue
+		}
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		seen[t] = struct{}{}
+		out = append(out, t)
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func sanitizeTagColors(m map[string]string) map[string]string {
+	if len(m) == 0 {
+		return nil
+	}
+	out := make(map[string]string, len(m))
+	for k, v := range m {
+		k = strings.TrimSpace(k)
+		v = strings.TrimSpace(v)
+		if k == "" || !isHexColor(v) {
+			continue
+		}
+		out[k] = v
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
+}
+
+func isHexColor(s string) bool {
+	if len(s) != 4 && len(s) != 7 {
+		return false
+	}
+	if s[0] != '#' {
+		return false
+	}
+	for i := 1; i < len(s); i++ {
+		c := s[i]
+		if (c < '0' || c > '9') && (c < 'a' || c > 'f') && (c < 'A' || c > 'F') {
+			return false
+		}
+	}
+	return true
 }
 
 // oneOf returns val if it matches one of the allowed values, otherwise def.
