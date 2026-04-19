@@ -522,6 +522,10 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: -0.01em;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
 }
 
 .lb-sidebar__brand svg {

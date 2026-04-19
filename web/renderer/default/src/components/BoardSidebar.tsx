@@ -334,7 +334,7 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
             </a>
           </div>
         )}
-        <a href="/" className="lb-sidebar__brand">
+        <button type="button" className="lb-sidebar__brand" onClick={() => setActive(null)}>
           <svg width="20" height="20" viewBox="0 0 128 128" xmlns="http://www.w3.org/2000/svg" aria-hidden>
             <rect x="10" y="16" width="108" height="96" rx="14" fill="none" stroke="currentColor" strokeWidth="3" />
             <line x1="46" y1="28" x2="46" y2="100" stroke="currentColor" strokeWidth="0.8" opacity="0.25" />
@@ -347,7 +347,7 @@ export function BoardSidebar({ collapsed = false }: { collapsed?: boolean }): JS
             <rect x="88" y="32" width="22" height="8" rx="2" fill="currentColor" />
           </svg>
           <span className="lb-sidebar__brand-name">{ws.data?.name ?? '—'}</span>
-        </a>
+        </button>
         <ThemePicker />
         <button
           type="button"
