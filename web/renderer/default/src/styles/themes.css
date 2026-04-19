@@ -13,7 +13,7 @@
 
 /* Semantic color tokens — light mode defaults (indigo / neutral). */
 :root {
-  --color-bg:             #f4f4f6;
+  --color-bg:             #f6f6f8;
   --color-surface:        #ffffff;
   --color-column-bg:      #ecedf0;
   --color-border:         #e2e3e8;
@@ -45,13 +45,13 @@
 
 /* Per-theme light overrides. */
 :root.theme-aqua {
-  --color-bg:             #ECECEC;
+  --color-bg:             #ffffff;
   --color-surface:        #FFFFFF;
   --color-column-bg:      #E0E0E4;
   --color-border:         #C8C8CC;
   --color-border-dashed:  #AEAEB2;
-  --sb-bg:                rgb(255 255 255 / 0.82);
-  --sb-bg-solid:          #ffffff;
+  --sb-bg:                rgb(236 236 236 / 0.82);
+  --sb-bg-solid:          #ECECEC;
 }
 
 :root.theme-green {
@@ -128,8 +128,8 @@
 /* Sidebar tokens — macOS HIG Source List vocabulary.
    Vibrant translucent surface, hairline dividers, inset selection bevel. */
 :root {
-  --sb-bg:              rgb(246 246 248 / 0.72);
-  --sb-bg-solid:        #f6f6f8;
+  --sb-bg:              rgb(244 244 246 / 0.72);
+  --sb-bg-solid:        #f4f4f6;
   --sb-border:          rgba(0, 0, 0, 0.08);
   --sb-divider:         rgba(0, 0, 0, 0.06);
   --sb-row-hover:       rgba(0, 0, 0, 0.045);
