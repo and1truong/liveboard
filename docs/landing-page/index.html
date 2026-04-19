@@ -497,7 +497,7 @@
         .demo-frame.fullscreen {
             position: fixed;
             inset: 0;
-            z-index: 9999;
+            z-index: 10000;
             border-radius: 0;
             box-shadow: none;
             display: flex;
@@ -819,9 +819,29 @@
 
         const greenDot = document.querySelector('.dot-green');
         const demoFrame = document.querySelector('.demo-frame');
-        greenDot.addEventListener('click', () => demoFrame.classList.toggle('fullscreen'));
+        let demoPlaceholder = null;
+
+        function enterFullscreen() {
+            demoPlaceholder = document.createComment('demo-frame-placeholder');
+            demoFrame.parentNode.insertBefore(demoPlaceholder, demoFrame);
+            document.body.appendChild(demoFrame);
+            demoFrame.classList.add('fullscreen');
+        }
+
+        function exitFullscreen() {
+            demoFrame.classList.remove('fullscreen');
+            if (demoPlaceholder) {
+                demoPlaceholder.parentNode.insertBefore(demoFrame, demoPlaceholder);
+                demoPlaceholder.remove();
+                demoPlaceholder = null;
+            }
+        }
+
+        greenDot.addEventListener('click', () => {
+            demoFrame.classList.contains('fullscreen') ? exitFullscreen() : enterFullscreen();
+        });
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') demoFrame.classList.remove('fullscreen');
+            if (e.key === 'Escape') exitFullscreen();
         });
     </script>
 </body>
