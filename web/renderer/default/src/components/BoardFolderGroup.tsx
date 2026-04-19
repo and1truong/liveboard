@@ -1,8 +1,12 @@
 import { useRef, useState, useEffect, type DragEvent, type ReactNode } from 'react'
+import * as ContextMenu from '@radix-ui/react-context-menu'
 import type { BoardSummary } from '@shared/adapter.js'
 import { BoardRow, BOARD_DRAG_MIME } from './BoardRow.js'
 import { useRenameFolder, useDeleteFolder } from '../mutations/useFolderCrud.js'
 import { errorToast } from '../toast.js'
+
+const contentCls = 'z-50 min-w-44 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 dark:text-slate-100'
+const itemCls = 'cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600'
 
 export interface BoardFolderGroupProps {
   folder: string
@@ -21,22 +25,11 @@ export function BoardFolderGroup({
   onToggle,
   onBoardDrop,
 }: BoardFolderGroupProps): JSX.Element {
-  const [menuOpen, setMenuOpen] = useState(false)
   const [renaming, setRenaming] = useState(false)
   const [dragOver, setDragOver] = useState(false)
-  const menuRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const renameFolder = useRenameFolder()
   const deleteFolder = useDeleteFolder()
-
-  useEffect(() => {
-    if (!menuOpen) return
-    const handler = (e: MouseEvent): void => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) setMenuOpen(false)
-    }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [menuOpen])
 
   useEffect(() => {
     if (renaming) inputRef.current?.focus()
@@ -50,7 +43,6 @@ export function BoardFolderGroup({
   }
 
   const onDelete = (): void => {
-    setMenuOpen(false)
     if (boards.length > 0) {
       errorToast('INVALID')
       return
@@ -118,66 +110,42 @@ export function BoardFolderGroup({
           <span className="lb-folder__name">{folder}</span>
           <span className="lb-folder__count">{boards.length}</span>
         </button>
-        <div ref={menuRef} className="lb-folder__menu-wrap">
-          <button
-            type="button"
-            className="lb-folder__menu-btn"
-            title="Folder actions"
-            aria-label="Folder actions"
-            aria-expanded={menuOpen}
-            onClick={(e) => { e.stopPropagation(); setMenuOpen((p) => !p) }}
-          >
-            <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden>
-              <circle cx="2" cy="6" r="1.25" fill="currentColor" />
-              <circle cx="6" cy="6" r="1.25" fill="currentColor" />
-              <circle cx="10" cy="6" r="1.25" fill="currentColor" />
-            </svg>
-          </button>
-          {menuOpen && (
-            <div className="lb-popover" role="menu">
-              <button
-                type="button"
-                className="lb-popover__item"
-                role="menuitem"
-                onClick={() => { setMenuOpen(false); setRenaming(true) }}
-              >
-                <span>Rename folder</span>
-              </button>
-              <button
-                type="button"
-                className="lb-popover__item"
-                role="menuitem"
-                onClick={onDelete}
-                disabled={boards.length > 0}
-                title={boards.length > 0 ? 'Folder must be empty' : 'Delete folder'}
-              >
-                <span>Delete folder</span>
-              </button>
-            </div>
-          )}
-        </div>
       </div>
     )
   }
 
   return (
-    <li
-      className={`lb-folder${dragOver ? ' lb-folder--drop-target' : ''}`}
-      onDragOver={onDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={onDrop}
-    >
-      {header}
-      {!collapsed && !renaming && (
-        <ul
-          id={`lb-folder-${folder}`}
-          className="lb-folder__children"
+    <ContextMenu.Root>
+      <ContextMenu.Trigger asChild>
+        <li
+          className={`lb-folder${dragOver ? ' lb-folder--drop-target' : ''}`}
+          onDragOver={onDragOver}
+          onDragLeave={onDragLeave}
+          onDrop={onDrop}
         >
-          {boards.map((b) => (
-            <BoardRow key={b.id} board={b} />
-          ))}
-        </ul>
-      )}
-    </li>
+          {header}
+          {!collapsed && !renaming && (
+            <ul
+              id={`lb-folder-${folder}`}
+              className="lb-folder__children"
+            >
+              {boards.map((b) => (
+                <BoardRow key={b.id} board={b} />
+              ))}
+            </ul>
+          )}
+        </li>
+      </ContextMenu.Trigger>
+      <ContextMenu.Portal>
+        <ContextMenu.Content className={contentCls}>
+          <ContextMenu.Item className={itemCls} onSelect={() => setRenaming(true)}>
+            Rename folder
+          </ContextMenu.Item>
+          <ContextMenu.Item className={itemCls} onSelect={onDelete} disabled={boards.length > 0}>
+            Delete folder
+          </ContextMenu.Item>
+        </ContextMenu.Content>
+      </ContextMenu.Portal>
+    </ContextMenu.Root>
   )
 }

@@ -64,6 +64,7 @@ export interface AppSettings {
   pinned_boards: string[]
   tags: string[]
   tag_colors: Record<string, string>
+  folder_collapse?: Record<string, boolean>
 }
 
 // Tagged union — discriminator is `type`.

@@ -35,6 +35,7 @@ type AppSettings struct {
 	ReminderTimezone  string            `json:"reminder_timezone,omitempty"`
 	Tags              []string          `json:"tags,omitempty"`
 	TagColors         map[string]string `json:"tag_colors,omitempty"`
+	FolderCollapse    map[string]bool   `json:"folder_collapse,omitempty"`
 }
 
 // ResolvedSettings holds the effective settings for a board view,

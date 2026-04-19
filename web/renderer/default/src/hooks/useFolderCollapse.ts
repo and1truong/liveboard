@@ -1,47 +1,43 @@
-import { useCallback, useEffect, useState } from 'react'
-
-const STORAGE_KEY = 'lb:folder-collapse'
-
-function readState(): Record<string, boolean> {
-  if (typeof localStorage === 'undefined') return {}
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) return {}
-    const parsed = JSON.parse(raw) as unknown
-    if (parsed && typeof parsed === 'object') return parsed as Record<string, boolean>
-  } catch {
-    // ignore
-  }
-  return {}
-}
-
-function writeState(state: Record<string, boolean>): void {
-  if (typeof localStorage === 'undefined') return
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
-  } catch {
-    // ignore — private mode / quota
-  }
-}
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import type { AppSettings } from '@shared/types.js'
+import { useClient } from '../queries.js'
 
 export interface FolderCollapseAPI {
   isCollapsed(folder: string): boolean
   toggle(folder: string): void
 }
 
-// useFolderCollapse persists per-folder expand/collapse state in localStorage.
-// Default (missing key) is expanded, matching Apple Reminders behavior.
+// useFolderCollapse persists per-folder expand/collapse state to the backend
+// settings. Default (missing key) is expanded.
 export function useFolderCollapse(): FolderCollapseAPI {
-  const [state, setState] = useState<Record<string, boolean>>(() => readState())
+  const client = useClient()
+  const { data: appSettings } = useQuery<AppSettings>({
+    queryKey: ['appSettings'],
+    queryFn: () => client.getAppSettings(),
+    staleTime: 60_000,
+  })
+
+  const [state, setState] = useState<Record<string, boolean>>({})
+  const initialized = useRef(false)
 
   useEffect(() => {
-    writeState(state)
-  }, [state])
+    if (initialized.current || !appSettings) return
+    initialized.current = true
+    setState(appSettings.folder_collapse ?? {})
+  }, [appSettings])
+
+  const toggle = useCallback(
+    (folder: string) => {
+      setState((prev) => {
+        const next = { ...prev, [folder]: !prev[folder] }
+        void client.putAppSettings({ folder_collapse: next })
+        return next
+      })
+    },
+    [client],
+  )
 
   const isCollapsed = useCallback((folder: string) => state[folder] === true, [state])
-  const toggle = useCallback((folder: string) => {
-    setState((prev) => ({ ...prev, [folder]: !prev[folder] }))
-  }, [])
-
   return { isCollapsed, toggle }
 }
