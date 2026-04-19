@@ -3,7 +3,7 @@ import { buildFaviconHref } from '../icons/favicon.js'
 import { SortableContext, horizontalListSortingStrategy } from '@dnd-kit/sortable'
 import type { Client } from '@shared/client.js'
 import { ProtocolError } from '@shared/protocol.js'
-import type { Column } from '@shared/types.js'
+import type { Board, Column } from '@shared/types.js'
 import { useBoard } from '../queries.js'
 import { EmptyState } from './EmptyState.js'
 import { AddColumnButton } from './AddColumnButton.js'
@@ -12,7 +12,7 @@ import { SortableColumn } from '../dnd/SortableColumn.js'
 import { encodeColumnId } from '../dnd/cardId.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { BoardFocusProvider } from '../contexts/BoardFocusContext.js'
-import { BoardFilterProvider } from '../contexts/BoardFilterContext.js'
+import { BoardFilterProvider, useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { BoardsGrid } from './BoardsGrid.js'
 import { BoardListView } from './BoardListView.js'
 import { BoardCalendarView } from './BoardCalendarView.js'
@@ -78,13 +78,57 @@ function BoardColumns({
   )
 }
 
+function FilterPanels({
+  data,
+  availableTags,
+  filterOpen,
+  setFilterOpen,
+  filterFocus,
+  setFilterFocus,
+  isDesktop,
+}: {
+  data: Board
+  availableTags: string[]
+  filterOpen: boolean
+  setFilterOpen: (v: boolean) => void
+  filterFocus: 'search' | null
+  setFilterFocus: (v: 'search' | null) => void
+  isDesktop: boolean
+}): JSX.Element {
+  const { filter } = useBoardFilter()
+  const tagCounts = useTagCounts(data, filter.hideCompleted)
+  return (
+    <>
+      {isDesktop && (
+        <FilterSidePanel
+          availableTags={availableTags}
+          tagCounts={tagCounts}
+          open={filterOpen}
+          onOpenChange={setFilterOpen}
+        />
+      )}
+      {!isDesktop && (
+        <FilterDrawer
+          availableTags={availableTags}
+          tagCounts={tagCounts}
+          open={filterOpen}
+          onOpenChange={(next) => {
+            setFilterOpen(next)
+            if (!next) setFilterFocus(null)
+          }}
+          initialFocus={filterFocus}
+        />
+      )}
+    </>
+  )
+}
+
 export function BoardView({ client, onToggleSidebar }: { client: Client; onToggleSidebar: () => void }): JSX.Element {
   const { active, setActive } = useActiveBoard()
   const { data, isLoading, error } = useBoard(active)
   const settings = useBoardSettings(active)
   const { openSettings } = useBoardSettingsContext()
   const availableTags = useAvailableTags(data)
-  const tagCounts = useTagCounts(data)
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const [filterOpen, setFilterOpen] = useState(false)
   const [filterFocus, setFilterFocus] = useState<'search' | null>(null)
@@ -156,27 +200,16 @@ export function BoardView({ client, onToggleSidebar }: { client: Client; onToggl
               />
               <div className="flex min-h-0 flex-1">
                 <div className="flex min-w-0 flex-1 flex-col">{view}</div>
-                {isDesktop && (
-                  <FilterSidePanel
-                    availableTags={availableTags}
-                    tagCounts={tagCounts}
-                    open={filterOpen}
-                    onOpenChange={setFilterOpen}
-                  />
-                )}
-              </div>
-              {!isDesktop && (
-                <FilterDrawer
+                <FilterPanels
+                  data={data}
                   availableTags={availableTags}
-                  tagCounts={tagCounts}
-                  open={filterOpen}
-                  onOpenChange={(next) => {
-                    setFilterOpen(next)
-                    if (!next) setFilterFocus(null)
-                  }}
-                  initialFocus={filterFocus}
+                  filterOpen={filterOpen}
+                  setFilterOpen={setFilterOpen}
+                  filterFocus={filterFocus}
+                  setFilterFocus={setFilterFocus}
+                  isDesktop={isDesktop}
                 />
-              )}
+              </div>
             </div>
           </BoardDndContext>
         </FocusedColumnProvider>
