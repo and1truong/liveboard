@@ -47,7 +47,8 @@ describe('CardDetailModal', () => {
     )
     await waitFor(() => expect((getByLabelText('card title') as HTMLInputElement).value).toBe('Hello'))
     expect((getByLabelText('card body') as HTMLTextAreaElement).value).toBe('orig body')
-    expect((getByLabelText('card tags') as HTMLInputElement).value).toBe('a, b')
+    expect((getByLabelText('remove tag a') as HTMLButtonElement)).toBeDefined()
+    expect((getByLabelText('remove tag b') as HTMLButtonElement)).toBeDefined()
     expect((getByLabelText('card priority') as HTMLSelectElement).value).toBe('high')
     expect((getByLabelText('card due') as HTMLInputElement).value).toBe('2026-05-01')
     expect((getByLabelText('card assignee') as HTMLInputElement).value).toBe('alice')
@@ -71,7 +72,14 @@ describe('CardDetailModal', () => {
     )
     await waitFor(() => getByLabelText('card title'))
     fireEvent.input(getByLabelText('card title'), { target: { value: 'NEW TITLE' } })
-    fireEvent.input(getByLabelText('card tags'), { target: { value: 'x, y, z' } })
+    // remove seeded chips then add x, y, z via the chip input
+    fireEvent.click(getByLabelText('remove tag a'))
+    fireEvent.click(getByLabelText('remove tag b'))
+    for (const t of ['x', 'y', 'z']) {
+      const tagInput = getByLabelText('card tags') as HTMLInputElement
+      fireEvent.input(tagInput, { target: { value: t } })
+      fireEvent.keyDown(tagInput, { key: 'Enter' })
+    }
     fireEvent.click(getByText('Save'))
 
     await waitFor(() => expect(calls).toContain(false))

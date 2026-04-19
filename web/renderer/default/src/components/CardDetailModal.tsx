@@ -1,4 +1,4 @@
-import { useRef, useState, useEffect, type FormEvent } from 'react'
+import { useRef, useState, useEffect, useMemo, type FormEvent } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import type { Card as CardModel } from '@shared/types.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
@@ -8,6 +8,10 @@ import { useOptionalActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
 import { LinkChip } from './LinkChip.js'
 import { LinkPicker } from './LinkPicker.js'
+import { TagsChipInput } from './TagsChipInput.js'
+import { useBoard, useTagColors } from '../queries.js'
+import { collectTags } from '../queries/useAvailableTags.js'
+import { useAppSettings } from '../queries/useAppSettings.js'
 
 export interface CreateCardParams {
   title: string
@@ -42,7 +46,6 @@ export function CardDetailModal({
 }): JSX.Element {
   const titleRef = useRef<HTMLInputElement>(null)
   const bodyRef = useRef<HTMLTextAreaElement>(null)
-  const tagsRef = useRef<HTMLInputElement>(null)
   const priorityRef = useRef<HTMLSelectElement>(null)
   const dueRef = useRef<HTMLInputElement>(null)
   const assigneeRef = useRef<HTMLInputElement>(null)
@@ -52,17 +55,30 @@ export function CardDetailModal({
 
   const [titleValid, setTitleValid] = useState((card.title ?? '').trim().length > 0)
   const [links, setLinks] = useState<string[]>(card.links ?? [])
+  const [tags, setTags] = useState<string[]>(card.tags ?? [])
   const [pickerOpen, setPickerOpen] = useState(false)
   const mutation = useBoardMutation(boardId)
+
+  const boardQuery = useBoard(open ? boardId : null)
+  const workspaceTags = useAppSettings().tags ?? []
+  const tagColors = useTagColors()
+  const availableTags = useMemo(
+    () => collectTags(boardQuery.data, workspaceTags),
+    [boardQuery.data, workspaceTags],
+  )
 
   const backlinks = useBacklinks(card.id)
   const activeBoardCtx = useOptionalActiveBoard()
   const focusCtx = useOptionalBoardFocus()
 
   useEffect(() => {
-    if (open) setLinks(card.links ?? [])
-    else setPickerOpen(false)
-  }, [open, card.links])
+    if (open) {
+      setLinks(card.links ?? [])
+      setTags(card.tags ?? [])
+    } else {
+      setPickerOpen(false)
+    }
+  }, [open, card.links, card.tags])
 
   const addLink = (t: string): void => {
     if (!links.includes(t)) setLinks([...links, t])
@@ -97,10 +113,6 @@ export function CardDetailModal({
     e.preventDefault()
     const title = (titleRef.current?.value ?? '').trim()
     if (!title) return
-    const tags = (tagsRef.current?.value ?? '')
-      .split(',')
-      .map((t) => t.trim())
-      .filter(Boolean)
     if (onCreateCard) {
       onCreateCard({
         title,
@@ -213,15 +225,16 @@ export function CardDetailModal({
                 )
               )}
             </div>
-            <label className="block">
-              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Tags (comma separated)</span>
-              <input
-                ref={tagsRef}
-                aria-label="card tags"
-                defaultValue={(card.tags ?? []).join(', ')}
-                className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"
+            <div>
+              <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Tags</span>
+              <TagsChipInput
+                value={tags}
+                onChange={setTags}
+                available={availableTags}
+                tagColors={tagColors}
+                ariaLabel="card tags"
               />
-            </label>
+            </div>
             <div className="grid grid-cols-3 gap-3">
               <label className="block">
                 <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Priority</span>
