@@ -85,8 +85,21 @@ renderer:
 bundle-check:
 	bash scripts/check-bundle-size.sh
 
+.PHONY: codegen verify-codegen
+# Regenerate TS files derived from Go (currently: web/shared/src/mutations.gen.ts).
+# Run after touching internal/board/mutation.go or any *Op struct.
+codegen:
+	go run ./cmd/gen-ts-mutations -out web/shared/src/mutations.gen.ts
+
+# CI guard: re-run codegen and fail if the result differs from what is
+# committed. Catches forgotten regenerations on PRs.
+verify-codegen:
+	@go run ./cmd/gen-ts-mutations -out web/shared/src/mutations.gen.ts
+	@git diff --exit-code -- web/shared/src/mutations.gen.ts \
+		|| (echo "ERROR: web/shared/src/mutations.gen.ts is stale. Run 'make codegen'." >&2; exit 1)
+
 .PHONY: frontend
-frontend: shell renderer
+frontend: codegen shell renderer
 
 css:
 	tailwindcss -i web/renderer/default/src/styles/tailwind.css -o web/renderer/default/dist/tailwind.css
