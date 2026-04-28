@@ -633,3 +633,67 @@ func TestErrorBoardPathTraversal(t *testing.T) {
 		t.Error("expected error for path traversal")
 	}
 }
+
+// mcpHiddenMutations lists mutation variants from board.MutationVariantNames()
+// that are deliberately NOT exposed as MCP tools, with the reason. Adding a
+// new mutation must either:
+//   - register an MCP tool with the same name, or
+//   - add an entry here.
+//
+// This forces the decision at the time of writing rather than letting AI
+// surfaces silently lag behind the wire-level mutation registry. Reasons are
+// kept terse so future maintainers can re-evaluate without spelunking.
+var mcpHiddenMutations = map[string]string{
+	"reorder_card":           "drag-drop visual ordering; LLMs use move_card for column changes",
+	"tag_card":               "tags edited via edit_card; redundant surface",
+	"toggle_column_collapse": "renderer UI state, not workflow",
+	"update_board_meta":      "board name/description rename — exposing risks AI-driven renames mid-conversation",
+	"update_board_members":   "workspace-admin concern, not LLM-driven",
+	"update_board_icon":      "cosmetic; no LLM use case",
+	"update_board_settings":  "per-board UI preferences (view_mode, etc.) — not LLM-driven",
+	"move_card_to_board":     "two-phase cross-board write; needs special handling beyond engine.Apply*",
+}
+
+// TestMCPMutationCoverage asserts every mutation registered in
+// internal/board is either exposed as an identically-named MCP tool or
+// explicitly listed in mcpHiddenMutations. Without this guard, adding a
+// mutation to internal/board/mutation.go silently leaves the MCP surface
+// out of sync — and the divergence is invisible until a human tries to
+// drive the new operation through an LLM.
+func TestMCPMutationCoverage(t *testing.T) {
+	srv, _ := setup(t)
+	cs := clientSession(t, srv)
+
+	res, err := cs.ListTools(context.Background(), nil)
+	if err != nil {
+		t.Fatalf("ListTools: %v", err)
+	}
+	exposed := make(map[string]struct{}, len(res.Tools))
+	for _, tool := range res.Tools {
+		exposed[tool.Name] = struct{}{}
+	}
+
+	for _, name := range board.MutationVariantNames() {
+		_, isExposed := exposed[name]
+		reason, isHidden := mcpHiddenMutations[name]
+		switch {
+		case isExposed && isHidden:
+			t.Errorf("mutation %q is both an MCP tool and listed in mcpHiddenMutations (reason=%q) — pick one", name, reason)
+		case !isExposed && !isHidden:
+			t.Errorf("mutation %q has no MCP tool and no entry in mcpHiddenMutations — either register a tool or add a hide-reason", name)
+		}
+	}
+
+	// Catch entries that no longer correspond to a real mutation (e.g. a
+	// variant was removed from the registry but the hide-reason was left
+	// stale). Without this, the allowlist accumulates dead names.
+	live := make(map[string]struct{}, 32)
+	for _, name := range board.MutationVariantNames() {
+		live[name] = struct{}{}
+	}
+	for name := range mcpHiddenMutations {
+		if _, ok := live[name]; !ok {
+			t.Errorf("mcpHiddenMutations lists %q but no such mutation exists in the registry", name)
+		}
+	}
+}

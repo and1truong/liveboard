@@ -116,9 +116,9 @@ func renderAndWrite(board *models.Board, path string) error {
 	return os.WriteFile(path, []byte(content), 0644)
 }
 
-// ApplyAddCard adds a new card to the specified column of b.
+// applyAddCard adds a new card to the specified column of b.
 // Returns a pointer to the card as stored in the board slice.
-func ApplyAddCard(b *models.Board, columnName, title string, prepend bool) (*models.Card, error) {
+func applyAddCard(b *models.Board, columnName, title string, prepend bool) (*models.Card, error) {
 	for i := range b.Columns {
 		if b.Columns[i].Name == columnName {
 			if prepend {
@@ -139,7 +139,7 @@ func ApplyAddCard(b *models.Board, columnName, title string, prepend bool) (*mod
 func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*models.Card, error) {
 	var out *models.Card
 	err := e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		c, err := ApplyAddCard(b, columnName, title, prepend)
+		c, err := applyAddCard(b, columnName, title, prepend)
 		out = c
 		return err
 	})
@@ -149,8 +149,8 @@ func (e *Engine) AddCard(boardPath, columnName, title string, prepend bool) (*mo
 	return out, nil
 }
 
-// ApplyMoveCard moves a card to a different column within b.
-func ApplyMoveCard(b *models.Board, colIdx, cardIdx int, targetColumn string) error {
+// applyMoveCard moves a card to a different column within b.
+func applyMoveCard(b *models.Board, colIdx, cardIdx int, targetColumn string) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
@@ -169,7 +169,7 @@ func ApplyMoveCard(b *models.Board, colIdx, cardIdx int, targetColumn string) er
 // MoveCard moves a card to a different column.
 func (e *Engine) MoveCard(boardPath string, colIdx, cardIdx int, targetColumn string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyMoveCard(b, colIdx, cardIdx, targetColumn)
+		return applyMoveCard(b, colIdx, cardIdx, targetColumn)
 	})
 }
 
@@ -239,9 +239,9 @@ func mergeMissing(existing *[]string, incoming []string) {
 	}
 }
 
-// ApplyReorderCard moves a card to a specific position within b.
+// applyReorderCard moves a card to a specific position within b.
 // beforeIdx is the index to insert before; -1 means append to end.
-func ApplyReorderCard(b *models.Board, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
+func applyReorderCard(b *models.Board, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
@@ -274,12 +274,12 @@ func ApplyReorderCard(b *models.Board, colIdx, cardIdx, beforeIdx int, targetCol
 // beforeIdx is the index to insert before; -1 means append to end.
 func (e *Engine) ReorderCard(boardPath string, colIdx, cardIdx, beforeIdx int, targetColumn string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyReorderCard(b, colIdx, cardIdx, beforeIdx, targetColumn)
+		return applyReorderCard(b, colIdx, cardIdx, beforeIdx, targetColumn)
 	})
 }
 
-// ApplyCompleteCard toggles the completed state of a card within b.
-func ApplyCompleteCard(b *models.Board, colIdx, cardIdx int) error {
+// applyCompleteCard toggles the completed state of a card within b.
+func applyCompleteCard(b *models.Board, colIdx, cardIdx int) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
@@ -291,12 +291,12 @@ func ApplyCompleteCard(b *models.Board, colIdx, cardIdx int) error {
 // CompleteCard toggles the completed state of a card.
 func (e *Engine) CompleteCard(boardPath string, colIdx, cardIdx int) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyCompleteCard(b, colIdx, cardIdx)
+		return applyCompleteCard(b, colIdx, cardIdx)
 	})
 }
 
-// ApplyTagCard adds tags to a card within b.
-func ApplyTagCard(b *models.Board, colIdx, cardIdx int, tags []string) error {
+// applyTagCard adds tags to a card within b.
+func applyTagCard(b *models.Board, colIdx, cardIdx int, tags []string) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
@@ -317,12 +317,12 @@ func ApplyTagCard(b *models.Board, colIdx, cardIdx int, tags []string) error {
 // TagCard adds tags to a card.
 func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyTagCard(b, colIdx, cardIdx, tags)
+		return applyTagCard(b, colIdx, cardIdx, tags)
 	})
 }
 
-// ApplyEditCard updates a card's fields within b.
-func ApplyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tags []string, links []string, priority, due, assignee string) error {
+// applyEditCard updates a card's fields within b.
+func applyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tags []string, links []string, priority, due, assignee string) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
@@ -343,12 +343,12 @@ func ApplyEditCard(b *models.Board, colIdx, cardIdx int, title, body string, tag
 // EditCard updates a card's title, body, tags, links, priority, due, and assignee in-place.
 func (e *Engine) EditCard(boardPath string, colIdx, cardIdx int, title, body string, tags []string, links []string, priority, due, assignee string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyEditCard(b, colIdx, cardIdx, title, body, tags, links, priority, due, assignee)
+		return applyEditCard(b, colIdx, cardIdx, title, body, tags, links, priority, due, assignee)
 	})
 }
 
-// ApplyDeleteCard removes a card from b by column and card index.
-func ApplyDeleteCard(b *models.Board, colIdx, cardIdx int) error {
+// applyDeleteCard removes a card from b by column and card index.
+func applyDeleteCard(b *models.Board, colIdx, cardIdx int) error {
 	if err := validateIndices(b, colIdx, cardIdx); err != nil {
 		return err
 	}
@@ -359,7 +359,7 @@ func ApplyDeleteCard(b *models.Board, colIdx, cardIdx int) error {
 // DeleteCard removes a card by column and card index.
 func (e *Engine) DeleteCard(boardPath string, colIdx, cardIdx int) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyDeleteCard(b, colIdx, cardIdx)
+		return applyDeleteCard(b, colIdx, cardIdx)
 	})
 }
 
@@ -382,8 +382,8 @@ func (e *Engine) ShowCard(boardPath string, colIdx, cardIdx int) (*models.Card, 
 	return &card, board.Columns[colIdx].Name, nil
 }
 
-// ApplyAddColumn adds a new column to b.
-func ApplyAddColumn(b *models.Board, colName string) error {
+// applyAddColumn adds a new column to b.
+func applyAddColumn(b *models.Board, colName string) error {
 	b.Columns = append(b.Columns, models.Column{Name: colName})
 	return nil
 }
@@ -391,12 +391,12 @@ func ApplyAddColumn(b *models.Board, colName string) error {
 // AddColumn adds a new column to the board.
 func (e *Engine) AddColumn(boardPath, colName string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyAddColumn(b, colName)
+		return applyAddColumn(b, colName)
 	})
 }
 
-// ApplyDeleteColumn removes a column and all its cards from b.
-func ApplyDeleteColumn(b *models.Board, colName string) error {
+// applyDeleteColumn removes a column and all its cards from b.
+func applyDeleteColumn(b *models.Board, colName string) error {
 	found := false
 	var cols []models.Column
 	for i, col := range b.Columns {
@@ -420,12 +420,12 @@ func ApplyDeleteColumn(b *models.Board, colName string) error {
 // DeleteColumn removes a column and all its cards.
 func (e *Engine) DeleteColumn(boardPath, colName string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyDeleteColumn(b, colName)
+		return applyDeleteColumn(b, colName)
 	})
 }
 
-// ApplyRenameColumn renames a column within b.
-func ApplyRenameColumn(b *models.Board, oldName, newName string) error {
+// applyRenameColumn renames a column within b.
+func applyRenameColumn(b *models.Board, oldName, newName string) error {
 	found := false
 	for i := range b.Columns {
 		if b.Columns[i].Name == oldName {
@@ -442,13 +442,13 @@ func ApplyRenameColumn(b *models.Board, oldName, newName string) error {
 // RenameColumn renames a column in-place.
 func (e *Engine) RenameColumn(boardPath, oldName, newName string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyRenameColumn(b, oldName, newName)
+		return applyRenameColumn(b, oldName, newName)
 	})
 }
 
-// ApplyMoveColumn reorders a column within b to be after afterCol.
+// applyMoveColumn reorders a column within b to be after afterCol.
 // Empty afterCol means prepend to front.
-func ApplyMoveColumn(b *models.Board, colName, afterCol string) error {
+func applyMoveColumn(b *models.Board, colName, afterCol string) error {
 	// Ensure ListCollapse is aligned with columns.
 	for len(b.ListCollapse) < len(b.Columns) {
 		b.ListCollapse = append(b.ListCollapse, false)
@@ -501,12 +501,12 @@ func ApplyMoveColumn(b *models.Board, colName, afterCol string) error {
 // MoveColumn reorders a column to be after another column.
 func (e *Engine) MoveColumn(boardPath, colName, afterCol string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyMoveColumn(b, colName, afterCol)
+		return applyMoveColumn(b, colName, afterCol)
 	})
 }
 
-// ApplyToggleColumnCollapse toggles the collapsed state of a column within b.
-func ApplyToggleColumnCollapse(b *models.Board, colIndex int) error {
+// applyToggleColumnCollapse toggles the collapsed state of a column within b.
+func applyToggleColumnCollapse(b *models.Board, colIndex int) error {
 	if colIndex < 0 || colIndex >= len(b.Columns) {
 		return fmt.Errorf("column index %d: %w", colIndex, ErrOutOfRange)
 	}
@@ -521,12 +521,12 @@ func ApplyToggleColumnCollapse(b *models.Board, colIndex int) error {
 // ToggleColumnCollapse toggles the collapsed state of a column by index.
 func (e *Engine) ToggleColumnCollapse(boardPath string, colIndex int) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyToggleColumnCollapse(b, colIndex)
+		return applyToggleColumnCollapse(b, colIndex)
 	})
 }
 
-// ApplyUpdateBoardMeta updates a board's name and description within b.
-func ApplyUpdateBoardMeta(b *models.Board, name, description string) error {
+// applyUpdateBoardMeta updates a board's name and description within b.
+func applyUpdateBoardMeta(b *models.Board, name, description string) error {
 	if name != "" {
 		b.Name = name
 	}
@@ -537,12 +537,12 @@ func ApplyUpdateBoardMeta(b *models.Board, name, description string) error {
 // UpdateBoardMeta updates a board's name and description.
 func (e *Engine) UpdateBoardMeta(boardPath, name, description string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyUpdateBoardMeta(b, name, description)
+		return applyUpdateBoardMeta(b, name, description)
 	})
 }
 
-// ApplyUpdateBoardMembers sets the member list within b.
-func ApplyUpdateBoardMembers(b *models.Board, members []string) error {
+// applyUpdateBoardMembers sets the member list within b.
+func applyUpdateBoardMembers(b *models.Board, members []string) error {
 	b.Members = members
 	return nil
 }
@@ -550,13 +550,13 @@ func ApplyUpdateBoardMembers(b *models.Board, members []string) error {
 // UpdateBoardMembers sets the member list for a board.
 func (e *Engine) UpdateBoardMembers(boardPath string, members []string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyUpdateBoardMembers(b, members)
+		return applyUpdateBoardMembers(b, members)
 	})
 }
 
-// ApplyUpdateBoardIcon sets the icon slug/emoji and/or icon background color within b.
+// applyUpdateBoardIcon sets the icon slug/emoji and/or icon background color within b.
 // nil args leave the corresponding field untouched; empty strings clear it.
-func ApplyUpdateBoardIcon(b *models.Board, icon, iconColor *string) error {
+func applyUpdateBoardIcon(b *models.Board, icon, iconColor *string) error {
 	if icon != nil {
 		b.Icon = *icon
 	}
@@ -569,7 +569,7 @@ func ApplyUpdateBoardIcon(b *models.Board, icon, iconColor *string) error {
 // UpdateBoardIcon sets the icon slug/emoji for a board. Does not touch IconColor.
 func (e *Engine) UpdateBoardIcon(boardPath, icon string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyUpdateBoardIcon(b, &icon, nil)
+		return applyUpdateBoardIcon(b, &icon, nil)
 	})
 }
 
@@ -587,9 +587,9 @@ func removeCardAt(cards []models.Card, idx int) []models.Card {
 	return append(cards[:idx], cards[idx+1:]...)
 }
 
-// ApplySortColumn sorts the cards in a column of b by the given key.
+// applySortColumn sorts the cards in a column of b by the given key.
 // Supported keys: "name", "priority", "due".
-func ApplySortColumn(b *models.Board, colIdx int, sortBy string) error {
+func applySortColumn(b *models.Board, colIdx int, sortBy string) error {
 	if colIdx < 0 || colIdx >= len(b.Columns) {
 		return fmt.Errorf("column index %d: %w", colIdx, ErrOutOfRange)
 	}
@@ -628,7 +628,7 @@ func ApplySortColumn(b *models.Board, colIdx int, sortBy string) error {
 // Supported keys: "name", "priority", "due".
 func (e *Engine) SortColumn(boardPath string, colIdx int, sortBy string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplySortColumn(b, colIdx, sortBy)
+		return applySortColumn(b, colIdx, sortBy)
 	})
 }
 
@@ -647,8 +647,8 @@ func priorityRank(p string) int {
 	}
 }
 
-// ApplyUpdateBoardSettings replaces the per-board settings overrides within b.
-func ApplyUpdateBoardSettings(b *models.Board, settings models.BoardSettings) error {
+// applyUpdateBoardSettings replaces the per-board settings overrides within b.
+func applyUpdateBoardSettings(b *models.Board, settings models.BoardSettings) error {
 	b.Settings = settings
 	return nil
 }
@@ -656,6 +656,40 @@ func ApplyUpdateBoardSettings(b *models.Board, settings models.BoardSettings) er
 // UpdateBoardSettings replaces a board's per-board settings overrides.
 func (e *Engine) UpdateBoardSettings(boardPath string, settings models.BoardSettings) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
-		return ApplyUpdateBoardSettings(b, settings)
+		return applyUpdateBoardSettings(b, settings)
+	})
+}
+
+// applyPatchBoardSettings merges non-nil pointer fields from patch into
+// b.Settings. Nil fields in patch leave the corresponding override on b
+// unchanged, matching the LocalAdapter's `{ ...existing, ...patch }` semantics.
+func applyPatchBoardSettings(b *models.Board, patch models.BoardSettings) error {
+	if patch.ShowCheckbox != nil {
+		b.Settings.ShowCheckbox = patch.ShowCheckbox
+	}
+	if patch.CardPosition != nil {
+		b.Settings.CardPosition = patch.CardPosition
+	}
+	if patch.ExpandColumns != nil {
+		b.Settings.ExpandColumns = patch.ExpandColumns
+	}
+	if patch.ViewMode != nil {
+		b.Settings.ViewMode = patch.ViewMode
+	}
+	if patch.CardDisplayMode != nil {
+		b.Settings.CardDisplayMode = patch.CardDisplayMode
+	}
+	if patch.WeekStart != nil {
+		b.Settings.WeekStart = patch.WeekStart
+	}
+	return nil
+}
+
+// PatchBoardSettings applies a partial update to a board's per-board
+// settings overrides under the per-board lock. Non-nil fields in patch
+// replace; nil fields preserve existing overrides.
+func (e *Engine) PatchBoardSettings(boardPath string, patch models.BoardSettings) error {
+	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {
+		return applyPatchBoardSettings(b, patch)
 	})
 }

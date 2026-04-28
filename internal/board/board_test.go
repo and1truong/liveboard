@@ -1047,7 +1047,7 @@ func TestMoveCardToBoard_SameBoardRejected(t *testing.T) {
 
 func TestApplyAddCardAssignsID(t *testing.T) {
 	b := &models.Board{Columns: []models.Column{{Name: "Todo"}}}
-	c, err := ApplyAddCard(b, "Todo", "hello", false)
+	c, err := applyAddCard(b, "Todo", "hello", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1061,7 +1061,7 @@ func TestApplyAddCardAssignsID(t *testing.T) {
 
 func TestApplyEditCardAssignsIDWhenMissing(t *testing.T) {
 	b := &models.Board{Columns: []models.Column{{Name: "Todo", Cards: []models.Card{{Title: "x"}}}}}
-	if err := ApplyEditCard(b, 0, 0, "x", "", nil, nil, "", "", ""); err != nil {
+	if err := applyEditCard(b, 0, 0, "x", "", nil, nil, "", "", ""); err != nil {
 		t.Fatal(err)
 	}
 	if b.Columns[0].Cards[0].ID == "" {
@@ -1094,11 +1094,11 @@ func TestEditCardLinksPersistedOnReload(t *testing.T) {
 
 func TestApplyAddCardDistinctIDs(t *testing.T) {
 	b := &models.Board{Columns: []models.Column{{Name: "Todo"}}}
-	c1, err := ApplyAddCard(b, "Todo", "a", false)
+	c1, err := applyAddCard(b, "Todo", "a", false)
 	if err != nil {
 		t.Fatal(err)
 	}
-	c2, err := ApplyAddCard(b, "Todo", "b", false)
+	c2, err := applyAddCard(b, "Todo", "b", false)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -1112,23 +1112,71 @@ func TestApplyCompleteTagMovePreserveAndAssignID(t *testing.T) {
 		{Name: "Todo", Cards: []models.Card{{Title: "x"}}},
 		{Name: "Done"},
 	}}
-	if err := ApplyCompleteCard(b, 0, 0); err != nil {
+	if err := applyCompleteCard(b, 0, 0); err != nil {
 		t.Fatal(err)
 	}
 	id1 := b.Columns[0].Cards[0].ID
 	if id1 == "" {
 		t.Fatal("complete_card must assign ID")
 	}
-	if err := ApplyTagCard(b, 0, 0, []string{"a"}); err != nil {
+	if err := applyTagCard(b, 0, 0, []string{"a"}); err != nil {
 		t.Fatal(err)
 	}
 	if b.Columns[0].Cards[0].ID != id1 {
 		t.Fatal("tag_card must preserve ID")
 	}
-	if err := ApplyMoveCard(b, 0, 0, "Done"); err != nil {
+	if err := applyMoveCard(b, 0, 0, "Done"); err != nil {
 		t.Fatal(err)
 	}
 	if b.Columns[1].Cards[0].ID != id1 {
 		t.Fatal("move_card must preserve ID")
+	}
+}
+
+func boolPtr(b bool) *bool    { return &b }
+func strPtr(s string) *string { return &s }
+
+func TestApplyPatchBoardSettings_mergesNonNilFields(t *testing.T) {
+	b := &models.Board{Settings: models.BoardSettings{
+		CardPosition: strPtr("prepend"),
+		ViewMode:     strPtr("board"),
+	}}
+
+	patch := models.BoardSettings{
+		ShowCheckbox: boolPtr(true),
+		ViewMode:     strPtr("calendar"),
+	}
+	if err := applyPatchBoardSettings(b, patch); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+
+	// Existing CardPosition override survives — patch had a nil there.
+	if b.Settings.CardPosition == nil || *b.Settings.CardPosition != "prepend" {
+		t.Errorf("CardPosition should be preserved, got %v", b.Settings.CardPosition)
+	}
+	// ViewMode replaced by patch.
+	if b.Settings.ViewMode == nil || *b.Settings.ViewMode != "calendar" {
+		t.Errorf("ViewMode should be 'calendar', got %v", b.Settings.ViewMode)
+	}
+	// ShowCheckbox set from patch.
+	if b.Settings.ShowCheckbox == nil || *b.Settings.ShowCheckbox != true {
+		t.Errorf("ShowCheckbox should be true, got %v", b.Settings.ShowCheckbox)
+	}
+}
+
+func TestApplyPatchBoardSettings_emptyPatchIsNoOp(t *testing.T) {
+	original := models.BoardSettings{
+		CardPosition: strPtr("prepend"),
+		ViewMode:     strPtr("list"),
+		WeekStart:    strPtr("monday"),
+	}
+	b := &models.Board{Settings: original}
+	if err := applyPatchBoardSettings(b, models.BoardSettings{}); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if b.Settings.CardPosition == nil || *b.Settings.CardPosition != "prepend" ||
+		b.Settings.ViewMode == nil || *b.Settings.ViewMode != "list" ||
+		b.Settings.WeekStart == nil || *b.Settings.WeekStart != "monday" {
+		t.Errorf("empty patch should leave settings unchanged, got %+v", b.Settings)
 	}
 }

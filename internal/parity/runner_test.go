@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	v1 "github.com/and1truong/liveboard/internal/api/v1"
 	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/pkg/models"
 )
@@ -62,12 +61,12 @@ func runVector(t *testing.T, path string) {
 		t.Fatalf("parse board_before: %v", err)
 	}
 
-	var op v1.MutationOp
+	var op board.MutationOp
 	if err = json.Unmarshal(vec.Op, &op); err != nil {
 		t.Fatalf("parse op: %v", err)
 	}
 
-	applyErr := v1.Apply(&b, op)
+	applyErr := board.ApplyMutation(&b, op)
 
 	if vec.ExpectedError != "" {
 		if applyErr == nil {

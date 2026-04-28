@@ -12,6 +12,21 @@ import (
 	"github.com/and1truong/liveboard/pkg/models"
 )
 
+// dispatch executes op against eng using the same MutateBoard + ApplyMutation
+// pair that postMutation uses. Mirrors the production wiring so tests exercise
+// the same atomic version-checked path.
+func dispatch(eng *board.Engine, boardPath string, clientVersion int, op board.MutationOp) (*models.Board, error) {
+	var out *models.Board
+	err := eng.MutateBoard(boardPath, clientVersion, func(b *models.Board) error {
+		if e := board.ApplyMutation(b, op); e != nil {
+			return e
+		}
+		out = b
+		return nil
+	})
+	return out, err
+}
+
 // newTwoColumnDeps returns a Deps with demo.md seeded with two columns ("Todo"
 // and "Done"), each containing one card. Some ops (move_card, move_column,
 // reorder_card) require at least two columns to make sensible calls.
@@ -19,11 +34,9 @@ func newTwoColumnDeps(t *testing.T) (v1.Deps, string) {
 	t.Helper()
 	deps := newTestDeps(t)
 	path := filepath.Join(deps.Workspace.Dir, "demo.md")
-	// Add a second column so move/reorder ops have a valid target.
 	if err := deps.Engine.AddColumn(path, "Done"); err != nil {
 		t.Fatalf("seed second column: %v", err)
 	}
-	// Add a second card to Todo so reorder has a non-trivial before_idx.
 	if _, err := deps.Engine.AddCard(path, "Todo", "Second", false); err != nil {
 		t.Fatalf("seed second card: %v", err)
 	}
@@ -33,18 +46,18 @@ func newTwoColumnDeps(t *testing.T) (v1.Deps, string) {
 func TestDispatchAllVariants(t *testing.T) {
 	cases := []struct {
 		name    string
-		op      func(string) v1.MutationOp
+		op      func(string) board.MutationOp
 		deps    func(t *testing.T) (v1.Deps, string)
 		wantErr bool
-		errNote string // why we expect an error
+		errNote string
 	}{
 		// ── card ops ──────────────────────────────────────────────────────────
 		{
 			name: "add_card",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:    "add_card",
-					AddCard: &v1.AddCardOp{Column: "Todo", Title: "new card"},
+					AddCard: &board.AddCardOp{Column: "Todo", Title: "new card"},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -54,10 +67,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "add_card_prepend",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:    "add_card",
-					AddCard: &v1.AddCardOp{Column: "Todo", Title: "prepended", Prepend: true},
+					AddCard: &board.AddCardOp{Column: "Todo", Title: "prepended", Prepend: true},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -67,11 +80,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "move_card",
-			op: func(_ string) v1.MutationOp {
-				// Move card 0 from column 0 (Todo) to column 1 (Done).
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:     "move_card",
-					MoveCard: &v1.MoveCardOp{ColIdx: 0, CardIdx: 0, TargetColumn: "Done"},
+					MoveCard: &board.MoveCardOp{ColIdx: 0, CardIdx: 0, TargetColumn: "Done"},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -81,11 +93,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "reorder_card",
-			op: func(_ string) v1.MutationOp {
-				// Two cards in Todo (indices 0,1); move card 1 before index 0.
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type: "reorder_card",
-					ReorderCard: &v1.ReorderCardOp{
+					ReorderCard: &board.ReorderCardOp{
 						ColIdx:       0,
 						CardIdx:      1,
 						BeforeIdx:    0,
@@ -100,10 +111,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "edit_card",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type: "edit_card",
-					EditCard: &v1.EditCardOp{
+					EditCard: &board.EditCardOp{
 						ColIdx:   0,
 						CardIdx:  0,
 						Title:    "edited title",
@@ -122,10 +133,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "delete_card",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:       "delete_card",
-					DeleteCard: &v1.DeleteCardOp{ColIdx: 0, CardIdx: 0},
+					DeleteCard: &board.DeleteCardOp{ColIdx: 0, CardIdx: 0},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -135,10 +146,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "complete_card",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:         "complete_card",
-					CompleteCard: &v1.CompleteCardOp{ColIdx: 0, CardIdx: 0},
+					CompleteCard: &board.CompleteCardOp{ColIdx: 0, CardIdx: 0},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -148,10 +159,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "tag_card",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:    "tag_card",
-					TagCard: &v1.TagCardOp{ColIdx: 0, CardIdx: 0, Tags: []string{"urgent"}},
+					TagCard: &board.TagCardOp{ColIdx: 0, CardIdx: 0, Tags: []string{"urgent"}},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -163,10 +174,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		// ── column ops ────────────────────────────────────────────────────────
 		{
 			name: "add_column",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:      "add_column",
-					AddColumn: &v1.AddColumnOp{Name: "Backlog"},
+					AddColumn: &board.AddColumnOp{Name: "Backlog"},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -176,10 +187,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "rename_column",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:         "rename_column",
-					RenameColumn: &v1.RenameColumnOp{OldName: "Todo", NewName: "Doing"},
+					RenameColumn: &board.RenameColumnOp{OldName: "Todo", NewName: "Doing"},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -188,13 +199,11 @@ func TestDispatchAllVariants(t *testing.T) {
 			},
 		},
 		{
-			// delete_column: seed has only "Todo"; after adding "Done" we delete
-			// "Done" so the board still has at least one column afterwards.
 			name: "delete_column",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:         "delete_column",
-					DeleteColumn: &v1.DeleteColumnOp{Name: "Done"},
+					DeleteColumn: &board.DeleteColumnOp{Name: "Done"},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -203,13 +212,11 @@ func TestDispatchAllVariants(t *testing.T) {
 			},
 		},
 		{
-			// move_column: board has Todo(0) and Done(1); move Done after "" (i.e.
-			// to front) to make it Done(0), Todo(1).
 			name: "move_column",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:       "move_column",
-					MoveColumn: &v1.MoveColumnOp{Name: "Done", AfterCol: ""},
+					MoveColumn: &board.MoveColumnOp{Name: "Done", AfterCol: ""},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -219,10 +226,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "sort_column",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:       "sort_column",
-					SortColumn: &v1.SortColumnOp{ColIdx: 0, SortBy: "priority"},
+					SortColumn: &board.SortColumnOp{ColIdx: 0, SortBy: "priority"},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -232,10 +239,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "toggle_column_collapse",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:                 "toggle_column_collapse",
-					ToggleColumnCollapse: &v1.ToggleColumnCollapseOp{ColIdx: 0},
+					ToggleColumnCollapse: &board.ToggleColumnCollapseOp{ColIdx: 0},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -247,10 +254,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		// ── board meta ops ────────────────────────────────────────────────────
 		{
 			name: "update_board_meta",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type: "update_board_meta",
-					UpdateBoardMeta: &v1.UpdateBoardMetaOp{
+					UpdateBoardMeta: &board.UpdateBoardMetaOp{
 						Name:        "Renamed",
 						Description: "desc",
 					},
@@ -263,10 +270,10 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "update_board_members",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
 					Type:               "update_board_members",
-					UpdateBoardMembers: &v1.UpdateBoardMembersOp{Members: []string{"alice", "bob"}},
+					UpdateBoardMembers: &board.UpdateBoardMembersOp{Members: []string{"alice", "bob"}},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -276,10 +283,11 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "update_board_icon",
-			op: func(_ string) v1.MutationOp {
-				return v1.MutationOp{
+			op: func(_ string) board.MutationOp {
+				icon := "🚀"
+				return board.MutationOp{
 					Type:            "update_board_icon",
-					UpdateBoardIcon: &v1.UpdateBoardIconOp{Icon: strPtr("🚀")},
+					UpdateBoardIcon: &board.UpdateBoardIconOp{Icon: &icon},
 				}
 			},
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -289,11 +297,11 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name: "update_board_settings",
-			op: func(_ string) v1.MutationOp {
+			op: func(_ string) board.MutationOp {
 				show := true
-				return v1.MutationOp{
+				return board.MutationOp{
 					Type: "update_board_settings",
-					UpdateBoardSettings: &v1.UpdateBoardSettingsOp{
+					UpdateBoardSettings: &board.UpdateBoardSettingsOp{
 						Settings: models.BoardSettings{ShowCheckbox: &show},
 					},
 				}
@@ -307,9 +315,9 @@ func TestDispatchAllVariants(t *testing.T) {
 		// ── error cases ───────────────────────────────────────────────────────
 		{
 			name:    "unknown_op_errors",
-			op:      func(_ string) v1.MutationOp { return v1.MutationOp{Type: "bogus"} },
+			op:      func(_ string) board.MutationOp { return board.MutationOp{Type: "bogus"} },
 			wantErr: true,
-			errNote: "Dispatch must reject unknown op types",
+			errNote: "dispatch must reject unknown op types",
 			deps: func(t *testing.T) (v1.Deps, string) {
 				deps := newTestDeps(t)
 				return deps, filepath.Join(deps.Workspace.Dir, "demo.md")
@@ -317,7 +325,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		},
 		{
 			name:    "add_card_nil_params_errors",
-			op:      func(_ string) v1.MutationOp { return v1.MutationOp{Type: "add_card"} },
+			op:      func(_ string) board.MutationOp { return board.MutationOp{Type: "add_card"} },
 			wantErr: true,
 			errNote: "nil params should be caught before engine call",
 			deps: func(t *testing.T) (v1.Deps, string) {
@@ -331,7 +339,7 @@ func TestDispatchAllVariants(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			deps, path := tc.deps(t)
 			op := tc.op(path)
-			_, err := v1.Dispatch(deps.Engine, path, -1, op)
+			_, err := dispatch(deps.Engine, path, -1, op)
 			if tc.wantErr {
 				if err == nil {
 					t.Fatalf("wanted error (%s) but got nil", tc.errNote)
@@ -342,7 +350,6 @@ func TestDispatchAllVariants(t *testing.T) {
 				t.Fatalf("dispatch %q: %v", tc.name, err)
 			}
 
-			// Spot-check that the file was actually written for a few key ops.
 			switch op.Type {
 			case "add_card":
 				raw, _ := os.ReadFile(path)
@@ -361,15 +368,8 @@ func TestDispatchAllVariants(t *testing.T) {
 				}
 			case "update_board_icon":
 				raw, _ := os.ReadFile(path)
-				// The YAML library escapes multi-byte emoji (e.g. 🚀 → "\U0001F680"),
-				// so check for the yaml key rather than the literal rune.
 				if !strings.Contains(string(raw), "icon:") {
 					t.Errorf("update_board_icon: 'icon:' key not found in file")
-				}
-			case "update_tag_colors":
-				raw, _ := os.ReadFile(path)
-				if !strings.Contains(string(raw), "tag-colors:") {
-					t.Errorf("update_tag_colors: 'tag-colors:' key not found in file")
 				}
 			}
 		})
@@ -379,13 +379,13 @@ func TestDispatchAllVariants(t *testing.T) {
 func TestApply_moveCardToBoard(t *testing.T) {
 	deps := newTestDeps(t)
 	path := filepath.Join(deps.Workspace.Dir, "demo.md")
-	op := v1.MutationOp{
+	op := board.MutationOp{
 		Type: "move_card_to_board",
-		MoveCardToBoard: &v1.MoveCardToBoardOp{
+		MoveCardToBoard: &board.MoveCardToBoardOp{
 			ColIdx: 0, CardIdx: 0, DstBoard: "other", DstColumn: "Inbox",
 		},
 	}
-	b, err := v1.Dispatch(deps.Engine, path, -1, op)
+	b, err := dispatch(deps.Engine, path, -1, op)
 	if err != nil {
 		t.Fatalf("dispatch: %v", err)
 	}
@@ -398,31 +398,12 @@ func TestApply_moveCardToBoard(t *testing.T) {
 }
 
 func TestApply_nilParams(t *testing.T) {
-	nilOps := []v1.MutationOp{
-		{Type: "move_card"},
-		{Type: "reorder_card"},
-		{Type: "edit_card"},
-		{Type: "delete_card"},
-		{Type: "complete_card"},
-		{Type: "tag_card"},
-		{Type: "add_column"},
-		{Type: "rename_column"},
-		{Type: "delete_column"},
-		{Type: "move_column"},
-		{Type: "sort_column"},
-		{Type: "toggle_column_collapse"},
-		{Type: "update_board_meta"},
-		{Type: "update_board_members"},
-		{Type: "update_board_icon"},
-		{Type: "update_board_settings"},
-		{Type: "update_tag_colors"},
-		{Type: "move_card_to_board"},
-	}
 	b := &models.Board{Columns: []models.Column{{Name: "Todo", Cards: []models.Card{{Title: "x"}}}}}
-	for _, op := range nilOps {
-		t.Run(op.Type, func(t *testing.T) {
-			if err := v1.Apply(b, op); err == nil {
-				t.Errorf("want error for nil params on %q, got nil", op.Type)
+	for _, typ := range board.MutationVariantNames() {
+		t.Run(typ, func(t *testing.T) {
+			op := board.MutationOp{Type: typ}
+			if err := board.ApplyMutation(b, op); err == nil {
+				t.Errorf("want error for nil params on %q, got nil", typ)
 			}
 		})
 	}
@@ -432,13 +413,11 @@ func TestDispatchRespectsClientVersion(t *testing.T) {
 	deps := newTestDeps(t)
 	path := filepath.Join(deps.Workspace.Dir, "demo.md")
 
-	// Stale version should fail with ErrVersionConflict.
-	// Seed board is at version 1; passing version 0 must be rejected.
-	op := v1.MutationOp{
+	op := board.MutationOp{
 		Type:    "add_card",
-		AddCard: &v1.AddCardOp{Column: "Todo", Title: "v-fail"},
+		AddCard: &board.AddCardOp{Column: "Todo", Title: "v-fail"},
 	}
-	_, err := v1.Dispatch(deps.Engine, path, 0, op)
+	_, err := dispatch(deps.Engine, path, 0, op)
 	if err == nil {
 		t.Fatal("want ErrVersionConflict, got nil")
 	}
