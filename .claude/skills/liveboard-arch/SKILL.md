@@ -21,7 +21,6 @@ Go server
     ├─ GET /app/*                  ← embedded Vite bundles (shell + renderer)
     │    (dev: proxied to Vite via LIVEBOARD_{SHELL,RENDERER}_DEV_URL)
     ├─ /api/v1/*                   ← internal/api/v1 — JSON API
-    ├─ /boards/*                   ← internal/api — legacy REST (still live)
     ├─ /mcp                        ← internal/mcp — Streamable HTTP
     ├─ /api/export                 ← internal/export — ZIP (html | md)
     └─ GET /                       ← 302 /app/
@@ -30,16 +29,9 @@ Go server
 Storage: `.md` files in workspace dir. No database.
 Realtime: `internal/web/SSEBroker` with per-board, workspace-list, and all-boards fan-out channels.
 
-## Two JSON Error Paths
+## JSON Error Shape
 
-Both convert sentinel errors to HTTP status, but they are **separate** implementations. Match the package when editing.
-
-| Path | Package | Error shape | Mapper |
-|---|---|---|---|
-| New JSON API | `internal/api/v1/` | `{error, code, status}` — codes: `NOT_FOUND`, `VERSION_CONFLICT`, `ALREADY_EXISTS`, `OUT_OF_RANGE`, `INVALID`, `INTERNAL` | `writeError()` in `helpers.go` |
-| Legacy REST | `internal/api/` | `{error, status}` — no code field | `handleError()` in `helpers.go` |
-
-Adapter/shell code (`web/shared/src/adapters/server.ts`) reads the `code` field from v1 responses.
+All JSON responses use a single shape: `{error, code, status}`. Mapping is `writeError()` in `internal/api/v1/helpers.go`. Codes: `NOT_FOUND`, `VERSION_CONFLICT`, `ALREADY_EXISTS`, `OUT_OF_RANGE`, `INVALID`, `INTERNAL`. Adapter/shell code (`web/shared/src/adapters/server.ts`) reads the `code` field.
 
 **Sentinel errors** (source of truth):
 - `board.ErrNotFound`, `board.ErrOutOfRange`, `board.ErrVersionConflict`, `board.ErrInvalidInput`, `board.ErrPartialSourceCleanup`
@@ -67,12 +59,16 @@ All board/workspace errors wrap sentinels with `%w`.
 
 `POST /api/v1/boards/mutate/{boardId}` is the single write endpoint.
 
-Body: `{ client_version: int, op: MutationOp }` where `MutationOp` is a tagged union with `type` discriminator and 19 variants (`add_card`, `move_card`, `reorder_card`, `edit_card`, `delete_card`, `complete_card`, `tag_card`, `add_column`, `rename_column`, `delete_column`, `move_column`, `sort_column`, `toggle_column_collapse`, `update_board_meta`, `update_board_members`, `update_board_icon`, `update_board_settings`, `update_tag_colors`, `move_card_to_board`).
+Body: `{ client_version: int, op: MutationOp }` where `MutationOp` is a tagged union with `type` discriminator and 18 variants (`add_card`, `move_card`, `reorder_card`, `edit_card`, `delete_card`, `complete_card`, `tag_card`, `add_column`, `rename_column`, `delete_column`, `move_column`, `sort_column`, `toggle_column_collapse`, `update_board_meta`, `update_board_members`, `update_board_icon`, `update_board_settings`, `move_card_to_board`).
+
+Variants are defined in a single registry — `mutationRegistry` in `internal/api/v1/mutation_registry.go` — which `MarshalJSON`, `UnmarshalJSON`, and `Apply` all dispatch through. Adding a variant: add a typed pointer field to `MutationOp` plus one registry entry.
+
+Tag colors are NOT a mutation — they live in `AppSettings` (workspace-level) and are written via `PUT /api/v1/settings`.
 
 Flow:
 1. `postMutation` (`internal/api/v1/mutations.go`) decodes request.
 2. `Dispatch(eng, path, clientVersion, op)` wraps a single `MutateBoard` call.
-3. `Apply(b, op)` (pure, no IO/locking) routes to `board.Apply*` functions in `internal/board/board.go`.
+3. `Apply(b, op)` (pure, no IO/locking) looks up the registry and routes to `board.Apply*` functions in `internal/board/board.go`.
 4. On success: `SSE.Publish(slug)`, `Search.UpdateBoard(slug, updated)`, return mutated board JSON.
 
 `move_card_to_board` is special-cased: the handler calls `Engine.MoveCardToBoard` directly (two-phase cross-board write) and fans out SSE to both src and dst.
@@ -130,7 +126,6 @@ AppSettings (settings.json in workspace root)
 | Concern | File |
 |---|---|
 | Router, shell mount, config injection | `internal/api/server.go` |
-| Legacy REST error mapping | `internal/api/helpers.go` |
 | v1 JSON API router | `internal/api/v1/router.go` |
 | v1 error mapping (`code` + status) | `internal/api/v1/helpers.go` |
 | v1 mutation dispatcher + `MutationOp` tagged union | `internal/api/v1/mutations.go` |

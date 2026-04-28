@@ -57,7 +57,7 @@ settings:                         # per-board setting overrides
 ## Architecture
 
 - `cmd/liveboard/` — CLI entrypoint (cobra)
-- `internal/api/` — chi router, middleware, shell/renderer mount, `/api/export`, legacy REST
+- `internal/api/` — chi router, middleware, shell/renderer mount, `/api/export`
 - `internal/api/v1/` — JSON API for renderer (boards, mutations, settings, search, SSE events)
 - `internal/web/` — settings persistence (`settings.go`) and SSE broker (`sse.go`); no HTTP handlers
 - `internal/board/` — CRUD engine, mutex-per-board, optimistic locking

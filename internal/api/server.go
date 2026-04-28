@@ -1,3 +1,5 @@
+// Package api wires the chi router, shell/renderer mount, and /api/export
+// handler. The canonical JSON API lives under internal/api/v1.
 package api
 
 import (
@@ -177,47 +179,8 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 	}))
 	r.Method(http.MethodGet, "/api/versions", apiv1.VersionsHandler())
 
-	// REST API routes (with JSON content type)
-	r.Route("/boards", func(r chi.Router) {
-		r.Use(jsonContentType)
-		r.Get("/", s.listBoards)
-		r.Post("/", s.createBoard)
-		r.Route("/{board}", func(r chi.Router) {
-			r.Get("/", s.getBoard)
-			r.Delete("/", s.deleteBoard)
-			r.Post("/columns", s.addColumn)
-			r.Route("/columns/{column}", func(r chi.Router) {
-				r.Delete("/", s.deleteColumn)
-				r.Post("/move", s.moveColumn)
-				r.Patch("/", s.stubHandler)
-				r.Post("/cards", s.addCard)
-			})
-		})
-	})
-
-	// Card operations: /boards/{board}/columns/{column}/cards is for adding,
-	// individual card ops use index-based paths:
-	r.Route("/boards/{board}/cols/{colIdx}/cards/{cardIdx}", func(r chi.Router) {
-		r.Use(jsonContentType)
-		r.Get("/", s.getCard)
-		r.Delete("/", s.deleteCard)
-		r.Post("/move", s.moveCard)
-		r.Post("/complete", s.completeCard)
-		r.Post("/tag", s.tagCard)
-	})
-
-	// Board-level card operations (non-indexed):
-	r.Route("/boards/{board}/cards", func(r chi.Router) {
-		r.Use(jsonContentType)
-		r.Post("/move-to-board", s.moveCardToBoard)
-	})
-
 	// MCP server (Streamable HTTP transport)
 	r.Mount("/mcp", s.mcpServer.StreamableHTTPHandler())
-
-	r.Get("/search", s.stubHandler)
-	r.Get("/events", s.stubHandler)
-	r.Get("/events/ws", s.stubHandler)
 }
 
 // exportHandler streams a workspace ZIP. ?format=md returns raw markdown;
@@ -374,15 +337,4 @@ func (s *Server) mountShellDevProxy(r chi.Router, shellURL, rendererURL string) 
 		shellProxy.ServeHTTP(w, req)
 	})
 	log.Printf("shell proxying to Vite: shell=%s renderer=%s", shellURL, rendererURL)
-}
-
-func jsonContentType(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (s *Server) stubHandler(w http.ResponseWriter, _ *http.Request) {
-	respondError(w, http.StatusNotImplemented, "not yet implemented")
 }
