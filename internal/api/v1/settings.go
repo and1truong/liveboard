@@ -23,10 +23,12 @@ func (d Deps) getBoardSettings(w http.ResponseWriter, r *http.Request) {
 	_ = json.NewEncoder(w).Encode(resolved)
 }
 
-// putBoardSettings replaces the board's per-board settings overrides with the
-// supplied payload (true replace, not a merge). Fields absent from the payload
-// will be nil in BoardSettings, which clears any existing per-board override for
-// that field so it falls back to the global default at resolve time.
+// putBoardSettings applies a partial update to a board's per-board settings
+// overrides. Non-nil fields in the payload replace existing overrides; absent
+// fields are left untouched. This matches the TS Partial<BoardSettings>
+// contract and the LocalAdapter's { ...existing, ...patch } semantics.
+// Invalid enum values in the payload are dropped by SanitizeBoardSettings
+// before merge.
 func (d Deps) putBoardSettings(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 1<<20)
 
@@ -41,7 +43,8 @@ func (d Deps) putBoardSettings(w http.ResponseWriter, r *http.Request) {
 		writeError(w, fmt.Errorf("%w: %v", errInvalid, err))
 		return
 	}
-	if err := d.Engine.UpdateBoardSettings(path, patch); err != nil {
+	web.SanitizeBoardSettings(&patch)
+	if err := d.Engine.PatchBoardSettings(path, patch); err != nil {
 		writeError(w, err)
 		return
 	}

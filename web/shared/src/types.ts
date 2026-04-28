@@ -67,49 +67,9 @@ export interface AppSettings {
   folder_collapse?: Record<string, boolean>
 }
 
-// Tagged union — discriminator is `type`.
-export type MutationOp =
-  | { type: 'add_card'; column: string; title: string; prepend?: boolean }
-  | { type: 'move_card'; col_idx: number; card_idx: number; target_column: string }
-  | {
-      type: 'reorder_card'
-      col_idx: number
-      card_idx: number
-      before_idx: number
-      target_column: string
-    }
-  | {
-      type: 'edit_card'
-      col_idx: number
-      card_idx: number
-      title: string
-      body: string
-      tags: string[]
-      links: string[]
-      priority: string
-      due: string
-      assignee: string
-    }
-  | { type: 'delete_card'; col_idx: number; card_idx: number }
-  | { type: 'complete_card'; col_idx: number; card_idx: number }
-  | { type: 'tag_card'; col_idx: number; card_idx: number; tags: string[] }
-  | { type: 'add_column'; name: string }
-  | { type: 'rename_column'; old_name: string; new_name: string }
-  | { type: 'delete_column'; name: string }
-  | { type: 'move_column'; name: string; after_col: string }
-  | { type: 'sort_column'; col_idx: number; sort_by: string }
-  | { type: 'toggle_column_collapse'; col_idx: number }
-  | { type: 'update_board_meta'; name: string; description: string }
-  | { type: 'update_board_members'; members: string[] }
-  | { type: 'update_board_icon'; icon?: string | null; icon_color?: string | null }
-  | { type: 'update_board_settings'; settings: BoardSettings }
-  | {
-      type: 'move_card_to_board'
-      col_idx: number
-      card_idx: number
-      dst_board: string
-      dst_column: string
-    }
+// MutationOp is generated from internal/board/mutation.go via
+// `make codegen` (cmd/gen-ts-mutations). The discriminator is `type`.
+export type { MutationOp } from './mutations.gen.js'
 
 // Canonical error codes. Thrown by applyOp as OpError instances.
 export type ErrorCode = 'NOT_FOUND' | 'OUT_OF_RANGE' | 'INVALID' | 'ALREADY_EXISTS' | 'INTERNAL'

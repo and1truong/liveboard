@@ -241,6 +241,37 @@ func oneOf(val, def string, allowed ...string) string {
 	return def
 }
 
+// SanitizeBoardSettings validates each non-nil per-board override and clears
+// (sets to nil) any field whose value is outside the accepted enum. Boolean
+// fields and CardDisplayMode are passed through untouched: the former have no
+// invalid state, the latter uses an enum that is currently inconsistent
+// between AppSettings ("full" | "hide" | "trim") and the renderer modal
+// ("normal" | "compact"); validating it here would silently drop overrides
+// the UI is actively writing.
+func SanitizeBoardSettings(bs *models.BoardSettings) {
+	if bs.CardPosition != nil {
+		switch *bs.CardPosition {
+		case "append", "prepend":
+		default:
+			bs.CardPosition = nil
+		}
+	}
+	if bs.ViewMode != nil {
+		switch *bs.ViewMode {
+		case "board", "list", "calendar", "table":
+		default:
+			bs.ViewMode = nil
+		}
+	}
+	if bs.WeekStart != nil {
+		switch *bs.WeekStart {
+		case "sunday", "monday":
+		default:
+			bs.WeekStart = nil
+		}
+	}
+}
+
 // ResolveSettings merges global defaults with per-board overrides.
 func ResolveSettings(global AppSettings, bs models.BoardSettings) ResolvedSettings {
 	rs := ResolvedSettings{
