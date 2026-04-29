@@ -1,6 +1,7 @@
 import { useCallback, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { GripVertical } from 'lucide-react'
 import type { Card as CardModel } from '@shared/types.js'
 import { CardEditable } from '../components/CardEditable.js'
 import { CardContextMenu } from '../components/CardContextMenu.js'
@@ -96,8 +97,10 @@ export function SortableCard({
           tabIndex={showFocusedTabStop ? 0 : -1}
           onFocus={() => setFocused({ colIdx, cardIdx })}
           onKeyDown={onKeyDown}
-          className={`group/sortable relative outline-none rounded-md ${
-            isFocused ? 'ring-2 ring-[color:var(--accent-500)] ring-offset-2' : ''
+          className={`group/sortable relative outline-none rounded-md transition-[box-shadow] duration-150 ${
+            isFocused
+              ? 'shadow-[0_14px_32px_-12px_rgba(15,23,42,0.28),0_4px_10px_-4px_rgba(15,23,42,0.1)]'
+              : ''
           }`}
         >
           {showDropLine && (
@@ -111,9 +114,9 @@ export function SortableCard({
             aria-label="drag card"
             {...attributes}
             {...listeners}
-            className="absolute -left-4 top-3 cursor-grab text-slate-300 opacity-0 group-hover/sortable:opacity-100 active:cursor-grabbing"
+            className="absolute -left-5 top-3 flex h-5 w-4 items-center justify-center cursor-grab text-slate-500 opacity-0 group-hover/sortable:opacity-100 hover:text-slate-700 active:cursor-grabbing dark:text-slate-400 dark:hover:text-slate-200"
           >
-            ⋮⋮
+            <GripVertical size={14} aria-hidden strokeWidth={2.25} />
           </button>
           <CardEditable
             card={card}
@@ -122,6 +125,7 @@ export function SortableCard({
             boardId={boardId}
             modalOpen={modalOpen}
             onModalOpenChange={setModalOpen}
+            isActive={isFocused}
           />
         </div>
       </CardContextMenu>

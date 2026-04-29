@@ -95,8 +95,8 @@ export function SortableColumn({
   }
 
   const sectionClass = isFocusMode
-    ? 'flex w-full flex-1 flex-col rounded-lg bg-[color:var(--color-column-bg)] p-3'
-    : `flex ${settings.expand_columns ? 'min-w-[200px] flex-[1_1_0]' : 'w-72 shrink-0'} flex-col rounded-lg bg-[color:var(--color-column-bg)] p-3`
+    ? 'flex w-full flex-1 flex-col px-1 pt-1'
+    : `flex ${settings.expand_columns ? 'min-w-[200px] flex-[1_1_0]' : 'w-72 shrink-0'} flex-col px-1 pt-1`
 
   return (
     <section
@@ -119,7 +119,6 @@ export function SortableColumn({
         <div className="flex-1">
           <ColumnHeader
             name={column.name}
-            cardCount={visibleCards.length}
             colIdx={colIdx}
             allColumnNames={allColumnNames}
             boardId={boardId}

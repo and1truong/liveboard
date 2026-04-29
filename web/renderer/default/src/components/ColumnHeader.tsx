@@ -1,20 +1,23 @@
 import { useState, useRef, useEffect, useContext } from 'react'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { Crosshair, Pencil, ArrowLeft, ArrowRight, ChevronDown, ChevronRight, Trash2 } from 'lucide-react'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { moveColumnTarget } from '../mutations/moveColumn.js'
 import { FocusedColumnContext } from '../contexts/FocusedColumnContext.js'
 
+const MENU_ITEM_CLS =
+  'flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)] data-[disabled]:cursor-not-allowed data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600'
+const MENU_ICON_CLS = 'shrink-0 text-[color:var(--color-text-muted)]'
+
 export function ColumnHeader({
   name,
-  cardCount,
   colIdx,
   allColumnNames,
   boardId,
   collapsed = false,
 }: {
   name: string
-  cardCount: number
   colIdx: number
   allColumnNames: string[]
   boardId: string
@@ -79,13 +82,16 @@ export function ColumnHeader({
   }
 
   return (
-    <header className="mb-3 flex items-center justify-between">
-      <div className="flex items-center gap-1">
+    <header className="mb-3 flex items-center justify-between gap-2">
+      <div className="flex min-w-0 flex-1 items-center gap-1.5">
+        <h2 className="min-w-0 truncate text-[22px] font-extrabold lowercase leading-[1.15] tracking-[-0.4px] text-slate-900 dark:text-slate-100">
+          {name}
+        </h2>
         <button
           type="button"
           aria-label={collapsed ? `expand column ${name}` : `collapse column ${name}`}
           onClick={() => mutation.mutate({ type: 'toggle_column_collapse', col_idx: colIdx })}
-          className="flex h-5 w-5 items-center justify-center rounded text-slate-400 hover:bg-slate-200 hover:text-slate-600 dark:text-slate-500 dark:hover:bg-slate-700 dark:hover:text-slate-300"
+          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 dark:bg-slate-700 dark:text-slate-300 dark:hover:bg-slate-600 dark:hover:text-slate-100"
         >
           <svg
             width="10"
@@ -97,65 +103,70 @@ export function ColumnHeader({
             <path d="M3 1L7 5L3 9" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </button>
-        <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-100">{name}</h2>
       </div>
-      <div className="flex items-center gap-2">
-        <span className="text-xs text-slate-500">{cardCount}</span>
+      <div className="flex shrink-0 items-center gap-2">
         <DropdownMenu.Root>
           <DropdownMenu.Trigger
             aria-label={`column menu ${name}`}
-            className="rounded p-1 text-slate-500 hover:bg-slate-200 dark:text-slate-400 dark:hover:bg-slate-700"
+            className="rounded p-1 text-slate-500 hover:bg-[color:var(--color-column-bg)] dark:text-slate-400"
           >
             ⋮
           </DropdownMenu.Trigger>
           <DropdownMenu.Portal>
             <DropdownMenu.Content
               sideOffset={4}
-              className="z-50 min-w-40 rounded-md bg-white p-1 shadow-lg ring-1 ring-slate-200 dark:bg-slate-800 dark:ring-slate-700 dark:text-slate-100"
+              className="z-50 min-w-40 rounded-md border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-1 shadow-[var(--shadow-raised)] dark:text-slate-100"
             >
               {focusCtx && !isFocused && (
                 <DropdownMenu.Item
                   onSelect={() => focusCtx.setFocused(name)}
-                  className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
+                  className={MENU_ITEM_CLS}
                 >
+                  <Crosshair size={14} className={MENU_ICON_CLS} aria-hidden />
                   Focus
                 </DropdownMenu.Item>
               )}
-              <DropdownMenu.Item
-                onSelect={() => setMode('edit')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
-              >
+              <DropdownMenu.Item onSelect={() => setMode('edit')} className={MENU_ITEM_CLS}>
+                <Pencil size={14} className={MENU_ICON_CLS} aria-hidden />
                 Rename
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 disabled={leftDisabled}
                 onSelect={() => move('left')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600 data-[disabled]:cursor-not-allowed"
+                className={MENU_ITEM_CLS}
               >
+                <ArrowLeft size={14} className={MENU_ICON_CLS} aria-hidden />
                 Move left
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 disabled={rightDisabled}
                 onSelect={() => move('right')}
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700 data-[disabled]:text-slate-300 dark:data-[disabled]:text-slate-600 data-[disabled]:cursor-not-allowed"
+                className={MENU_ITEM_CLS}
               >
+                <ArrowRight size={14} className={MENU_ICON_CLS} aria-hidden />
                 Move right
               </DropdownMenu.Item>
               <DropdownMenu.Item
                 onSelect={() =>
                   mutation.mutate({ type: 'toggle_column_collapse', col_idx: colIdx })
                 }
-                className="cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-slate-100 dark:hover:bg-slate-700"
+                className={MENU_ITEM_CLS}
               >
+                {collapsed ? (
+                  <ChevronDown size={14} className={MENU_ICON_CLS} aria-hidden />
+                ) : (
+                  <ChevronRight size={14} className={MENU_ICON_CLS} aria-hidden />
+                )}
                 {collapsed ? 'Expand' : 'Collapse'}
               </DropdownMenu.Item>
-              <DropdownMenu.Separator className="my-1 h-px bg-slate-200 dark:bg-slate-700" />
+              <DropdownMenu.Separator className="my-1 h-px bg-[color:var(--color-border)]" />
               <DropdownMenu.Item
                 onSelect={() =>
                   stageDelete(() => mutation.mutate({ type: 'delete_column', name }), name)
                 }
-                className="cursor-pointer rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                className="flex cursor-pointer items-center gap-2 rounded px-2 py-1 text-sm text-red-600 outline-none hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
               >
+                <Trash2 size={14} className="shrink-0" aria-hidden />
                 Delete
               </DropdownMenu.Item>
             </DropdownMenu.Content>

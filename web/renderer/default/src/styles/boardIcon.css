@@ -61,32 +61,96 @@
   outline-offset: 2px;
 }
 
-/* Popover modifier for the icon+swatch grid layout. */
+/* Popover modifier — two-column layout: colour swatches on the left,
+   tabbed icon grid (symbol / emoji) on the right. */
 .lb-popover--icons {
+  display: grid;
+  grid-template-columns: auto 1px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px;
+  width: 520px;
+}
+.lb-popover--icons .lb-iconpicker-divider {
+  background: var(--sb-divider);
+  align-self: stretch;
+}
+.lb-popover--icons .lb-iconpicker-section {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 10px;
-  width: 320px;
+  min-width: 0;
+}
+.lb-popover--icons .lb-iconpicker-section__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--sb-text-tertiary);
+}
+.lb-popover--icons .lb-iconpicker-section__header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.lb-popover--icons .lb-iconpicker-section--colour {
+  flex: 0 0 auto;
 }
 .lb-popover--icons .lb-iconpicker-swatches {
   display: grid;
-  grid-template-columns: repeat(14, 1fr);
-  gap: 4px;
-  padding-bottom: 6px;
-  border-bottom: 1px solid var(--sb-divider);
+  grid-template-columns: repeat(6, 22px);
+  gap: 8px;
+}
+.lb-popover--icons .lb-iconpicker-tabs {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  background: var(--sb-row-hover);
+  border-radius: 6px;
+}
+.lb-popover--icons .lb-iconpicker-tab {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 3px 10px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--sb-text-secondary);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.lb-popover--icons .lb-iconpicker-tab[aria-selected="true"] {
+  background: var(--sb-bg);
+  color: var(--sb-text-primary);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
+}
+.lb-popover--icons .lb-iconpicker-clear {
+  margin-left: auto;
+  appearance: none;
+  border: 0;
+  background: transparent;
+  padding: 3px 6px;
+  font-size: 12px;
+  color: var(--sb-text-tertiary);
+  border-radius: 4px;
+  cursor: pointer;
+}
+.lb-popover--icons .lb-iconpicker-clear:hover {
+  background: var(--sb-row-hover);
+  color: var(--sb-text-secondary);
 }
 .lb-popover--icons .lb-iconpicker-grid {
   display: grid;
-  grid-template-columns: repeat(8, 1fr);
+  grid-template-columns: repeat(6, 1fr);
   gap: 6px;
+  max-height: 280px;
+  overflow-y: auto;
 }
 .lb-popover--icons .lb-iconpicker-cell {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 28px;
+  width: 40px;
+  height: 40px;
   padding: 0;
   border: 0;
   background: transparent;
@@ -98,8 +162,4 @@
 .lb-popover--icons .lb-iconpicker-cell[aria-pressed="true"] {
   outline: 2px solid var(--accent-500);
   outline-offset: -2px;
-}
-.lb-popover--icons .lb-iconpicker-cell--clear {
-  color: var(--sb-text-tertiary);
-  font-size: 14px;
 }

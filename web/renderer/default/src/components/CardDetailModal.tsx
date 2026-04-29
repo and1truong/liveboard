@@ -210,7 +210,7 @@ export function CardDetailModal({
               <textarea
                 ref={bodyRef}
                 aria-label="card body"
-                rows={6}
+                rows={7}
                 defaultValue={card.body ?? ''}
                 hidden={tab === 'preview'}
                 className="mt-1 w-full rounded border border-[color:var(--color-border)] px-2 py-1 text-sm outline-none focus:border-[color:var(--accent-500)]"

@@ -2,6 +2,7 @@ import { Suspense, lazy, useCallback, useEffect, useRef, useState } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
+import { GripVertical } from 'lucide-react'
 import type { Card as CardModel } from '@shared/types.js'
 import { AttachmentBadge } from '../components/AttachmentBadge.js'
 import { CardContextMenu } from '../components/CardContextMenu.js'
@@ -10,7 +11,6 @@ import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { stageDelete } from '../mutations/undoable.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useTagColors } from '../queries.js'
-import { tagChipStyle } from '../utils/tagColor.js'
 import { formatDueBadge } from '../utils/dueDate.js'
 import { encodeCardId } from './cardId.js'
 import { useDragState } from './BoardDndContext.js'
@@ -28,6 +28,12 @@ const PRIORITY_CHIP: Record<string, string> = {
 
 const menuItemCls =
   'cursor-pointer rounded px-2 py-1 text-sm outline-none hover:bg-[color:var(--color-column-bg)]'
+
+function truncateWords(text: string, maxWords: number): string {
+  const words = text.split(/\s+/)
+  if (words.length <= maxWords) return text
+  return words.slice(0, maxWords).join(' ') + '...'
+}
 
 export function SortableListRow({
   card,
@@ -136,9 +142,9 @@ export function SortableListRow({
             aria-label="drag card"
             {...attributes}
             {...listeners}
-            className="mt-[3px] cursor-grab text-slate-300 opacity-0 group-hover:opacity-100 active:cursor-grabbing dark:text-slate-600"
+            className="mt-[3px] flex h-5 w-4 items-center justify-center cursor-grab text-slate-500 opacity-0 group-hover:opacity-100 hover:text-slate-700 active:cursor-grabbing dark:text-slate-400 dark:hover:text-slate-200"
           >
-            ⋮⋮
+            <GripVertical size={14} aria-hidden strokeWidth={2.25} />
           </button>
           <button
             key={popKey}
@@ -190,11 +196,11 @@ export function SortableListRow({
             </div>
             {card.body && (
               <div
-                className={`mt-0.5 line-clamp-2 text-xs text-slate-500 dark:text-slate-400 ${
+                className={`mt-0.5 text-xs text-slate-500 dark:text-slate-400 ${
                   card.completed ? 'line-through decoration-[color:var(--color-text-subtle)]' : ''
                 }`}
               >
-                {card.body}
+                {truncateWords(card.body, 120)}
               </div>
             )}
             {hasMeta && (
@@ -212,15 +218,15 @@ export function SortableListRow({
                   </span>
                 )}
                 {card.tags?.map((t) => {
-                  const style = tagChipStyle(tagColors[t])
+                  const color = tagColors[t]
                   return (
                     <span
                       key={t}
-                      style={style}
+                      style={color ? { color } : undefined}
                       className={
-                        style
-                          ? 'rounded px-1.5 py-0.5 text-[10px]'
-                          : 'rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-[10px] text-slate-700 dark:text-slate-200'
+                        color
+                          ? 'text-[10px] font-medium uppercase tracking-wide'
+                          : 'text-[10px] font-medium uppercase tracking-wide text-slate-600 dark:text-slate-300'
                       }
                     >
                       {t}

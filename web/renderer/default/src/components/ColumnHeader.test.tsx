@@ -28,16 +28,15 @@ async function setup(): Promise<{ client: Client; qc: QueryClient }> {
 }
 
 describe('ColumnHeader', () => {
-  it('renders name, count, and menu trigger', async () => {
+  it('renders name and menu trigger', async () => {
     const { client, qc } = await setup()
     const { getByText, getByLabelText } = renderWithQuery(
       <ClientProvider client={client}>
-        <ColumnHeader name="Todo" cardCount={3} colIdx={0} allColumnNames={['Todo','Doing','Done']} boardId="welcome" />
+        <ColumnHeader name="Todo" colIdx={0} allColumnNames={['Todo','Doing','Done']} boardId="welcome" />
       </ClientProvider>,
       { queryClient: qc },
     )
     expect(getByText('Todo')).toBeDefined()
-    expect(getByText('3')).toBeDefined()
     expect(getByLabelText('column menu Todo')).toBeDefined()
   })
 
@@ -45,7 +44,7 @@ describe('ColumnHeader', () => {
     const { client, qc } = await setup()
     const { getByLabelText, findByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" collapsed={false} />
+        <ColumnHeader name="Todo" colIdx={0} allColumnNames={['Todo']} boardId="welcome" collapsed={false} />
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -57,7 +56,7 @@ describe('ColumnHeader', () => {
     const { client, qc } = await setup()
     const { getByLabelText, findByText } = renderWithQuery(
       <ClientProvider client={client}>
-        <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" collapsed={true} />
+        <ColumnHeader name="Todo" colIdx={0} allColumnNames={['Todo']} boardId="welcome" collapsed={true} />
       </ClientProvider>,
       { queryClient: qc },
     )
@@ -81,7 +80,7 @@ describe('ColumnHeader', () => {
         <ActiveBoardProvider initialBoardId="welcome">
           <FocusedColumnProvider columns={colsList}>
             <Spy />
-            <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo','Doing']} boardId="welcome" />
+            <ColumnHeader name="Todo" colIdx={0} allColumnNames={['Todo','Doing']} boardId="welcome" />
           </FocusedColumnProvider>
         </ActiveBoardProvider>
       </ClientProvider>,
@@ -107,7 +106,7 @@ describe('ColumnHeader', () => {
         <ActiveBoardProvider initialBoardId="welcome">
           <FocusedColumnProvider columns={colsList}>
             <Seed />
-            <ColumnHeader name="Todo" cardCount={0} colIdx={0} allColumnNames={['Todo']} boardId="welcome" />
+            <ColumnHeader name="Todo" colIdx={0} allColumnNames={['Todo']} boardId="welcome" />
           </FocusedColumnProvider>
         </ActiveBoardProvider>
       </ClientProvider>,

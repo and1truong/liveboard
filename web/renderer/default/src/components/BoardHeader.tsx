@@ -4,7 +4,6 @@ import { useBoardFilter } from '../contexts/BoardFilterContext.js'
 import { tagChipStyle } from '../utils/tagColor.js'
 import { activeFilterCount, type Priority } from '../utils/cardFilter.js'
 import { FilterChip } from './FilterChip.js'
-import { BoardIcon } from './BoardIcon.js'
 import { useAppSettings } from '../queries/useAppSettings.js'
 
 const PRIORITY_LABEL: Record<Priority, string> = {
@@ -61,7 +60,6 @@ export function BoardHeader({
       </button>
 
       <div className="flex min-w-0 items-center gap-2">
-        {data.icon && <BoardIcon icon={data.icon} color={data.icon_color} size="sm" />}
         <h1
           className="truncate text-[15px] font-semibold tracking-[-0.01em] text-[color:var(--color-text-primary)]"
           style={{ fontFeatureSettings: '"ss01", "cv11"' }}

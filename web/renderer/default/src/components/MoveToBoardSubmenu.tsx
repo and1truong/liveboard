@@ -1,3 +1,4 @@
+import { type ReactNode } from 'react'
 import * as ContextMenu from '@radix-ui/react-context-menu'
 import { useBoardsLite } from '../queries/useBoardsLite.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
@@ -9,6 +10,7 @@ export function MoveToBoardSubmenu({
   triggerCls,
   contentCls,
   itemCls,
+  triggerIcon,
 }: {
   srcBoardId: string
   colIdx: number
@@ -16,6 +18,7 @@ export function MoveToBoardSubmenu({
   triggerCls: string
   contentCls: string
   itemCls: string
+  triggerIcon?: ReactNode
 }): JSX.Element {
   const { data: boards } = useBoardsLite()
   const mutation = useBoardMutation(srcBoardId)
@@ -24,7 +27,15 @@ export function MoveToBoardSubmenu({
   return (
     <ContextMenu.Sub>
       <ContextMenu.SubTrigger disabled={others.length === 0} className={triggerCls}>
-        Move to board<span aria-hidden>▸</span>
+        {triggerIcon ? (
+          <span className="flex items-center gap-2">
+            {triggerIcon}
+            Move to board
+          </span>
+        ) : (
+          <>Move to board</>
+        )}
+        <span aria-hidden>▸</span>
       </ContextMenu.SubTrigger>
       <ContextMenu.Portal>
         <ContextMenu.SubContent className={contentCls}>

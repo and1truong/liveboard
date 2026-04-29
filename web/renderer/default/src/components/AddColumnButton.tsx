@@ -43,10 +43,27 @@ export function AddColumnButton({ boardId }: { boardId: string }): JSX.Element {
         type="button"
         aria-label="add list"
         onClick={() => setOpen(true)}
-        className="group ml-auto flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center self-start rounded-[10px] border border-dashed border-[color:var(--color-border)] bg-transparent text-[color:var(--sb-text-tertiary)] hover:border-solid hover:bg-[color:var(--color-hover)] hover:text-[color:var(--sb-text-secondary)]"
+        className="group ml-auto flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center self-start rounded-[10px] border border-dashed"
         style={{
           fontFamily: HIG_FONT,
+          backgroundColor: 'color-mix(in srgb, var(--accent-500) 12%, transparent)',
+          borderColor: 'color-mix(in srgb, var(--accent-500) 45%, transparent)',
+          color: 'var(--accent-600)',
           transition: `background-color 180ms ${HIG_EASE}, border-color 180ms ${HIG_EASE}, color 180ms ${HIG_EASE}`,
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.backgroundColor =
+            'color-mix(in srgb, var(--accent-500) 22%, transparent)'
+          e.currentTarget.style.borderStyle = 'solid'
+          e.currentTarget.style.borderColor =
+            'color-mix(in srgb, var(--accent-500) 70%, transparent)'
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.backgroundColor =
+            'color-mix(in srgb, var(--accent-500) 12%, transparent)'
+          e.currentTarget.style.borderStyle = 'dashed'
+          e.currentTarget.style.borderColor =
+            'color-mix(in srgb, var(--accent-500) 45%, transparent)'
         }}
       >
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>

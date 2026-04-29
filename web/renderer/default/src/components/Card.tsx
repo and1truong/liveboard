@@ -1,6 +1,5 @@
 import { useState } from 'react'
 import type { Card as CardModel, Attachment } from '@shared/types.js'
-import { tagChipStyle } from '../utils/tagColor.js'
 import { useClient } from '../queries.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { AttachmentBadge } from './AttachmentBadge.js'
@@ -69,17 +68,17 @@ export function Card({
         {compact && <AttachmentBadge attachments={card.attachments} />}
       </div>
       {card.tags && card.tags.length > 0 && (
-        <ul className="mt-2 flex flex-wrap gap-1">
+        <ul className="mt-2 flex flex-wrap gap-x-2 gap-y-0.5">
           {card.tags.map((t) => {
-            const style = tagChipStyle(tagColors?.[t])
+            const color = tagColors?.[t]
             return (
               <li
                 key={t}
-                style={style}
+                style={color ? { color } : undefined}
                 className={
-                  style
-                    ? 'rounded px-1.5 py-0.5 text-xs'
-                    : 'rounded bg-[color:var(--color-column-bg)] px-1.5 py-0.5 text-xs text-slate-700 dark:text-slate-200'
+                  color
+                    ? 'text-[11px] font-medium uppercase tracking-wide'
+                    : 'text-[11px] font-medium uppercase tracking-wide text-slate-600 dark:text-slate-300'
                 }
               >
                 {t}

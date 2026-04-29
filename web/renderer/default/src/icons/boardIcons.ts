@@ -101,6 +101,14 @@ export const BOARD_ICONS: Record<string, LucideIcon> = {
 export const BOARD_ICON_SLUGS: readonly string[] = Object.keys(BOARD_ICONS)
 export const DEFAULT_ICON_SLUG = 'list'
 
+export const BOARD_EMOJI_ICONS: readonly string[] = [
+  '🚀', '✅', '📌', '📋', '📚', '📝',
+  '💼', '🎯', '🎨', '🎵', '🎮', '🏠',
+  '🍕', '☕️', '🌟', '❤️', '🔥', '💡',
+  '🛒', '✈️', '🐱', '🐶', '🌳', '🌙',
+  '☀️', '🎉', '💎', '🏆', '🎓', '🍎',
+]
+
 export function getBoardIcon(slug: string | undefined): LucideIcon | undefined {
   if (!slug) return undefined
   return BOARD_ICONS[slug]

@@ -3,8 +3,10 @@ import { createPortal } from 'react-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
 import { BoardIcon } from './BoardIcon.js'
-import { BOARD_ICON_SLUGS } from '../icons/boardIcons.js'
+import { BOARD_EMOJI_ICONS, BOARD_ICON_SLUGS, isEmojiIcon } from '../icons/boardIcons.js'
 import { ICON_COLORS, resolveIconColor } from '../icons/iconColors.js'
+
+type Tab = 'symbol' | 'emoji'
 
 export function BoardIconPicker({
   boardId,
@@ -18,6 +20,7 @@ export function BoardIconPicker({
   const [open, setOpen] = useState(false)
   // Track color locally so swatch clicks retint the grid preview immediately.
   const [currentColor, setCurrentColor] = useState<string>(resolveIconColor(iconColor))
+  const [tab, setTab] = useState<Tab>(() => (icon && isEmojiIcon(icon) ? 'emoji' : 'symbol'))
   const [pos, setPos] = useState<{ top: number; left: number } | null>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
   const popoverRef = useRef<HTMLDivElement>(null)
@@ -77,14 +80,14 @@ export function BoardIconPicker({
     )
   }
 
-  const pickIcon = (slug: string | null): void => {
+  const pickIcon = (value: string | null): void => {
     setOpen(false)
     // Commit both so the visible tint in the grid is what gets saved, even if
     // the user never clicked a swatch separately.
     mutation.mutate(
-      slug === null
+      value === null
         ? { type: 'update_board_icon', icon: null }
-        : { type: 'update_board_icon', icon: slug, icon_color: currentColor },
+        : { type: 'update_board_icon', icon: value, icon_color: currentColor },
       { onSuccess: invalidate },
     )
   }
@@ -113,43 +116,85 @@ export function BoardIconPicker({
           className="lb-popover lb-popover--icons"
           style={{ position: 'fixed', top: pos.top, left: pos.left }}
         >
-          <div className="lb-iconpicker-swatches" role="radiogroup" aria-label="Icon colour">
-            {ICON_COLORS.map((c) => (
+          <section className="lb-iconpicker-section lb-iconpicker-section--colour">
+            <div className="lb-iconpicker-section__label">Colour</div>
+            <div className="lb-iconpicker-swatches" role="radiogroup" aria-label="Icon colour">
+              {ICON_COLORS.map((c) => (
+                <button
+                  key={c.key}
+                  type="button"
+                  aria-label={c.label}
+                  aria-pressed={currentColor === c.key}
+                  title={c.label}
+                  className="lb-iconpicker-swatch"
+                  style={{ background: c.swatch }}
+                  onClick={() => pickColor(c.key)}
+                />
+              ))}
+            </div>
+          </section>
+
+          <div className="lb-iconpicker-divider" aria-hidden />
+
+          <section className="lb-iconpicker-section lb-iconpicker-section--icon">
+            <div className="lb-iconpicker-section__header">
+              <div className="lb-iconpicker-tabs" role="tablist">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'symbol'}
+                  className="lb-iconpicker-tab"
+                  onClick={() => setTab('symbol')}
+                >
+                  Symbol
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === 'emoji'}
+                  className="lb-iconpicker-tab"
+                  onClick={() => setTab('emoji')}
+                >
+                  Emoji
+                </button>
+              </div>
               <button
-                key={c.key}
                 type="button"
-                aria-label={c.label}
-                aria-pressed={currentColor === c.key}
-                title={c.label}
-                className={`lb-iconpicker-swatch lb-bicon--c-${c.key}`}
-                style={{ background: 'var(--lb-icon-bg)' }}
-                onClick={() => pickColor(c.key)}
-              />
-            ))}
-          </div>
-          <div className="lb-iconpicker-grid">
-            <button
-              type="button"
-              onClick={() => pickIcon(null)}
-              title="Remove icon"
-              aria-label="Remove icon"
-              className="lb-iconpicker-cell lb-iconpicker-cell--clear"
-            >
-              ✕
-            </button>
-            {BOARD_ICON_SLUGS.map((slug) => (
-              <button
-                key={slug}
-                type="button"
-                onClick={() => pickIcon(slug)}
-                title={slug}
-                aria-pressed={icon === slug}
-                className="lb-iconpicker-cell"
+                onClick={() => pickIcon(null)}
+                className="lb-iconpicker-clear"
+                title="Remove icon"
               >
-                <BoardIcon icon={slug} color={currentColor} size="sm" />
+                Clear
               </button>
-            ))}
-          </div>
+            </div>
+            <div className="lb-iconpicker-grid">
+              {tab === 'symbol'
+                ? BOARD_ICON_SLUGS.map((slug) => (
+                    <button
+                      key={slug}
+                      type="button"
+                      onClick={() => pickIcon(slug)}
+                      title={slug}
+                      aria-pressed={icon === slug}
+                      className="lb-iconpicker-cell"
+                    >
+                      <BoardIcon icon={slug} color={currentColor} size="md" />
+                    </button>
+                  ))
+                : BOARD_EMOJI_ICONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      type="button"
+                      onClick={() => pickIcon(emoji)}
+                      title={emoji}
+                      aria-pressed={icon === emoji}
+                      className="lb-iconpicker-cell"
+                    >
+                      <BoardIcon icon={emoji} size="md" />
+                    </button>
+                  ))}
+            </div>
+          </section>
         </div>,
         document.body,
       )}
