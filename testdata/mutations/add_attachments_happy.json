@@ -1,0 +1,34 @@
+{
+  "name": "add_attachments_happy",
+  "description": "Add a single attachment to a card.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      { "name": "Todo", "cards": [{ "title": "Task with file" }] }
+    ]
+  },
+  "op": {
+    "type": "add_attachments",
+    "col_idx": 0,
+    "card_idx": 0,
+    "items": [
+      { "h": "a3f9.pdf", "n": "Plan.pdf", "s": 12, "m": "application/pdf" }
+    ]
+  },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "Task with file",
+            "attachments": [
+              { "h": "a3f9.pdf", "n": "Plan.pdf", "s": 12, "m": "application/pdf" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

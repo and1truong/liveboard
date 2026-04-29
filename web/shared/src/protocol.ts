@@ -49,6 +49,12 @@ export type Request =
     }
   | { id: string; kind: 'request'; method: 'board.pin'; params: { boardId: string } }
   | { id: string; kind: 'request'; method: 'workspace.exportUrl'; params: { format: 'html' | 'markdown' } }
+  | {
+      id: string
+      kind: 'request'
+      method: 'attachment.upload'
+      params: { file: File }
+    }
 
 export type ErrorCode =
   | 'NOT_FOUND'
@@ -88,6 +94,11 @@ export interface Welcome {
   initialBoardId?: string | null
   initialCardPos?: { colIdx: number; cardIdx: number } | null
   initialFocusedColumn?: string | null
+  // attachmentsBaseURL is the URL prefix to which the renderer can append
+  // `<hash>/<encodeURIComponent(name)>` to download an attachment. null when
+  // the active adapter has no URL backing (e.g. LocalAdapter — body images
+  // resolve via async IndexedDB lookup instead).
+  attachmentsBaseURL?: string | null
 }
 
 export interface HandshakeError {

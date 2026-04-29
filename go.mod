@@ -3,11 +3,13 @@ module github.com/and1truong/liveboard
 go 1.25.0
 
 require (
+	github.com/blevesearch/bleve/v2 v2.5.4
 	github.com/go-chi/chi/v5 v5.2.5
 	github.com/modelcontextprotocol/go-sdk v1.4.1
 	github.com/spf13/cobra v1.10.2
 	github.com/wailsapp/wails/v2 v2.11.0
 	github.com/yuin/goldmark v1.7.17
+	golang.org/x/image v0.39.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -15,7 +17,6 @@ require (
 	github.com/RoaringBitmap/roaring/v2 v2.4.5 // indirect
 	github.com/bep/debounce v1.2.1 // indirect
 	github.com/bits-and-blooms/bitset v1.22.0 // indirect
-	github.com/blevesearch/bleve/v2 v2.5.4 // indirect
 	github.com/blevesearch/bleve_index_api v1.2.10 // indirect
 	github.com/blevesearch/geo v0.2.4 // indirect
 	github.com/blevesearch/go-faiss v1.0.25 // indirect
@@ -52,7 +53,6 @@ require (
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mschoch/smat v0.2.0 // indirect
-	github.com/oklog/ulid/v2 v2.1.1 // indirect
 	github.com/pkg/browser v0.0.0-20240102092130-5ac0b6a4141c // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/rivo/uniseg v0.4.7 // indirect
@@ -69,11 +69,10 @@ require (
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	go.etcd.io/bbolt v1.4.0 // indirect
 	golang.org/x/crypto v0.33.0 // indirect
-	golang.org/x/mobile v0.0.0-20260312152759-81488f6aeb60 // indirect
 	golang.org/x/net v0.35.0 // indirect
 	golang.org/x/oauth2 v0.34.0 // indirect
 	golang.org/x/sys v0.42.0 // indirect
-	golang.org/x/text v0.22.0 // indirect
+	golang.org/x/text v0.36.0 // indirect
 	google.golang.org/protobuf v1.36.6 // indirect
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 )

@@ -9,9 +9,11 @@ import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
 import { LinkChip } from './LinkChip.js'
 import { LinkPicker } from './LinkPicker.js'
 import { TagsChipInput } from './TagsChipInput.js'
-import { useBoard, useTagColors } from '../queries.js'
+import { useBoard, useTagColors, useClient } from '../queries.js'
 import { collectTags } from '../queries/useAvailableTags.js'
 import { useAppSettings } from '../queries/useAppSettings.js'
+import { AttachmentList } from './AttachmentList.js'
+import { buildAttachmentResolver } from '../util/attachmentResolver.js'
 
 export interface CreateCardParams {
   title: string
@@ -58,6 +60,7 @@ export function CardDetailModal({
   const [tags, setTags] = useState<string[]>(card.tags ?? [])
   const [pickerOpen, setPickerOpen] = useState(false)
   const mutation = useBoardMutation(boardId)
+  const client = useClient()
 
   const boardQuery = useBoard(open ? boardId : null)
   const workspaceTags = useAppSettings().tags ?? []
@@ -95,7 +98,8 @@ export function CardDetailModal({
     setTab('preview')
     setPreviewHtml(null)
     const gen = ++renderGenRef.current
-    void renderMarkdown(bodyRef.current?.value ?? '').then((html) => {
+    const resolver = buildAttachmentResolver(client, { attachments: card.attachments })
+    void renderMarkdown(bodyRef.current?.value ?? '', { attachmentResolver: resolver }).then((html) => {
       if (renderGenRef.current === gen) setPreviewHtml(html)
     })
   }
@@ -235,6 +239,27 @@ export function CardDetailModal({
                 ariaLabel="card tags"
               />
             </div>
+            {!isNew && (
+              <div>
+                <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Attachments</span>
+                <AttachmentList
+                  attachments={card.attachments ?? []}
+                  boardId={boardId}
+                  colIdx={colIdx}
+                  cardIdx={cardIdx}
+                  onInsertIntoBody={(att) => {
+                    const ta = bodyRef.current
+                    if (!ta) return
+                    const insert = `![${att.n}](attachment:${att.h})`
+                    const start = ta.selectionStart ?? ta.value.length
+                    const end = ta.selectionEnd ?? ta.value.length
+                    ta.value = ta.value.slice(0, start) + insert + ta.value.slice(end)
+                    ta.focus()
+                    ta.setSelectionRange(start + insert.length, start + insert.length)
+                  }}
+                />
+              </div>
+            )}
             <div className="grid grid-cols-3 gap-3">
               <label className="block">
                 <span className="block text-xs font-medium text-slate-600 dark:text-slate-300">Priority</span>

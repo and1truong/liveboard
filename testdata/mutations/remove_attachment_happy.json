@@ -1,0 +1,38 @@
+{
+  "name": "remove_attachment_happy",
+  "description": "Remove an attachment by hash; siblings preserved.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "C",
+            "attachments": [
+              { "h": "a.pdf", "n": "a.pdf", "s": 1, "m": "application/pdf" },
+              { "h": "b.png", "n": "b.png", "s": 2, "m": "image/png" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "op": { "type": "remove_attachment", "col_idx": 0, "card_idx": 0, "hash": "a.pdf" },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "C",
+            "attachments": [
+              { "h": "b.png", "n": "b.png", "s": 2, "m": "image/png" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

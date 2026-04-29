@@ -312,6 +312,24 @@ func TestDispatchAllVariants(t *testing.T) {
 			},
 		},
 
+		// ── attachment ops ────────────────────────────────────────────────────
+		{
+			name: "add_attachments",
+			op: func(_ string) board.MutationOp {
+				return board.MutationOp{
+					Type: "add_attachments",
+					AddAttachments: &board.AddAttachmentsOp{
+						ColIdx: 0, CardIdx: 0,
+						Items: []models.Attachment{{Hash: "h.pdf", Name: "n.pdf", Size: 1, Mime: "application/pdf"}},
+					},
+				}
+			},
+			deps: func(t *testing.T) (v1.Deps, string) {
+				deps := newTestDeps(t)
+				return deps, filepath.Join(deps.Workspace.Dir, "demo.md")
+			},
+		},
+
 		// ── error cases ───────────────────────────────────────────────────────
 		{
 			name:    "unknown_op_errors",
@@ -370,6 +388,11 @@ func TestDispatchAllVariants(t *testing.T) {
 				raw, _ := os.ReadFile(path)
 				if !strings.Contains(string(raw), "icon:") {
 					t.Errorf("update_board_icon: 'icon:' key not found in file")
+				}
+			case "add_attachments":
+				raw, _ := os.ReadFile(path)
+				if !strings.Contains(string(raw), "attachments:") || !strings.Contains(string(raw), op.AddAttachments.Items[0].Hash) {
+					t.Errorf("add_attachments: attachments line / hash not found in file:\n%s", raw)
 				}
 			}
 		})

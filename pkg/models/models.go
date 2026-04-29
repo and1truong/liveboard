@@ -39,18 +39,29 @@ type Column struct {
 
 // Card represents a task item (list item in Markdown).
 type Card struct {
-	ID         string            `json:"id,omitempty"`
-	Title      string            `json:"title"`
-	Completed  bool              `json:"completed"`
-	NoCheckbox bool              `json:"no_checkbox,omitempty"`
-	Tags       []string          `json:"tags,omitempty"`
-	InlineTags []string          `json:"inline_tags,omitempty"`
-	Links      []string          `json:"links,omitempty" yaml:"links,omitempty"`
-	Assignee   string            `json:"assignee,omitempty"`
-	Priority   string            `json:"priority,omitempty"`
-	Due        string            `json:"due,omitempty"`
-	Metadata   map[string]string `json:"metadata,omitempty"`
-	Body       string            `json:"body,omitempty"`
+	ID          string            `json:"id,omitempty"`
+	Title       string            `json:"title"`
+	Completed   bool              `json:"completed"`
+	NoCheckbox  bool              `json:"no_checkbox,omitempty"`
+	Tags        []string          `json:"tags,omitempty"`
+	InlineTags  []string          `json:"inline_tags,omitempty"`
+	Links       []string          `json:"links,omitempty" yaml:"links,omitempty"`
+	Assignee    string            `json:"assignee,omitempty"`
+	Priority    string            `json:"priority,omitempty"`
+	Due         string            `json:"due,omitempty"`
+	Metadata    map[string]string `json:"metadata,omitempty"`
+	Body        string            `json:"body,omitempty"`
+	Attachments []Attachment      `json:"attachments,omitempty"`
+}
+
+// Attachment is a card-level reference to a blob in the workspace pool.
+// Field tags use short keys to keep the serialized JSON line scannable
+// in raw markdown.
+type Attachment struct {
+	Hash string `json:"h"` // sha256 hex + "." + extension, e.g. "a3f9...e1.pdf"
+	Name string `json:"n"` // display filename, user-editable via rename_attachment
+	Size int64  `json:"s"` // bytes
+	Mime string `json:"m"` // sniffed MIME at upload time
 }
 
 // Config represents global or project-level configuration.

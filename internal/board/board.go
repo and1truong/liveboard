@@ -314,6 +314,134 @@ func applyTagCard(b *models.Board, colIdx, cardIdx int, tags []string) error {
 	return nil
 }
 
+// applyAddAttachments appends items to a card's attachment list.
+// Duplicates by hash are skipped so re-issuing the op is idempotent.
+func applyAddAttachments(b *models.Board, colIdx, cardIdx int, items []models.Attachment) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
+		return err
+	}
+	card := &b.Columns[colIdx].Cards[cardIdx]
+	ensureCardID(card)
+	existing := make(map[string]struct{}, len(card.Attachments))
+	for _, a := range card.Attachments {
+		existing[a.Hash] = struct{}{}
+	}
+	for _, a := range items {
+		if _, dup := existing[a.Hash]; dup {
+			continue
+		}
+		card.Attachments = append(card.Attachments, a)
+		existing[a.Hash] = struct{}{}
+	}
+	return nil
+}
+
+// applyRemoveAttachment drops the attachment with hash from card. No-op if absent.
+func applyRemoveAttachment(b *models.Board, colIdx, cardIdx int, hash string) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
+		return err
+	}
+	card := &b.Columns[colIdx].Cards[cardIdx]
+	ensureCardID(card)
+	out := card.Attachments[:0]
+	for _, a := range card.Attachments {
+		if a.Hash == hash {
+			continue
+		}
+		out = append(out, a)
+	}
+	card.Attachments = out
+	return nil
+}
+
+// applyMoveAttachment moves an attachment between two cards on the same
+// board. Errors if the source attachment is not present. If dst already has
+// the same hash, the op becomes pure src-removal (idempotent dedup).
+func applyMoveAttachment(b *models.Board, fromCol, fromCard, toCol, toCard int, hash string) error {
+	if err := validateIndices(b, fromCol, fromCard); err != nil {
+		return err
+	}
+	if err := validateIndices(b, toCol, toCard); err != nil {
+		return err
+	}
+	srcCard := &b.Columns[fromCol].Cards[fromCard]
+	ensureCardID(srcCard)
+	var moved *models.Attachment
+	out := srcCard.Attachments[:0]
+	for i := range srcCard.Attachments {
+		if srcCard.Attachments[i].Hash == hash && moved == nil {
+			a := srcCard.Attachments[i]
+			moved = &a
+			continue
+		}
+		out = append(out, srcCard.Attachments[i])
+	}
+	if moved == nil {
+		return fmt.Errorf("attachment %q on card %d/%d: %w", hash, fromCol, fromCard, ErrNotFound)
+	}
+	srcCard.Attachments = out
+	dstCard := &b.Columns[toCol].Cards[toCard]
+	ensureCardID(dstCard)
+	for _, a := range dstCard.Attachments {
+		if a.Hash == hash {
+			return nil // dst already has it; src-side removal is the only effect
+		}
+	}
+	dstCard.Attachments = append(dstCard.Attachments, *moved)
+	return nil
+}
+
+// applyRenameAttachment changes only the display name of the attachment with
+// the given hash. Returns ErrNotFound if no such hash on the card.
+func applyRenameAttachment(b *models.Board, colIdx, cardIdx int, hash, newName string) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
+		return err
+	}
+	card := &b.Columns[colIdx].Cards[cardIdx]
+	ensureCardID(card)
+	for i := range card.Attachments {
+		if card.Attachments[i].Hash == hash {
+			card.Attachments[i].Name = newName
+			return nil
+		}
+	}
+	return fmt.Errorf("attachment %q on card %d/%d: %w", hash, colIdx, cardIdx, ErrNotFound)
+}
+
+// applyReorderAttachments rearranges attachments to match HashesInOrder.
+// Unknown hashes ignored; surviving attachments not listed are appended in
+// original relative order.
+func applyReorderAttachments(b *models.Board, colIdx, cardIdx int, order []string) error {
+	if err := validateIndices(b, colIdx, cardIdx); err != nil {
+		return err
+	}
+	card := &b.Columns[colIdx].Cards[cardIdx]
+	ensureCardID(card)
+	byHash := make(map[string]models.Attachment, len(card.Attachments))
+	for _, a := range card.Attachments {
+		byHash[a.Hash] = a
+	}
+	out := make([]models.Attachment, 0, len(card.Attachments))
+	placed := make(map[string]struct{}, len(order))
+	for _, h := range order {
+		if _, already := placed[h]; already {
+			continue
+		}
+		if a, ok := byHash[h]; ok {
+			out = append(out, a)
+			placed[h] = struct{}{}
+		}
+	}
+	for _, a := range card.Attachments {
+		if _, done := placed[a.Hash]; done {
+			continue
+		}
+		out = append(out, a)
+	}
+	card.Attachments = out
+	return nil
+}
+
 // TagCard adds tags to a card.
 func (e *Engine) TagCard(boardPath string, colIdx, cardIdx int, tags []string) error {
 	return e.MutateBoard(boardPath, -1, func(b *models.Board) error {

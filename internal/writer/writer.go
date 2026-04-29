@@ -2,6 +2,7 @@
 package writer
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -102,6 +103,13 @@ func writeCard(b *strings.Builder, card *models.Card) {
 	}
 	if card.Due != "" {
 		b.WriteString("  due: " + card.Due + "\n")
+	}
+
+	if len(card.Attachments) > 0 {
+		jb, err := json.Marshal(card.Attachments)
+		if err == nil {
+			fmt.Fprintf(b, "  attachments: %s\n", jb)
+		}
 	}
 
 	// Sort metadata keys for deterministic output.

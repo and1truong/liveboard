@@ -69,6 +69,36 @@ export class Client {
     return this.capabilities().includes(name)
   }
 
+  // attachmentsBaseURL returns the prefix the renderer can use to build
+  // attachment download URLs locally. Returns null in local mode.
+  // Available only after the welcome handshake completes (await ready()).
+  attachmentsBaseURL(): string | null {
+    return this.welcome?.attachmentsBaseURL ?? null
+  }
+
+  // attachmentURL builds a stable download URL. Returns the
+  // `attachment:<hash>` sentinel when no base URL is available — caller
+  // must resolve via async lookup in that case.
+  attachmentURL(att: { h: string; n: string }): string {
+    const base = this.attachmentsBaseURL()
+    if (!base) return `attachment:${att.h}`
+    return `${base}/${att.h}/${encodeURIComponent(att.n)}`
+  }
+
+  // attachmentThumbURL appends ?thumb=1 in server mode. In local mode
+  // returns the sentinel — caller must resolve via async lookup.
+  attachmentThumbURL(att: { h: string; n: string }): string {
+    const base = this.attachmentsBaseURL()
+    if (!base) return `attachment:${att.h}`
+    return `${base}/${att.h}/${encodeURIComponent(att.n)}?thumb=1`
+  }
+
+  // uploadAttachment sends the file to the active adapter's storage and
+  // returns the descriptor to embed in a subsequent add_attachments mutation.
+  uploadAttachment(file: File): Promise<import('./types.js').Attachment> {
+    return this.request({ kind: 'request', method: 'attachment.upload', params: { file } })
+  }
+
   private handle(msg: Message): void {
     switch (msg.kind) {
       case 'welcome':

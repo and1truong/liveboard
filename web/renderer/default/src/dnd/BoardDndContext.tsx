@@ -91,7 +91,7 @@ export function BoardDndContext({
 
   const board = qc.getQueryData<Board>(['board', boardId])
   const tagColors = useAppSettings().tag_colors ?? {}
-  const overlay = renderOverlay(activeId, board, tagColors)
+  const overlay = renderOverlay(activeId, board, tagColors, boardId)
 
   return (
     <DragStateContext.Provider value={{ drop, isDragActive: activeId != null }}>
@@ -114,6 +114,7 @@ function renderOverlay(
   activeId: string | null,
   board: Board | undefined,
   tagColors: Record<string, string>,
+  boardId: string,
 ): JSX.Element | null {
   if (!activeId || !board) return null
   const cardId = decodeCardId(activeId)
@@ -122,7 +123,13 @@ function renderOverlay(
     if (!card) return null
     return (
       <div className="w-72">
-        <Card card={card} tagColors={tagColors} />
+        <Card
+          card={card}
+          tagColors={tagColors}
+          boardId={boardId}
+          colIdx={cardId.colIdx}
+          cardIdx={cardId.cardIdx}
+        />
       </div>
     )
   }

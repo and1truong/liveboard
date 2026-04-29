@@ -312,4 +312,43 @@ describe('ServerAdapter mutate + settings', () => {
     expect(hits).toEqual([{ boardId: 'src', boardName: 'Src', colIdx: 0, cardIdx: 2, cardTitle: 'source' }])
     expect(log[0]!.url).toBe('/api/v1/cards/TGT0000001/backlinks')
   })
+
+  it('uploadAttachment POSTs multipart and returns descriptor', async () => {
+    const log: RequestRecord[] = []
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(
+        () => jsonResponse({ h: 'h.txt', n: 'x.txt', s: 4, m: 'text/plain' }),
+        log,
+      ),
+    })
+    const file = new File(['hi'], 'x.txt', { type: 'text/plain' })
+    const desc = await a.uploadAttachment(file)
+    expect(desc.h).toBe('h.txt')
+    expect(desc.n).toBe('x.txt')
+    expect(desc.s).toBe(4)
+    expect(desc.m).toBe('text/plain')
+    expect(log[0]!.method).toBe('POST')
+    expect(log[0]!.url).toBe('/api/v1/attachments')
+  })
+
+  it('attachmentURL builds a stable path with encoded name', () => {
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => jsonResponse(null)),
+    })
+    expect(a.attachmentURL({ h: 'abc.pdf', n: 'doc one.pdf' })).toBe(
+      '/api/v1/attachments/abc.pdf/doc%20one.pdf',
+    )
+  })
+
+  it('attachmentThumbURL appends ?thumb=1', () => {
+    const a = new ServerAdapter({
+      baseUrl: '/api/v1',
+      fetch: mockFetch(() => jsonResponse(null)),
+    })
+    expect(a.attachmentThumbURL({ h: 'abc.png', n: 'pic.png' })).toBe(
+      '/api/v1/attachments/abc.png/pic.png?thumb=1',
+    )
+  })
 })

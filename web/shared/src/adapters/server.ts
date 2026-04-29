@@ -1,4 +1,4 @@
-import type { AppSettings, Board, BoardSettings, MutationOp } from '../types.js'
+import type { AppSettings, Attachment, Board, BoardSettings, MutationOp } from '../types.js'
 import type {
   BackendAdapter,
   BacklinkHit,
@@ -254,5 +254,36 @@ export class ServerAdapter implements BackendAdapter {
       this.es.close()
       this.es = null
     }
+  }
+
+  attachmentsBaseURL(): string | null {
+    return `${this.baseUrl}/attachments`
+  }
+
+  async uploadAttachment(file: File): Promise<Attachment> {
+    const fd = new FormData()
+    fd.append('file', file, file.name)
+    let res: Response
+    try {
+      res = await this.fetchFn(`${this.baseUrl}/attachments`, {
+        method: 'POST',
+        body: fd,
+      })
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      throw new ProtocolError('INTERNAL', msg)
+    }
+    if (!res.ok) {
+      throw new ProtocolError('INTERNAL', `upload failed: ${res.status}`)
+    }
+    return (await res.json()) as Attachment
+  }
+
+  attachmentURL(att: Pick<Attachment, 'h' | 'n'>): string {
+    return `${this.baseUrl}/attachments/${att.h}/${encodeURIComponent(att.n)}`
+  }
+
+  attachmentThumbURL(att: Pick<Attachment, 'h' | 'n'>): string {
+    return `${this.attachmentURL(att)}?thumb=1`
   }
 }

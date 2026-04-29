@@ -1,0 +1,42 @@
+{
+  "name": "rename_attachment_happy",
+  "description": "Rename an attachment's display name; hash unchanged.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "C",
+            "attachments": [
+              { "h": "a.pdf", "n": "old.pdf", "s": 1, "m": "application/pdf" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "op": {
+    "type": "rename_attachment",
+    "col_idx": 0, "card_idx": 0,
+    "hash": "a.pdf",
+    "new_name": "new.pdf"
+  },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "C",
+            "attachments": [
+              { "h": "a.pdf", "n": "new.pdf", "s": 1, "m": "application/pdf" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

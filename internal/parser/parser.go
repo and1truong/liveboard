@@ -3,6 +3,7 @@ package parser
 
 import (
 	"bufio"
+	"encoding/json"
 	"regexp"
 	"strings"
 
@@ -183,6 +184,11 @@ func Parse(content string) (*models.Board, error) {
 						if l != "" {
 							currentCard.Links = append(currentCard.Links, l)
 						}
+					}
+				case "attachments":
+					var atts []models.Attachment
+					if err := json.Unmarshal([]byte(val), &atts); err == nil {
+						currentCard.Attachments = atts
 					}
 				default:
 					if currentCard.Metadata == nil {

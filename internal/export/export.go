@@ -16,6 +16,7 @@ import (
 	"github.com/yuin/goldmark/extension"
 	"github.com/yuin/goldmark/renderer/html"
 
+	"github.com/and1truong/liveboard/internal/attachments"
 	tmplfs "github.com/and1truong/liveboard/internal/templates"
 	"github.com/and1truong/liveboard/internal/workspace"
 	"github.com/and1truong/liveboard/pkg/models"
@@ -30,9 +31,10 @@ var mdRenderer = goldmark.New(
 
 // Options controls export rendering.
 type Options struct {
-	Theme      string
-	ColorTheme string
-	SiteName   string
+	Theme              string
+	ColorTheme         string
+	SiteName           string
+	IncludeAttachments bool
 }
 
 type boardSummary struct {
@@ -166,6 +168,32 @@ func render(ws *workspace.Workspace, opts Options, emit renderFile) error {
 	return emit("index.html", buf.Bytes())
 }
 
+// bundleAttachments copies all referenced attachment blobs into the ZIP under
+// .attachments/<hash>. Missing blobs are silently skipped to match the
+// graceful-degradation behavior used elsewhere.
+func bundleAttachments(zw *zip.Writer, ws *workspace.Workspace) error {
+	refs, err := attachments.CollectReferenced(ws.Dir)
+	if err != nil {
+		return fmt.Errorf("scan refs: %w", err)
+	}
+	for hash := range refs {
+		src := filepath.Join(ws.Dir, attachments.PoolDir, hash)
+		data, rerr := os.ReadFile(src)
+		if rerr != nil {
+			// missing blob — skip silently
+			continue
+		}
+		fw, cerr := zw.Create(attachments.PoolDir + "/" + hash)
+		if cerr != nil {
+			return fmt.Errorf("zip create %s: %w", hash, cerr)
+		}
+		if _, werr := fw.Write(data); werr != nil {
+			return fmt.Errorf("zip write %s: %w", hash, werr)
+		}
+	}
+	return nil
+}
+
 // RunToZip renders all boards to an in-memory ZIP archive and returns the bytes.
 func RunToZip(ws *workspace.Workspace, opts Options) ([]byte, error) {
 	var zipBuf bytes.Buffer
@@ -181,6 +209,12 @@ func RunToZip(ws *workspace.Workspace, opts Options) ([]byte, error) {
 	})
 	if err != nil {
 		return nil, err
+	}
+	if opts.IncludeAttachments {
+		// TODO: rewrite attachment: URLs in body markdown to ./attachments/<hash>/<name>
+		if err := bundleAttachments(zw, ws); err != nil {
+			return nil, err
+		}
 	}
 	if err := zw.Close(); err != nil {
 		return nil, err
@@ -221,15 +255,14 @@ func WriteZipTo(w io.Writer, ws *workspace.Workspace, opts Options) error {
 	return err
 }
 
-// WriteMarkdownZipTo streams a ZIP of the raw workspace source files (all .md
-// files plus settings.json if present) to w. No parsing or templating — the
-// files are zipped as they exist on disk.
-func WriteMarkdownZipTo(w io.Writer, ws *workspace.Workspace) error {
+// WriteMarkdownZipToOpts streams a ZIP of the raw workspace source files (all
+// .md files plus settings.json if present) to w, optionally bundling all
+// referenced attachment blobs under .attachments/.
+func WriteMarkdownZipToOpts(w io.Writer, ws *workspace.Workspace, opts Options) error {
 	entries, err := os.ReadDir(ws.Dir)
 	if err != nil {
 		return fmt.Errorf("read workspace: %w", err)
 	}
-
 	zw := zip.NewWriter(w)
 	for _, entry := range entries {
 		if entry.IsDir() {
@@ -251,5 +284,19 @@ func WriteMarkdownZipTo(w io.Writer, ws *workspace.Workspace) error {
 			return fmt.Errorf("zip write %s: %w", name, err)
 		}
 	}
+	if opts.IncludeAttachments {
+		if err := bundleAttachments(zw, ws); err != nil {
+			return err
+		}
+	}
 	return zw.Close()
+}
+
+// WriteMarkdownZipTo streams a ZIP of the raw workspace source files (all .md
+// files plus settings.json if present) to w, and bundles all referenced
+// attachment blobs under .attachments/. No body markdown rewriting; the
+// embedded attachment: URLs only resolve in environments that understand the
+// scheme (LiveBoard itself).
+func WriteMarkdownZipTo(w io.Writer, ws *workspace.Workspace) error {
+	return WriteMarkdownZipToOpts(w, ws, Options{IncludeAttachments: true})
 }

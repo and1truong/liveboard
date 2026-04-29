@@ -21,6 +21,11 @@ type MutationOp struct {
 	DeleteCard           *DeleteCardOp           `json:"-"`
 	CompleteCard         *CompleteCardOp         `json:"-"`
 	TagCard              *TagCardOp              `json:"-"`
+	AddAttachments       *AddAttachmentsOp       `json:"-"`
+	RemoveAttachment     *RemoveAttachmentOp     `json:"-"`
+	MoveAttachment       *MoveAttachmentOp       `json:"-"`
+	RenameAttachment     *RenameAttachmentOp     `json:"-"`
+	ReorderAttachments   *ReorderAttachmentsOp   `json:"-"`
 	AddColumn            *AddColumnOp            `json:"-"`
 	RenameColumn         *RenameColumnOp         `json:"-"`
 	DeleteColumn         *DeleteColumnOp         `json:"-"`
@@ -97,6 +102,51 @@ type TagCardOp struct {
 	ColIdx  int      `json:"col_idx"`
 	CardIdx int      `json:"card_idx"`
 	Tags    []string `json:"tags"`
+}
+
+// AddAttachmentsOp are the params for an "add_attachments" mutation.
+// Items is plural to make batch-uploads (drag N files) a single mutation.
+type AddAttachmentsOp struct {
+	ColIdx  int                 `json:"col_idx"`
+	CardIdx int                 `json:"card_idx"`
+	Items   []models.Attachment `json:"items"`
+}
+
+// RemoveAttachmentOp removes a single attachment by hash from a card.
+type RemoveAttachmentOp struct {
+	ColIdx  int    `json:"col_idx"`
+	CardIdx int    `json:"card_idx"`
+	Hash    string `json:"hash"`
+}
+
+// MoveAttachmentOp moves an attachment from one card to another on the same
+// board. Cross-board moves are orchestrated by the frontend as add+remove.
+// Append to dst's list (no insert-at-index).
+type MoveAttachmentOp struct {
+	FromCol  int    `json:"from_col"`
+	FromCard int    `json:"from_card"`
+	ToCol    int    `json:"to_col"`
+	ToCard   int    `json:"to_card"`
+	Hash     string `json:"hash"`
+}
+
+// RenameAttachmentOp updates the display name of a card's attachment.
+// The hash (and on-disk blob) is unchanged.
+type RenameAttachmentOp struct {
+	ColIdx  int    `json:"col_idx"`
+	CardIdx int    `json:"card_idx"`
+	Hash    string `json:"hash"`
+	NewName string `json:"new_name"`
+}
+
+// ReorderAttachmentsOp reorders a card's attachments to match HashesInOrder.
+// Hashes not present on the card are ignored; hashes present on the card but
+// missing from HashesInOrder are appended in their original relative order
+// (so a partial reorder is non-destructive).
+type ReorderAttachmentsOp struct {
+	ColIdx        int      `json:"col_idx"`
+	CardIdx       int      `json:"card_idx"`
+	HashesInOrder []string `json:"hashes_in_order"`
 }
 
 // AddColumnOp are the params for an "add_column" mutation.
@@ -194,6 +244,51 @@ var mutationRegistry = map[string]variantSpec{
 			op := mustCast[*AddCardOp](p)
 			_, err := applyAddCard(b, op.Column, op.Title, op.Prepend)
 			return err
+		},
+	},
+	"add_attachments": {
+		new: func() any { return &AddAttachmentsOp{} },
+		get: func(m *MutationOp) (any, bool) { return m.AddAttachments, m.AddAttachments != nil },
+		set: func(m *MutationOp, v any) { m.AddAttachments = mustCast[*AddAttachmentsOp](v) },
+		apply: func(b *models.Board, p any) error {
+			op := mustCast[*AddAttachmentsOp](p)
+			return applyAddAttachments(b, op.ColIdx, op.CardIdx, op.Items)
+		},
+	},
+	"remove_attachment": {
+		new: func() any { return &RemoveAttachmentOp{} },
+		get: func(m *MutationOp) (any, bool) { return m.RemoveAttachment, m.RemoveAttachment != nil },
+		set: func(m *MutationOp, v any) { m.RemoveAttachment = mustCast[*RemoveAttachmentOp](v) },
+		apply: func(b *models.Board, p any) error {
+			op := mustCast[*RemoveAttachmentOp](p)
+			return applyRemoveAttachment(b, op.ColIdx, op.CardIdx, op.Hash)
+		},
+	},
+	"move_attachment": {
+		new: func() any { return &MoveAttachmentOp{} },
+		get: func(m *MutationOp) (any, bool) { return m.MoveAttachment, m.MoveAttachment != nil },
+		set: func(m *MutationOp, v any) { m.MoveAttachment = mustCast[*MoveAttachmentOp](v) },
+		apply: func(b *models.Board, p any) error {
+			op := mustCast[*MoveAttachmentOp](p)
+			return applyMoveAttachment(b, op.FromCol, op.FromCard, op.ToCol, op.ToCard, op.Hash)
+		},
+	},
+	"rename_attachment": {
+		new: func() any { return &RenameAttachmentOp{} },
+		get: func(m *MutationOp) (any, bool) { return m.RenameAttachment, m.RenameAttachment != nil },
+		set: func(m *MutationOp, v any) { m.RenameAttachment = mustCast[*RenameAttachmentOp](v) },
+		apply: func(b *models.Board, p any) error {
+			op := mustCast[*RenameAttachmentOp](p)
+			return applyRenameAttachment(b, op.ColIdx, op.CardIdx, op.Hash, op.NewName)
+		},
+	},
+	"reorder_attachments": {
+		new: func() any { return &ReorderAttachmentsOp{} },
+		get: func(m *MutationOp) (any, bool) { return m.ReorderAttachments, m.ReorderAttachments != nil },
+		set: func(m *MutationOp, v any) { m.ReorderAttachments = mustCast[*ReorderAttachmentsOp](v) },
+		apply: func(b *models.Board, p any) error {
+			op := mustCast[*ReorderAttachmentsOp](p)
+			return applyReorderAttachments(b, op.ColIdx, op.CardIdx, op.HashesInOrder)
 		},
 	},
 	"move_card": {

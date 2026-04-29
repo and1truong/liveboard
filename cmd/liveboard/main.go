@@ -54,6 +54,7 @@ func main() {
 	rootCmd.AddCommand(serveCmd())
 	rootCmd.AddCommand(mcpCmd())
 	rootCmd.AddCommand(exportCmd())
+	rootCmd.AddCommand(gcCmd())
 
 	if err := rootCmd.Execute(); err != nil {
 		os.Exit(1)

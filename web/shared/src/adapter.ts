@@ -1,4 +1,4 @@
-import type { AppSettings, Board, BoardSettings, MutationOp } from './types.js'
+import type { AppSettings, Attachment, Board, BoardSettings, MutationOp } from './types.js'
 
 export interface BoardSummary {
   id: string
@@ -78,6 +78,22 @@ export interface BackendAdapter {
   // so the renderer can enable/disable UI affordances up front. Known values:
   //   'local-storage', 'realtime', 'export:html', 'export:markdown'
   capabilities(): string[]
+
+  // attachmentsBaseURL returns the URL prefix the renderer can use to
+  // construct download URLs locally (e.g. "/api/v1/attachments"). Returns
+  // null when this adapter has no URL backing (LocalAdapter).
+  attachmentsBaseURL(): string | null
+  // uploadAttachment stores the bytes (HTTP for server, IndexedDB for local)
+  // and returns the descriptor to embed in a subsequent add_attachments mutation.
+  uploadAttachment(file: File): Promise<Attachment>
+  // attachmentURL resolves a descriptor to a URL the renderer can pass to
+  // <a href> / <img src>. ServerAdapter returns an HTTP path; LocalAdapter
+  // returns an `attachment:<hash>` sentinel that the renderer's body-markdown
+  // rewrite plugin resolves to a blob: URL on demand.
+  attachmentURL(att: Pick<Attachment, 'h' | 'n'>): string
+  // Optional thumb URL. ServerAdapter appends `?thumb=1`; LocalAdapter may
+  // omit (renderer falls back to attachmentURL).
+  attachmentThumbURL?(att: Pick<Attachment, 'h' | 'n'>): string
 }
 
 export interface SearchHit {

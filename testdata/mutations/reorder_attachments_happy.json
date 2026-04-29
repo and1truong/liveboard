@@ -1,0 +1,45 @@
+{
+  "name": "reorder_attachments_happy",
+  "description": "Reorder attachments to match given hash list; unlisted attachments preserved at end.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "C",
+            "attachments": [
+              { "h": "a.pdf", "n": "a.pdf", "s": 1, "m": "application/pdf" },
+              { "h": "b.png", "n": "b.png", "s": 2, "m": "image/png" },
+              { "h": "c.txt", "n": "c.txt", "s": 3, "m": "text/plain" }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "op": {
+    "type": "reorder_attachments",
+    "col_idx": 0, "card_idx": 0,
+    "hashes_in_order": ["c.txt", "a.pdf", "b.png"]
+  },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "C",
+            "attachments": [
+              { "h": "c.txt", "n": "c.txt", "s": 3, "m": "text/plain" },
+              { "h": "a.pdf", "n": "a.pdf", "s": 1, "m": "application/pdf" },
+              { "h": "b.png", "n": "b.png", "s": 2, "m": "image/png" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

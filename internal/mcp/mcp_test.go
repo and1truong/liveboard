@@ -652,6 +652,13 @@ var mcpHiddenMutations = map[string]string{
 	"update_board_icon":      "cosmetic; no LLM use case",
 	"update_board_settings":  "per-board UI preferences (view_mode, etc.) — not LLM-driven",
 	"move_card_to_board":     "two-phase cross-board write; needs special handling beyond engine.Apply*",
+	// Attachment mutations are exposed under card_-prefixed tool names to
+	// namespace them clearly; they don't match mutation names by convention.
+	"add_attachments":     "exposed as card_add_attachment_ref (prefixed to distinguish from HTTP upload endpoint)",
+	"remove_attachment":   "exposed as card_remove_attachment (card_ prefix for namespace consistency)",
+	"move_attachment":     "exposed as card_move_attachment (card_ prefix for namespace consistency)",
+	"rename_attachment":   "exposed as card_rename_attachment (card_ prefix for namespace consistency)",
+	"reorder_attachments": "exposed as card_reorder_attachments (card_ prefix for namespace consistency)",
 }
 
 // TestMCPMutationCoverage asserts every mutation registered in

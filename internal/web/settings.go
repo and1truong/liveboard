@@ -16,26 +16,27 @@ import (
 
 // AppSettings holds persisted user preferences (workspace-global).
 type AppSettings struct {
-	SiteName          string            `json:"site_name"`
-	Theme             string            `json:"theme"`
-	ColorTheme        string            `json:"color_theme"`
-	FontFamily        string            `json:"font_family"`
-	ColumnWidth       int               `json:"column_width"`
-	SidebarPosition   string            `json:"sidebar_position"`
-	DefaultColumns    []string          `json:"default_columns,omitempty"`
-	ShowCheckbox      bool              `json:"show_checkbox"`
-	NewLineTrigger    string            `json:"newline_trigger"`
-	CardPosition      string            `json:"card_position"`
-	CardDisplayMode   string            `json:"card_display_mode"`
-	PinnedBoards      []string          `json:"pinned_boards,omitempty"`
-	KeyboardShortcuts bool              `json:"keyboard_shortcuts"`
-	WeekStart         string            `json:"week_start,omitempty"`
-	LastBoard         string            `json:"last_board,omitempty"`
-	ReminderEnabled   bool              `json:"reminder_enabled,omitempty"`
-	ReminderTimezone  string            `json:"reminder_timezone,omitempty"`
-	Tags              []string          `json:"tags,omitempty"`
-	TagColors         map[string]string `json:"tag_colors,omitempty"`
-	FolderCollapse    map[string]bool   `json:"folder_collapse,omitempty"`
+	SiteName           string            `json:"site_name"`
+	Theme              string            `json:"theme"`
+	ColorTheme         string            `json:"color_theme"`
+	FontFamily         string            `json:"font_family"`
+	ColumnWidth        int               `json:"column_width"`
+	SidebarPosition    string            `json:"sidebar_position"`
+	DefaultColumns     []string          `json:"default_columns,omitempty"`
+	ShowCheckbox       bool              `json:"show_checkbox"`
+	NewLineTrigger     string            `json:"newline_trigger"`
+	CardPosition       string            `json:"card_position"`
+	CardDisplayMode    string            `json:"card_display_mode"`
+	PinnedBoards       []string          `json:"pinned_boards,omitempty"`
+	KeyboardShortcuts  bool              `json:"keyboard_shortcuts"`
+	WeekStart          string            `json:"week_start,omitempty"`
+	LastBoard          string            `json:"last_board,omitempty"`
+	ReminderEnabled    bool              `json:"reminder_enabled,omitempty"`
+	ReminderTimezone   string            `json:"reminder_timezone,omitempty"`
+	Tags               []string          `json:"tags,omitempty"`
+	TagColors          map[string]string `json:"tag_colors,omitempty"`
+	FolderCollapse     map[string]bool   `json:"folder_collapse,omitempty"`
+	AttachmentMaxBytes int64             `json:"attachments_max_bytes,omitempty"`
 }
 
 // ResolvedSettings holds the effective settings for a board view,

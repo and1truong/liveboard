@@ -24,6 +24,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 
 	apiv1 "github.com/and1truong/liveboard/internal/api/v1"
+	"github.com/and1truong/liveboard/internal/attachments"
 	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/internal/export"
 	livemcp "github.com/and1truong/liveboard/internal/mcp"
@@ -170,12 +171,15 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 			}
 		}
 	}
+	appSettings := web.LoadSettingsFromDir(s.ws.Dir)
 	r.Mount("/api/v1", apiv1.Router(apiv1.Deps{
-		Dir:       s.ws.Dir,
-		Workspace: s.ws,
-		Engine:    s.eng,
-		SSE:       s.sse,
-		Search:    idx,
+		Dir:                s.ws.Dir,
+		Workspace:          s.ws,
+		Engine:             s.eng,
+		SSE:                s.sse,
+		Search:             idx,
+		Attachments:        attachments.NewStore(s.ws.Dir),
+		AttachmentMaxBytes: appSettings.AttachmentMaxBytes,
 	}))
 	r.Method(http.MethodGet, "/api/versions", apiv1.VersionsHandler())
 
@@ -185,23 +189,26 @@ func (s *Server) mountAPIRoutes(r chi.Router) {
 
 // exportHandler streams a workspace ZIP. ?format=md returns raw markdown;
 // ?format=html (default) renders a static HTML site using settings.json for
-// theme, color-theme, and site-name.
+// theme, color-theme, and site-name. Pass ?attachments=false to exclude
+// referenced attachment blobs from the archive.
 func (s *Server) exportHandler(w http.ResponseWriter, r *http.Request) {
 	format := r.URL.Query().Get("format")
+	includeAttachments := r.URL.Query().Get("attachments") != "false"
 	w.Header().Set("Content-Type", "application/zip")
 
 	switch format {
 	case "md", "markdown":
 		w.Header().Set("Content-Disposition", `attachment; filename="liveboard-export-md.zip"`)
-		if err := export.WriteMarkdownZipTo(w, s.ws); err != nil {
+		if err := export.WriteMarkdownZipToOpts(w, s.ws, export.Options{IncludeAttachments: includeAttachments}); err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 		}
 	case "", "html":
 		settings := web.LoadSettingsFromDir(s.ws.Dir)
 		opts := export.Options{
-			Theme:      settings.Theme,
-			ColorTheme: settings.ColorTheme,
-			SiteName:   settings.SiteName,
+			Theme:              settings.Theme,
+			ColorTheme:         settings.ColorTheme,
+			SiteName:           settings.SiteName,
+			IncludeAttachments: includeAttachments,
 		}
 		w.Header().Set("Content-Disposition", `attachment; filename="liveboard-export.zip"`)
 		if err := export.WriteZipTo(w, s.ws, opts); err != nil {

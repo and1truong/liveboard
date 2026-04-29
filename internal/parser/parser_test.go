@@ -3,6 +3,9 @@ package parser
 import (
 	"reflect"
 	"testing"
+
+	"github.com/and1truong/liveboard/internal/writer"
+	"github.com/and1truong/liveboard/pkg/models"
 )
 
 const sampleBoard = `---
@@ -708,5 +711,84 @@ func TestParseCard_Links(t *testing.T) {
 	want := []string{"foo:aBc1234XyZ", "bar:Q9rT5pZ2nM"}
 	if !reflect.DeepEqual(got, want) {
 		t.Errorf("links = %v, want %v", got, want)
+	}
+}
+
+func TestParseCardAttachments(t *testing.T) {
+	md := `---
+version: 1
+name: T
+---
+
+## Col
+
+- [ ] Card
+  attachments: [{"h":"a3f9.pdf","n":"Plan.pdf","s":12,"m":"application/pdf"}]
+`
+	b, err := Parse(md)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if len(b.Columns) != 1 || len(b.Columns[0].Cards) != 1 {
+		t.Fatalf("shape: %+v", b)
+	}
+	c := b.Columns[0].Cards[0]
+	if len(c.Attachments) != 1 {
+		t.Fatalf("attachments len: %d", len(c.Attachments))
+	}
+	got := c.Attachments[0]
+	want := models.Attachment{Hash: "a3f9.pdf", Name: "Plan.pdf", Size: 12, Mime: "application/pdf"}
+	if got != want {
+		t.Errorf("got %+v want %+v", got, want)
+	}
+}
+
+func TestParseCardAttachmentsMalformed(t *testing.T) {
+	md := `---
+version: 1
+name: T
+---
+
+## Col
+
+- [ ] Card
+  attachments: not-json
+`
+	b, err := Parse(md)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if len(b.Columns[0].Cards[0].Attachments) != 0 {
+		t.Errorf("expected empty attachments on malformed input")
+	}
+}
+
+func TestRoundtripCardAttachments(t *testing.T) {
+	original := &models.Board{
+		Version: 1,
+		Name:    "T",
+		Columns: []models.Column{{
+			Name: "Col",
+			Cards: []models.Card{{
+				Title: "Card",
+				Attachments: []models.Attachment{
+					{Hash: "a3f9.pdf", Name: "Plan.pdf", Size: 12, Mime: "application/pdf"},
+					{Hash: "7c2b.png", Name: "shot.png", Size: 88, Mime: "image/png"},
+				},
+			}},
+		}},
+	}
+	rendered, err := writer.Render(original)
+	if err != nil {
+		t.Fatalf("render: %v", err)
+	}
+	parsed, err := Parse(rendered)
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	got := parsed.Columns[0].Cards[0].Attachments
+	if !reflect.DeepEqual(got, original.Columns[0].Cards[0].Attachments) {
+		t.Errorf("roundtrip mismatch:\n got:  %+v\n want: %+v\n rendered:\n%s",
+			got, original.Columns[0].Cards[0].Attachments, rendered)
 	}
 }

@@ -15,7 +15,8 @@ Markdown-powered Kanban board, real-time collaboration.
 - **Workspace**: Directory of `.md` files — root container for all boards
 - **Board**: Single `.md` file. YAML frontmatter holds metadata (name, description, icon, tags, members, settings). Versioned for optimistic concurrency
 - **Column**: H2 heading (`##`). Contains cards. Can collapse, reorder, sort
-- **Card**: Markdown list item (`- [ ]` or `- `). Has: title, body, tags, priority (critical/high/medium/low), due date, assignee, completed state
+- **Card**: Markdown list item (`- [ ]` or `- `). Has: title, body, tags, priority (critical/high/medium/low), due date, assignee, completed state, attachments
+- **Attachment**: File attached to a card. Stored as blob in `<workspace>/.attachments/` keyed by sha256+ext. Card carries descriptors (`{h,n,s,m}`); body markdown can embed via `attachment:<hash>` URLs. See `docs/attachments.md`. GC via `liveboard gc`
 - **Settings**: Two-tier — global (`settings.json` in workspace) w/ per-board overrides (YAML frontmatter). Includes: theme, color theme, site name, column width, sidebar position, card display mode, default columns
 - **Command Palette**: Cmd+K / Ctrl+K — navigate between boards and pages
 - **Parser/Writer**: Roundtrips between markdown text and Go structs (`pkg/models/models.go`)
@@ -56,16 +57,17 @@ settings:                         # per-board setting overrides
 
 ## Architecture
 
-- `cmd/liveboard/` — CLI entrypoint (cobra)
+- `cmd/liveboard/` — CLI entrypoint (cobra). `liveboard gc` removes orphaned attachment blobs.
 - `internal/api/` — chi router, middleware, shell/renderer mount, `/api/export`
-- `internal/api/v1/` — JSON API for renderer (boards, mutations, settings, search, SSE events)
+- `internal/api/v1/` — JSON API for renderer (boards, mutations, settings, search, SSE events, attachments)
 - `internal/web/` — settings persistence (`settings.go`) and SSE broker (`sse.go`); no HTTP handlers
 - `internal/board/` — CRUD engine, mutex-per-board, optimistic locking
+- `internal/attachments/` — content-addressed blob pool, ref scanning, GC, JPEG thumbnails
 - `internal/parser/` — markdown + YAML frontmatter parsing
 - `internal/writer/` — struct-to-markdown serialization
 - `internal/workspace/` — directory scanning, board listing
 - `internal/templates/` — Go HTML templates for static export only (`export_*.html`)
-- `internal/export/` — workspace → static HTML/ZIP export
+- `internal/export/` — workspace → static HTML/ZIP export (bundles `.attachments/` by default; `?attachments=false` opts out)
 - `web/shell/`, `web/renderer/default/`, `web/shared/` — TypeScript SPA (shell iframe-hosts renderer; shared defines BackendAdapter protocol)
 - `web/img/` — logos / icons for desktop bundle (`make generate-icon`)
 - `pkg/models/` — shared data structs

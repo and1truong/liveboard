@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/and1truong/liveboard/internal/attachments"
 	"github.com/and1truong/liveboard/internal/workspace"
 )
 
@@ -383,4 +384,96 @@ func fileNames(files map[string]string) []string {
 		names = append(names, k)
 	}
 	return names
+}
+
+func zipNames(zr *zip.Reader) []string {
+	out := make([]string, 0, len(zr.File))
+	for _, f := range zr.File {
+		out = append(out, f.Name)
+	}
+	return out
+}
+
+func TestExportMarkdownBundlesAttachments(t *testing.T) {
+	dir := t.TempDir()
+	store := attachments.NewStore(dir)
+	desc, err := store.Put(bytes.NewReader([]byte("blob")), "x.txt")
+	if err != nil {
+		t.Fatal(err)
+	}
+	board := "---\nversion: 1\nname: B\n---\n\n## C\n\n- [ ] x\n  attachments: [{\"h\":\"" + desc.Hash + "\",\"n\":\"x.txt\",\"s\":4,\"m\":\"text/plain\"}]\n"
+	if writeErr := os.WriteFile(filepath.Join(dir, "b.md"), []byte(board), 0o644); writeErr != nil {
+		t.Fatal(writeErr)
+	}
+
+	var buf bytes.Buffer
+	ws := workspace.Open(dir)
+	if zipErr := WriteMarkdownZipToOpts(&buf, ws, Options{IncludeAttachments: true}); zipErr != nil {
+		t.Fatal(zipErr)
+	}
+	zr, err := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if err != nil {
+		t.Fatal(err)
+	}
+	want := ".attachments/" + desc.Hash
+	var found bool
+	for _, f := range zr.File {
+		if f.Name == want {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("attachment blob missing from zip; got entries: %v", zipNames(zr))
+	}
+}
+
+func TestExportMarkdownSkipsAttachmentsWhenDisabled(t *testing.T) {
+	dir := t.TempDir()
+	store := attachments.NewStore(dir)
+	desc, _ := store.Put(bytes.NewReader([]byte("blob")), "x.txt")
+	board := "---\nversion: 1\nname: B\n---\n\n## C\n\n- [ ] x\n  attachments: [{\"h\":\"" + desc.Hash + "\",\"n\":\"x.txt\",\"s\":4,\"m\":\"text/plain\"}]\n"
+	_ = os.WriteFile(filepath.Join(dir, "b.md"), []byte(board), 0o644)
+
+	var buf bytes.Buffer
+	ws := workspace.Open(dir)
+	if err := WriteMarkdownZipToOpts(&buf, ws, Options{IncludeAttachments: false}); err != nil {
+		t.Fatal(err)
+	}
+	zr, zrErr := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if zrErr != nil {
+		t.Fatal(zrErr)
+	}
+	for _, f := range zr.File {
+		if strings.HasPrefix(f.Name, ".attachments/") {
+			t.Errorf("attachments included when disabled: %s", f.Name)
+		}
+	}
+}
+
+func TestExportHTMLBundlesAttachments(t *testing.T) {
+	dir := t.TempDir()
+	store := attachments.NewStore(dir)
+	desc, _ := store.Put(bytes.NewReader([]byte("blob")), "x.txt")
+	board := "---\nversion: 1\nname: B\n---\n\n## C\n\n- [ ] x\n  attachments: [{\"h\":\"" + desc.Hash + "\",\"n\":\"x.txt\",\"s\":4,\"m\":\"text/plain\"}]\n"
+	_ = os.WriteFile(filepath.Join(dir, "b.md"), []byte(board), 0o644)
+
+	var buf bytes.Buffer
+	ws := workspace.Open(dir)
+	if err := WriteZipTo(&buf, ws, Options{IncludeAttachments: true, SiteName: "X"}); err != nil {
+		t.Fatal(err)
+	}
+	zr, zrErr := zip.NewReader(bytes.NewReader(buf.Bytes()), int64(buf.Len()))
+	if zrErr != nil {
+		t.Fatal(zrErr)
+	}
+	want := ".attachments/" + desc.Hash
+	var found bool
+	for _, f := range zr.File {
+		if f.Name == want {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("HTML export missing attachment blob; got entries: %v", zipNames(zr))
+	}
 }

@@ -10,13 +10,14 @@ import type {
   Subscription,
   WorkspaceInfo,
 } from '../adapter.js'
-import type { AppSettings, Board, BoardSettings, MutationOp } from '../types.js'
+import type { AppSettings, Attachment, Board, BoardSettings, MutationOp } from '../types.js'
 import { OpError } from '../types.js'
 import { ProtocolError } from '../protocol.js'
 import { applyOp } from '../boardOps.js'
 import type { StorageDriver } from './local-storage-driver.js'
 import { WELCOME_BOARD, WORKSPACE_NAME } from './local-seed.js'
 import { slugify } from '../util/slug.js'
+import { putBlob } from './local-attachments.js'
 
 const KEY_PREFIX = 'liveboard:v1:'
 const boardKey = (id: string): string => `${KEY_PREFIX}board:${id}`
@@ -445,6 +446,21 @@ export class LocalAdapter implements BackendAdapter {
 
   capabilities(): string[] {
     return ['local-storage', 'realtime']
+  }
+
+  attachmentsBaseURL(): string | null {
+    return null
+  }
+
+  async uploadAttachment(file: File): Promise<Attachment> {
+    return putBlob(file, file.name)
+  }
+
+  attachmentURL(att: Pick<Attachment, 'h' | 'n'>): string {
+    // Returns a sentinel URL that the renderer's body-markdown rewrite
+    // resolves to a `blob:` URL via getBlob() at view time. A direct
+    // synchronous URL is impossible because IndexedDB lookups are async.
+    return `attachment:${att.h}`
   }
 
   async backlinks(cardId: string): Promise<BacklinkHit[]> {

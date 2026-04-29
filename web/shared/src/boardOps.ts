@@ -1,4 +1,4 @@
-import type { Board, Column, Card, MutationOp } from './types.js'
+import type { Attachment, Board, Column, Card, MutationOp } from './types.js'
 import { OpError } from './types.js'
 import { newCardId } from './util/cardid.js'
 
@@ -202,6 +202,96 @@ export function applyOp(board: Board, op: MutationOp): Board {
       const src = colAt(b, op.col_idx)
       cardAt(src, op.card_idx, op.col_idx)
       src.cards = src.cards.filter((_, i) => i !== op.card_idx)
+      return b
+    }
+    case 'add_attachments': {
+      const col = colAt(b, op.col_idx)
+      cardAt(col, op.card_idx, op.col_idx)
+      const card = col.cards[op.card_idx]!
+      ensureCardId(card)
+      const existing = card.attachments ?? []
+      const seen = new Set(existing.map((a) => a.h))
+      const merged = [...existing]
+      for (const a of op.items) {
+        if (seen.has(a.h)) continue
+        merged.push(a)
+        seen.add(a.h)
+      }
+      card.attachments = merged
+      return b
+    }
+    case 'remove_attachment': {
+      const col = colAt(b, op.col_idx)
+      cardAt(col, op.card_idx, op.col_idx)
+      const card = col.cards[op.card_idx]!
+      ensureCardId(card)
+      card.attachments = (card.attachments ?? []).filter((a) => a.h !== op.hash)
+      return b
+    }
+    case 'move_attachment': {
+      const src = colAt(b, op.from_col)
+      cardAt(src, op.from_card, op.from_col)
+      const dst = colAt(b, op.to_col)
+      cardAt(dst, op.to_card, op.to_col)
+      const srcCard = src.cards[op.from_card]!
+      const dstCard = dst.cards[op.to_card]!
+      ensureCardId(srcCard)
+      ensureCardId(dstCard)
+      const srcAtts = srcCard.attachments ?? []
+      const idx = srcAtts.findIndex((a) => a.h === op.hash)
+      if (idx < 0) {
+        throw new OpError(
+          'NOT_FOUND',
+          `attachment ${op.hash} on card ${op.from_col}/${op.from_card}`,
+        )
+      }
+      const moved = srcAtts[idx]!
+      srcCard.attachments = srcAtts.filter((_, i) => i !== idx)
+      const dstAtts = dstCard.attachments ?? []
+      if (!dstAtts.some((a) => a.h === op.hash)) {
+        dstCard.attachments = [...dstAtts, moved]
+      } else {
+        dstCard.attachments = dstAtts
+      }
+      return b
+    }
+    case 'rename_attachment': {
+      const col = colAt(b, op.col_idx)
+      cardAt(col, op.card_idx, op.col_idx)
+      const card = col.cards[op.card_idx]!
+      ensureCardId(card)
+      const atts = card.attachments ?? []
+      const target = atts.find((a) => a.h === op.hash)
+      if (!target) {
+        throw new OpError(
+          'NOT_FOUND',
+          `attachment ${op.hash} on card ${op.col_idx}/${op.card_idx}`,
+        )
+      }
+      target.n = op.new_name
+      return b
+    }
+    case 'reorder_attachments': {
+      const col = colAt(b, op.col_idx)
+      cardAt(col, op.card_idx, op.col_idx)
+      const card = col.cards[op.card_idx]!
+      ensureCardId(card)
+      const atts = card.attachments ?? []
+      const byHash = new Map<string, Attachment>(atts.map((a) => [a.h, a]))
+      const out: Attachment[] = []
+      const placed = new Set<string>()
+      for (const h of op.hashes_in_order) {
+        if (placed.has(h)) continue
+        const a = byHash.get(h)
+        if (a) {
+          out.push(a)
+          placed.add(h)
+        }
+      }
+      for (const a of atts) {
+        if (!placed.has(a.h)) out.push(a)
+      }
+      card.attachments = out
       return b
     }
     default:

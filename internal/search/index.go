@@ -23,15 +23,16 @@ type Hit struct {
 }
 
 type doc struct {
-	BoardID   string   `json:"board_id"`
-	BoardName string   `json:"board_name"`
-	ColIdx    int      `json:"col_idx"`
-	CardIdx   int      `json:"card_idx"`
-	CardID    string   `json:"card_id"`
-	Title     string   `json:"title"`
-	Body      string   `json:"body"`
-	Tags      []string `json:"tags"`
-	Links     []string `json:"links"`
+	BoardID         string   `json:"board_id"`
+	BoardName       string   `json:"board_name"`
+	ColIdx          int      `json:"col_idx"`
+	CardIdx         int      `json:"card_idx"`
+	CardID          string   `json:"card_id"`
+	Title           string   `json:"title"`
+	Body            string   `json:"body"`
+	Tags            []string `json:"tags"`
+	Links           []string `json:"links"`
+	AttachmentNames string   `json:"attachment_names,omitempty"`
 }
 
 // Index is an in-memory bleve index of cards across all boards.
@@ -75,6 +76,13 @@ func (i *Index) UpdateBoard(slug string, b *models.Board) error {
 				Body:      c.Body,
 				Tags:      c.Tags,
 				Links:     c.Links,
+			}
+			if len(c.Attachments) > 0 {
+				names := make([]string, 0, len(c.Attachments))
+				for _, a := range c.Attachments {
+					names = append(names, a.Name)
+				}
+				d.AttachmentNames = strings.Join(names, " ")
 			}
 			id := fmt.Sprintf("%s:%d:%d", slug, cIdx, kIdx)
 			if err := i.idx.Index(id, d); err != nil {

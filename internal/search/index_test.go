@@ -31,6 +31,30 @@ func mustNew(t *testing.T) *search.Index {
 	return idx
 }
 
+// TestSearch_AttachmentNames verifies that attachment display names are
+// indexed and findable via the standard query string search.
+func TestSearch_AttachmentNames(t *testing.T) {
+	idx := mustNew(t)
+	b := newBoard("B",
+		col("C", models.Card{
+			Title: "ticket",
+			Attachments: []models.Attachment{
+				{Hash: "h1", Name: "Q1-roadmap.pdf", Mime: "application/pdf"},
+			},
+		}),
+	)
+	if err := idx.UpdateBoard("slug", b); err != nil {
+		t.Fatal(err)
+	}
+	hits, err := idx.Search("Q1-roadmap", 10)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(hits) == 0 {
+		t.Errorf("expected at least 1 hit for attachment name 'Q1-roadmap'")
+	}
+}
+
 func TestSearch_BuildAndQuery(t *testing.T) {
 	idx := mustNew(t)
 	b := newBoard("Welcome", col("Todo", card("Read the docs", "see the wiki", "docs")))

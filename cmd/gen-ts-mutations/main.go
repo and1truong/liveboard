@@ -53,7 +53,7 @@ func render(variants map[string]any) ([]byte, error) {
 	b.WriteString("// AUTO-GENERATED FROM internal/board/mutation.go.\n")
 	b.WriteString("// Run `make codegen` to regenerate. Do not edit by hand.\n")
 	b.WriteString("\n")
-	b.WriteString("import type { BoardSettings } from './types.js'\n")
+	b.WriteString("import type { Attachment, BoardSettings } from './types.js'\n")
 	b.WriteString("\n")
 
 	for _, name := range names {
@@ -139,11 +139,13 @@ func goTypeToTS(t reflect.Type) (string, error) {
 	case reflect.Ptr:
 		return goTypeToTS(t.Elem())
 	case reflect.Struct:
-		// One concrete cross-package reference today: models.BoardSettings.
-		// The generated file imports it from types.ts at the top.
+		// Concrete cross-package references handled here. The generated file
+		// imports these names from types.ts at the top.
 		switch t.Name() {
 		case "BoardSettings":
 			return "BoardSettings", nil
+		case "Attachment":
+			return "Attachment", nil
 		}
 	}
 	return "", fmt.Errorf("unsupported Go type: %s (kind=%s)", t.String(), t.Kind())

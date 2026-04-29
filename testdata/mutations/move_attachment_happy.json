@@ -1,0 +1,44 @@
+{
+  "name": "move_attachment_happy",
+  "description": "Move an attachment from one card to another on the same board.",
+  "board_before": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          {
+            "title": "Src",
+            "attachments": [
+              { "h": "a.pdf", "n": "a.pdf", "s": 1, "m": "application/pdf" }
+            ]
+          },
+          { "title": "Dst" }
+        ]
+      }
+    ]
+  },
+  "op": {
+    "type": "move_attachment",
+    "from_col": 0, "from_card": 0,
+    "to_col": 0, "to_card": 1,
+    "hash": "a.pdf"
+  },
+  "board_after": {
+    "version": 1,
+    "columns": [
+      {
+        "name": "Todo",
+        "cards": [
+          { "title": "Src" },
+          {
+            "title": "Dst",
+            "attachments": [
+              { "h": "a.pdf", "n": "a.pdf", "s": 1, "m": "application/pdf" }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -35,3 +35,24 @@ describe('sanitize', () => {
     expect(sanitize("<a onmouseover='x'>a</a>")).not.toContain('onmouseover')
   })
 })
+
+describe('renderMarkdown attachment URL rewriting', () => {
+  it('rewrites attachment: URLs in img src via resolver', async () => {
+    const html = await renderMarkdown('![](attachment:aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111.png)', {
+      attachmentResolver: async (hash) => `/api/v1/attachments/${hash}/x.png`,
+    })
+    expect(html).toContain('src="/api/v1/attachments/aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111.png/x.png"')
+  })
+
+  it('rewrites attachment: URLs in anchor href via resolver', async () => {
+    const html = await renderMarkdown('[doc](attachment:bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222.pdf)', {
+      attachmentResolver: (hash) => `/x/${hash}`,
+    })
+    expect(html).toContain('href="/x/bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222bbbb2222.pdf"')
+  })
+
+  it('without resolver, attachment: URLs are sanitized but not resolved', async () => {
+    const html = await renderMarkdown('![](attachment:aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111aaaa1111.png)')
+    expect(html).toContain('attachment:')
+  })
+})

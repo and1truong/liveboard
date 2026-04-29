@@ -58,6 +58,7 @@ export class Broker {
         initialBoardId: this.opts.initialBoardId ?? null,
         initialCardPos: this.opts.initialCardPos ?? null,
         initialFocusedColumn: this.opts.initialFocusedColumn ?? null,
+        attachmentsBaseURL: this.adapter.attachmentsBaseURL(),
       })
       return
     }
@@ -157,6 +158,8 @@ export class Broker {
         return this.adapter.backlinks(req.params.cardId)
       case 'workspace.exportUrl':
         return { url: this.adapter.getExportUrl(req.params.format) }
+      case 'attachment.upload':
+        return this.adapter.uploadAttachment(req.params.file)
     }
   }
 

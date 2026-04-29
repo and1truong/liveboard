@@ -35,6 +35,17 @@ export interface Card {
   due?: string
   metadata?: Record<string, string>
   body?: string
+  attachments?: Attachment[]
+}
+
+// Attachment is a card-level reference to a blob in the workspace pool.
+// Field names use short keys to keep the serialized JSON line scannable
+// in raw markdown — mirror of pkg/models.Attachment.
+export interface Attachment {
+  h: string  // sha256 hex + extension, e.g. "a3f9...e1.pdf"
+  n: string  // display filename
+  s: number  // bytes
+  m: string  // sniffed MIME at upload time
 }
 
 export interface BoardSettings {

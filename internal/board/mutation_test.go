@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"reflect"
 	"strings"
 	"testing"
 
@@ -378,5 +379,192 @@ func TestRegistryMatchesVectorSuite(t *testing.T) {
 		if !covered[typ] {
 			t.Errorf("variant %q is not exercised by any vector in testdata/mutations/", typ)
 		}
+	}
+}
+
+func TestApplyAddAttachments(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{{
+			Name:  "Col",
+			Cards: []models.Card{{Title: "C", ID: "id1"}},
+		}},
+	}
+	op := board.MutationOp{
+		Type: "add_attachments",
+		AddAttachments: &board.AddAttachmentsOp{
+			ColIdx:  0,
+			CardIdx: 0,
+			Items: []models.Attachment{
+				{Hash: "a3f9.pdf", Name: "Plan.pdf", Size: 12, Mime: "application/pdf"},
+			},
+		},
+	}
+	if err := board.ApplyMutation(b, op); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	got := b.Columns[0].Cards[0].Attachments
+	if len(got) != 1 || got[0].Hash != "a3f9.pdf" {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestApplyRemoveAttachment(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{{
+			Name: "Col",
+			Cards: []models.Card{{
+				Title: "C", ID: "id1",
+				Attachments: []models.Attachment{
+					{Hash: "a.pdf", Name: "a.pdf"},
+					{Hash: "b.png", Name: "b.png"},
+				},
+			}},
+		}},
+	}
+	op := board.MutationOp{
+		Type:             "remove_attachment",
+		RemoveAttachment: &board.RemoveAttachmentOp{ColIdx: 0, CardIdx: 0, Hash: "a.pdf"},
+	}
+	if err := board.ApplyMutation(b, op); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	got := b.Columns[0].Cards[0].Attachments
+	if len(got) != 1 || got[0].Hash != "b.png" {
+		t.Errorf("got %+v", got)
+	}
+}
+
+func TestApplyMoveAttachment(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{{
+			Name: "Col",
+			Cards: []models.Card{
+				{Title: "Src", ID: "s",
+					Attachments: []models.Attachment{{Hash: "a.pdf", Name: "a.pdf"}},
+				},
+				{Title: "Dst", ID: "d"},
+			},
+		}},
+	}
+	op := board.MutationOp{
+		Type: "move_attachment",
+		MoveAttachment: &board.MoveAttachmentOp{
+			FromCol: 0, FromCard: 0, ToCol: 0, ToCard: 1, Hash: "a.pdf",
+		},
+	}
+	if err := board.ApplyMutation(b, op); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if len(b.Columns[0].Cards[0].Attachments) != 0 {
+		t.Errorf("src not cleared")
+	}
+	if got := b.Columns[0].Cards[1].Attachments; len(got) != 1 || got[0].Hash != "a.pdf" {
+		t.Errorf("dst got %+v", got)
+	}
+}
+
+func TestApplyRenameAttachment(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{{
+			Name: "Col",
+			Cards: []models.Card{{
+				Title: "C", ID: "id",
+				Attachments: []models.Attachment{{Hash: "a.pdf", Name: "old.pdf"}},
+			}},
+		}},
+	}
+	op := board.MutationOp{
+		Type:             "rename_attachment",
+		RenameAttachment: &board.RenameAttachmentOp{ColIdx: 0, CardIdx: 0, Hash: "a.pdf", NewName: "new.pdf"},
+	}
+	if err := board.ApplyMutation(b, op); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	if got := b.Columns[0].Cards[0].Attachments[0].Name; got != "new.pdf" {
+		t.Errorf("got name %q", got)
+	}
+}
+
+func TestApplyReorderAttachments(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{{
+			Name: "Col",
+			Cards: []models.Card{{
+				Title: "C", ID: "id",
+				Attachments: []models.Attachment{
+					{Hash: "a.pdf"}, {Hash: "b.png"}, {Hash: "c.txt"},
+				},
+			}},
+		}},
+	}
+	op := board.MutationOp{
+		Type: "reorder_attachments",
+		ReorderAttachments: &board.ReorderAttachmentsOp{
+			ColIdx: 0, CardIdx: 0,
+			HashesInOrder: []string{"c.txt", "a.pdf", "b.png"},
+		},
+	}
+	if err := board.ApplyMutation(b, op); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	got := b.Columns[0].Cards[0].Attachments
+	if len(got) != 3 || got[0].Hash != "c.txt" || got[1].Hash != "a.pdf" || got[2].Hash != "b.png" {
+		t.Errorf("got %+v", got)
+	}
+}
+
+// TestMutationOpJSONRoundtripAttachments asserts that the five attachment
+// op variants survive a marshal→unmarshal roundtrip with full field equality.
+func TestMutationOpJSONRoundtripAttachments(t *testing.T) {
+	cases := []board.MutationOp{
+		{Type: "add_attachments", AddAttachments: &board.AddAttachmentsOp{ColIdx: 1, CardIdx: 2, Items: []models.Attachment{{Hash: "h1", Name: "n", Size: 1, Mime: "m"}}}},
+		{Type: "remove_attachment", RemoveAttachment: &board.RemoveAttachmentOp{ColIdx: 1, CardIdx: 2, Hash: "h"}},
+		{Type: "move_attachment", MoveAttachment: &board.MoveAttachmentOp{FromCol: 0, FromCard: 0, ToCol: 1, ToCard: 1, Hash: "h"}},
+		{Type: "rename_attachment", RenameAttachment: &board.RenameAttachmentOp{ColIdx: 0, CardIdx: 0, Hash: "h", NewName: "n"}},
+		{Type: "reorder_attachments", ReorderAttachments: &board.ReorderAttachmentsOp{ColIdx: 0, CardIdx: 0, HashesInOrder: []string{"a", "b"}}},
+	}
+	for _, in := range cases {
+		t.Run(in.Type, func(t *testing.T) {
+			data, err := json.Marshal(in)
+			if err != nil {
+				t.Fatalf("marshal: %v", err)
+			}
+			var out board.MutationOp
+			if err := json.Unmarshal(data, &out); err != nil {
+				t.Fatalf("unmarshal: %v\nraw: %s", err, data)
+			}
+			if !reflect.DeepEqual(in, out) {
+				t.Errorf("roundtrip mismatch:\n in:  %+v\n out: %+v\n raw: %s", in, out, data)
+			}
+		})
+	}
+}
+
+// TestApplyReorderAttachmentsDuplicateHash guards against a regression where
+// a duplicate hash in HashesInOrder caused the attachment to be appended
+// twice, growing the slice beyond the card's actual attachment count.
+func TestApplyReorderAttachmentsDuplicateHash(t *testing.T) {
+	b := &models.Board{
+		Columns: []models.Column{{
+			Name: "Col",
+			Cards: []models.Card{{
+				Title: "C", ID: "id",
+				Attachments: []models.Attachment{{Hash: "a"}, {Hash: "b"}},
+			}},
+		}},
+	}
+	op := board.MutationOp{
+		Type: "reorder_attachments",
+		ReorderAttachments: &board.ReorderAttachmentsOp{
+			ColIdx: 0, CardIdx: 0,
+			HashesInOrder: []string{"a", "a", "b"},
+		},
+	}
+	if err := board.ApplyMutation(b, op); err != nil {
+		t.Fatalf("apply: %v", err)
+	}
+	got := b.Columns[0].Cards[0].Attachments
+	if len(got) != 2 || got[0].Hash != "a" || got[1].Hash != "b" {
+		t.Errorf("got %+v, want [a b]", got)
 	}
 }

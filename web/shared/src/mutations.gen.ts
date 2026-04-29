@@ -1,7 +1,14 @@
 // AUTO-GENERATED FROM internal/board/mutation.go.
 // Run `make codegen` to regenerate. Do not edit by hand.
 
-import type { BoardSettings } from './types.js'
+import type { Attachment, BoardSettings } from './types.js'
+
+export interface AddAttachmentsOp {
+  type: 'add_attachments'
+  col_idx: number
+  card_idx: number
+  items: Attachment[]
+}
 
 export interface AddCardOp {
   type: 'add_card'
@@ -45,6 +52,15 @@ export interface EditCardOp {
   assignee: string
 }
 
+export interface MoveAttachmentOp {
+  type: 'move_attachment'
+  from_col: number
+  from_card: number
+  to_col: number
+  to_card: number
+  hash: string
+}
+
 export interface MoveCardOp {
   type: 'move_card'
   col_idx: number
@@ -66,10 +82,32 @@ export interface MoveColumnOp {
   after_col: string
 }
 
+export interface RemoveAttachmentOp {
+  type: 'remove_attachment'
+  col_idx: number
+  card_idx: number
+  hash: string
+}
+
+export interface RenameAttachmentOp {
+  type: 'rename_attachment'
+  col_idx: number
+  card_idx: number
+  hash: string
+  new_name: string
+}
+
 export interface RenameColumnOp {
   type: 'rename_column'
   old_name: string
   new_name: string
+}
+
+export interface ReorderAttachmentsOp {
+  type: 'reorder_attachments'
+  col_idx: number
+  card_idx: number
+  hashes_in_order: string[]
 }
 
 export interface ReorderCardOp {
@@ -121,16 +159,21 @@ export interface UpdateBoardSettingsOp {
 }
 
 export type MutationOp =
+  | AddAttachmentsOp
   | AddCardOp
   | AddColumnOp
   | CompleteCardOp
   | DeleteCardOp
   | DeleteColumnOp
   | EditCardOp
+  | MoveAttachmentOp
   | MoveCardOp
   | MoveCardToBoardOp
   | MoveColumnOp
+  | RemoveAttachmentOp
+  | RenameAttachmentOp
   | RenameColumnOp
+  | ReorderAttachmentsOp
   | ReorderCardOp
   | SortColumnOp
   | TagCardOp

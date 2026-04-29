@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 
+	"github.com/and1truong/liveboard/internal/attachments"
 	"github.com/and1truong/liveboard/internal/board"
 	"github.com/and1truong/liveboard/internal/search"
 	"github.com/and1truong/liveboard/internal/web"
@@ -14,11 +15,13 @@ import (
 
 // Deps is the set of dependencies the v1 handlers need.
 type Deps struct {
-	Dir       string // workspace directory for settings.json
-	Workspace *workspace.Workspace
-	Engine    *board.Engine
-	SSE       *web.SSEBroker
-	Search    *search.Index
+	Dir                string // workspace directory for settings.json
+	Workspace          *workspace.Workspace
+	Engine             *board.Engine
+	SSE                *web.SSEBroker
+	Search             *search.Index
+	Attachments        *attachments.Store
+	AttachmentMaxBytes int64 // 0 → use default 25MB
 }
 
 // Router returns a chi subrouter with all /api/v1 routes registered.
@@ -36,6 +39,9 @@ func Router(d Deps) chi.Router {
 	r.Get("/events", d.getEvents)
 	r.Get("/search", d.getSearch)
 	r.Get("/cards/{cardId}/backlinks", d.getBacklinks)
+	r.Post("/attachments", d.postAttachment)
+	r.Get("/attachments/{hash}/{name}", d.getAttachment)
+	r.Head("/attachments/{hash}/{name}", d.getAttachment)
 	r.Route("/boards", func(r chi.Router) {
 		r.Get("/", d.listBoards)
 		r.Post("/", d.createBoard)

@@ -27,6 +27,7 @@ func New(ws *workspace.Workspace, eng *board.Engine, version string) *Server {
 	m.registerBoardTools()
 	m.registerCardTools()
 	m.registerColumnTools()
+	m.registerAttachmentTools()
 	return m
 }
 
