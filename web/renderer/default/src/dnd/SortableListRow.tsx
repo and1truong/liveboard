@@ -3,6 +3,7 @@ import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import * as DropdownMenu from '@radix-ui/react-dropdown-menu'
 import type { Card as CardModel } from '@shared/types.js'
+import { AttachmentBadge } from '../components/AttachmentBadge.js'
 import { CardContextMenu } from '../components/CardContextMenu.js'
 import { QuickEditDialog } from '../components/QuickEditDialog.js'
 import { useBoardMutation } from '../mutations/useBoardMutation.js'
@@ -185,6 +186,7 @@ export function SortableListRow({
                   {due.label}
                 </span>
               )}
+              <AttachmentBadge attachments={card.attachments} />
             </div>
             {card.body && (
               <div

@@ -8,6 +8,7 @@ const CardDetailModal = lazy(() =>
 import { useBoardSettings } from '../queries/useBoardSettings.js'
 import { useTagColors } from '../queries.js'
 import { tagChipStyle } from '../utils/tagColor.js'
+import { AttachmentBadge } from './AttachmentBadge.js'
 
 const PRIORITY_DOT: Record<string, string> = {
   critical: 'bg-red-600',
@@ -128,6 +129,7 @@ export function CardEditable({
               <h3 className={`text-sm font-semibold dark:text-slate-100 ${card.completed ? 'text-slate-400' : ''}`}>
                 {card.title}
               </h3>
+              <AttachmentBadge attachments={card.attachments} />
             </div>
             <button
               type="button"
