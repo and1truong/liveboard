@@ -43,34 +43,20 @@ export function AddColumnButton({ boardId }: { boardId: string }): JSX.Element {
         type="button"
         aria-label="add list"
         onClick={() => setOpen(true)}
-        className="group ml-auto flex shrink-0 cursor-pointer flex-col items-center justify-center self-stretch rounded-[10px] border border-dashed border-[color:var(--color-border-dashed)] bg-transparent hover:border-solid hover:bg-[color:var(--color-hover)]"
+        className="group ml-auto flex h-12 w-12 shrink-0 cursor-pointer items-center justify-center self-start rounded-[10px] border border-dashed border-[color:var(--color-border)] bg-transparent text-[color:var(--sb-text-tertiary)] hover:border-solid hover:bg-[color:var(--color-hover)] hover:text-[color:var(--sb-text-secondary)]"
         style={{
-          width: 56,
-          minHeight: 120,
           fontFamily: HIG_FONT,
-          transition: `background-color 180ms ${HIG_EASE}, border-color 180ms ${HIG_EASE}`,
+          transition: `background-color 180ms ${HIG_EASE}, border-color 180ms ${HIG_EASE}, color 180ms ${HIG_EASE}`,
         }}
       >
-        <span
-          aria-hidden
-          className="flex h-8 w-8 items-center justify-center rounded-full text-[color:var(--sb-text-tertiary)] group-hover:text-[color:var(--sb-text-secondary)]"
-          style={{ transition: `color 180ms ${HIG_EASE}` }}
-        >
-          <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
-            <path
-              d="M9 3.5v11M3.5 9h11"
-              stroke="currentColor"
-              strokeWidth="1.5"
-              strokeLinecap="round"
-            />
-          </svg>
-        </span>
-        <span
-          className="mt-1.5 text-[10px] font-semibold uppercase text-[color:var(--sb-text-tertiary)] group-hover:text-[color:var(--sb-text-secondary)]"
-          style={{ letterSpacing: '0.08em', transition: `color 180ms ${HIG_EASE}` }}
-        >
-          List
-        </span>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <path
+            d="M8 3v10M3 8h10"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+          />
+        </svg>
       </button>
     )
   }
