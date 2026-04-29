@@ -440,7 +440,7 @@ export class LocalAdapter implements BackendAdapter {
     return hits
   }
 
-  getExportUrl(_format: ExportFormat): string | null {
+  getExportUrl(_format: ExportFormat, _opts?: { includeAttachments?: boolean }): string | null {
     return null
   }
 

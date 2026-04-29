@@ -66,8 +66,9 @@ export function GlobalSettingsModal({
   const mutation = useUpdateAppSettings()
   const htmlExportSupported = useHasCapability('export:html')
   const mdExportSupported = useHasCapability('export:markdown')
-  const htmlExportUrl = useExportUrl('html')
-  const mdExportUrl = useExportUrl('markdown')
+  const [includeAttachments, setIncludeAttachments] = useState(true)
+  const htmlExportUrl = useExportUrl('html', includeAttachments)
+  const mdExportUrl = useExportUrl('markdown', includeAttachments)
   const { setMode, setTheme: setColorTheme } = useTheme()
 
   const savedTags = settings.tags ?? []
@@ -330,6 +331,26 @@ export function GlobalSettingsModal({
               </Section>
 
               <Section label="Data">
+                <label className="lb-settings__row lb-settings__row--toggle">
+                  <div className="lb-settings__row-text">
+                    <span className="lb-settings__row-title">Include attachments</span>
+                    <span className="lb-settings__row-hint">
+                      Bundle referenced attachment blobs in the export ZIP.
+                    </span>
+                  </div>
+                  <span className="lb-toggle">
+                    <input
+                      type="checkbox"
+                      role="switch"
+                      checked={includeAttachments}
+                      onChange={(e) => setIncludeAttachments(e.target.checked)}
+                      className="lb-toggle__input"
+                    />
+                    <span className="lb-toggle__track" aria-hidden="true">
+                      <span className="lb-toggle__thumb" />
+                    </span>
+                  </span>
+                </label>
                 <Row
                   label="Export to HTML"
                   hint={htmlExportSupported

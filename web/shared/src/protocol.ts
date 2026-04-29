@@ -48,7 +48,12 @@ export type Request =
       params: { patch: Partial<AppSettings> }
     }
   | { id: string; kind: 'request'; method: 'board.pin'; params: { boardId: string } }
-  | { id: string; kind: 'request'; method: 'workspace.exportUrl'; params: { format: 'html' | 'markdown' } }
+  | {
+      id: string
+      kind: 'request'
+      method: 'workspace.exportUrl'
+      params: { format: 'html' | 'markdown'; includeAttachments?: boolean }
+    }
   | {
       id: string
       kind: 'request'

@@ -33,9 +33,11 @@ export class ServerAdapter implements BackendAdapter {
     this.exportPath = opts.exportPath ?? '/api/export'
   }
 
-  getExportUrl(format: ExportFormat): string | null {
-    const qs = format === 'markdown' ? '?format=md' : '?format=html'
-    return this.exportPath + qs
+  getExportUrl(format: ExportFormat, opts?: { includeAttachments?: boolean }): string | null {
+    const params = new URLSearchParams()
+    params.set('format', format === 'markdown' ? 'md' : 'html')
+    if (opts?.includeAttachments === false) params.set('attachments', 'false')
+    return `${this.exportPath}?${params.toString()}`
   }
 
   capabilities(): string[] {

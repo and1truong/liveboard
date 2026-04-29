@@ -73,7 +73,7 @@ export interface BackendAdapter {
   backlinks(cardId: string): Promise<BacklinkHit[]>
   // Absolute/same-origin URL that, when navigated to, downloads the workspace as a ZIP.
   // Returns null when the adapter has no backing server to produce an export.
-  getExportUrl(format: ExportFormat): string | null
+  getExportUrl(format: ExportFormat, opts?: { includeAttachments?: boolean }): string | null
   // Feature flags the adapter supports. Surfaced through the welcome handshake
   // so the renderer can enable/disable UI affordances up front. Known values:
   //   'local-storage', 'realtime', 'export:html', 'export:markdown'

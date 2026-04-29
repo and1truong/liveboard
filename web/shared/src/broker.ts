@@ -157,7 +157,11 @@ export class Broker {
       case 'backlinks':
         return this.adapter.backlinks(req.params.cardId)
       case 'workspace.exportUrl':
-        return { url: this.adapter.getExportUrl(req.params.format) }
+        return {
+          url: this.adapter.getExportUrl(req.params.format, {
+            includeAttachments: req.params.includeAttachments,
+          }),
+        }
       case 'attachment.upload':
         return this.adapter.uploadAttachment(req.params.file)
     }

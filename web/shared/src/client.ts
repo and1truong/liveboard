@@ -231,7 +231,14 @@ export class Client {
   backlinks(cardId: string): Promise<BacklinkHit[]> {
     return this.request({ kind: 'request', method: 'backlinks', params: { cardId } })
   }
-  getExportUrl(format: ExportFormat): Promise<{ url: string | null }> {
-    return this.request({ kind: 'request', method: 'workspace.exportUrl', params: { format } })
+  getExportUrl(
+    format: ExportFormat,
+    opts?: { includeAttachments?: boolean },
+  ): Promise<{ url: string | null }> {
+    return this.request({
+      kind: 'request',
+      method: 'workspace.exportUrl',
+      params: { format, includeAttachments: opts?.includeAttachments },
+    })
   }
 }
