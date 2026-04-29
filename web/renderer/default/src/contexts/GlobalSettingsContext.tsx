@@ -1,7 +1,9 @@
 import { createContext, useContext } from 'react'
 
+export type GlobalSettingsSection = 'data'
+
 interface GlobalSettingsContextValue {
-  openSettings: () => void
+  openSettings: (section?: GlobalSettingsSection) => void
 }
 
 export const GlobalSettingsContext = createContext<GlobalSettingsContextValue>({

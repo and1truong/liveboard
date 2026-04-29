@@ -113,4 +113,18 @@ describe('CommandPalette', () => {
     fireEvent.keyDown(window, { key: 'k', metaKey: true })
     await findByText('Rename current board')
   })
+
+  it('Data export item is visible', async () => {
+    const { client, qc } = await setup()
+    const { findByText } = renderWithQuery(
+      <ClientProvider client={client}>
+        <ActiveBoardProvider>
+          <CommandPaletteHost />
+        </ActiveBoardProvider>
+      </ClientProvider>,
+      { queryClient: qc },
+    )
+    fireEvent.keyDown(window, { key: 'k', metaKey: true })
+    await findByText('Data export')
+  })
 })

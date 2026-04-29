@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { Command } from 'cmdk'
-import { Plus, Pencil, Settings, LayoutGrid, List, CalendarDays, Trash2 } from 'lucide-react'
+import { Plus, Pencil, Settings, LayoutGrid, List, CalendarDays, Trash2, Download } from 'lucide-react'
 import { useBoardList } from '../queries.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useOptionalBoardFocus } from '../contexts/BoardFocusContext.js'
@@ -265,6 +265,15 @@ export function CommandPalette({ open, onOpenChange }: CommandPaletteProps): JSX
                   >
                     <span aria-hidden className={ICON_CLS}><Settings size={15} /></span>
                     <span className="flex-1 min-w-0">App settings</span>
+                    {ARROW}
+                  </Command.Item>
+                  <Command.Item
+                    value="action data export workspace download html markdown"
+                    onSelect={() => { openGlobalSettings('data'); close() }}
+                    className={ITEM_BASE}
+                  >
+                    <span aria-hidden className={ICON_CLS}><Download size={15} /></span>
+                    <span className="flex-1 min-w-0">Data export</span>
                     {ARROW}
                   </Command.Item>
                 </Command.Group>

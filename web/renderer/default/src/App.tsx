@@ -8,7 +8,7 @@ import { ActiveBoardProvider } from './contexts/ActiveBoardContext.js'
 import { useActiveBoard } from './contexts/ActiveBoardContext.js'
 import { ThemeProvider } from './contexts/ThemeContext.js'
 import { BoardSettingsContext } from './contexts/BoardSettingsContext.js'
-import { GlobalSettingsContext } from './contexts/GlobalSettingsContext.js'
+import { GlobalSettingsContext, type GlobalSettingsSection } from './contexts/GlobalSettingsContext.js'
 import { useBoardListEvents } from './mutations/useBoardListEvents.js'
 import { useBoard } from './queries.js'
 
@@ -57,6 +57,7 @@ export function App({ client, initialBoardId, initialCardPos, initialFocusedColu
   )
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [globalSettingsOpen, setGlobalSettingsOpen] = useState(false)
+  const [globalSettingsSection, setGlobalSettingsSection] = useState<GlobalSettingsSection | null>(null)
 
   const toggleSidebar = useCallback(() => {
     setSidebarCollapsed((prev) => {
@@ -70,7 +71,7 @@ export function App({ client, initialBoardId, initialCardPos, initialFocusedColu
     <ThemeProvider>
       <ActiveBoardProvider initialBoardId={initialBoardId ?? null} initialCardPos={initialCardPos ?? null} initialFocusedColumn={initialFocusedColumn ?? null}>
         <BoardSettingsContext.Provider value={{ openSettings: () => setSettingsOpen(true) }}>
-          <GlobalSettingsContext.Provider value={{ openSettings: () => setGlobalSettingsOpen(true) }}>
+          <GlobalSettingsContext.Provider value={{ openSettings: (section) => { setGlobalSettingsSection(section ?? null); setGlobalSettingsOpen(true) } }}>
           <ListEventsBridge />
           <div className="lb-app-shell flex h-screen w-screen flex-col md:flex-row">
             <BoardSidebar collapsed={sidebarCollapsed} />
@@ -82,7 +83,11 @@ export function App({ client, initialBoardId, initialCardPos, initialFocusedColu
           </div>
           <BoardSettingsHost open={settingsOpen} onOpenChange={setSettingsOpen} />
           <Suspense fallback={null}>
-            <GlobalSettingsModal open={globalSettingsOpen} onOpenChange={setGlobalSettingsOpen} />
+            <GlobalSettingsModal
+              open={globalSettingsOpen}
+              onOpenChange={(v) => { if (!v) setGlobalSettingsSection(null); setGlobalSettingsOpen(v) }}
+              initialSection={globalSettingsSection}
+            />
           </Suspense>
           </GlobalSettingsContext.Provider>
         </BoardSettingsContext.Provider>

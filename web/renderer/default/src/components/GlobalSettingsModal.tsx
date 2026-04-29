@@ -1,9 +1,10 @@
-import { useEffect, useState, type FormEvent, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from 'react'
 import * as Dialog from '@radix-ui/react-dialog'
 import { useAppSettings, useUpdateAppSettings } from '../queries/useAppSettings.js'
 import { useExportUrl } from '../queries/useExportUrl.js'
 import { useHasCapability } from '../queries/useCapabilities.js'
 import { useTheme, type Mode, type ThemeName, THEME_NAMES } from '../contexts/ThemeContext.js'
+import type { GlobalSettingsSection } from '../contexts/GlobalSettingsContext.js'
 import { TAG_PALETTE, tagChipStyle } from '../utils/tagColor.js'
 
 const UNSUPPORTED_EXPORT_HINT = 'Not available in browser-only mode — connect to a workspace server to enable.'
@@ -58,9 +59,11 @@ const WEEK_STARTS = [
 export function GlobalSettingsModal({
   open,
   onOpenChange,
+  initialSection,
 }: {
   open: boolean
   onOpenChange: (next: boolean) => void
+  initialSection?: GlobalSettingsSection | null
 }): JSX.Element {
   const settings = useAppSettings()
   const mutation = useUpdateAppSettings()
@@ -70,6 +73,7 @@ export function GlobalSettingsModal({
   const htmlExportUrl = useExportUrl('html', includeAttachments)
   const mdExportUrl = useExportUrl('markdown', includeAttachments)
   const { setMode, setTheme: setColorTheme } = useTheme()
+  const scrollRef = useRef<HTMLDivElement>(null)
 
   const savedTags = settings.tags ?? []
   const savedTagColors = settings.tag_colors ?? {}
@@ -85,6 +89,18 @@ export function GlobalSettingsModal({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open])
+
+  useEffect(() => {
+    if (!open || !initialSection) return
+    const id = window.setTimeout(() => {
+      const target = scrollRef.current?.querySelector<HTMLElement>(
+        `[data-section="${initialSection}"]`,
+      )
+      if (!target || !scrollRef.current) return
+      scrollRef.current.scrollTop = target.offsetTop
+    }, 0)
+    return () => window.clearTimeout(id)
+  }, [open, initialSection])
 
   const tagList = Array.from(new Set([...tags, ...Object.keys(tagColors)])).sort()
 
@@ -183,7 +199,7 @@ export function GlobalSettingsModal({
           </header>
 
           <form onSubmit={submit} className="lb-settings__form">
-            <div className="lb-settings__scroll">
+            <div ref={scrollRef} className="lb-settings__scroll">
 
               <Section label="General">
                 <Row label="Site name" hint="Shown in the sidebar and browser tab.">
@@ -330,7 +346,7 @@ export function GlobalSettingsModal({
                 </div>
               </Section>
 
-              <Section label="Data">
+              <Section label="Data" sectionId="data">
                 <label className="lb-settings__row lb-settings__row--toggle">
                   <div className="lb-settings__row-text">
                     <span className="lb-settings__row-title">Include attachments</span>
@@ -415,12 +431,14 @@ export function GlobalSettingsModal({
 function Section({
   label,
   children,
+  sectionId,
 }: {
   label: string
   children: ReactNode
+  sectionId?: string
 }): JSX.Element {
   return (
-    <section className="lb-settings__section">
+    <section className="lb-settings__section" data-section={sectionId}>
       <div className="lb-settings__section-head">
         <span className="lb-settings__section-label" dangerouslySetInnerHTML={{ __html: label }} />
       </div>
