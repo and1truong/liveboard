@@ -90,6 +90,9 @@ func emitInterface(b *bytes.Buffer, opType string, t reflect.Type) error {
 			continue
 		}
 		parts := strings.Split(jsonTag, ",")
+		if len(parts) == 0 {
+			continue
+		}
 		fieldName := parts[0]
 		if fieldName == "" {
 			continue
