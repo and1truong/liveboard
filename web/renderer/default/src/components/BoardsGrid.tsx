@@ -3,6 +3,7 @@ import type { BoardSummary } from '@shared/adapter.js'
 import { useBoardList } from '../queries.js'
 import { useActiveBoard } from '../contexts/ActiveBoardContext.js'
 import { useCreateBoard } from '../mutations/useBoardCrud.js'
+import { BoardIcon } from './BoardIcon.js'
 
 function NewBoardInline({ onDone }: { onDone: () => void }): JSX.Element {
   const inputRef = useRef<HTMLInputElement>(null)
@@ -56,7 +57,7 @@ function BoardCard({ board }: { board: BoardSummary }): JSX.Element {
       className="flex flex-col rounded-xl border border-[color:var(--color-border)] bg-[color:var(--color-surface)] p-5 text-left transition-shadow hover:shadow-md"
     >
       <div className="mb-2 flex items-center gap-2">
-        {board.icon && <span className="text-2xl leading-none" aria-hidden>{board.icon}</span>}
+        {board.icon && <BoardIcon icon={board.icon} color={board.icon_color} size="lg" />}
         <h3 className="text-base font-semibold text-slate-800 dark:text-slate-100">{board.name}</h3>
       </div>
 
