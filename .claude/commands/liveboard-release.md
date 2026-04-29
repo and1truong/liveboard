@@ -62,22 +62,59 @@ Use the `Edit` tool with the exact string `"version": "<old>"` → `"version": "
 - `web/shared/package.json`
 - `web/renderer/default/package.json`
 
-### 7. Update landing-page CDN refs
+### 7. Build the npm artifacts and detect renderer asset hashes
 
-In `docs/landing-page/index.html`, every CDN URL contains the version as `@<version>/` (e.g. `@0.20.3/`). Use `Edit` with `replace_all: true` to swap `@<old>/` → `@<new>/`.
+The landing page references content-hashed Vite output (`index-<hash>.js` and `index-<hash>.css`) from `@wriven/liveboard-renderer-default`. Vite emits a fresh hash on every build, so each release has different filenames — they must be detected from the just-built `dist-npm/` and patched into the landing-page HTML, otherwise CDN URLs will 404.
 
-Verify by grepping the file afterward — there should be zero remaining occurrences of the old version.
+Run:
 
-### 8. Show diff and confirm
+```
+make npm-build
+```
+
+Then capture the new asset filenames (each glob matches exactly one file):
+
+```
+NEW_JS=$(basename web/renderer/default/dist-npm/assets/index-*.js)
+NEW_CSS=$(basename web/renderer/default/dist-npm/assets/index-*.css)
+```
+
+If either glob matches zero or more than one file, abort and tell the user — the renderer build did not produce the expected entry chunk.
+
+Also capture the *current* (pre-edit) hashes from the landing page:
+
+```
+OLD_JS=$(grep -oE 'index-[A-Za-z0-9_-]+\.js' docs/landing-page/index.html | head -1)
+OLD_CSS=$(grep -oE 'index-[A-Za-z0-9_-]+\.css' docs/landing-page/index.html | head -1)
+```
+
+### 8. Update landing-page version + asset hashes
+
+The landing page is split across two files:
+
+- `docs/landing-page/index.html` — CDN URLs for both the displayed code example and the live demo iframe shell
+- `docs/landing-page/renderer.html` — same-origin renderer document loaded into the iframe
+
+Apply the following `Edit` calls with `replace_all: true` to **both** files:
+
+1. `@<old-version>/` → `@<new-version>/`
+2. `<OLD_JS>` → `<NEW_JS>`
+3. `<OLD_CSS>` → `<NEW_CSS>`
+
+Verify with grep: there should be zero remaining occurrences of `@<old-version>/`, `<OLD_JS>`, or `<OLD_CSS>` across both files.
+
+### 9. Show diff and confirm
 
 Run `git diff --stat` and `git diff` (the latter scoped or summarized — full diff if small, summary if large). Tell the user what's about to be committed, tagged, and pushed, then **ask for explicit confirmation** before continuing. Pushing `main` and a release tag is the irreversible step — do not skip this gate.
 
-### 9. Commit
+Note: `make npm-build` writes into `web/renderer/default/dist-npm/` and `web/shell/dist-npm/`. Both directories are gitignored, so they will not appear in `git status` — but verify nothing unexpected is staged.
 
-Stage the four files **by name** (never `git add -A` / `git add .`):
+### 10. Commit
+
+Stage the five files **by name** (never `git add -A` / `git add .`):
 
 ```
-git add web/shell/package.json web/shared/package.json web/renderer/default/package.json docs/landing-page/index.html
+git add web/shell/package.json web/shared/package.json web/renderer/default/package.json docs/landing-page/index.html docs/landing-page/renderer.html
 ```
 
 Commit with a HEREDOC body, message exactly:
@@ -90,7 +127,7 @@ Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
 
 Never use `--no-verify` or `--amend`. If a hook fails, fix the underlying issue and create a new commit.
 
-### 10. Tag
+### 11. Tag
 
 ```
 git tag v<new>
@@ -98,9 +135,9 @@ git tag v<new>
 
 (No `-s`, no `-a` — match the existing tag style; `git tag --list 'v*'` confirms simple lightweight tags.)
 
-### 11. Push
+### 12. Push
 
-After the user confirmed in step 8, push commit then tag:
+After the user confirmed in step 9, push commit then tag:
 
 ```
 git push origin main
@@ -115,7 +152,7 @@ https://github.com/<owner>/<repo>/releases/tag/v<new>
 
 (Resolve `<owner>/<repo>` from `git remote get-url origin`.)
 
-### 12. Done
+### 13. Done
 
 Tell the user:
 
@@ -127,4 +164,4 @@ Tell the user:
 - Never `--no-verify`, never `--force`, never `--amend` published commits.
 - Never `git add -A` / `git add .` — stage by filename.
 - Never auto-resolve a dirty tree — abort and let the user clean up.
-- The confirmation gate before push (step 8) is mandatory.
+- The confirmation gate before push (step 9) is mandatory.
